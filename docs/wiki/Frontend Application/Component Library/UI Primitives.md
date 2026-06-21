@@ -2,24 +2,24 @@
 
 <cite>
 **Referenced Files in This Document**
-- [button.tsx](file://frontend/components/ui/button.tsx)
-- [input.tsx](file://frontend/components/ui/input.tsx)
-- [dialog.tsx](file://frontend/components/ui/dialog.tsx)
-- [card.tsx](file://frontend/components/ui/card.tsx)
-- [table.tsx](file://frontend/components/ui/table.tsx)
-- [tabs.tsx](file://frontend/components/ui/tabs.tsx)
-- [badge.tsx](file://frontend/components/ui/badge.tsx)
-- [alert.tsx](file://frontend/components/ui/alert.tsx)
-- [checkbox.tsx](file://frontend/components/ui/checkbox.tsx)
-- [select.tsx](file://frontend/components/ui/select.tsx)
-- [textarea.tsx](file://frontend/components/ui/textarea.tsx)
-- [switch.tsx](file://frontend/components/ui/switch.tsx)
-- [dropdown-menu.tsx](file://frontend/components/ui/dropdown-menu.tsx)
-- [separator.tsx](file://frontend/components/ui/separator.tsx)
-- [progress.tsx](file://frontend/components/ui/progress.tsx)
-- [sheet.tsx](file://frontend/components/ui/sheet.tsx)
-- [label.tsx](file://frontend/components/ui/label.tsx)
-- [alert-dialog.tsx](file://frontend/components/ui/alert-dialog.tsx)
+- [button.tsx](frontend/components/ui/button.tsx)
+- [input.tsx](frontend/components/ui/input.tsx)
+- [dialog.tsx](frontend/components/ui/dialog.tsx)
+- [card.tsx](frontend/components/ui/card.tsx)
+- [table.tsx](frontend/components/ui/table.tsx)
+- [tabs.tsx](frontend/components/ui/tabs.tsx)
+- [badge.tsx](frontend/components/ui/badge.tsx)
+- [alert.tsx](frontend/components/ui/alert.tsx)
+- [checkbox.tsx](frontend/components/ui/checkbox.tsx)
+- [select.tsx](frontend/components/ui/select.tsx)
+- [textarea.tsx](frontend/components/ui/textarea.tsx)
+- [switch.tsx](frontend/components/ui/switch.tsx)
+- [dropdown-menu.tsx](frontend/components/ui/dropdown-menu.tsx)
+- [separator.tsx](frontend/components/ui/separator.tsx)
+- [progress.tsx](frontend/components/ui/progress.tsx)
+- [sheet.tsx](frontend/components/ui/sheet.tsx)
+- [label.tsx](frontend/components/ui/label.tsx)
+- [alert-dialog.tsx](frontend/components/ui/alert-dialog.tsx)
 </cite>
 
 ## Table of Contents
@@ -65,44 +65,44 @@ end
 ```
 
 **Diagram sources**
-- [button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
-- [input.tsx:1-22](file://frontend/components/ui/input.tsx#L1-L22)
-- [dialog.tsx:1-110](file://frontend/components/ui/dialog.tsx#L1-L110)
-- [card.tsx:1-53](file://frontend/components/ui/card.tsx#L1-L53)
-- [table.tsx:1-90](file://frontend/components/ui/table.tsx#L1-L90)
-- [tabs.tsx:1-55](file://frontend/components/ui/tabs.tsx#L1-L55)
-- [badge.tsx:1-31](file://frontend/components/ui/badge.tsx#L1-L31)
-- [alert.tsx:1-59](file://frontend/components/ui/alert.tsx#L1-L59)
-- [checkbox.tsx:1-30](file://frontend/components/ui/checkbox.tsx#L1-L30)
-- [select.tsx:1-147](file://frontend/components/ui/select.tsx#L1-L147)
-- [textarea.tsx:1-21](file://frontend/components/ui/textarea.tsx#L1-L21)
-- [switch.tsx:1-30](file://frontend/components/ui/switch.tsx#L1-L30)
-- [dropdown-menu.tsx:1-201](file://frontend/components/ui/dropdown-menu.tsx#L1-L201)
-- [separator.tsx:1-26](file://frontend/components/ui/separator.tsx#L1-L26)
-- [progress.tsx:1-35](file://frontend/components/ui/progress.tsx#L1-L35)
-- [sheet.tsx:1-111](file://frontend/components/ui/sheet.tsx#L1-L111)
-- [label.tsx](file://frontend/components/ui/label.tsx)
-- [alert-dialog.tsx](file://frontend/components/ui/alert-dialog.tsx)
+- [button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
+- [input.tsx:1-22](frontend/components/ui/input.tsx#L1-L22)
+- [dialog.tsx:1-110](frontend/components/ui/dialog.tsx#L1-L110)
+- [card.tsx:1-53](frontend/components/ui/card.tsx#L1-L53)
+- [table.tsx:1-90](frontend/components/ui/table.tsx#L1-L90)
+- [tabs.tsx:1-55](frontend/components/ui/tabs.tsx#L1-L55)
+- [badge.tsx:1-31](frontend/components/ui/badge.tsx#L1-L31)
+- [alert.tsx:1-59](frontend/components/ui/alert.tsx#L1-L59)
+- [checkbox.tsx:1-30](frontend/components/ui/checkbox.tsx#L1-L30)
+- [select.tsx:1-147](frontend/components/ui/select.tsx#L1-L147)
+- [textarea.tsx:1-21](frontend/components/ui/textarea.tsx#L1-L21)
+- [switch.tsx:1-30](frontend/components/ui/switch.tsx#L1-L30)
+- [dropdown-menu.tsx:1-201](frontend/components/ui/dropdown-menu.tsx#L1-L201)
+- [separator.tsx:1-26](frontend/components/ui/separator.tsx#L1-L26)
+- [progress.tsx:1-35](frontend/components/ui/progress.tsx#L1-L35)
+- [sheet.tsx:1-111](frontend/components/ui/sheet.tsx#L1-L111)
+- [label.tsx](frontend/components/ui/label.tsx)
+- [alert-dialog.tsx](frontend/components/ui/alert-dialog.tsx)
 
 **Section sources**
-- [button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
-- [input.tsx:1-22](file://frontend/components/ui/input.tsx#L1-L22)
-- [dialog.tsx:1-110](file://frontend/components/ui/dialog.tsx#L1-L110)
-- [card.tsx:1-53](file://frontend/components/ui/card.tsx#L1-L53)
-- [table.tsx:1-90](file://frontend/components/ui/table.tsx#L1-L90)
-- [tabs.tsx:1-55](file://frontend/components/ui/tabs.tsx#L1-L55)
-- [badge.tsx:1-31](file://frontend/components/ui/badge.tsx#L1-L31)
-- [alert.tsx:1-59](file://frontend/components/ui/alert.tsx#L1-L59)
-- [checkbox.tsx:1-30](file://frontend/components/ui/checkbox.tsx#L1-L30)
-- [select.tsx:1-147](file://frontend/components/ui/select.tsx#L1-L147)
-- [textarea.tsx:1-21](file://frontend/components/ui/textarea.tsx#L1-L21)
-- [switch.tsx:1-30](file://frontend/components/ui/switch.tsx#L1-L30)
-- [dropdown-menu.tsx:1-201](file://frontend/components/ui/dropdown-menu.tsx#L1-L201)
-- [separator.tsx:1-26](file://frontend/components/ui/separator.tsx#L1-L26)
-- [progress.tsx:1-35](file://frontend/components/ui/progress.tsx#L1-L35)
-- [sheet.tsx:1-111](file://frontend/components/ui/sheet.tsx#L1-L111)
-- [label.tsx](file://frontend/components/ui/label.tsx)
-- [alert-dialog.tsx](file://frontend/components/ui/alert-dialog.tsx)
+- [button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
+- [input.tsx:1-22](frontend/components/ui/input.tsx#L1-L22)
+- [dialog.tsx:1-110](frontend/components/ui/dialog.tsx#L1-L110)
+- [card.tsx:1-53](frontend/components/ui/card.tsx#L1-L53)
+- [table.tsx:1-90](frontend/components/ui/table.tsx#L1-L90)
+- [tabs.tsx:1-55](frontend/components/ui/tabs.tsx#L1-L55)
+- [badge.tsx:1-31](frontend/components/ui/badge.tsx#L1-L31)
+- [alert.tsx:1-59](frontend/components/ui/alert.tsx#L1-L59)
+- [checkbox.tsx:1-30](frontend/components/ui/checkbox.tsx#L1-L30)
+- [select.tsx:1-147](frontend/components/ui/select.tsx#L1-L147)
+- [textarea.tsx:1-21](frontend/components/ui/textarea.tsx#L1-L21)
+- [switch.tsx:1-30](frontend/components/ui/switch.tsx#L1-L30)
+- [dropdown-menu.tsx:1-201](frontend/components/ui/dropdown-menu.tsx#L1-L201)
+- [separator.tsx:1-26](frontend/components/ui/separator.tsx#L1-L26)
+- [progress.tsx:1-35](frontend/components/ui/progress.tsx#L1-L35)
+- [sheet.tsx:1-111](frontend/components/ui/sheet.tsx#L1-L111)
+- [label.tsx](frontend/components/ui/label.tsx)
+- [alert-dialog.tsx](frontend/components/ui/alert-dialog.tsx)
 
 ## Core Components
 - Button: Variants and sizes, with asChild support via @radix-ui/react-slot and class-variance-authority.
@@ -125,24 +125,24 @@ end
 - AlertDialog: Dialog variant for destructive actions.
 
 **Section sources**
-- [button.tsx:35-56](file://frontend/components/ui/button.tsx#L35-L56)
-- [input.tsx:4-22](file://frontend/components/ui/input.tsx#L4-L22)
-- [dialog.tsx:8-110](file://frontend/components/ui/dialog.tsx#L8-L110)
-- [card.tsx:4-53](file://frontend/components/ui/card.tsx#L4-L53)
-- [table.tsx:4-90](file://frontend/components/ui/table.tsx#L4-L90)
-- [tabs.tsx:7-55](file://frontend/components/ui/tabs.tsx#L7-L55)
-- [badge.tsx:24-31](file://frontend/components/ui/badge.tsx#L24-L31)
-- [alert.tsx:21-59](file://frontend/components/ui/alert.tsx#L21-L59)
-- [checkbox.tsx:8-30](file://frontend/components/ui/checkbox.tsx#L8-L30)
-- [select.tsx:8-147](file://frontend/components/ui/select.tsx#L8-L147)
-- [textarea.tsx:4-21](file://frontend/components/ui/textarea.tsx#L4-L21)
-- [switch.tsx:8-30](file://frontend/components/ui/switch.tsx#L8-L30)
-- [dropdown-menu.tsx:9-201](file://frontend/components/ui/dropdown-menu.tsx#L9-L201)
-- [separator.tsx:7-26](file://frontend/components/ui/separator.tsx#L7-L26)
-- [progress.tsx:11-35](file://frontend/components/ui/progress.tsx#L11-L35)
-- [sheet.tsx:9-111](file://frontend/components/ui/sheet.tsx#L9-L111)
-- [label.tsx](file://frontend/components/ui/label.tsx)
-- [alert-dialog.tsx](file://frontend/components/ui/alert-dialog.tsx)
+- [button.tsx:35-56](frontend/components/ui/button.tsx#L35-L56)
+- [input.tsx:4-22](frontend/components/ui/input.tsx#L4-L22)
+- [dialog.tsx:8-110](frontend/components/ui/dialog.tsx#L8-L110)
+- [card.tsx:4-53](frontend/components/ui/card.tsx#L4-L53)
+- [table.tsx:4-90](frontend/components/ui/table.tsx#L4-L90)
+- [tabs.tsx:7-55](frontend/components/ui/tabs.tsx#L7-L55)
+- [badge.tsx:24-31](frontend/components/ui/badge.tsx#L24-L31)
+- [alert.tsx:21-59](frontend/components/ui/alert.tsx#L21-L59)
+- [checkbox.tsx:8-30](frontend/components/ui/checkbox.tsx#L8-L30)
+- [select.tsx:8-147](frontend/components/ui/select.tsx#L8-L147)
+- [textarea.tsx:4-21](frontend/components/ui/textarea.tsx#L4-L21)
+- [switch.tsx:8-30](frontend/components/ui/switch.tsx#L8-L30)
+- [dropdown-menu.tsx:9-201](frontend/components/ui/dropdown-menu.tsx#L9-L201)
+- [separator.tsx:7-26](frontend/components/ui/separator.tsx#L7-L26)
+- [progress.tsx:11-35](frontend/components/ui/progress.tsx#L11-L35)
+- [sheet.tsx:9-111](frontend/components/ui/sheet.tsx#L9-L111)
+- [label.tsx](frontend/components/ui/label.tsx)
+- [alert-dialog.tsx](frontend/components/ui/alert-dialog.tsx)
 
 ## Architecture Overview
 WheelSense UI primitives are thin wrappers around Radix UI primitives. They:
@@ -185,12 +185,12 @@ class Button {
 ```
 
 **Diagram sources**
-- [button.tsx:6-33](file://frontend/components/ui/button.tsx#L6-L33)
-- [button.tsx:35-56](file://frontend/components/ui/button.tsx#L35-L56)
+- [button.tsx:6-33](frontend/components/ui/button.tsx#L6-L33)
+- [button.tsx:35-56](frontend/components/ui/button.tsx#L35-L56)
 
 **Section sources**
-- [button.tsx:6-33](file://frontend/components/ui/button.tsx#L6-L33)
-- [button.tsx:35-56](file://frontend/components/ui/button.tsx#L35-L56)
+- [button.tsx:6-33](frontend/components/ui/button.tsx#L6-L33)
+- [button.tsx:35-56](frontend/components/ui/button.tsx#L35-L56)
 
 ### Input
 - Purpose: Text input with consistent border, padding, focus ring, and disabled state.
@@ -206,10 +206,10 @@ class Input {
 ```
 
 **Diagram sources**
-- [input.tsx:4-22](file://frontend/components/ui/input.tsx#L4-L22)
+- [input.tsx:4-22](frontend/components/ui/input.tsx#L4-L22)
 
 **Section sources**
-- [input.tsx:4-22](file://frontend/components/ui/input.tsx#L4-L22)
+- [input.tsx:4-22](frontend/components/ui/input.tsx#L4-L22)
 
 ### Dialog
 - Purpose: Modal overlay with animated content, close button, and structured header/footer/title/description.
@@ -233,10 +233,10 @@ Close->>Portal : Close
 ```
 
 **Diagram sources**
-- [dialog.tsx:8-51](file://frontend/components/ui/dialog.tsx#L8-L51)
+- [dialog.tsx:8-51](frontend/components/ui/dialog.tsx#L8-L51)
 
 **Section sources**
-- [dialog.tsx:8-110](file://frontend/components/ui/dialog.tsx#L8-L110)
+- [dialog.tsx:8-110](frontend/components/ui/dialog.tsx#L8-L110)
 
 ### Card
 - Purpose: Container for grouped content with header, title, description, content, and footer.
@@ -265,10 +265,10 @@ class CardFooter {
 ```
 
 **Diagram sources**
-- [card.tsx:4-53](file://frontend/components/ui/card.tsx#L4-L53)
+- [card.tsx:4-53](frontend/components/ui/card.tsx#L4-L53)
 
 **Section sources**
-- [card.tsx:4-53](file://frontend/components/ui/card.tsx#L4-L53)
+- [card.tsx:4-53](frontend/components/ui/card.tsx#L4-L53)
 
 ### Table
 - Purpose: Scrollable table container with styled rows, cells, and headers.
@@ -303,10 +303,10 @@ class TableCaption {
 ```
 
 **Diagram sources**
-- [table.tsx:4-90](file://frontend/components/ui/table.tsx#L4-L90)
+- [table.tsx:4-90](frontend/components/ui/table.tsx#L4-L90)
 
 **Section sources**
-- [table.tsx:4-90](file://frontend/components/ui/table.tsx#L4-L90)
+- [table.tsx:4-90](frontend/components/ui/table.tsx#L4-L90)
 
 ### Tabs
 - Purpose: Tabbed content navigation with active state styling and focus rings.
@@ -329,10 +329,10 @@ class TabsContent {
 ```
 
 **Diagram sources**
-- [tabs.tsx:7-55](file://frontend/components/ui/tabs.tsx#L7-L55)
+- [tabs.tsx:7-55](frontend/components/ui/tabs.tsx#L7-L55)
 
 **Section sources**
-- [tabs.tsx:7-55](file://frontend/components/ui/tabs.tsx#L7-L55)
+- [tabs.tsx:7-55](frontend/components/ui/tabs.tsx#L7-L55)
 
 ### Badge
 - Purpose: Lightweight status or metadata label with semantic variants.
@@ -347,10 +347,10 @@ class Badge {
 ```
 
 **Diagram sources**
-- [badge.tsx:5-31](file://frontend/components/ui/badge.tsx#L5-L31)
+- [badge.tsx:5-31](frontend/components/ui/badge.tsx#L5-L31)
 
 **Section sources**
-- [badge.tsx:5-31](file://frontend/components/ui/badge.tsx#L5-L31)
+- [badge.tsx:5-31](frontend/components/ui/badge.tsx#L5-L31)
 
 ### Alert
 - Purpose: Callout for informational or error-related messages.
@@ -372,10 +372,10 @@ class AlertDescription {
 ```
 
 **Diagram sources**
-- [alert.tsx:5-59](file://frontend/components/ui/alert.tsx#L5-L59)
+- [alert.tsx:5-59](frontend/components/ui/alert.tsx#L5-L59)
 
 **Section sources**
-- [alert.tsx:5-59](file://frontend/components/ui/alert.tsx#L5-L59)
+- [alert.tsx:5-59](frontend/components/ui/alert.tsx#L5-L59)
 
 ### Checkbox
 - Purpose: Binary selection with visible indicator.
@@ -389,10 +389,10 @@ class Checkbox {
 ```
 
 **Diagram sources**
-- [checkbox.tsx:8-30](file://frontend/components/ui/checkbox.tsx#L8-L30)
+- [checkbox.tsx:8-30](frontend/components/ui/checkbox.tsx#L8-L30)
 
 **Section sources**
-- [checkbox.tsx:8-30](file://frontend/components/ui/checkbox.tsx#L8-L30)
+- [checkbox.tsx:8-30](frontend/components/ui/checkbox.tsx#L8-L30)
 
 ### Select
 - Purpose: Expandable list of options with keyboard navigation and viewport scrolling.
@@ -421,10 +421,10 @@ class SelectSeparator {
 ```
 
 **Diagram sources**
-- [select.tsx:8-147](file://frontend/components/ui/select.tsx#L8-L147)
+- [select.tsx:8-147](frontend/components/ui/select.tsx#L8-L147)
 
 **Section sources**
-- [select.tsx:8-147](file://frontend/components/ui/select.tsx#L8-L147)
+- [select.tsx:8-147](frontend/components/ui/select.tsx#L8-L147)
 
 ### Textarea
 - Purpose: Multi-line text input with consistent focus and disabled states.
@@ -438,10 +438,10 @@ class Textarea {
 ```
 
 **Diagram sources**
-- [textarea.tsx:4-21](file://frontend/components/ui/textarea.tsx#L4-L21)
+- [textarea.tsx:4-21](frontend/components/ui/textarea.tsx#L4-L21)
 
 **Section sources**
-- [textarea.tsx:4-21](file://frontend/components/ui/textarea.tsx#L4-L21)
+- [textarea.tsx:4-21](frontend/components/ui/textarea.tsx#L4-L21)
 
 ### Switch
 - Purpose: Toggle control with animated thumb.
@@ -455,10 +455,10 @@ class Switch {
 ```
 
 **Diagram sources**
-- [switch.tsx:8-30](file://frontend/components/ui/switch.tsx#L8-L30)
+- [switch.tsx:8-30](frontend/components/ui/switch.tsx#L8-L30)
 
 **Section sources**
-- [switch.tsx:8-30](file://frontend/components/ui/switch.tsx#L8-L30)
+- [switch.tsx:8-30](frontend/components/ui/switch.tsx#L8-L30)
 
 ### DropdownMenu
 - Purpose: Contextual menu with nested submenus, checkboxes, radios, and shortcuts.
@@ -486,10 +486,10 @@ class DropdownMenu {
 ```
 
 **Diagram sources**
-- [dropdown-menu.tsx:9-201](file://frontend/components/ui/dropdown-menu.tsx#L9-L201)
+- [dropdown-menu.tsx:9-201](frontend/components/ui/dropdown-menu.tsx#L9-L201)
 
 **Section sources**
-- [dropdown-menu.tsx:9-201](file://frontend/components/ui/dropdown-menu.tsx#L9-L201)
+- [dropdown-menu.tsx:9-201](frontend/components/ui/dropdown-menu.tsx#L9-L201)
 
 ### Separator
 - Purpose: Visual divider, horizontal or vertical.
@@ -503,10 +503,10 @@ class Separator {
 ```
 
 **Diagram sources**
-- [separator.tsx:7-26](file://frontend/components/ui/separator.tsx#L7-L26)
+- [separator.tsx:7-26](frontend/components/ui/separator.tsx#L7-L26)
 
 **Section sources**
-- [separator.tsx:7-26](file://frontend/components/ui/separator.tsx#L7-L26)
+- [separator.tsx:7-26](frontend/components/ui/separator.tsx#L7-L26)
 
 ### Progress
 - Purpose: Determinate progress indicator with percentage clamping.
@@ -520,10 +520,10 @@ RenderBar --> End(["Done"])
 ```
 
 **Diagram sources**
-- [progress.tsx:11-35](file://frontend/components/ui/progress.tsx#L11-L35)
+- [progress.tsx:11-35](frontend/components/ui/progress.tsx#L11-L35)
 
 **Section sources**
-- [progress.tsx:11-35](file://frontend/components/ui/progress.tsx#L11-L35)
+- [progress.tsx:11-35](frontend/components/ui/progress.tsx#L11-L35)
 
 ### Sheet
 - Purpose: Slide-in panel from a given side (top, bottom, left, right) with overlay and close button.
@@ -547,10 +547,10 @@ Close->>Portal : Close
 ```
 
 **Diagram sources**
-- [sheet.tsx:9-70](file://frontend/components/ui/sheet.tsx#L9-L70)
+- [sheet.tsx:9-70](frontend/components/ui/sheet.tsx#L9-L70)
 
 **Section sources**
-- [sheet.tsx:9-111](file://frontend/components/ui/sheet.tsx#L9-L111)
+- [sheet.tsx:9-111](frontend/components/ui/sheet.tsx#L9-L111)
 
 ### Label
 - Purpose: Associates text with form controls for accessibility.
@@ -603,26 +603,26 @@ Tokens --> Sh
 ```
 
 **Diagram sources**
-- [button.tsx:1-5](file://frontend/components/ui/button.tsx#L1-L5)
-- [dialog.tsx:3-6](file://frontend/components/ui/dialog.tsx#L3-L6)
-- [tabs.tsx:3-5](file://frontend/components/ui/tabs.tsx#L3-L5)
-- [checkbox.tsx:3-6](file://frontend/components/ui/checkbox.tsx#L3-L6)
-- [select.tsx:3-6](file://frontend/components/ui/select.tsx#L3-L6)
-- [switch.tsx:3-7](file://frontend/components/ui/switch.tsx#L3-L7)
-- [dropdown-menu.tsx:3-8](file://frontend/components/ui/dropdown-menu.tsx#L3-L8)
-- [separator.tsx:3-6](file://frontend/components/ui/separator.tsx#L3-L6)
-- [sheet.tsx:3-8](file://frontend/components/ui/sheet.tsx#L3-L8)
+- [button.tsx:1-5](frontend/components/ui/button.tsx#L1-L5)
+- [dialog.tsx:3-6](frontend/components/ui/dialog.tsx#L3-L6)
+- [tabs.tsx:3-5](frontend/components/ui/tabs.tsx#L3-L5)
+- [checkbox.tsx:3-6](frontend/components/ui/checkbox.tsx#L3-L6)
+- [select.tsx:3-6](frontend/components/ui/select.tsx#L3-L6)
+- [switch.tsx:3-7](frontend/components/ui/switch.tsx#L3-L7)
+- [dropdown-menu.tsx:3-8](frontend/components/ui/dropdown-menu.tsx#L3-L8)
+- [separator.tsx:3-6](frontend/components/ui/separator.tsx#L3-L6)
+- [sheet.tsx:3-8](frontend/components/ui/sheet.tsx#L3-L8)
 
 **Section sources**
-- [button.tsx:1-5](file://frontend/components/ui/button.tsx#L1-L5)
-- [dialog.tsx:3-6](file://frontend/components/ui/dialog.tsx#L3-L6)
-- [tabs.tsx:3-5](file://frontend/components/ui/tabs.tsx#L3-L5)
-- [checkbox.tsx:3-6](file://frontend/components/ui/checkbox.tsx#L3-L6)
-- [select.tsx:3-6](file://frontend/components/ui/select.tsx#L3-L6)
-- [switch.tsx:3-7](file://frontend/components/ui/switch.tsx#L3-L7)
-- [dropdown-menu.tsx:3-8](file://frontend/components/ui/dropdown-menu.tsx#L3-L8)
-- [separator.tsx:3-6](file://frontend/components/ui/separator.tsx#L3-L6)
-- [sheet.tsx:3-8](file://frontend/components/ui/sheet.tsx#L3-L8)
+- [button.tsx:1-5](frontend/components/ui/button.tsx#L1-L5)
+- [dialog.tsx:3-6](frontend/components/ui/dialog.tsx#L3-L6)
+- [tabs.tsx:3-5](frontend/components/ui/tabs.tsx#L3-L5)
+- [checkbox.tsx:3-6](frontend/components/ui/checkbox.tsx#L3-L6)
+- [select.tsx:3-6](frontend/components/ui/select.tsx#L3-L6)
+- [switch.tsx:3-7](frontend/components/ui/switch.tsx#L3-L7)
+- [dropdown-menu.tsx:3-8](frontend/components/ui/dropdown-menu.tsx#L3-L8)
+- [separator.tsx:3-6](frontend/components/ui/separator.tsx#L3-L6)
+- [sheet.tsx:3-8](frontend/components/ui/sheet.tsx#L3-L8)
 
 ## Performance Considerations
 - Prefer lightweight wrappers: Components avoid heavy computations; most logic is presentational.
@@ -646,11 +646,11 @@ Tokens --> Sh
   - The component clamps values; verify value and max are numeric and max > 0.
 
 **Section sources**
-- [button.tsx:7-8](file://frontend/components/ui/button.tsx#L7-L8)
-- [select.tsx:62-88](file://frontend/components/ui/select.tsx#L62-L88)
-- [progress.tsx:13-13](file://frontend/components/ui/progress.tsx#L13-L13)
-- [dialog.tsx:44-47](file://frontend/components/ui/dialog.tsx#L44-L47)
-- [sheet.tsx:62-66](file://frontend/components/ui/sheet.tsx#L62-L66)
+- [button.tsx:7-8](frontend/components/ui/button.tsx#L7-L8)
+- [select.tsx:62-88](frontend/components/ui/select.tsx#L62-L88)
+- [progress.tsx:13-13](frontend/components/ui/progress.tsx#L13-L13)
+- [dialog.tsx:44-47](frontend/components/ui/dialog.tsx#L44-L47)
+- [sheet.tsx:62-66](frontend/components/ui/sheet.tsx#L62-L66)
 
 ## Conclusion
 WheelSense UI primitives provide a cohesive, accessible, and theme-friendly set of building blocks for the platform. By leveraging Radix UI primitives and Tailwind tokens, components remain consistent, customizable, and easy to compose. Follow the documented props, variants, and accessibility notes to ensure reliable cross-role and cross-screen experiences.

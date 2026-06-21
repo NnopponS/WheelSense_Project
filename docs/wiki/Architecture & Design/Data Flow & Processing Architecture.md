@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [server/app/main.py](file://server/app/main.py)
-- [server/app/mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [server/app/localization.py](file://server/app/localization.py)
-- [server/app/motion_classifier.py](file://server/app/motion_classifier.py)
-- [server/app/feature_engineering.py](file://server/app/feature_engineering.py)
-- [server/app/models/telemetry.py](file://server/app/models/telemetry.py)
-- [server/app/api/endpoints/telemetry.py](file://server/app/api/endpoints/telemetry.py)
-- [server/app/api/endpoints/devices.py](file://server/app/api/endpoints/devices.py)
-- [server/app/db/session.py](file://server/app/db/session.py)
-- [server/app/services/device_management.py](file://server/app/services/device_management.py)
-- [server/app/agent_runtime/main.py](file://server/app/agent_runtime/main.py)
-- [server/app/agent_runtime/service.py](file://server/app/agent_runtime/service.py)
+- [server/app/main.py](server/app/main.py)
+- [server/app/mqtt_handler.py](server/app/mqtt_handler.py)
+- [server/app/localization.py](server/app/localization.py)
+- [server/app/motion_classifier.py](server/app/motion_classifier.py)
+- [server/app/feature_engineering.py](server/app/feature_engineering.py)
+- [server/app/models/telemetry.py](server/app/models/telemetry.py)
+- [server/app/api/endpoints/telemetry.py](server/app/api/endpoints/telemetry.py)
+- [server/app/api/endpoints/devices.py](server/app/api/endpoints/devices.py)
+- [server/app/db/session.py](server/app/db/session.py)
+- [server/app/services/device_management.py](server/app/services/device_management.py)
+- [server/app/agent_runtime/main.py](server/app/agent_runtime/main.py)
+- [server/app/agent_runtime/service.py](server/app/agent_runtime/service.py)
 </cite>
 
 ## Table of Contents
@@ -79,17 +79,17 @@ DB --> TM
 ```
 
 **Diagram sources**
-- [server/app/main.py:1-123](file://server/app/main.py#L1-L123)
-- [server/app/mqtt_handler.py:1-667](file://server/app/mqtt_handler.py#L1-L667)
-- [server/app/db/session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [server/app/models/telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [server/app/api/endpoints/telemetry.py:1-73](file://server/app/api/endpoints/telemetry.py#L1-L73)
-- [server/app/api/endpoints/devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [server/app/agent_runtime/main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
-- [server/app/agent_runtime/service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
+- [server/app/main.py:1-123](server/app/main.py#L1-L123)
+- [server/app/mqtt_handler.py:1-667](server/app/mqtt_handler.py#L1-L667)
+- [server/app/db/session.py:1-64](server/app/db/session.py#L1-L64)
+- [server/app/models/telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [server/app/api/endpoints/telemetry.py:1-73](server/app/api/endpoints/telemetry.py#L1-L73)
+- [server/app/api/endpoints/devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [server/app/agent_runtime/main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
+- [server/app/agent_runtime/service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
 
 **Section sources**
-- [server/app/main.py:1-123](file://server/app/main.py#L1-L123)
+- [server/app/main.py:1-123](server/app/main.py#L1-L123)
 
 ## Core Components
 - MQTT ingestion and processing: Handles device telemetry, camera registration/status/photo/frame, and ACKs; persists telemetry, derives room predictions, and emits alerts.
@@ -101,15 +101,15 @@ DB --> TM
 - AI agent runtime: Classifies user intent, proposes execution plans, and executes MCP tools.
 
 **Section sources**
-- [server/app/mqtt_handler.py:1-667](file://server/app/mqtt_handler.py#L1-L667)
-- [server/app/models/telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [server/app/localization.py:1-321](file://server/app/localization.py#L1-L321)
-- [server/app/motion_classifier.py:1-246](file://server/app/motion_classifier.py#L1-L246)
-- [server/app/feature_engineering.py:1-129](file://server/app/feature_engineering.py#L1-L129)
-- [server/app/services/device_management.py:1-800](file://server/app/services/device_management.py#L1-L800)
-- [server/app/api/endpoints/telemetry.py:1-73](file://server/app/api/endpoints/telemetry.py#L1-L73)
-- [server/app/api/endpoints/devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [server/app/agent_runtime/service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
+- [server/app/mqtt_handler.py:1-667](server/app/mqtt_handler.py#L1-L667)
+- [server/app/models/telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [server/app/localization.py:1-321](server/app/localization.py#L1-L321)
+- [server/app/motion_classifier.py:1-246](server/app/motion_classifier.py#L1-L246)
+- [server/app/feature_engineering.py:1-129](server/app/feature_engineering.py#L1-L129)
+- [server/app/services/device_management.py:1-800](server/app/services/device_management.py#L1-L800)
+- [server/app/api/endpoints/telemetry.py:1-73](server/app/api/endpoints/telemetry.py#L1-L73)
+- [server/app/api/endpoints/devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [server/app/agent_runtime/service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
 
 ## Architecture Overview
 The system follows a real-time ingestion pattern:
@@ -137,8 +137,8 @@ H->>MQ : Publish "WheelSense/vitals/{patient}" (optional)
 ```
 
 **Diagram sources**
-- [server/app/mqtt_handler.py:100-325](file://server/app/mqtt_handler.py#L100-L325)
-- [server/app/models/telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
+- [server/app/mqtt_handler.py:100-325](server/app/mqtt_handler.py#L100-L325)
+- [server/app/models/telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
 
 ## Detailed Component Analysis
 
@@ -173,13 +173,13 @@ Telemetry --> Vitals["Publish 'WheelSense/vitals/{patient}' (optional)"]
 ```
 
 **Diagram sources**
-- [server/app/mqtt_handler.py:100-325](file://server/app/mqtt_handler.py#L100-L325)
-- [server/app/localization.py:268-290](file://server/app/localization.py#L268-L290)
+- [server/app/mqtt_handler.py:100-325](server/app/mqtt_handler.py#L100-L325)
+- [server/app/localization.py:268-290](server/app/localization.py#L268-L290)
 
 **Section sources**
-- [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [server/app/localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [server/app/api/endpoints/telemetry.py:15-71](file://server/app/api/endpoints/telemetry.py#L15-L71)
+- [server/app/mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [server/app/localization.py:268-290](server/app/localization.py#L268-L290)
+- [server/app/api/endpoints/telemetry.py:15-71](server/app/api/endpoints/telemetry.py#L15-L71)
 
 ### Data Validation and Transformation
 - Timestamp normalization: ISO timestamp parsed or fallback to server time.
@@ -188,14 +188,14 @@ Telemetry --> Vitals["Publish 'WheelSense/vitals/{patient}' (optional)"]
 - Photo ingestion: Base64 chunks assembled and persisted; snapshot counters updated.
 
 Concrete examples from the codebase:
-- [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [server/app/mqtt_handler.py:542-564](file://server/app/mqtt_handler.py#L542-L564)
-- [server/app/mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
+- [server/app/mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [server/app/mqtt_handler.py:542-564](server/app/mqtt_handler.py#L542-L564)
+- [server/app/mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
 
 **Section sources**
-- [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [server/app/mqtt_handler.py:542-564](file://server/app/mqtt_handler.py#L542-L564)
-- [server/app/mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
+- [server/app/mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [server/app/mqtt_handler.py:542-564](server/app/mqtt_handler.py#L542-L564)
+- [server/app/mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
 
 ### Real-Time Alert Generation
 - Fall detection thresholds: acceleration threshold and near-zero velocity.
@@ -216,12 +216,12 @@ Publish --> End
 ```
 
 **Diagram sources**
-- [server/app/mqtt_handler.py:246-311](file://server/app/mqtt_handler.py#L246-L311)
-- [server/app/mqtt_handler.py:327-367](file://server/app/mqtt_handler.py#L327-L367)
+- [server/app/mqtt_handler.py:246-311](server/app/mqtt_handler.py#L246-L311)
+- [server/app/mqtt_handler.py:327-367](server/app/mqtt_handler.py#L327-L367)
 
 **Section sources**
-- [server/app/mqtt_handler.py:246-311](file://server/app/mqtt_handler.py#L246-L311)
-- [server/app/mqtt_handler.py:327-367](file://server/app/mqtt_handler.py#L327-L367)
+- [server/app/mqtt_handler.py:246-311](server/app/mqtt_handler.py#L246-L311)
+- [server/app/mqtt_handler.py:327-367](server/app/mqtt_handler.py#L327-L367)
 
 ### Intent Classification and Plan Execution (AI Processing Flow)
 - Agent runtime exposes internal endpoints for proposing turns and executing plans.
@@ -255,12 +255,12 @@ AR-->>FE : Final message
 ```
 
 **Diagram sources**
-- [server/app/agent_runtime/main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
-- [server/app/agent_runtime/service.py:202-520](file://server/app/agent_runtime/service.py#L202-L520)
+- [server/app/agent_runtime/main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
+- [server/app/agent_runtime/service.py:202-520](server/app/agent_runtime/service.py#L202-L520)
 
 **Section sources**
-- [server/app/agent_runtime/main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
-- [server/app/agent_runtime/service.py:202-520](file://server/app/agent_runtime/service.py#L202-L520)
+- [server/app/agent_runtime/main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
+- [server/app/agent_runtime/service.py:202-520](server/app/agent_runtime/service.py#L202-L520)
 
 ### Motion Classification Pipeline
 - Feature engineering: Sliding windows and statistical features from IMU samples.
@@ -278,14 +278,14 @@ Predict --> Output["Confidence + Probabilities"]
 ```
 
 **Diagram sources**
-- [server/app/feature_engineering.py:89-129](file://server/app/feature_engineering.py#L89-L129)
-- [server/app/motion_classifier.py:61-148](file://server/app/motion_classifier.py#L61-L148)
-- [server/app/motion_classifier.py:150-177](file://server/app/motion_classifier.py#L150-L177)
+- [server/app/feature_engineering.py:89-129](server/app/feature_engineering.py#L89-L129)
+- [server/app/motion_classifier.py:61-148](server/app/motion_classifier.py#L61-L148)
+- [server/app/motion_classifier.py:150-177](server/app/motion_classifier.py#L150-L177)
 
 **Section sources**
-- [server/app/feature_engineering.py:25-88](file://server/app/feature_engineering.py#L25-L88)
-- [server/app/motion_classifier.py:61-148](file://server/app/motion_classifier.py#L61-L148)
-- [server/app/motion_classifier.py:150-177](file://server/app/motion_classifier.py#L150-L177)
+- [server/app/feature_engineering.py:25-88](server/app/feature_engineering.py#L25-L88)
+- [server/app/motion_classifier.py:61-148](server/app/motion_classifier.py#L61-L148)
+- [server/app/motion_classifier.py:150-177](server/app/motion_classifier.py#L150-L177)
 
 ### Room Localization Strategy
 - Strategy selection: KNN or max-RSSI with fallback.
@@ -304,14 +304,14 @@ Max --> Out3["Room + Confidence"]
 ```
 
 **Diagram sources**
-- [server/app/localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [server/app/localization.py:157-179](file://server/app/localization.py#L157-L179)
-- [server/app/localization.py:215-265](file://server/app/localization.py#L215-L265)
+- [server/app/localization.py:268-290](server/app/localization.py#L268-L290)
+- [server/app/localization.py:157-179](server/app/localization.py#L157-L179)
+- [server/app/localization.py:215-265](server/app/localization.py#L215-L265)
 
 **Section sources**
-- [server/app/localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [server/app/localization.py:157-179](file://server/app/localization.py#L157-L179)
-- [server/app/localization.py:215-265](file://server/app/localization.py#L215-L265)
+- [server/app/localization.py:268-290](server/app/localization.py#L268-L290)
+- [server/app/localization.py:157-179](server/app/localization.py#L157-L179)
+- [server/app/localization.py:215-265](server/app/localization.py#L215-L265)
 
 ### Data Persistence and Caching
 - Database: PostgreSQL with async SQLAlchemy sessions; engine configured with pool settings.
@@ -391,12 +391,12 @@ NODE_STATUS_TELEMETRY ||--o{ PHOTO_RECORDS : "snapshots"
 ```
 
 **Diagram sources**
-- [server/app/models/telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
+- [server/app/models/telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
 
 **Section sources**
-- [server/app/db/session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [server/app/models/telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
-- [server/app/services/device_management.py:635-761](file://server/app/services/device_management.py#L635-L761)
+- [server/app/db/session.py:18-64](server/app/db/session.py#L18-L64)
+- [server/app/models/telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
+- [server/app/services/device_management.py:635-761](server/app/services/device_management.py#L635-L761)
 
 ### User Interaction Flow
 - REST endpoints support listing devices, querying device commands, assigning patients to devices, and ingesting mobile telemetry.
@@ -422,12 +422,12 @@ API-->>Client : Command response
 ```
 
 **Diagram sources**
-- [server/app/api/endpoints/devices.py:63-263](file://server/app/api/endpoints/devices.py#L63-L263)
-- [server/app/services/device_management.py:127-214](file://server/app/services/device_management.py#L127-L214)
+- [server/app/api/endpoints/devices.py:63-263](server/app/api/endpoints/devices.py#L63-L263)
+- [server/app/services/device_management.py:127-214](server/app/services/device_management.py#L127-L214)
 
 **Section sources**
-- [server/app/api/endpoints/devices.py:63-263](file://server/app/api/endpoints/devices.py#L63-L263)
-- [server/app/services/device_management.py:127-214](file://server/app/services/device_management.py#L127-L214)
+- [server/app/api/endpoints/devices.py:63-263](server/app/api/endpoints/devices.py#L63-L263)
+- [server/app/services/device_management.py:127-214](server/app/services/device_management.py#L127-L214)
 
 ## Dependency Analysis
 - Startup and lifecycle:
@@ -452,18 +452,18 @@ ARMAIN["server/app/agent_runtime/main.py"] --> ARSVC["server/app/agent_runtime/s
 ```
 
 **Diagram sources**
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
-- [server/app/mqtt_handler.py:15-38](file://server/app/mqtt_handler.py#L15-L38)
-- [server/app/localization.py:1-321](file://server/app/localization.py#L1-L321)
-- [server/app/services/device_management.py:1-48](file://server/app/services/device_management.py#L1-L48)
-- [server/app/models/telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [server/app/agent_runtime/main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
-- [server/app/agent_runtime/service.py:1-36](file://server/app/agent_runtime/service.py#L1-L36)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
+- [server/app/mqtt_handler.py:15-38](server/app/mqtt_handler.py#L15-L38)
+- [server/app/localization.py:1-321](server/app/localization.py#L1-L321)
+- [server/app/services/device_management.py:1-48](server/app/services/device_management.py#L1-L48)
+- [server/app/models/telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [server/app/agent_runtime/main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
+- [server/app/agent_runtime/service.py:1-36](server/app/agent_runtime/service.py#L1-L36)
 
 **Section sources**
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
-- [server/app/mqtt_handler.py:15-38](file://server/app/mqtt_handler.py#L15-L38)
-- [server/app/agent_runtime/service.py:122-146](file://server/app/agent_runtime/service.py#L122-L146)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
+- [server/app/mqtt_handler.py:15-38](server/app/mqtt_handler.py#L15-L38)
+- [server/app/agent_runtime/service.py:122-146](server/app/agent_runtime/service.py#L122-L146)
 
 ## Performance Considerations
 - Asynchronous I/O: MQTT listener and REST endpoints use async/await; database sessions are async.
@@ -478,10 +478,10 @@ Recommendations:
 - Batch writes for high-frequency telemetry if needed; current implementation persists per message.
 
 **Section sources**
-- [server/app/db/session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [server/app/mqtt_handler.py:42-46](file://server/app/mqtt_handler.py#L42-L46)
-- [server/app/motion_classifier.py:25-36](file://server/app/motion_classifier.py#L25-L36)
-- [server/app/localization.py:25-37](file://server/app/localization.py#L25-L37)
+- [server/app/db/session.py:18-64](server/app/db/session.py#L18-L64)
+- [server/app/mqtt_handler.py:42-46](server/app/mqtt_handler.py#L42-L46)
+- [server/app/motion_classifier.py:25-36](server/app/motion_classifier.py#L25-L36)
+- [server/app/localization.py:25-37](server/app/localization.py#L25-L37)
 
 ## Troubleshooting Guide
 Common issues and diagnostics:
@@ -498,10 +498,10 @@ Actions:
 - Review agent runtime logs for MCP tool execution errors.
 
 **Section sources**
-- [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [server/app/mqtt_handler.py:163-167](file://server/app/mqtt_handler.py#L163-L167)
-- [server/app/mqtt_handler.py:542-564](file://server/app/mqtt_handler.py#L542-L564)
-- [server/app/agent_runtime/service.py:400-410](file://server/app/agent_runtime/service.py#L400-L410)
+- [server/app/mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [server/app/mqtt_handler.py:163-167](server/app/mqtt_handler.py#L163-L167)
+- [server/app/mqtt_handler.py:542-564](server/app/mqtt_handler.py#L542-L564)
+- [server/app/agent_runtime/service.py:400-410](server/app/agent_runtime/service.py#L400-L410)
 
 ## Conclusion
 The platform implements a robust, real-time ingestion pipeline that transforms raw device telemetry into actionable insights:

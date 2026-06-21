@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/admin/ml-calibration/page.tsx)
-- [MlCalibrationClient.tsx](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx)
-- [localization.py](file://server/app/api/endpoints/localization.py)
-- [telemetry.py](file://server/app/api/endpoints/telemetry.py)
-- [motion_classifier.py](file://server/app/motion_classifier.py)
-- [feature_engineering.py](file://server/app/feature_engineering.py)
-- [openapi.generated.json](file://server/openapi.generated.json)
-- [openapi.generated.json](file://frontend/.openapi.json)
-- [initial_workspace_schema.py](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py)
+- [page.tsx](frontend/app/admin/ml-calibration/page.tsx)
+- [MlCalibrationClient.tsx](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx)
+- [localization.py](server/app/api/endpoints/localization.py)
+- [telemetry.py](server/app/api/endpoints/telemetry.py)
+- [motion_classifier.py](server/app/motion_classifier.py)
+- [feature_engineering.py](server/app/feature_engineering.py)
+- [openapi.generated.json](server/openapi.generated.json)
+- [openapi.generated.json](frontend/.openapi.json)
+- [initial_workspace_schema.py](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py)
 </cite>
 
 ## Table of Contents
@@ -55,17 +55,17 @@ E --> F
 ```
 
 **Diagram sources**
-- [page.tsx:1-5](file://frontend/app/admin/ml-calibration/page.tsx#L1-L5)
-- [MlCalibrationClient.tsx:1-974](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
-- [localization.py:233-395](file://server/app/api/endpoints/localization.py#L233-L395)
-- [telemetry.py:49-72](file://server/app/api/endpoints/telemetry.py#L49-L72)
-- [motion_classifier.py:61-246](file://server/app/motion_classifier.py#L61-L246)
-- [feature_engineering.py:25-129](file://server/app/feature_engineering.py#L25-L129)
-- [initial_workspace_schema.py:125-144](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
+- [page.tsx:1-5](frontend/app/admin/ml-calibration/page.tsx#L1-L5)
+- [MlCalibrationClient.tsx:1-974](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
+- [localization.py:233-395](server/app/api/endpoints/localization.py#L233-L395)
+- [telemetry.py:49-72](server/app/api/endpoints/telemetry.py#L49-L72)
+- [motion_classifier.py:61-246](server/app/motion_classifier.py#L61-L246)
+- [feature_engineering.py:25-129](server/app/feature_engineering.py#L25-L129)
+- [initial_workspace_schema.py:125-144](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
 
 **Section sources**
-- [page.tsx:1-5](file://frontend/app/admin/ml-calibration/page.tsx#L1-L5)
-- [MlCalibrationClient.tsx:1-974](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
+- [page.tsx:1-5](frontend/app/admin/ml-calibration/page.tsx#L1-L5)
+- [MlCalibrationClient.tsx:1-974](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
 
 ## Core Components
 - Admin Calibration UI (MlCalibrationClient): Provides tabbed controls for Localization and Motion calibration, device selection, session management, and model status monitoring.
@@ -76,12 +76,12 @@ E --> F
 - Data Schemas: Defines RSSI training data persistence and related indices.
 
 **Section sources**
-- [MlCalibrationClient.tsx:104-974](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L104-L974)
-- [localization.py:233-395](file://server/app/api/endpoints/localization.py#L233-L395)
-- [telemetry.py:49-72](file://server/app/api/endpoints/telemetry.py#L49-L72)
-- [motion_classifier.py:61-246](file://server/app/motion_classifier.py#L61-L246)
-- [feature_engineering.py:25-129](file://server/app/feature_engineering.py#L25-L129)
-- [initial_workspace_schema.py:125-144](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
+- [MlCalibrationClient.tsx:104-974](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L104-L974)
+- [localization.py:233-395](server/app/api/endpoints/localization.py#L233-L395)
+- [telemetry.py:49-72](server/app/api/endpoints/telemetry.py#L49-L72)
+- [motion_classifier.py:61-246](server/app/motion_classifier.py#L61-L246)
+- [feature_engineering.py:25-129](server/app/feature_engineering.py#L25-L129)
+- [initial_workspace_schema.py:125-144](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
 
 ## Architecture Overview
 The Admin Dashboard drives two calibration workflows:
@@ -112,11 +112,11 @@ Admin->>ML : Load Model
 ```
 
 **Diagram sources**
-- [MlCalibrationClient.tsx:265-433](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L265-L433)
-- [localization.py:233-395](file://server/app/api/endpoints/localization.py#L233-L395)
-- [telemetry.py:49-72](file://server/app/api/endpoints/telemetry.py#L49-L72)
-- [motion_classifier.py:61-246](file://server/app/motion_classifier.py#L61-L246)
-- [initial_workspace_schema.py:125-144](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
+- [MlCalibrationClient.tsx:265-433](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L265-L433)
+- [localization.py:233-395](server/app/api/endpoints/localization.py#L233-L395)
+- [telemetry.py:49-72](server/app/api/endpoints/telemetry.py#L49-L72)
+- [motion_classifier.py:61-246](server/app/motion_classifier.py#L61-L246)
+- [initial_workspace_schema.py:125-144](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
 
 ## Detailed Component Analysis
 
@@ -150,15 +150,15 @@ Key behaviors:
 - Training copies session samples into the RSSI training dataset and updates session status.
 
 **Diagram sources**
-- [MlCalibrationClient.tsx:265-329](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L265-L329)
-- [localization.py:233-395](file://server/app/api/endpoints/localization.py#L233-L395)
-- [telemetry.py:49-72](file://server/app/api/endpoints/telemetry.py#L49-L72)
-- [initial_workspace_schema.py:125-144](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
+- [MlCalibrationClient.tsx:265-329](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L265-L329)
+- [localization.py:233-395](server/app/api/endpoints/localization.py#L233-L395)
+- [telemetry.py:49-72](server/app/api/endpoints/telemetry.py#L49-L72)
+- [initial_workspace_schema.py:125-144](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
 
 **Section sources**
-- [MlCalibrationClient.tsx:265-329](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L265-L329)
-- [localization.py:233-395](file://server/app/api/endpoints/localization.py#L233-L395)
-- [telemetry.py:49-72](file://server/app/api/endpoints/telemetry.py#L49-L72)
+- [MlCalibrationClient.tsx:265-329](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L265-L329)
+- [localization.py:233-395](server/app/api/endpoints/localization.py#L233-L395)
+- [telemetry.py:49-72](server/app/api/endpoints/telemetry.py#L49-L72)
 
 ### Motion Classification Workflow
 The motion workflow converts IMU windows into feature vectors, trains an XGBoost classifier, and manages model persistence.
@@ -180,14 +180,14 @@ Key behaviors:
 - Models are saved and loaded per workspace, enabling persistence across restarts.
 
 **Diagram sources**
-- [MlCalibrationClient.tsx:387-433](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L387-L433)
-- [motion_classifier.py:61-246](file://server/app/motion_classifier.py#L61-L246)
-- [feature_engineering.py:25-129](file://server/app/feature_engineering.py#L25-L129)
+- [MlCalibrationClient.tsx:387-433](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L387-L433)
+- [motion_classifier.py:61-246](server/app/motion_classifier.py#L61-L246)
+- [feature_engineering.py:25-129](server/app/feature_engineering.py#L25-L129)
 
 **Section sources**
-- [MlCalibrationClient.tsx:387-433](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L387-L433)
-- [motion_classifier.py:61-246](file://server/app/motion_classifier.py#L61-L246)
-- [feature_engineering.py:25-129](file://server/app/feature_engineering.py#L25-L129)
+- [MlCalibrationClient.tsx:387-433](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L387-L433)
+- [motion_classifier.py:61-246](server/app/motion_classifier.py#L61-L246)
+- [feature_engineering.py:25-129](server/app/feature_engineering.py#L25-L129)
 
 ### Admin Procedures and Controls
 - Localization:
@@ -199,15 +199,15 @@ Key behaviors:
   - Train the XGBoost model and save/load models to/from disk.
 
 **Section sources**
-- [MlCalibrationClient.tsx:104-974](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L104-L974)
+- [MlCalibrationClient.tsx:104-974](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L104-L974)
 
 ### Data Management and Persistence
 - RSSI training data is stored in a JSONB column with indexed workspace and device fields.
 - Calibration sessions capture device context and room labels; training copies samples into the training dataset.
 
 **Section sources**
-- [initial_workspace_schema.py:125-144](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
-- [localization.py:310-395](file://server/app/api/endpoints/localization.py#L310-L395)
+- [initial_workspace_schema.py:125-144](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
+- [localization.py:310-395](server/app/api/endpoints/localization.py#L310-L395)
 
 ## Dependency Analysis
 - Frontend depends on server APIs for:
@@ -228,20 +228,20 @@ LOC_API --> DB["RSSI Training Data Schema"]
 ```
 
 **Diagram sources**
-- [MlCalibrationClient.tsx:1-974](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
-- [localization.py:233-395](file://server/app/api/endpoints/localization.py#L233-L395)
-- [telemetry.py:49-72](file://server/app/api/endpoints/telemetry.py#L49-L72)
-- [motion_classifier.py:61-246](file://server/app/motion_classifier.py#L61-L246)
-- [feature_engineering.py:25-129](file://server/app/feature_engineering.py#L25-L129)
-- [initial_workspace_schema.py:125-144](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
+- [MlCalibrationClient.tsx:1-974](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
+- [localization.py:233-395](server/app/api/endpoints/localization.py#L233-L395)
+- [telemetry.py:49-72](server/app/api/endpoints/telemetry.py#L49-L72)
+- [motion_classifier.py:61-246](server/app/motion_classifier.py#L61-L246)
+- [feature_engineering.py:25-129](server/app/feature_engineering.py#L25-L129)
+- [initial_workspace_schema.py:125-144](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
 
 **Section sources**
-- [MlCalibrationClient.tsx:1-974](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
-- [localization.py:233-395](file://server/app/api/endpoints/localization.py#L233-L395)
-- [telemetry.py:49-72](file://server/app/api/endpoints/telemetry.py#L49-L72)
-- [motion_classifier.py:61-246](file://server/app/motion_classifier.py#L61-L246)
-- [feature_engineering.py:25-129](file://server/app/feature_engineering.py#L25-L129)
-- [initial_workspace_schema.py:125-144](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
+- [MlCalibrationClient.tsx:1-974](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L1-L974)
+- [localization.py:233-395](server/app/api/endpoints/localization.py#L233-L395)
+- [telemetry.py:49-72](server/app/api/endpoints/telemetry.py#L49-L72)
+- [motion_classifier.py:61-246](server/app/motion_classifier.py#L61-L246)
+- [feature_engineering.py:25-129](server/app/feature_engineering.py#L25-L129)
+- [initial_workspace_schema.py:125-144](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L125-L144)
 
 ## Performance Considerations
 - RSSI Sampling: Limit the number of RSSI readings fetched per sample to reduce payload size and latency.
@@ -258,9 +258,9 @@ Common issues and resolutions:
 - Model load failures: Confirm model and encoder files exist on disk for the workspace.
 
 **Section sources**
-- [MlCalibrationClient.tsx:276-315](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L276-L315)
-- [localization.py:290-329](file://server/app/api/endpoints/localization.py#L290-L329)
-- [motion_classifier.py:204-246](file://server/app/motion_classifier.py#L204-L246)
+- [MlCalibrationClient.tsx:276-315](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L276-L315)
+- [localization.py:290-329](server/app/api/endpoints/localization.py#L290-L329)
+- [motion_classifier.py:204-246](server/app/motion_classifier.py#L204-L246)
 
 ## Conclusion
 The Admin Dashboard provides a comprehensive interface for ML calibration across localization and motion domains. It integrates with backend APIs to manage calibration sessions, collect and persist training data, and train or load models. The system supports automation via retraining from stored data and offers robust controls for strategy configuration, readiness validation, and performance monitoring.

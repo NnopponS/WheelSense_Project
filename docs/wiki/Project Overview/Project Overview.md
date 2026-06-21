@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [frontend/README.md](file://frontend/README.md)
-- [frontend/package.json](file://frontend/package.json)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [docs/adr/README.md](file://docs/adr/README.md)
-- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
-- [docs/adr/0003-facility-hierarchy-for-spatial-model.md](file://docs/adr/0003-facility-hierarchy-for-spatial-model.md)
-- [docs/adr/0008-workflow-domains-for-role-operations.md](file://docs/adr/0008-workflow-domains-for-role-operations.md)
+- [README.md](README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [server/AGENTS.md](server/AGENTS.md)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [server/pyproject.toml](server/pyproject.toml)
+- [frontend/README.md](frontend/README.md)
+- [frontend/package.json](frontend/package.json)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [docs/adr/README.md](docs/adr/README.md)
+- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [docs/adr/0003-facility-hierarchy-for-spatial-model.md](docs/adr/0003-facility-hierarchy-for-spatial-model.md)
+- [docs/adr/0008-workflow-domains-for-role-operations.md](docs/adr/0008-workflow-domains-for-role-operations.md)
 </cite>
 
 ## Table of Contents
@@ -80,14 +80,14 @@ PROXY --> API
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
-- [server/AGENTS.md:34-46](file://server/AGENTS.md#L34-L46)
-- [frontend/README.md:24-51](file://frontend/README.md#L24-L51)
+- [ARCHITECTURE.md:3-21](ARCHITECTURE.md#L3-L21)
+- [server/AGENTS.md:34-46](server/AGENTS.md#L34-L46)
+- [frontend/README.md:24-51](frontend/README.md#L24-L51)
 
 **Section sources**
-- [README.md:1-74](file://README.md#L1-L74)
-- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
+- [README.md:1-74](README.md#L1-L74)
+- [ARCHITECTURE.md:3-21](ARCHITECTURE.md#L3-L21)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
 
 ## Core Components
 - Backend (FastAPI)
@@ -105,9 +105,9 @@ PROXY --> API
   - Node_Tsimcam: camera registration/status/photo ingestion and BLE beacon metadata
 
 **Section sources**
-- [server/AGENTS.md:9-21](file://server/AGENTS.md#L9-L21)
-- [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/AGENTS.md:9-21](server/AGENTS.md#L9-L21)
+- [frontend/README.md:1-374](frontend/README.md#L1-L374)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Architecture Overview
 The system architecture couples hardware telemetry, backend services, AI/MCP orchestration, and role-based dashboards. Data flows from devices to MQTT, processed by the backend, and surfaced to the frontend and AI runtime.
@@ -126,12 +126,12 @@ F --> J["Home Assistant Integration<br/>/api/ha/*"]
 ```
 
 **Diagram sources**
-- [server/AGENTS.md:322-341](file://server/AGENTS.md#L322-L341)
-- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
+- [server/AGENTS.md:322-341](server/AGENTS.md#L322-L341)
+- [ARCHITECTURE.md:3-21](ARCHITECTURE.md#L3-L21)
 
 **Section sources**
-- [server/AGENTS.md:34-46](file://server/AGENTS.md#L34-L46)
-- [ARCHITECTURE.md:23-111](file://ARCHITECTURE.md#L23-L111)
+- [server/AGENTS.md:34-46](server/AGENTS.md#L34-L46)
+- [ARCHITECTURE.md:23-111](ARCHITECTURE.md#L23-L111)
 
 ## Detailed Component Analysis
 
@@ -175,12 +175,12 @@ Proxy-->>UI : "ExecutionStepList"
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:93-111](file://ARCHITECTURE.md#L93-L111)
-- [server/AGENTS.md:402-425](file://server/AGENTS.md#L402-L425)
+- [ARCHITECTURE.md:93-111](ARCHITECTURE.md#L93-L111)
+- [server/AGENTS.md:402-425](server/AGENTS.md#L402-L425)
 
 **Section sources**
-- [server/AGENTS.md:126-291](file://server/AGENTS.md#L126-L291)
-- [ARCHITECTURE.md:23-111](file://ARCHITECTURE.md#L23-L111)
+- [server/AGENTS.md:126-291](server/AGENTS.md#L126-L291)
+- [ARCHITECTURE.md:23-111](ARCHITECTURE.md#L23-L111)
 
 ### Frontend: Role-Based Dashboards and AI Chat
 - Next.js 16 with App Router, cookie-based auth, and a canonical /api/* proxy to the backend
@@ -203,11 +203,11 @@ ShowAnswer --> Done
 ```
 
 **Diagram sources**
-- [frontend/README.md:199-330](file://frontend/README.md#L199-L330)
-- [ARCHITECTURE.md:93-111](file://ARCHITECTURE.md#L93-L111)
+- [frontend/README.md:199-330](frontend/README.md#L199-L330)
+- [ARCHITECTURE.md:93-111](ARCHITECTURE.md#L93-L111)
 
 **Section sources**
-- [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
+- [frontend/README.md:1-374](frontend/README.md#L1-L374)
 
 ### Firmware: M5StickCPlus2 and Node_Tsimcam
 - M5StickCPlus2 publishes IMU, motion, RSSI, and battery telemetry over MQTT
@@ -229,12 +229,12 @@ Srv-->>MQTT : "Publish room updates/alerts"
 ```
 
 **Diagram sources**
-- [server/AGENTS.md:322-341](file://server/AGENTS.md#L322-L341)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/AGENTS.md:322-341](server/AGENTS.md#L322-L341)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 **Section sources**
-- [server/AGENTS.md:322-357](file://server/AGENTS.md#L322-L357)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/AGENTS.md:322-357](server/AGENTS.md#L322-L357)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### AI/MCP Integration and Security
 - MCP server mounted at /mcp with Streamable HTTP primary and SSE compatibility
@@ -270,12 +270,12 @@ AgentRuntime --> MCPServer : "calls tools"
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:27-80](file://ARCHITECTURE.md#L27-L80)
-- [server/AGENTS.md:426-466](file://server/AGENTS.md#L426-L466)
+- [ARCHITECTURE.md:27-80](ARCHITECTURE.md#L27-L80)
+- [server/AGENTS.md:426-466](server/AGENTS.md#L426-L466)
 
 **Section sources**
-- [ARCHITECTURE.md:23-127](file://ARCHITECTURE.md#L23-L127)
-- [server/AGENTS.md:426-486](file://server/AGENTS.md#L426-L486)
+- [ARCHITECTURE.md:23-127](ARCHITECTURE.md#L23-L127)
+- [server/AGENTS.md:426-486](server/AGENTS.md#L426-L486)
 
 ## Dependency Analysis
 - Core technologies
@@ -299,14 +299,14 @@ FW2["Firmware: Node_Tsimcam"] --> MQTT
 ```
 
 **Diagram sources**
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
 
 **Section sources**
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
 
 ## Performance Considerations
 - Containerized runtime with isolated volumes for simulator and production modes; choose appropriate compose entry for environment
@@ -331,9 +331,9 @@ FW2["Firmware: Node_Tsimcam"] --> MQTT
   - Check device activity logs and room prediction readiness
 
 **Section sources**
-- [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
-- [frontend/README.md:41-51](file://frontend/README.md#L41-L51)
-- [ARCHITECTURE.md:128-139](file://ARCHITECTURE.md#L128-L139)
+- [server/AGENTS.md:72-111](server/AGENTS.md#L72-L111)
+- [frontend/README.md:41-51](frontend/README.md#L41-L51)
+- [ARCHITECTURE.md:128-139](ARCHITECTURE.md#L128-L139)
 
 ## Conclusion
 WheelSense delivers a cohesive IoT + clinical workflow platform integrating hardware telemetry, secure AI/MCP orchestration, and role-based dashboards. Its modular architecture, strong access controls, and scalable runtime make it suitable for healthcare facilities seeking improved patient monitoring, care coordination, and operational insights. The platform’s documented ADRs and evolving frontend/backend contracts provide a clear path for continued development and deployment.

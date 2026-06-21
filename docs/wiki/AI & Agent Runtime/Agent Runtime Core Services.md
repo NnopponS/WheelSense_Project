@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [language_bridge.py](file://server/app/agent_runtime/language_bridge.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [config.py](file://server/app/config.py)
-- [schemas/agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [main.py](file://server/app/main.py)
-- [mcp/server.py](file://server/app/mcp/server.py)
-- [api/endpoints/chat.py](file://server/app/api/endpoints/chat.py)
-- [components/ai/AIChatPopup.tsx](file://frontend/components/ai/AIChatPopup.tsx)
-- [tests/test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [language_bridge.py](server/app/agent_runtime/language_bridge.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [config.py](server/app/config.py)
+- [schemas/agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [main.py](server/app/main.py)
+- [mcp/server.py](server/app/mcp/server.py)
+- [api/endpoints/chat.py](server/app/api/endpoints/chat.py)
+- [components/ai/AIChatPopup.tsx](frontend/components/ai/AIChatPopup.tsx)
+- [tests/test_agent_runtime.py](server/tests/test_agent_runtime.py)
 </cite>
 
 ## Table of Contents
@@ -65,20 +65,20 @@ J --> B
 ```
 
 **Diagram sources**
-- [main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [intent.py:1-1024](file://server/app/agent_runtime/intent.py#L1-L1024)
-- [conversation_fastpath.py:1-45](file://server/app/agent_runtime/conversation_fastpath.py#L1-L45)
-- [language_bridge.py:1-125](file://server/app/agent_runtime/language_bridge.py#L1-L125)
-- [llm_tool_router.py:1-366](file://server/app/agent_runtime/llm_tool_router.py#L1-L366)
-- [schemas/agent_runtime.py:1-57](file://server/app/schemas/agent_runtime.py#L1-L57)
-- [main.py:1-123](file://server/app/main.py#L1-L123)
-- [mcp/server.py:1-800](file://server/app/mcp/server.py#L1-L800)
-- [components/ai/AIChatPopup.tsx:1-677](file://frontend/components/ai/AIChatPopup.tsx#L1-L677)
+- [main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [intent.py:1-1024](server/app/agent_runtime/intent.py#L1-L1024)
+- [conversation_fastpath.py:1-45](server/app/agent_runtime/conversation_fastpath.py#L1-L45)
+- [language_bridge.py:1-125](server/app/agent_runtime/language_bridge.py#L1-L125)
+- [llm_tool_router.py:1-366](server/app/agent_runtime/llm_tool_router.py#L1-L366)
+- [schemas/agent_runtime.py:1-57](server/app/schemas/agent_runtime.py#L1-L57)
+- [main.py:1-123](server/app/main.py#L1-L123)
+- [mcp/server.py:1-800](server/app/mcp/server.py#L1-L800)
+- [components/ai/AIChatPopup.tsx:1-677](frontend/components/ai/AIChatPopup.tsx#L1-L677)
 
 **Section sources**
-- [main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
-- [main.py:1-123](file://server/app/main.py#L1-L123)
+- [main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
+- [main.py:1-123](server/app/main.py#L1-L123)
 
 ## Core Components
 - Agent Runtime Controller: Exposes internal endpoints for propose and execute flows, validates internal secrets, and delegates to the service layer.
@@ -91,15 +91,15 @@ J --> B
 - Frontend Integration: EaseAI chat UI sends propose/confirm/execute requests and renders grounded answers.
 
 **Section sources**
-- [main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [intent.py:1-1024](file://server/app/agent_runtime/intent.py#L1-L1024)
-- [conversation_fastpath.py:1-45](file://server/app/agent_runtime/conversation_fastpath.py#L1-L45)
-- [language_bridge.py:1-125](file://server/app/agent_runtime/language_bridge.py#L1-L125)
-- [llm_tool_router.py:1-366](file://server/app/agent_runtime/llm_tool_router.py#L1-L366)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [schemas/agent_runtime.py:1-57](file://server/app/schemas/agent_runtime.py#L1-L57)
-- [components/ai/AIChatPopup.tsx:1-677](file://frontend/components/ai/AIChatPopup.tsx#L1-L677)
+- [main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [intent.py:1-1024](server/app/agent_runtime/intent.py#L1-L1024)
+- [conversation_fastpath.py:1-45](server/app/agent_runtime/conversation_fastpath.py#L1-L45)
+- [language_bridge.py:1-125](server/app/agent_runtime/language_bridge.py#L1-L125)
+- [llm_tool_router.py:1-366](server/app/agent_runtime/llm_tool_router.py#L1-L366)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [schemas/agent_runtime.py:1-57](server/app/schemas/agent_runtime.py#L1-L57)
+- [components/ai/AIChatPopup.tsx:1-677](frontend/components/ai/AIChatPopup.tsx#L1-L677)
 
 ## Architecture Overview
 The agent runtime sits behind internal-only endpoints and coordinates intent classification, MCP tool execution, and AI fallback. It maintains conversation context and supports two routing modes: intent classifier and LLM tool router. MCP tools are exposed via a mounted FastMCP server.
@@ -151,14 +151,14 @@ AR-->>FE : AgentRuntimeExecuteResponse
 ```
 
 **Diagram sources**
-- [main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
-- [service.py:346-561](file://server/app/agent_runtime/service.py#L346-L561)
-- [intent.py:347-800](file://server/app/agent_runtime/intent.py#L347-L800)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [mcp/server.py:110-800](file://server/app/mcp/server.py#L110-L800)
-- [components/ai/AIChatPopup.tsx:306-431](file://frontend/components/ai/AIChatPopup.tsx#L306-L431)
+- [main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
+- [service.py:346-561](server/app/agent_runtime/service.py#L346-L561)
+- [intent.py:347-800](server/app/agent_runtime/intent.py#L347-L800)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [mcp/server.py:110-800](server/app/mcp/server.py#L110-L800)
+- [components/ai/AIChatPopup.tsx:306-431](frontend/components/ai/AIChatPopup.tsx#L306-L431)
 
 ## Detailed Component Analysis
 
@@ -171,7 +171,7 @@ AR-->>FE : AgentRuntimeExecuteResponse
 - Delegates to service functions for propose and execute.
 
 **Section sources**
-- [main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
+- [main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
 
 ### Service Layer Orchestration
 Responsibilities:
@@ -208,13 +208,13 @@ PlanResp --> End
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:202-321](file://server/app/agent_runtime/intent.py#L202-L321)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:202-321](server/app/agent_runtime/intent.py#L202-L321)
 
 **Section sources**
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
 
 ### Conversation Fastpath
 - Purpose: Skip intent classification and MCP for obvious greetings/thanks.
@@ -225,7 +225,7 @@ PlanResp --> End
   - Matches strict chitchat patterns in Thai and English.
 
 **Section sources**
-- [conversation_fastpath.py:1-45](file://server/app/agent_runtime/conversation_fastpath.py#L1-L45)
+- [conversation_fastpath.py:1-45](server/app/agent_runtime/conversation_fastpath.py#L1-L45)
 
 ### Intent Classification and Context
 - IntentClassifier:
@@ -275,10 +275,10 @@ IntentClassifier --> ConversationContext : "updates"
 ```
 
 **Diagram sources**
-- [intent.py:59-1024](file://server/app/agent_runtime/intent.py#L59-L1024)
+- [intent.py:59-1024](server/app/agent_runtime/intent.py#L59-L1024)
 
 **Section sources**
-- [intent.py:1-1024](file://server/app/agent_runtime/intent.py#L1-L1024)
+- [intent.py:1-1024](server/app/agent_runtime/intent.py#L1-L1024)
 
 ### Language Bridge (LLM Normalization)
 - Optional normalization of non-English messages to English for intent classification.
@@ -286,7 +286,7 @@ IntentClassifier --> ConversationContext : "updates"
 - Returns normalized text or None if disabled/failed.
 
 **Section sources**
-- [language_bridge.py:1-125](file://server/app/agent_runtime/language_bridge.py#L1-L125)
+- [language_bridge.py:1-125](server/app/agent_runtime/language_bridge.py#L1-L125)
 
 ### LLM Tool Router (Experimental)
 - When enabled, proposes tool calls directly from the LLM.
@@ -295,7 +295,7 @@ IntentClassifier --> ConversationContext : "updates"
 - Falls back to intent classifier if LLM routing fails.
 
 **Section sources**
-- [llm_tool_router.py:1-366](file://server/app/agent_runtime/llm_tool_router.py#L1-L366)
+- [llm_tool_router.py:1-366](server/app/agent_runtime/llm_tool_router.py#L1-L366)
 
 ### Runtime Context Management
 - In-memory dictionary keyed by conversation_id.
@@ -303,7 +303,7 @@ IntentClassifier --> ConversationContext : "updates"
 - Persistence: Current implementation is in-memory; recommended to externalize to Redis/DB for production.
 
 **Section sources**
-- [service.py:148-200](file://server/app/agent_runtime/service.py#L148-L200)
+- [service.py:148-200](server/app/agent_runtime/service.py#L148-L200)
 
 ### Dependency Injection and Service Layer Contracts
 - Service functions depend on:
@@ -314,8 +314,8 @@ IntentClassifier --> ConversationContext : "updates"
 - Strong separation of concerns: controller delegates to service, which depends on classifiers, bridges, routers, and MCP.
 
 **Section sources**
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [mcp/server.py:1-800](file://server/app/mcp/server.py#L1-L800)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [mcp/server.py:1-800](server/app/mcp/server.py#L1-L800)
 
 ### Frontend Integration (EaseAI)
 - UI component sends propose/confirm/execute requests to backend endpoints.
@@ -338,13 +338,13 @@ API-->>UI : Execute response
 ```
 
 **Diagram sources**
-- [components/ai/AIChatPopup.tsx:306-431](file://frontend/components/ai/AIChatPopup.tsx#L306-L431)
-- [api/endpoints/chat.py:1-150](file://server/app/api/endpoints/chat.py#L1-L150)
-- [main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
+- [components/ai/AIChatPopup.tsx:306-431](frontend/components/ai/AIChatPopup.tsx#L306-L431)
+- [api/endpoints/chat.py:1-150](server/app/api/endpoints/chat.py#L1-L150)
+- [main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
 
 **Section sources**
-- [components/ai/AIChatPopup.tsx:1-677](file://frontend/components/ai/AIChatPopup.tsx#L1-L677)
-- [api/endpoints/chat.py:1-150](file://server/app/api/endpoints/chat.py#L1-L150)
+- [components/ai/AIChatPopup.tsx:1-677](frontend/components/ai/AIChatPopup.tsx#L1-L677)
+- [api/endpoints/chat.py:1-150](server/app/api/endpoints/chat.py#L1-L150)
 
 ## Dependency Analysis
 - Internal dependencies:
@@ -368,19 +368,19 @@ FE["frontend/AIChatPopup.tsx"] --> ARMain
 ```
 
 **Diagram sources**
-- [main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [intent.py:1-1024](file://server/app/agent_runtime/intent.py#L1-L1024)
-- [conversation_fastpath.py:1-45](file://server/app/agent_runtime/conversation_fastpath.py#L1-L45)
-- [language_bridge.py:1-125](file://server/app/agent_runtime/language_bridge.py#L1-L125)
-- [llm_tool_router.py:1-366](file://server/app/agent_runtime/llm_tool_router.py#L1-L366)
-- [schemas/agent_runtime.py:1-57](file://server/app/schemas/agent_runtime.py#L1-L57)
-- [mcp/server.py:1-800](file://server/app/mcp/server.py#L1-L800)
-- [components/ai/AIChatPopup.tsx:1-677](file://frontend/components/ai/AIChatPopup.tsx#L1-L677)
+- [main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [intent.py:1-1024](server/app/agent_runtime/intent.py#L1-L1024)
+- [conversation_fastpath.py:1-45](server/app/agent_runtime/conversation_fastpath.py#L1-L45)
+- [language_bridge.py:1-125](server/app/agent_runtime/language_bridge.py#L1-L125)
+- [llm_tool_router.py:1-366](server/app/agent_runtime/llm_tool_router.py#L1-L366)
+- [schemas/agent_runtime.py:1-57](server/app/schemas/agent_runtime.py#L1-L57)
+- [mcp/server.py:1-800](server/app/mcp/server.py#L1-L800)
+- [components/ai/AIChatPopup.tsx:1-677](frontend/components/ai/AIChatPopup.tsx#L1-L677)
 
 **Section sources**
-- [main.py:1-55](file://server/app/agent_runtime/main.py#L1-L55)
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
+- [main.py:1-55](server/app/agent_runtime/main.py#L1-L55)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
 
 ## Performance Considerations
 - Conversation fastpath reduces latency for simple chitchat by bypassing intent and MCP.
@@ -400,10 +400,10 @@ Common issues and diagnostics:
 - Conversation context anomalies: Confirm in-memory store behavior and consider persistence migration.
 
 **Section sources**
-- [main.py:17-23](file://server/app/agent_runtime/main.py#L17-L23)
-- [service.py:427-442](file://server/app/agent_runtime/service.py#L427-L442)
-- [llm_tool_router.py:221-263](file://server/app/agent_runtime/llm_tool_router.py#L221-L263)
-- [mcp/server.py:113-128](file://server/app/mcp/server.py#L113-L128)
+- [main.py:17-23](server/app/agent_runtime/main.py#L17-L23)
+- [service.py:427-442](server/app/agent_runtime/service.py#L427-L442)
+- [llm_tool_router.py:221-263](server/app/agent_runtime/llm_tool_router.py#L221-L263)
+- [mcp/server.py:113-128](server/app/mcp/server.py#L113-L128)
 
 ## Conclusion
 The WheelSense agent runtime provides a robust, extensible foundation for conversational AI in healthcare environments. It balances speed (fastpath), accuracy (intent + semantics), and safety (confirmation flows) while integrating tightly with MCP tools and the frontend UI. Production deployments should focus on externalizing conversation context, tuning AI providers, and monitoring performance and reliability.
@@ -422,21 +422,21 @@ The WheelSense agent runtime provides a robust, extensible foundation for conver
   - agent_llm_router_model
 
 **Section sources**
-- [config.py:68-94](file://server/app/config.py#L68-L94)
+- [config.py:68-94](server/app/config.py#L68-L94)
 
 ### Service Initialization and Lifecycle
 - Server lifecycle initializes DB, admin user, and background tasks; agent runtime endpoints are part of the mounted FastAPI app.
 - Internal secret enforcement ensures only trusted callers can reach propose/execute endpoints.
 
 **Section sources**
-- [main.py:26-67](file://server/app/main.py#L26-L67)
-- [main.py:17-23](file://server/app/agent_runtime/main.py#L17-L23)
+- [main.py:26-67](server/app/main.py#L26-L67)
+- [main.py:17-23](server/app/agent_runtime/main.py#L17-L23)
 
 ### Conversation Flow Management
 - Frontend initiates propose, receives either immediate answer or plan with action payload.
 - Confirmation triggers execution plan step-by-step, aggregating results and returning a consolidated response.
 
 **Section sources**
-- [components/ai/AIChatPopup.tsx:306-431](file://frontend/components/ai/AIChatPopup.tsx#L306-L431)
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
-- [tests/test_agent_runtime.py:460-597](file://server/tests/test_agent_runtime.py#L460-L597)
+- [components/ai/AIChatPopup.tsx:306-431](frontend/components/ai/AIChatPopup.tsx#L306-L431)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
+- [tests/test_agent_runtime.py:460-597](server/tests/test_agent_runtime.py#L460-L597)

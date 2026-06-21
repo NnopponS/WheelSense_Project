@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [main.py](file://server/app/main.py)
-- [config.py](file://server/app/config.py)
-- [router.py](file://server/app/api/router.py)
-- [errors.py](file://server/app/api/errors.py)
-- [security.py](file://server/app/core/security.py)
-- [session.py](file://server/app/db/session.py)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [mcp_server.py](file://server/app/mcp_server.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [retention_worker.py](file://server/app/workers/retention_worker.py)
-- [taskiq_app.py](file://server/app/workers/taskiq_app.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [pyproject.toml](file://server/pyproject.toml)
-- [requirements.txt](file://server/requirements.txt)
+- [main.py](server/app/main.py)
+- [config.py](server/app/config.py)
+- [router.py](server/app/api/router.py)
+- [errors.py](server/app/api/errors.py)
+- [security.py](server/app/core/security.py)
+- [session.py](server/app/db/session.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [mcp_server.py](server/app/mcp_server.py)
+- [auth.py](server/app/mcp/auth.py)
+- [retention_worker.py](server/app/workers/retention_worker.py)
+- [taskiq_app.py](server/app/workers/taskiq_app.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [pyproject.toml](server/pyproject.toml)
+- [requirements.txt](server/requirements.txt)
 </cite>
 
 ## Table of Contents
@@ -62,23 +62,23 @@ A --> L["server/app/workers/taskiq_app.py"]
 ```
 
 **Diagram sources**
-- [main.py:68-76](file://server/app/main.py#L68-L76)
-- [router.py:16-158](file://server/app/api/router.py#L16-L158)
-- [config.py:12-151](file://server/app/config.py#L12-L151)
-- [errors.py:50-76](file://server/app/api/errors.py#L50-L76)
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [retention_worker.py:55-87](file://server/app/workers/retention_worker.py#L55-L87)
-- [mcp_server.py:5-12](file://server/app/mcp_server.py#L5-L12)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [taskiq_app.py:11-28](file://server/app/workers/taskiq_app.py#L11-L28)
+- [main.py:68-76](server/app/main.py#L68-L76)
+- [router.py:16-158](server/app/api/router.py#L16-L158)
+- [config.py:12-151](server/app/config.py#L12-L151)
+- [errors.py:50-76](server/app/api/errors.py#L50-L76)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [retention_worker.py:55-87](server/app/workers/retention_worker.py#L55-L87)
+- [mcp_server.py:5-12](server/app/mcp_server.py#L5-L12)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [taskiq_app.py:11-28](server/app/workers/taskiq_app.py#L11-L28)
 
 **Section sources**
-- [main.py:1-123](file://server/app/main.py#L1-L123)
-- [router.py:1-159](file://server/app/api/router.py#L1-L159)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
+- [main.py:1-123](server/app/main.py#L1-L123)
+- [router.py:1-159](server/app/api/router.py#L1-L159)
+- [config.py:1-152](server/app/config.py#L1-L152)
 
 ## Core Components
 - Application entry point and lifespan: initializes database, starts MQTT listener, conditionally starts retention scheduler, and shuts down resources cleanly.
@@ -92,18 +92,18 @@ A --> L["server/app/workers/taskiq_app.py"]
 - MCP integration: middleware enforcing origin checks and token validation for MCP endpoints.
 
 **Section sources**
-- [main.py:26-76](file://server/app/main.py#L26-L76)
-- [config.py:12-151](file://server/app/config.py#L12-L151)
-- [router.py:16-158](file://server/app/api/router.py#L16-L158)
-- [errors.py:14-76](file://server/app/api/errors.py#L14-L76)
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [retention_worker.py:25-87](file://server/app/workers/retention_worker.py#L25-L87)
-- [taskiq_app.py:11-28](file://server/app/workers/taskiq_app.py#L11-L28)
-- [mcp_server.py:5-12](file://server/app/mcp_server.py#L5-L12)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
+- [main.py:26-76](server/app/main.py#L26-L76)
+- [config.py:12-151](server/app/config.py#L12-L151)
+- [router.py:16-158](server/app/api/router.py#L16-L158)
+- [errors.py:14-76](server/app/api/errors.py#L14-L76)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [retention_worker.py:25-87](server/app/workers/retention_worker.py#L25-L87)
+- [taskiq_app.py:11-28](server/app/workers/taskiq_app.py#L11-L28)
+- [mcp_server.py:5-12](server/app/mcp_server.py#L5-L12)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
 
 ## Architecture Overview
 The application follows a layered architecture:
@@ -147,18 +147,18 @@ FA --> CFG
 ```
 
 **Diagram sources**
-- [main.py:68-123](file://server/app/main.py#L68-L123)
-- [router.py:16-158](file://server/app/api/router.py#L16-L158)
-- [errors.py:50-76](file://server/app/api/errors.py#L50-L76)
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mcp_server.py:5-12](file://server/app/mcp_server.py#L5-L12)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [retention_worker.py:55-87](file://server/app/workers/retention_worker.py#L55-L87)
-- [taskiq_app.py:11-28](file://server/app/workers/taskiq_app.py#L11-L28)
-- [config.py:12-151](file://server/app/config.py#L12-L151)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
+- [main.py:68-123](server/app/main.py#L68-L123)
+- [router.py:16-158](server/app/api/router.py#L16-L158)
+- [errors.py:50-76](server/app/api/errors.py#L50-L76)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mcp_server.py:5-12](server/app/mcp_server.py#L5-L12)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [retention_worker.py:55-87](server/app/workers/retention_worker.py#L55-L87)
+- [taskiq_app.py:11-28](server/app/workers/taskiq_app.py#L11-L28)
+- [config.py:12-151](server/app/config.py#L12-L151)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
 
 ## Detailed Component Analysis
 
@@ -198,12 +198,12 @@ Lifespan-->>App : complete
 ```
 
 **Diagram sources**
-- [main.py:26-76](file://server/app/main.py#L26-L76)
-- [retention_worker.py:55-87](file://server/app/workers/retention_worker.py#L55-L87)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
+- [main.py:26-76](server/app/main.py#L26-L76)
+- [retention_worker.py:55-87](server/app/workers/retention_worker.py#L55-L87)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
 
 **Section sources**
-- [main.py:26-76](file://server/app/main.py#L26-L76)
+- [main.py:26-76](server/app/main.py#L26-L76)
 
 ### Configuration Management and Validation
 - Strongly typed settings loaded from .env with Pydantic settings.
@@ -223,12 +223,12 @@ ComputeProps --> End(["Settings Ready"])
 ```
 
 **Diagram sources**
-- [config.py:119-150](file://server/app/config.py#L119-L150)
-- [security.py:13-19](file://server/app/core/security.py#L13-L19)
+- [config.py:119-150](server/app/config.py#L119-L150)
+- [security.py:13-19](server/app/core/security.py#L13-L19)
 
 **Section sources**
-- [config.py:12-151](file://server/app/config.py#L12-L151)
-- [security.py:13-19](file://server/app/core/security.py#L13-L19)
+- [config.py:12-151](server/app/config.py#L12-L151)
+- [security.py:13-19](server/app/core/security.py#L13-L19)
 
 ### Router Organization and Endpoint Registration
 - APIRouter is prefixed with /api and includes routers for domains such as workspaces, devices, rooms, telemetry, localization, motion, patients, caregivers, facilities, vitals, timeline, alerts, analytics, auth, users, homeassistant, retention, cameras, chat, ai_settings, workflow, floorplans, care, medication, service_requests, calendar, support, chat_actions, demo_control, admin_database, shift_checklist, task_management, and tasks.
@@ -277,10 +277,10 @@ R --> PI["Public Images '/api/public/profile-images'"]
 ```
 
 **Diagram sources**
-- [router.py:16-158](file://server/app/api/router.py#L16-L158)
+- [router.py:16-158](server/app/api/router.py#L16-L158)
 
 **Section sources**
-- [router.py:16-158](file://server/app/api/router.py#L16-L158)
+- [router.py:16-158](server/app/api/router.py#L16-L158)
 
 ### Dependency Injection and Authentication Flow
 - Global dependency on active user is applied to most routes via Depends(get_current_active_user).
@@ -310,10 +310,10 @@ API-->>Client : 200 OK
 ```
 
 **Diagram sources**
-- [dependencies.py:41-120](file://server/app/api/dependencies.py#L41-L120)
+- [dependencies.py:41-120](server/app/api/dependencies.py#L41-L120)
 
 **Section sources**
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
 
 ### Error Handling Mechanisms
 - Standardized error envelope with machine-readable code and human-readable message.
@@ -334,10 +334,10 @@ F --> H
 ```
 
 **Diagram sources**
-- [errors.py:50-76](file://server/app/api/errors.py#L50-L76)
+- [errors.py:50-76](server/app/api/errors.py#L50-L76)
 
 **Section sources**
-- [errors.py:14-76](file://server/app/api/errors.py#L14-L76)
+- [errors.py:14-76](server/app/api/errors.py#L14-L76)
 
 ### Middleware Setup for MCP Integration
 - MCP auth middleware enforces allowed origins and requires Origin header when configured.
@@ -363,10 +363,10 @@ App-->>Client : Response
 ```
 
 **Diagram sources**
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
 
 **Section sources**
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
 
 ### Request/Response Flow Through the API
 - Root endpoint returns application metadata and links to docs, health, and MCP when enabled.
@@ -392,14 +392,14 @@ Handler-->>Client : JSON Response
 ```
 
 **Diagram sources**
-- [main.py:78-123](file://server/app/main.py#L78-L123)
-- [router.py:156-158](file://server/app/api/router.py#L156-L158)
-- [dependencies.py:131-136](file://server/app/api/dependencies.py#L131-L136)
+- [main.py:78-123](server/app/main.py#L78-L123)
+- [router.py:156-158](server/app/api/router.py#L156-L158)
+- [dependencies.py:131-136](server/app/api/dependencies.py#L131-L136)
 
 **Section sources**
-- [main.py:78-123](file://server/app/main.py#L78-L123)
-- [router.py:156-158](file://server/app/api/router.py#L156-L158)
-- [dependencies.py:131-136](file://server/app/api/dependencies.py#L131-L136)
+- [main.py:78-123](server/app/main.py#L78-L123)
+- [router.py:156-158](server/app/api/router.py#L156-L158)
+- [dependencies.py:131-136](server/app/api/dependencies.py#L131-L136)
 
 ### Database Initialization and Session Management
 - Lazy-initialized async SQLAlchemy engine and session factory.
@@ -429,11 +429,11 @@ Lifespan --> SessionFactory : "initializes engines"
 ```
 
 **Diagram sources**
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [config.py:19-22](file://server/app/config.py#L19-L22)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [config.py:19-22](server/app/config.py#L19-L22)
 
 **Section sources**
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
 
 ### MQTT Task Management
 - Continuous MQTT client connects to broker with TLS support and subscribes to topics.
@@ -462,16 +462,16 @@ Publish --> Loop
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [mqtt_handler.py:542-564](file://server/app/mqtt_handler.py#L542-L564)
-- [mqtt_handler.py:566-573](file://server/app/mqtt_handler.py#L566-L573)
-- [mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
-- [mqtt_handler.py:590-638](file://server/app/mqtt_handler.py#L590-L638)
-- [mqtt_handler.py:640-667](file://server/app/mqtt_handler.py#L640-L667)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:542-564](server/app/mqtt_handler.py#L542-L564)
+- [mqtt_handler.py:566-573](server/app/mqtt_handler.py#L566-L573)
+- [mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
+- [mqtt_handler.py:590-638](server/app/mqtt_handler.py#L590-L638)
+- [mqtt_handler.py:640-667](server/app/mqtt_handler.py#L640-L667)
 
 **Section sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
 
 ### Worker Scheduler Setup (Data Retention)
 - APScheduler runs periodic cleanup across all workspaces.
@@ -497,11 +497,11 @@ Lifespan->>Sched : stop scheduler on shutdown
 ```
 
 **Diagram sources**
-- [retention_worker.py:25-87](file://server/app/workers/retention_worker.py#L25-L87)
-- [main.py:47-66](file://server/app/main.py#L47-L66)
+- [retention_worker.py:25-87](server/app/workers/retention_worker.py#L25-L87)
+- [main.py:47-66](server/app/main.py#L47-L66)
 
 **Section sources**
-- [retention_worker.py:25-87](file://server/app/workers/retention_worker.py#L25-L87)
+- [retention_worker.py:25-87](server/app/workers/retention_worker.py#L25-L87)
 
 ### Conditional Mounting Strategy for MCP
 - MCP is mounted under /mcp only when WHEELSENSE_ENABLE_MCP is truthy.
@@ -518,12 +518,12 @@ Serve --> End
 ```
 
 **Diagram sources**
-- [main.py:24-25](file://server/app/main.py#L24-L25)
-- [main.py:117-122](file://server/app/main.py#L117-L122)
+- [main.py:24-25](server/app/main.py#L24-L25)
+- [main.py:117-122](server/app/main.py#L117-L122)
 
 **Section sources**
-- [main.py:24-25](file://server/app/main.py#L24-L25)
-- [main.py:117-122](file://server/app/main.py#L117-L122)
+- [main.py:24-25](server/app/main.py#L24-L25)
+- [main.py:117-122](server/app/main.py#L117-L122)
 
 ### Practical Examples
 - Application initialization: see lifespan startup steps and conditional mounting.
@@ -531,9 +531,9 @@ Serve --> End
 - Configuration best practices: set SECRET_KEY, configure database URLs, enable debug only locally, and normalize env_mode.
 
 **Section sources**
-- [main.py:26-76](file://server/app/main.py#L26-L76)
-- [errors.py:24-47](file://server/app/api/errors.py#L24-L47)
-- [config.py:119-150](file://server/app/config.py#L119-L150)
+- [main.py:26-76](server/app/main.py#L26-L76)
+- [errors.py:24-47](server/app/api/errors.py#L24-L47)
+- [config.py:119-150](server/app/config.py#L119-L150)
 
 ## Dependency Analysis
 - FastAPI app depends on router, error handlers, security utilities, database session factory, MQTT handler, retention worker, MCP server wrapper, and dependencies.
@@ -557,23 +557,23 @@ Main --> Cfg["server/app/config.py"]
 ```
 
 **Diagram sources**
-- [main.py:68-76](file://server/app/main.py#L68-L76)
-- [router.py:16-158](file://server/app/api/router.py#L16-L158)
-- [errors.py:50-76](file://server/app/api/errors.py#L50-L76)
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [retention_worker.py:55-87](file://server/app/workers/retention_worker.py#L55-L87)
-- [mcp_server.py:5-12](file://server/app/mcp_server.py#L5-L12)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [taskiq_app.py:11-28](file://server/app/workers/taskiq_app.py#L11-L28)
-- [config.py:12-151](file://server/app/config.py#L12-L151)
+- [main.py:68-76](server/app/main.py#L68-L76)
+- [router.py:16-158](server/app/api/router.py#L16-L158)
+- [errors.py:50-76](server/app/api/errors.py#L50-L76)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [retention_worker.py:55-87](server/app/workers/retention_worker.py#L55-L87)
+- [mcp_server.py:5-12](server/app/mcp_server.py#L5-L12)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [taskiq_app.py:11-28](server/app/workers/taskiq_app.py#L11-L28)
+- [config.py:12-151](server/app/config.py#L12-L151)
 
 **Section sources**
-- [main.py:68-76](file://server/app/main.py#L68-L76)
-- [router.py:16-158](file://server/app/api/router.py#L16-L158)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
+- [main.py:68-76](server/app/main.py#L68-L76)
+- [router.py:16-158](server/app/api/router.py#L16-L158)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
 
 ## Performance Considerations
 - Use async database sessions and avoid blocking operations in request handlers.
@@ -593,12 +593,12 @@ Main --> Cfg["server/app/config.py"]
 - Retention job failures: check scheduler logs and workspace iteration for exceptions.
 
 **Section sources**
-- [security.py:13-19](file://server/app/core/security.py#L13-L19)
-- [session.py:58-64](file://server/app/db/session.py#L58-L64)
-- [mqtt_handler.py:126-136](file://server/app/mqtt_handler.py#L126-L136)
-- [auth.py:30-50](file://server/app/mcp/auth.py#L30-L50)
-- [errors.py:50-76](file://server/app/api/errors.py#L50-L76)
-- [retention_worker.py:49-50](file://server/app/workers/retention_worker.py#L49-L50)
+- [security.py:13-19](server/app/core/security.py#L13-L19)
+- [session.py:58-64](server/app/db/session.py#L58-L64)
+- [mqtt_handler.py:126-136](server/app/mqtt_handler.py#L126-L136)
+- [auth.py:30-50](server/app/mcp/auth.py#L30-L50)
+- [errors.py:50-76](server/app/api/errors.py#L50-L76)
+- [retention_worker.py:49-50](server/app/workers/retention_worker.py#L49-L50)
 
 ## Conclusion
 The WheelSense FastAPI application integrates asynchronous request handling, robust configuration management, lifecycle-aware initialization, standardized error handling, and secure authentication. It orchestrates MQTT telemetry ingestion, scheduled retention cleanup, and optional MCP integration with strict origin and token validation. The modular router and dependency injection patterns promote maintainability and scalability.
@@ -619,7 +619,7 @@ The WheelSense FastAPI application integrates asynchronous request handling, rob
 - Data retention: enable flag and retention windows with interval.
 
 **Section sources**
-- [config.py:19-118](file://server/app/config.py#L19-L118)
+- [config.py:19-118](server/app/config.py#L19-L118)
 
 ### Runtime Settings Best Practices
 - Set SECRET_KEY to a cryptographically secure value in production.
@@ -629,14 +629,14 @@ The WheelSense FastAPI application integrates asynchronous request handling, rob
 - Monitor retention intervals and adjust for storage capacity.
 
 **Section sources**
-- [security.py:13-19](file://server/app/core/security.py#L13-L19)
-- [config.py:119-150](file://server/app/config.py#L119-L150)
-- [auth.py:24-28](file://server/app/mcp/auth.py#L24-L28)
+- [security.py:13-19](server/app/core/security.py#L13-L19)
+- [config.py:119-150](server/app/config.py#L119-L150)
+- [auth.py:24-28](server/app/mcp/auth.py#L24-L28)
 
 ### Environment and Tooling Notes
 - Python version and linting targets are defined in project configuration.
 - Dependencies include FastAPI, Uvicorn, SQLAlchemy, Alembic, aiomqtt, Pydantic, APScheduler, and MCP.
 
 **Section sources**
-- [pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [requirements.txt:1-30](file://server/requirements.txt#L1-L30)
+- [pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [requirements.txt:1-30](server/requirements.txt#L1-L30)

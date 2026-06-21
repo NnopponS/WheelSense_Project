@@ -2,30 +2,30 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [server/docs/CONTRIBUTING.md](file://server/docs/CONTRIBUTING.md)
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [server/mypy.ini](file://server/mypy.ini)
-- [frontend/package.json](file://frontend/package.json)
-- [frontend/eslint.config.mjs](file://frontend/eslint.config.mjs)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [docs/adr/README.md](file://docs/adr/README.md)
-- [docs/adr/template.md](file://docs/adr/template.md)
-- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
-- [docs/adr/0007-tdd-service-layer-architecture.md](file://docs/adr/0007-tdd-service-layer-architecture.md)
-- [Code_Review/iter-6/Full-Stack-Code-Review.md](file://Code_Review/iter-6/Full-Stack-Code-Review.md)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [server/docker-compose.data-prod.yml](file://server/docker-compose.data-prod.yml)
-- [server/docker-compose.no-web.yml](file://server/docker-compose.no-web.yml)
-- [server/scripts/start-prod.sh](file://server/scripts/start-prod.sh)
-- [server/scripts/start-prod.ps1](file://server/scripts/start-prod.ps1)
-- [server/tests/test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
-- [server/tests/test_chat_actions_integration.py](file://server/tests/test_chat_actions_integration.py)
-- [testing/hospital-simulation/DESIGN.md](file://testing/hospital-simulation/DESIGN.md)
-- [testing/ux-testing-report.md](file://testing/ux-testing-report.md)
-- [wheelsense-full-roadmap-plan.md](file://wheelsense-full-roadmap-plan.md)
+- [README.md](README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [server/docs/CONTRIBUTING.md](server/docs/CONTRIBUTING.md)
+- [server/pyproject.toml](server/pyproject.toml)
+- [server/mypy.ini](server/mypy.ini)
+- [frontend/package.json](frontend/package.json)
+- [frontend/eslint.config.mjs](frontend/eslint.config.mjs)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [server/AGENTS.md](server/AGENTS.md)
+- [docs/adr/README.md](docs/adr/README.md)
+- [docs/adr/template.md](docs/adr/template.md)
+- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [docs/adr/0007-tdd-service-layer-architecture.md](docs/adr/0007-tdd-service-layer-architecture.md)
+- [Code_Review/iter-6/Full-Stack-Code-Review.md](Code_Review/iter-6/Full-Stack-Code-Review.md)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [server/docker-compose.data-prod.yml](server/docker-compose.data-prod.yml)
+- [server/docker-compose.no-web.yml](server/docker-compose.no-web.yml)
+- [server/scripts/start-prod.sh](server/scripts/start-prod.sh)
+- [server/scripts/start-prod.ps1](server/scripts/start-prod.ps1)
+- [server/tests/test_agent_runtime.py](server/tests/test_agent_runtime.py)
+- [server/tests/test_chat_actions_integration.py](server/tests/test_chat_actions_integration.py)
+- [testing/hospital-simulation/DESIGN.md](testing/hospital-simulation/DESIGN.md)
+- [testing/ux-testing-report.md](testing/ux-testing-report.md)
+- [wheelsense-full-roadmap-plan.md](wheelsense-full-roadmap-plan.md)
 </cite>
 
 ## Table of Contents
@@ -75,8 +75,8 @@ CR -. "Audit" .-> FE
 ```
 
 **Section sources**
-- [README.md:1-74](file://README.md#L1-L74)
-- [ARCHITECTURE.md:1-275](file://ARCHITECTURE.md#L1-L275)
+- [README.md:1-74](README.md#L1-L74)
+- [ARCHITECTURE.md:1-275](ARCHITECTURE.md#L1-L275)
 
 ## Core Components
 - Backend runtime (Python)
@@ -88,12 +88,12 @@ CR -. "Audit" .-> FE
   - PlatformIO projects for M5StickCPlus2 and Node_Tsimcam with Arduino framework and PubSubClient
 
 **Section sources**
-- [server/AGENTS.md:1-614](file://server/AGENTS.md#L1-L614)
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [server/mypy.ini:1-3](file://server/mypy.ini#L1-L3)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [frontend/eslint.config.mjs:1-19](file://frontend/eslint.config.mjs#L1-L19)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/AGENTS.md:1-614](server/AGENTS.md#L1-L614)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [server/mypy.ini:1-3](server/mypy.ini#L1-L3)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [frontend/eslint.config.mjs:1-19](frontend/eslint.config.mjs#L1-L19)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Architecture Overview
 The platform integrates three runtime layers:
@@ -119,12 +119,12 @@ FE --> SV
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:322-351](file://ARCHITECTURE.md#L322-L351)
-- [server/AGENTS.md:386-425](file://server/AGENTS.md#L386-L425)
+- [ARCHITECTURE.md:322-351](ARCHITECTURE.md#L322-L351)
+- [server/AGENTS.md:386-425](server/AGENTS.md#L386-L425)
 
 **Section sources**
-- [ARCHITECTURE.md:1-275](file://ARCHITECTURE.md#L1-L275)
-- [server/AGENTS.md:1-614](file://server/AGENTS.md#L1-L614)
+- [ARCHITECTURE.md:1-275](ARCHITECTURE.md#L1-L275)
+- [server/AGENTS.md:1-614](server/AGENTS.md#L1-L614)
 
 ## Detailed Component Analysis
 
@@ -144,10 +144,10 @@ Best practices
 - Prefer service-layer architecture for testability and maintainability
 
 **Section sources**
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [server/mypy.ini:1-3](file://server/mypy.ini#L1-L3)
-- [server/docs/CONTRIBUTING.md:67-79](file://server/docs/CONTRIBUTING.md#L67-L79)
-- [docs/adr/0007-tdd-service-layer-architecture.md:1-63](file://docs/adr/0007-tdd-service-layer-architecture.md#L1-L63)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [server/mypy.ini:1-3](server/mypy.ini#L1-L3)
+- [server/docs/CONTRIBUTING.md:67-79](server/docs/CONTRIBUTING.md#L67-L79)
+- [docs/adr/0007-tdd-service-layer-architecture.md:1-63](docs/adr/0007-tdd-service-layer-architecture.md#L1-L63)
 
 ### Frontend Coding Standards and Style Guides (TypeScript/Next.js)
 - ESLint configuration
@@ -160,10 +160,10 @@ Best practices
   - Next.js app route proxies to backend with cookie-based auth and Authorization header injection
 
 **Section sources**
-- [frontend/eslint.config.mjs:1-19](file://frontend/eslint.config.mjs#L1-L19)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [server/AGENTS.md:560-590](file://server/AGENTS.md#L560-L590)
+- [frontend/eslint.config.mjs:1-19](frontend/eslint.config.mjs#L1-L19)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [ARCHITECTURE.md:140-183](ARCHITECTURE.md#L140-L183)
+- [server/AGENTS.md:560-590](server/AGENTS.md#L560-L590)
 
 ### Firmware Coding Standards and Style Guides (C++)
 - PlatformIO configuration
@@ -172,7 +172,7 @@ Best practices
   - Build flags include debug level and USB mode settings
 
 **Section sources**
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### Pull Request Process and Code Review Guidelines
 - PR checklist
@@ -181,8 +181,8 @@ Best practices
   - Structured audits across backend, frontend, and full-stack flows with closure tracking and remediation logs
 
 **Section sources**
-- [server/docs/CONTRIBUTING.md:127-136](file://server/docs/CONTRIBUTING.md#L127-L136)
-- [Code_Review/iter-6/Full-Stack-Code-Review.md:1-83](file://Code_Review/iter-6/Full-Stack-Code-Review.md#L1-L83)
+- [server/docs/CONTRIBUTING.md:127-136](server/docs/CONTRIBUTING.md#L127-L136)
+- [Code_Review/iter-6/Full-Stack-Code-Review.md:1-83](Code_Review/iter-6/Full-Stack-Code-Review.md#L1-L83)
 
 ### Quality Assurance Procedures
 - Backend testing
@@ -196,9 +196,9 @@ Best practices
   - Automated browser testing across roles with screenshot capture and error logging
 
 **Section sources**
-- [server/AGENTS.md:524-559](file://server/AGENTS.md#L524-L559)
-- [testing/hospital-simulation/DESIGN.md:1-62](file://testing/hospital-simulation/DESIGN.md#L1-L62)
-- [testing/ux-testing-report.md:1-45](file://testing/ux-testing-report.md#L1-L45)
+- [server/AGENTS.md:524-559](server/AGENTS.md#L524-L559)
+- [testing/hospital-simulation/DESIGN.md:1-62](testing/hospital-simulation/DESIGN.md#L1-L62)
+- [testing/ux-testing-report.md:1-45](testing/ux-testing-report.md#L1-L45)
 
 ### Architectural Decision Record (ADR) Process
 - Purpose
@@ -209,10 +209,10 @@ Best practices
   - Examples include FastMCP SSE mounting, dual-path Polar integration, configurable localization strategy, and LLM-native MCP routing
 
 **Section sources**
-- [docs/adr/README.md:1-25](file://docs/adr/README.md#L1-L25)
-- [docs/adr/template.md:1-45](file://docs/adr/template.md#L1-L45)
-- [docs/adr/0001-fastmcp-sse-for-ai-integration.md:1-42](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md#L1-L42)
-- [docs/adr/0007-tdd-service-layer-architecture.md:1-63](file://docs/adr/0007-tdd-service-layer-architecture.md#L1-L63)
+- [docs/adr/README.md:1-25](docs/adr/README.md#L1-L25)
+- [docs/adr/template.md:1-45](docs/adr/template.md#L1-L45)
+- [docs/adr/0001-fastmcp-sse-for-ai-integration.md:1-42](docs/adr/0001-fastmcp-sse-for-ai-integration.md#L1-L42)
+- [docs/adr/0007-tdd-service-layer-architecture.md:1-63](docs/adr/0007-tdd-service-layer-architecture.md#L1-L63)
 
 ### Planning Documentation and Change Management
 - Execution plans
@@ -221,8 +221,8 @@ Best practices
   - Iterative code review closures and remediation logs
 
 **Section sources**
-- [wheelsense-full-roadmap-plan.md:1-173](file://wheelsense-full-roadmap-plan.md#L1-L173)
-- [Code_Review/iter-1/README.md:1-10](file://Code_Review/iter-1/README.md#L1-L10)
+- [wheelsense-full-roadmap-plan.md:1-173](wheelsense-full-roadmap-plan.md#L1-L173)
+- [Code_Review/iter-1/README.md:1-10](Code_Review/iter-1/README.md#L1-L10)
 
 ### Development Workflow, Branching Strategies, and Version Control Practices
 - Environment modes
@@ -233,12 +233,12 @@ Best practices
   - OS-specific start scripts for production mode with build, reset, and detach options
 
 **Section sources**
-- [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
-- [server/docker-compose.yml:1-9](file://server/docker-compose.yml#L1-L9)
-- [server/docker-compose.data-prod.yml:1-28](file://server/docker-compose.data-prod.yml#L1-L28)
-- [server/docker-compose.no-web.yml:1-15](file://server/docker-compose.no-web.yml#L1-L15)
-- [server/scripts/start-prod.sh:1-133](file://server/scripts/start-prod.sh#L1-L133)
-- [server/scripts/start-prod.ps1:76-108](file://server/scripts/start-prod.ps1#L76-L108)
+- [server/AGENTS.md:72-111](server/AGENTS.md#L72-L111)
+- [server/docker-compose.yml:1-9](server/docker-compose.yml#L1-L9)
+- [server/docker-compose.data-prod.yml:1-28](server/docker-compose.data-prod.yml#L1-L28)
+- [server/docker-compose.no-web.yml:1-15](server/docker-compose.no-web.yml#L1-L15)
+- [server/scripts/start-prod.sh:1-133](server/scripts/start-prod.sh#L1-L133)
+- [server/scripts/start-prod.ps1:76-108](server/scripts/start-prod.ps1#L76-L108)
 
 ### Release Management
 - Docker Compose stacks
@@ -247,9 +247,9 @@ Best practices
   - Post-deploy checks including health endpoints, UI availability, and seed verification counts
 
 **Section sources**
-- [server/docker-compose.yml:1-9](file://server/docker-compose.yml#L1-L9)
-- [server/docker-compose.data-prod.yml:1-28](file://server/docker-compose.data-prod.yml#L1-L28)
-- [wheelsense-full-roadmap-plan.md:156-173](file://wheelsense-full-roadmap-plan.md#L156-L173)
+- [server/docker-compose.yml:1-9](server/docker-compose.yml#L1-L9)
+- [server/docker-compose.data-prod.yml:1-28](server/docker-compose.data-prod.yml#L1-L28)
+- [wheelsense-full-roadmap-plan.md:156-173](wheelsense-full-roadmap-plan.md#L156-L173)
 
 ### Debugging Procedures, Profiling Techniques, and Performance Optimization
 - Backend
@@ -260,10 +260,10 @@ Best practices
   - PlatformIO build flags and library dependencies for telemetry and MQTT
 
 **Section sources**
-- [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
-- [server/AGENTS.md:322-351](file://server/AGENTS.md#L322-L351)
-- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/AGENTS.md:72-111](server/AGENTS.md#L72-L111)
+- [server/AGENTS.md:322-351](server/AGENTS.md#L322-L351)
+- [ARCHITECTURE.md:140-183](ARCHITECTURE.md#L140-L183)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### Contribution Guidelines, Community Standards, and Collaboration Practices
 - Backend conventions
@@ -274,9 +274,9 @@ Best practices
   - Iterative audits, closure logs, and shared documentation responsibilities
 
 **Section sources**
-- [server/docs/CONTRIBUTING.md:67-79](file://server/docs/CONTRIBUTING.md#L67-L79)
-- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [server/AGENTS.md:599-614](file://server/AGENTS.md#L599-L614)
+- [server/docs/CONTRIBUTING.md:67-79](server/docs/CONTRIBUTING.md#L67-L79)
+- [ARCHITECTURE.md:140-183](ARCHITECTURE.md#L140-L183)
+- [server/AGENTS.md:599-614](server/AGENTS.md#L599-L614)
 
 ### Code Documentation Standards and Testing Requirements
 - Backend
@@ -287,10 +287,10 @@ Best practices
   - Scenario-based hospital simulation, automated browser testing, and focused PyTest suites
 
 **Section sources**
-- [docs/adr/0007-tdd-service-layer-architecture.md:1-63](file://docs/adr/0007-tdd-service-layer-architecture.md#L1-L63)
-- [server/AGENTS.md:524-559](file://server/AGENTS.md#L524-L559)
-- [testing/hospital-simulation/DESIGN.md:1-62](file://testing/hospital-simulation/DESIGN.md#L1-L62)
-- [testing/ux-testing-report.md:1-45](file://testing/ux-testing-report.md#L1-L45)
+- [docs/adr/0007-tdd-service-layer-architecture.md:1-63](docs/adr/0007-tdd-service-layer-architecture.md#L1-L63)
+- [server/AGENTS.md:524-559](server/AGENTS.md#L524-L559)
+- [testing/hospital-simulation/DESIGN.md:1-62](testing/hospital-simulation/DESIGN.md#L1-L62)
+- [testing/ux-testing-report.md:1-45](testing/ux-testing-report.md#L1-L45)
 
 ### Deployment Procedures
 - Production mode
@@ -301,9 +301,9 @@ Best practices
   - Running the Next.js app locally while backend runs in Docker
 
 **Section sources**
-- [server/docker-compose.data-prod.yml:1-28](file://server/docker-compose.data-prod.yml#L1-L28)
-- [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
-- [server/docker-compose.no-web.yml:1-15](file://server/docker-compose.no-web.yml#L1-L15)
+- [server/docker-compose.data-prod.yml:1-28](server/docker-compose.data-prod.yml#L1-L28)
+- [server/AGENTS.md:72-111](server/AGENTS.md#L72-L111)
+- [server/docker-compose.no-web.yml:1-15](server/docker-compose.no-web.yml#L1-L15)
 
 ## Dependency Analysis
 Backend and frontend dependencies are primarily managed via package manifests and configuration files. The backend relies on FastAPI, SQLAlchemy, Alembic, and PyTest; the frontend on Next.js, TanStack Query, and OpenAPI tooling.
@@ -321,16 +321,16 @@ PKG --> |"TanStack Query, OpenAPI"| PKG
 ```
 
 **Diagram sources**
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [server/mypy.ini:1-3](file://server/mypy.ini#L1-L3)
-- [frontend/eslint.config.mjs:1-19](file://frontend/eslint.config.mjs#L1-L19)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [server/mypy.ini:1-3](server/mypy.ini#L1-L3)
+- [frontend/eslint.config.mjs:1-19](frontend/eslint.config.mjs#L1-L19)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
 
 **Section sources**
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [server/mypy.ini:1-3](file://server/mypy.ini#L1-L3)
-- [frontend/eslint.config.mjs:1-19](file://frontend/eslint.config.mjs#L1-L19)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [server/mypy.ini:1-3](server/mypy.ini#L1-L3)
+- [frontend/eslint.config.mjs:1-19](frontend/eslint.config.mjs#L1-L19)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
 
 ## Performance Considerations
 - Backend
@@ -352,10 +352,10 @@ PKG --> |"TanStack Query, OpenAPI"| PKG
   - Inspect build flags and library dependencies for telemetry and MQTT connectivity
 
 **Section sources**
-- [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
-- [server/AGENTS.md:322-351](file://server/AGENTS.md#L322-L351)
-- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/AGENTS.md:72-111](server/AGENTS.md#L72-L111)
+- [server/AGENTS.md:322-351](server/AGENTS.md#L322-L351)
+- [ARCHITECTURE.md:140-183](ARCHITECTURE.md#L140-L183)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Conclusion
 These guidelines consolidate WheelSense Platform development practices across Python, TypeScript/Next.js, and C++. By adhering to service-layer architecture, strict testing, documented ADRs, and disciplined deployment procedures, contributors can maintain a secure, scalable, and user-centric system.
@@ -373,6 +373,6 @@ These guidelines consolidate WheelSense Platform development practices across Py
   - Verify build flags and library dependencies for stable telemetry and MQTT operations
 
 **Section sources**
-- [server/AGENTS.md:524-559](file://server/AGENTS.md#L524-L559)
-- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/AGENTS.md:524-559](server/AGENTS.md#L524-L559)
+- [ARCHITECTURE.md:140-183](ARCHITECTURE.md#L140-L183)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)

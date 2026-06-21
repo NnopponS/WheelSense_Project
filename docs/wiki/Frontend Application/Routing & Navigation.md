@@ -2,22 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**
-- [layout.tsx](file://frontend/app/layout.tsx)
-- [routes.ts](file://frontend/lib/routes.ts)
-- [sidebarConfig.ts](file://frontend/lib/sidebarConfig.ts)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [permissions.ts](file://frontend/lib/permissions.ts)
-- [route.ts](file://frontend/app/api/[[...path]]/route.ts)
-- [admin/page.tsx](file://frontend/app/admin/page.tsx)
-- [head-nurse/page.tsx](file://frontend/app/head-nurse/page.tsx)
-- [supervisor/page.tsx](file://frontend/app/supervisor/page.tsx)
-- [observer/page.tsx](file://frontend/app/observer/page.tsx)
-- [patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [admin/caregivers/[id]/page.tsx](file://frontend/app/admin/caregivers/[id]/page.tsx)
-- [observer/patients/[id]/page.tsx](file://frontend/app/observer/patients/[id]/page.tsx)
-- [supervisor/patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx)
-- [head-nurse/patients/[id]/page.tsx](file://frontend/app/head-nurse/patients/[id]/page.tsx)
+- [layout.tsx](frontend/app/layout.tsx)
+- [routes.ts](frontend/lib/routes.ts)
+- [sidebarConfig.ts](frontend/lib/sidebarConfig.ts)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [permissions.ts](frontend/lib/permissions.ts)
+- [route.ts](frontend/app/api/[[...path]]/route.ts)
+- [admin/page.tsx](frontend/app/admin/page.tsx)
+- [head-nurse/page.tsx](frontend/app/head-nurse/page.tsx)
+- [supervisor/page.tsx](frontend/app/supervisor/page.tsx)
+- [observer/page.tsx](frontend/app/observer/page.tsx)
+- [patient/page.tsx](frontend/app/patient/page.tsx)
+- [admin/caregivers/[id]/page.tsx](frontend/app/admin/caregivers/[id]/page.tsx)
+- [observer/patients/[id]/page.tsx](frontend/app/observer/patients/[id]/page.tsx)
+- [supervisor/patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx)
+- [head-nurse/patients/[id]/page.tsx](frontend/app/head-nurse/patients/[id]/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -67,16 +67,16 @@ Providers --> APIProxy
 ```
 
 **Diagram sources**
-- [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
-- [admin/page.tsx:46-96](file://frontend/app/admin/page.tsx#L46-L96)
-- [head-nurse/page.tsx:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
-- [supervisor/page.tsx:41-66](file://frontend/app/supervisor/page.tsx#L41-L66)
-- [observer/page.tsx:75-95](file://frontend/app/observer/page.tsx#L75-L95)
-- [patient/page.tsx:92-111](file://frontend/app/patient/page.tsx#L92-L111)
-- [route.ts:299-328](file://frontend/app/api/[[...path]]/route.ts#L299-L328)
+- [layout.tsx:11-23](frontend/app/layout.tsx#L11-L23)
+- [admin/page.tsx:46-96](frontend/app/admin/page.tsx#L46-L96)
+- [head-nurse/page.tsx:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
+- [supervisor/page.tsx:41-66](frontend/app/supervisor/page.tsx#L41-L66)
+- [observer/page.tsx:75-95](frontend/app/observer/page.tsx#L75-L95)
+- [patient/page.tsx:92-111](frontend/app/patient/page.tsx#L92-L111)
+- [route.ts:299-328](frontend/app/api/[[...path]]/route.ts#L299-L328)
 
 **Section sources**
-- [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
+- [layout.tsx:11-23](frontend/app/layout.tsx#L11-L23)
 
 ## Core Components
 - RoleShell: Centralized role guard and shell wrapper that enforces access control and renders sidebar, top bar, and main content area
@@ -92,11 +92,11 @@ Key responsibilities:
 - Provide a unified API proxy for backend integration
 
 **Section sources**
-- [RoleShell.tsx:29-101](file://frontend/components/RoleShell.tsx#L29-L101)
-- [RoleSidebar.tsx:60-227](file://frontend/components/RoleSidebar.tsx#L60-L227)
-- [sidebarConfig.ts:22-300](file://frontend/lib/sidebarConfig.ts#L22-L300)
-- [permissions.ts:95-111](file://frontend/lib/permissions.ts#L95-L111)
-- [route.ts:299-328](file://frontend/app/api/[[...path]]/route.ts#L299-L328)
+- [RoleShell.tsx:29-101](frontend/components/RoleShell.tsx#L29-L101)
+- [RoleSidebar.tsx:60-227](frontend/components/RoleSidebar.tsx#L60-L227)
+- [sidebarConfig.ts:22-300](frontend/lib/sidebarConfig.ts#L22-L300)
+- [permissions.ts:95-111](frontend/lib/permissions.ts#L95-L111)
+- [route.ts:299-328](frontend/app/api/[[...path]]/route.ts#L299-L328)
 
 ## Architecture Overview
 The routing and navigation architecture combines:
@@ -136,11 +136,11 @@ end
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:29-66](file://frontend/components/RoleShell.tsx#L29-L66)
-- [permissions.ts:107-109](file://frontend/lib/permissions.ts#L107-L109)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
-- [RoleSidebar.tsx:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig.ts:280-300](file://frontend/lib/sidebarConfig.ts#L280-L300)
+- [RoleShell.tsx:29-66](frontend/components/RoleShell.tsx#L29-L66)
+- [permissions.ts:107-109](frontend/lib/permissions.ts#L107-L109)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
+- [RoleSidebar.tsx:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig.ts:280-300](frontend/lib/sidebarConfig.ts#L280-L300)
 
 ## Detailed Component Analysis
 
@@ -164,12 +164,12 @@ Render --> End
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:29-66](file://frontend/components/RoleShell.tsx#L29-L66)
-- [permissions.ts:107-109](file://frontend/lib/permissions.ts#L107-L109)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [RoleShell.tsx:29-66](frontend/components/RoleShell.tsx#L29-L66)
+- [permissions.ts:107-109](frontend/lib/permissions.ts#L107-L109)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 **Section sources**
-- [RoleShell.tsx:29-101](file://frontend/components/RoleShell.tsx#L29-L101)
+- [RoleShell.tsx:29-101](frontend/components/RoleShell.tsx#L29-L101)
 
 ### RoleSidebar: Role-Aware Navigation Drawer
 RoleSidebar:
@@ -189,13 +189,13 @@ MobileSheet --> Exit(["Exit"])
 ```
 
 **Diagram sources**
-- [RoleSidebar.tsx:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig.ts:280-300](file://frontend/lib/sidebarConfig.ts#L280-L300)
-- [permissions.ts:103-105](file://frontend/lib/permissions.ts#L103-L105)
+- [RoleSidebar.tsx:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig.ts:280-300](frontend/lib/sidebarConfig.ts#L280-L300)
+- [permissions.ts:103-105](frontend/lib/permissions.ts#L103-L105)
 
 **Section sources**
-- [RoleSidebar.tsx:60-227](file://frontend/components/RoleSidebar.tsx#L60-L227)
-- [sidebarConfig.ts:22-300](file://frontend/lib/sidebarConfig.ts#L22-L300)
+- [RoleSidebar.tsx:60-227](frontend/components/RoleSidebar.tsx#L60-L227)
+- [sidebarConfig.ts:22-300](frontend/lib/sidebarConfig.ts#L22-L300)
 
 ### Navigation Configuration and Capability Filtering
 Navigation configuration is centralized:
@@ -233,11 +233,11 @@ NavGroup --> NavItem
 ```
 
 **Diagram sources**
-- [sidebarConfig.ts:22-54](file://frontend/lib/sidebarConfig.ts#L22-L54)
-- [sidebarConfig.ts:280-300](file://frontend/lib/sidebarConfig.ts#L280-L300)
+- [sidebarConfig.ts:22-54](frontend/lib/sidebarConfig.ts#L22-L54)
+- [sidebarConfig.ts:280-300](frontend/lib/sidebarConfig.ts#L280-L300)
 
 **Section sources**
-- [sidebarConfig.ts:22-300](file://frontend/lib/sidebarConfig.ts#L22-L300)
+- [sidebarConfig.ts:22-300](frontend/lib/sidebarConfig.ts#L22-L300)
 
 ### Permission Matrix and Role Access
 Permissions define:
@@ -253,11 +253,11 @@ CanAccess --> |False| Deny["Redirect to role home"]
 ```
 
 **Diagram sources**
-- [permissions.ts:95-111](file://frontend/lib/permissions.ts#L95-L111)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [permissions.ts:95-111](frontend/lib/permissions.ts#L95-L111)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 **Section sources**
-- [permissions.ts:95-111](file://frontend/lib/permissions.ts#L95-L111)
+- [permissions.ts:95-111](frontend/lib/permissions.ts#L95-L111)
 
 ### API Proxy: Catch-All Route
 The catch-all route under /api/[[...path]] proxies requests to the backend:
@@ -280,11 +280,11 @@ Proxy-->>Client : Return response or fallback
 ```
 
 **Diagram sources**
-- [route.ts:127-225](file://frontend/app/api/[[...path]]/route.ts#L127-L225)
-- [route.ts:299-328](file://frontend/app/api/[[...path]]/route.ts#L299-L328)
+- [route.ts:127-225](frontend/app/api/[[...path]]/route.ts#L127-L225)
+- [route.ts:299-328](frontend/app/api/[[...path]]/route.ts#L299-L328)
 
 **Section sources**
-- [route.ts:1-328](file://frontend/app/api/[[...path]]/route.ts#L1-L328)
+- [route.ts:1-328](frontend/app/api/[[...path]]/route.ts#L1-L328)
 
 ### Dynamic Routes and Resource Detail Pages
 Dynamic routes are used for resource detail pages:
@@ -310,16 +310,16 @@ Render --> Exit
 ```
 
 **Diagram sources**
-- [admin/caregivers/[id]/page.tsx](file://frontend/app/admin/caregivers/[id]/page.tsx#L19-L66)
-- [observer/patients/[id]/page.tsx](file://frontend/app/observer/patients/[id]/page.tsx#L118-L125)
-- [supervisor/patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L75)
-- [head-nurse/patients/[id]/page.tsx](file://frontend/app/head-nurse/patients/[id]/page.tsx#L71-L78)
+- [admin/caregivers/[id]/page.tsx](frontend/app/admin/caregivers/[id]/page.tsx#L19-L66)
+- [observer/patients/[id]/page.tsx](frontend/app/observer/patients/[id]/page.tsx#L118-L125)
+- [supervisor/patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L65-L75)
+- [head-nurse/patients/[id]/page.tsx](frontend/app/head-nurse/patients/[id]/page.tsx#L71-L78)
 
 **Section sources**
-- [admin/caregivers/[id]/page.tsx](file://frontend/app/admin/caregivers/[id]/page.tsx#L19-L124)
-- [observer/patients/[id]/page.tsx](file://frontend/app/observer/patients/[id]/page.tsx#L118-L800)
-- [supervisor/patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L570)
-- [head-nurse/patients/[id]/page.tsx](file://frontend/app/head-nurse/patients/[id]/page.tsx#L71-L504)
+- [admin/caregivers/[id]/page.tsx](frontend/app/admin/caregivers/[id]/page.tsx#L19-L124)
+- [observer/patients/[id]/page.tsx](frontend/app/observer/patients/[id]/page.tsx#L118-L800)
+- [supervisor/patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L65-L570)
+- [head-nurse/patients/[id]/page.tsx](frontend/app/head-nurse/patients/[id]/page.tsx#L71-L504)
 
 ### Role Dashboards and Workspace Awareness
 Each role dashboard:
@@ -335,11 +335,11 @@ Examples:
 - Patient dashboard: hub tabs (overview, profile, support), SOS and assistance buttons
 
 **Section sources**
-- [admin/page.tsx:46-96](file://frontend/app/admin/page.tsx#L46-L96)
-- [head-nurse/page.tsx:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
-- [supervisor/page.tsx:41-66](file://frontend/app/supervisor/page.tsx#L41-L66)
-- [observer/page.tsx:75-95](file://frontend/app/observer/page.tsx#L75-L95)
-- [patient/page.tsx:92-111](file://frontend/app/patient/page.tsx#L92-L111)
+- [admin/page.tsx:46-96](frontend/app/admin/page.tsx#L46-L96)
+- [head-nurse/page.tsx:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
+- [supervisor/page.tsx:41-66](frontend/app/supervisor/page.tsx#L41-L66)
+- [observer/page.tsx:75-95](frontend/app/observer/page.tsx#L75-L95)
+- [patient/page.tsx:92-111](frontend/app/patient/page.tsx#L92-L111)
 
 ## Dependency Analysis
 High-level dependencies among navigation and routing components:
@@ -371,25 +371,25 @@ APIRoute --> Permissions
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:29-66](file://frontend/components/RoleShell.tsx#L29-L66)
-- [RoleSidebar.tsx:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig.ts:280-300](file://frontend/lib/sidebarConfig.ts#L280-L300)
-- [permissions.ts:95-111](file://frontend/lib/permissions.ts#L95-L111)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
-- [route.ts:299-328](file://frontend/app/api/[[...path]]/route.ts#L299-L328)
-- [admin/page.tsx:46-96](file://frontend/app/admin/page.tsx#L46-L96)
-- [head-nurse/page.tsx:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
-- [supervisor/page.tsx:41-66](file://frontend/app/supervisor/page.tsx#L41-L66)
-- [observer/page.tsx:75-95](file://frontend/app/observer/page.tsx#L75-L95)
-- [patient/page.tsx:92-111](file://frontend/app/patient/page.tsx#L92-L111)
+- [RoleShell.tsx:29-66](frontend/components/RoleShell.tsx#L29-L66)
+- [RoleSidebar.tsx:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig.ts:280-300](frontend/lib/sidebarConfig.ts#L280-L300)
+- [permissions.ts:95-111](frontend/lib/permissions.ts#L95-L111)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
+- [route.ts:299-328](frontend/app/api/[[...path]]/route.ts#L299-L328)
+- [admin/page.tsx:46-96](frontend/app/admin/page.tsx#L46-L96)
+- [head-nurse/page.tsx:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
+- [supervisor/page.tsx:41-66](frontend/app/supervisor/page.tsx#L41-L66)
+- [observer/page.tsx:75-95](frontend/app/observer/page.tsx#L75-L95)
+- [patient/page.tsx:92-111](frontend/app/patient/page.tsx#L92-L111)
 
 **Section sources**
-- [RoleShell.tsx:29-101](file://frontend/components/RoleShell.tsx#L29-L101)
-- [RoleSidebar.tsx:60-227](file://frontend/components/RoleSidebar.tsx#L60-L227)
-- [sidebarConfig.ts:22-300](file://frontend/lib/sidebarConfig.ts#L22-L300)
-- [permissions.ts:95-111](file://frontend/lib/permissions.ts#L95-L111)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
-- [route.ts:299-328](file://frontend/app/api/[[...path]]/route.ts#L299-L328)
+- [RoleShell.tsx:29-101](frontend/components/RoleShell.tsx#L29-L101)
+- [RoleSidebar.tsx:60-227](frontend/components/RoleSidebar.tsx#L60-L227)
+- [sidebarConfig.ts:22-300](frontend/lib/sidebarConfig.ts#L22-L300)
+- [permissions.ts:95-111](frontend/lib/permissions.ts#L95-L111)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
+- [route.ts:299-328](frontend/app/api/[[...path]]/route.ts#L299-L328)
 
 ## Performance Considerations
 - Client-side guards avoid unnecessary server round trips by redirecting early when authentication or role checks fail
@@ -407,11 +407,11 @@ Common issues and resolutions:
 - Dynamic route errors: Confirm numeric ID validation and error handling in detail pages
 
 **Section sources**
-- [RoleShell.tsx:44-66](file://frontend/components/RoleShell.tsx#L44-L66)
-- [sidebarConfig.ts:287-299](file://frontend/lib/sidebarConfig.ts#L287-L299)
-- [route.ts:170-206](file://frontend/app/api/[[...path]]/route.ts#L170-L206)
-- [admin/caregivers/[id]/page.tsx](file://frontend/app/admin/caregivers/[id]/page.tsx#L33-L66)
-- [observer/patients/[id]/page.tsx](file://frontend/app/observer/patients/[id]/page.tsx#L643-L655)
+- [RoleShell.tsx:44-66](frontend/components/RoleShell.tsx#L44-L66)
+- [sidebarConfig.ts:287-299](frontend/lib/sidebarConfig.ts#L287-L299)
+- [route.ts:170-206](frontend/app/api/[[...path]]/route.ts#L170-L206)
+- [admin/caregivers/[id]/page.tsx](frontend/app/admin/caregivers/[id]/page.tsx#L33-L66)
+- [observer/patients/[id]/page.tsx](frontend/app/observer/patients/[id]/page.tsx#L643-L655)
 
 ## Conclusion
 The WheelSense Platform implements a robust, role-aware routing and navigation system:

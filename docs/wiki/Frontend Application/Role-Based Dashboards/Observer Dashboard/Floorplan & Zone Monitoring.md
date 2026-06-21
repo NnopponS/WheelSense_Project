@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [FloorplanCanvas.tsx](file://frontend/components/floorplan/FloorplanCanvas.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [FloorplansPanel.tsx](file://frontend/components/admin/FloorplansPanel.tsx)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [floorplanLayout.ts](file://frontend/lib/floorplanLayout.ts)
-- [floorplanRoomResolve.ts](file://frontend/lib/floorplanRoomResolve.ts)
-- [floorplanSaveProvision.ts](file://frontend/lib/floorplanSaveProvision.ts)
-- [AGENTS.md](file://server/AGENTS.md)
-- [localization_setup.py](file://server/app/services/localization_setup.py)
-- [0011-phase2-map-person-presence-projection.md](file://docs/adr/0011-phase2-map-person-presence-projection.md)
-- [openapi.generated.json](file://server/openapi.generated.json)
+- [FloorplanCanvas.tsx](frontend/components/floorplan/FloorplanCanvas.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [FloorplansPanel.tsx](frontend/components/admin/FloorplansPanel.tsx)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [floorplanLayout.ts](frontend/lib/floorplanLayout.ts)
+- [floorplanRoomResolve.ts](frontend/lib/floorplanRoomResolve.ts)
+- [floorplanSaveProvision.ts](frontend/lib/floorplanSaveProvision.ts)
+- [AGENTS.md](server/AGENTS.md)
+- [localization_setup.py](server/app/services/localization_setup.py)
+- [0011-phase2-map-person-presence-projection.md](docs/adr/0011-phase2-map-person-presence-projection.md)
+- [openapi.generated.json](server/openapi.generated.json)
 </cite>
 
 ## Table of Contents
@@ -75,21 +75,21 @@ FPC --> |"saves"| FPS
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplanSaveProvision.ts:1-64](file://frontend/lib/floorplanSaveProvision.ts#L1-L64)
-- [FloorplansPanel.tsx:1088-1125](file://frontend/components/admin/FloorplansPanel.tsx#L1088-L1125)
-- [FloorMapWorkspace.tsx:522-555](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L522-L555)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanSaveProvision.ts:1-64](frontend/lib/floorplanSaveProvision.ts#L1-L64)
+- [FloorplansPanel.tsx:1088-1125](frontend/components/admin/FloorplansPanel.tsx#L1088-L1125)
+- [FloorMapWorkspace.tsx:522-555](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L522-L555)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplanSaveProvision.ts:1-64](file://frontend/lib/floorplanSaveProvision.ts#L1-L64)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanSaveProvision.ts:1-64](frontend/lib/floorplanSaveProvision.ts#L1-L64)
 
 ## Core Components
 - FloorplanCanvas: An SVG-based canvas for rendering rooms, presence dots, and interactive editing. Supports zoom, pan, move, and resize operations; integrates with room metadata for tone, chips, and presence overlays.
@@ -99,11 +99,11 @@ FPC --> |"saves"| FPS
 - floorplanSaveProvision: Aligns shape device_id with registry devices and provisions missing rooms for nodes during layout save.
 
 **Section sources**
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplanSaveProvision.ts:1-64](file://frontend/lib/floorplanSaveProvision.ts#L1-L64)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanSaveProvision.ts:1-64](frontend/lib/floorplanSaveProvision.ts#L1-L64)
 
 ## Architecture Overview
 The system integrates three data streams to produce a unified spatial view:
@@ -131,9 +131,9 @@ UI->>Canvas : Render rooms with overlays
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:682-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L682-L702)
-- [AGENTS.md:187-198](file://server/AGENTS.md#L187-L198)
-- [openapi.generated.json:15474-15529](file://server/openapi.generated.json#L15474-L15529)
+- [FloorplanRoleViewer.tsx:682-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L682-L702)
+- [AGENTS.md:187-198](server/AGENTS.md#L187-L198)
+- [openapi.generated.json:15474-15529](server/openapi.generated.json#L15474-L15529)
 
 ## Detailed Component Analysis
 
@@ -185,8 +185,8 @@ FloorplanCanvas --> FloorplanRoomMeta : "reads"
 ```
 
 **Diagram sources**
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [floorplanLayout.ts:1-11](file://frontend/lib/floorplanLayout.ts#L1-L11)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [floorplanLayout.ts:1-11](frontend/lib/floorplanLayout.ts#L1-L11)
 
 Interactive editing flow:
 ```mermaid
@@ -204,11 +204,11 @@ Continue --> Kind
 ```
 
 **Diagram sources**
-- [FloorplanCanvas.tsx:260-371](file://frontend/components/floorplan/FloorplanCanvas.tsx#L260-L371)
+- [FloorplanCanvas.tsx:260-371](frontend/components/floorplan/FloorplanCanvas.tsx#L260-L371)
 
 **Section sources**
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
 
 ### FloorplanRoleViewer: Presence Composition and Visualization
 FloorplanRoleViewer:
@@ -234,11 +234,11 @@ Viewer->>Canvas : Render with rooms + roomMetaById
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:644-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L644-L702)
-- [FloorplanRoleViewer.tsx:772-780](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L772-L780)
+- [FloorplanRoleViewer.tsx:644-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L644-L702)
+- [FloorplanRoleViewer.tsx:772-780](frontend/components/floorplan/FloorplanRoleViewer.tsx#L772-L780)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
 
 ### Layout, Resolution, and Save Provision
 - Coordinate normalization: Converts legacy and modern layout units to canvas units.
@@ -259,14 +259,14 @@ K --> L["Persisted layout with device_id and room rows"]
 ```
 
 **Diagram sources**
-- [floorplanLayout.ts:55-103](file://frontend/lib/floorplanLayout.ts#L55-L103)
-- [floorplanRoomResolve.ts:24-108](file://frontend/lib/floorplanRoomResolve.ts#L24-L108)
-- [floorplanSaveProvision.ts:11-64](file://frontend/lib/floorplanSaveProvision.ts#L11-L64)
+- [floorplanLayout.ts:55-103](frontend/lib/floorplanLayout.ts#L55-L103)
+- [floorplanRoomResolve.ts:24-108](frontend/lib/floorplanRoomResolve.ts#L24-L108)
+- [floorplanSaveProvision.ts:11-64](frontend/lib/floorplanSaveProvision.ts#L11-L64)
 
 **Section sources**
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplanSaveProvision.ts:1-64](file://frontend/lib/floorplanSaveProvision.ts#L1-L64)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanSaveProvision.ts:1-64](frontend/lib/floorplanSaveProvision.ts#L1-L64)
 
 ### Integration with Real-Time Localization Data
 - Presence composition: Combines layout-backed rooms, patient assignments, localization predictions, and optional staff presence.
@@ -285,14 +285,14 @@ M --> R["Render chips and dots"]
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:123-150](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L123-L150)
-- [FloorplanRoleViewer.tsx:204-210](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L204-L210)
-- [FloorplanRoleViewer.tsx:223-281](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L281)
+- [FloorplanRoleViewer.tsx:123-150](frontend/components/floorplan/FloorplanRoleViewer.tsx#L123-L150)
+- [FloorplanRoleViewer.tsx:204-210](frontend/components/floorplan/FloorplanRoleViewer.tsx#L204-L210)
+- [FloorplanRoleViewer.tsx:223-281](frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L281)
 
 **Section sources**
-- [AGENTS.md:187-198](file://server/AGENTS.md#L187-L198)
-- [0011-phase2-map-person-presence-projection.md:1-21](file://docs/adr/0011-phase2-map-person-presence-projection.md#L1-L21)
-- [openapi.generated.json:15474-15529](file://server/openapi.generated.json#L15474-L15529)
+- [AGENTS.md:187-198](server/AGENTS.md#L187-L198)
+- [0011-phase2-map-person-presence-projection.md:1-21](docs/adr/0011-phase2-map-person-presence-projection.md#L1-L21)
+- [openapi.generated.json:15474-15529](server/openapi.generated.json#L15474-L15529)
 
 ## Dependency Analysis
 - FloorplanRoleViewer depends on:
@@ -319,16 +319,16 @@ API --> LOC["Localization"]
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
 
 ## Performance Considerations
 - Rendering:
@@ -358,9 +358,9 @@ Common issues and resolutions:
   - Ensure node_device_id exists in the device registry; otherwise, device_id is cleared to prevent stale references.
 
 **Section sources**
-- [FloorplansPanel.tsx:1088-1125](file://frontend/components/admin/FloorplansPanel.tsx#L1088-L1125)
-- [FloorMapWorkspace.tsx:522-555](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L522-L555)
-- [floorplanSaveProvision.ts:11-26](file://frontend/lib/floorplanSaveProvision.ts#L11-L26)
+- [FloorplansPanel.tsx:1088-1125](frontend/components/admin/FloorplansPanel.tsx#L1088-L1125)
+- [FloorMapWorkspace.tsx:522-555](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L522-L555)
+- [floorplanSaveProvision.ts:11-26](frontend/lib/floorplanSaveProvision.ts#L11-L26)
 
 ## Conclusion
 The WheelSense Floorplan & Zone Monitoring system provides a robust, role-aware spatial view integrating layout, assignments, and localization data. FloorplanCanvas offers precise, grid-aligned editing and visualization, while FloorplanRoleViewer composes presence overlays and manages room metadata. Libraries ensure accurate coordinate handling, reliable label-to-room resolution, and safe layout saves. Together, these components enable effective zone monitoring, occupancy tracking, and spatial reporting for observers, supervisors, and head nurses.

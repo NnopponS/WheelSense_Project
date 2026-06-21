@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FacilityFloorToolbar.tsx](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [WardOverviewGrid.tsx](file://frontend/components/dashboard/WardOverviewGrid.tsx)
-- [RoomSubCard.tsx](file://frontend/components/dashboard/RoomSubCard.tsx)
-- [KPIStatCard.tsx](file://frontend/components/dashboard/KPIStatCard.tsx)
-- [WardTimelineEmbed.tsx](file://frontend/components/timeline/WardTimelineEmbed.tsx)
-- [monitoringWorkspace.ts](file://frontend/lib/monitoringWorkspace.ts)
-- [types.ts](file://frontend/lib/types.ts)
-- [page.tsx](file://frontend/app/observer/monitoring/page.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FacilityFloorToolbar.tsx](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [WardOverviewGrid.tsx](frontend/components/dashboard/WardOverviewGrid.tsx)
+- [RoomSubCard.tsx](frontend/components/dashboard/RoomSubCard.tsx)
+- [KPIStatCard.tsx](frontend/components/dashboard/KPIStatCard.tsx)
+- [WardTimelineEmbed.tsx](frontend/components/timeline/WardTimelineEmbed.tsx)
+- [monitoringWorkspace.ts](frontend/lib/monitoringWorkspace.ts)
+- [types.ts](frontend/lib/types.ts)
+- [page.tsx](frontend/app/observer/monitoring/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -77,23 +77,23 @@ RTC --> TYP
 ```
 
 **Diagram sources**
-- [page.tsx:1-6](file://frontend/app/observer/monitoring/page.tsx#L1-L6)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [types.ts:1-200](file://frontend/lib/types.ts#L1-L200)
+- [page.tsx:1-6](frontend/app/observer/monitoring/page.tsx#L1-L6)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [types.ts:1-200](frontend/lib/types.ts#L1-L200)
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [types.ts:1-200](file://frontend/lib/types.ts#L1-L200)
-- [page.tsx:1-6](file://frontend/app/observer/monitoring/page.tsx#L1-L6)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [types.ts:1-200](frontend/lib/types.ts#L1-L200)
+- [page.tsx:1-6](frontend/app/observer/monitoring/page.tsx#L1-L6)
 
 ## Core Components
 - DashboardFloorplanPanel: Provides a role-aware floor plan viewer with optional presence indicators and initial selection parameters.
@@ -106,14 +106,14 @@ RTC --> TYP
 - Types: Shared domain types for devices, vitals, and real-time snapshots.
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [types.ts:92-200](file://frontend/lib/types.ts#L92-L200)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [types.ts:92-200](frontend/lib/types.ts#L92-L200)
 
 ## Architecture Overview
 The monitoring dashboard is driven by URL state managed via monitoringWorkspace utilities. The observer navigates to the monitoring page, which delegates to the floor plan panel. From there, toolbar and grid/timeline components render the current view. Admin-level floor map editing is available separately.
@@ -139,12 +139,12 @@ Panel->>Timeline : Render timeline embed
 ```
 
 **Diagram sources**
-- [page.tsx:1-6](file://frontend/app/observer/monitoring/page.tsx#L1-L6)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [page.tsx:1-6](frontend/app/observer/monitoring/page.tsx#L1-L6)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 ## Detailed Component Analysis
 
@@ -161,10 +161,10 @@ Forward --> End(["FloorplanRoleViewer renders"])
 ```
 
 **Diagram sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ### WardOverviewGrid
 - Purpose: Present an overview of rooms with occupancy, patient avatars, and alert counts.
@@ -185,11 +185,11 @@ Render --> Popup["RoomDetailPopup on selection"]
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
 
 **Section sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
 
 ### RoomSubCard
 - Purpose: Individual room tile within WardOverviewGrid.
@@ -216,10 +216,10 @@ RoomSubCard --> PatientOut : "renders avatars/count"
 ```
 
 **Diagram sources**
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
 
 **Section sources**
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
 
 ### KPIStatCard
 - Purpose: Display key metrics with optional trend and status.
@@ -242,10 +242,10 @@ class KPIStatCard {
 ```
 
 **Diagram sources**
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
 
 **Section sources**
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
 
 ### WardTimelineEmbed
 - Purpose: Visualize recent ward activities in calendar and agenda views.
@@ -274,10 +274,10 @@ Embed->>Embed : Re-filter and re-render
 ```
 
 **Diagram sources**
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
 
 **Section sources**
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
 
 ### FacilityFloorToolbar and FloorMapWorkspace
 - Purpose: Provide facility and floor selection and toggle between list and map view modes. FloorMapWorkspace enables administrative editing of floor plan layouts and device assignments.
@@ -295,13 +295,13 @@ ChangeView --> UpdateURL
 ```
 
 **Diagram sources**
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 **Section sources**
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 ### Observer Monitoring Redirect
 - Purpose: Redirects the observer monitoring route to the observer role shell.
@@ -317,10 +317,10 @@ Router-->>Browser : Navigate to observer role shell
 ```
 
 **Diagram sources**
-- [page.tsx:1-6](file://frontend/app/observer/monitoring/page.tsx#L1-L6)
+- [page.tsx:1-6](frontend/app/observer/monitoring/page.tsx#L1-L6)
 
 **Section sources**
-- [page.tsx:1-6](file://frontend/app/observer/monitoring/page.tsx#L1-L6)
+- [page.tsx:1-6](frontend/app/observer/monitoring/page.tsx#L1-L6)
 
 ## Dependency Analysis
 - DashboardFloorplanPanel depends on FloorplanRoleViewer and monitoringWorkspace for URL state.
@@ -345,22 +345,22 @@ RTC --> TYP
 ```
 
 **Diagram sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [types.ts:1-200](file://frontend/lib/types.ts#L1-L200)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [types.ts:1-200](frontend/lib/types.ts#L1-L200)
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [types.ts:1-200](file://frontend/lib/types.ts#L1-L200)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [types.ts:1-200](frontend/lib/types.ts#L1-L200)
 
 ## Performance Considerations
 - Polling intervals: Timeline embed polls for updates at a fixed interval; adjust intervals based on load and responsiveness needs.
@@ -384,9 +384,9 @@ RTC --> TYP
   - Confirm room provisioning and node device alignment steps complete successfully.
 
 **Section sources**
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 ## Conclusion
 The Observer Clinical Monitoring Dashboard integrates floor plan visualization, ward overview, and timeline activity into a cohesive monitoring interface. DashboardFloorplanPanel provides a streamlined entry point, while WardOverviewGrid and WardTimelineEmbed deliver actionable insights. Administrative tools like FacilityFloorToolbar and FloorMapWorkspace support operational maintenance. The monitoringWorkspace utilities ensure consistent navigation and state management across roles.
@@ -424,6 +424,6 @@ The Observer Clinical Monitoring Dashboard integrates floor plan visualization, 
 - Administrative floor map editing allows linking rooms to devices, supporting precise alert routing.
 
 **Section sources**
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)

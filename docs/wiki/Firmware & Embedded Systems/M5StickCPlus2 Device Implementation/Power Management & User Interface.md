@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [main.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [Config.h](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [DisplayManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
-- [DisplayManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp)
-- [SceneManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h)
-- [SceneManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp)
-- [InputManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h)
-- [InputManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp)
-- [BuzzerManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h)
-- [BuzzerManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp)
-- [ConfigManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
-- [SensorManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [main.cpp](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [Config.h](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [DisplayManager.h](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
+- [DisplayManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp)
+- [SceneManager.h](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h)
+- [SceneManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp)
+- [InputManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h)
+- [InputManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp)
+- [BuzzerManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h)
+- [BuzzerManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp)
+- [ConfigManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
+- [SensorManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
 </cite>
 
 ## Table of Contents
@@ -49,16 +49,16 @@ Main -.-> ConfigH["Config.h<br/>Timers, brightness, modes"]
 ```
 
 **Diagram sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
-- [SensorManager.h:28-71](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L28-L71)
-- [SceneManager.cpp:12-25](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L12-L25)
-- [DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
-- [Config.h:43-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [SensorManager.h:28-71](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L28-L71)
+- [SceneManager.cpp:12-25](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L12-L25)
+- [DisplayManager.cpp:7-36](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
+- [Config.h:43-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
 
 **Section sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [Config.h:43-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [Config.h:43-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
 
 ## Core Components
 - Power management and activity tracking:
@@ -78,12 +78,12 @@ Main -.-> ConfigH["Config.h<br/>Timers, brightness, modes"]
   - WiFi sleep enabled, adaptive sensor and publish intervals, reduced main loop idle delay when sleeping.
 
 **Section sources**
-- [main.cpp:73-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L121)
-- [SceneManager.h:12-23](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L12-L23)
-- [InputManager.h:6-11](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L6-L11)
-- [BuzzerManager.cpp:16-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
-- [DisplayManager.cpp:17-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L17-L36)
-- [Config.h:61-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L76)
+- [main.cpp:73-121](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L121)
+- [SceneManager.h:12-23](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L12-L23)
+- [InputManager.h:6-11](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L6-L11)
+- [BuzzerManager.cpp:16-44](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
+- [DisplayManager.cpp:17-36](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L17-L36)
+- [Config.h:61-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L76)
 
 ## Architecture Overview
 The main loop orchestrates input, sensors, networking, and UI rendering. It applies power policies to control LCD brightness and update rates, and coordinates state machines for recording and scene transitions.
@@ -121,10 +121,10 @@ end
 ```
 
 **Diagram sources**
-- [main.cpp:153-220](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L220)
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
-- [SceneManager.cpp:79-93](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L79-L93)
-- [DisplayManager.cpp:38-46](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L38-L46)
+- [main.cpp:153-220](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L220)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [SceneManager.cpp:79-93](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L79-L93)
+- [DisplayManager.cpp:38-46](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L38-L46)
 
 ## Detailed Component Analysis
 
@@ -154,12 +154,12 @@ End(["Exit"])
 ```
 
 **Diagram sources**
-- [main.cpp:82-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L82-L121)
-- [Config.h:61-66](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L66)
+- [main.cpp:82-121](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L82-L121)
+- [Config.h:61-66](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L66)
 
 **Section sources**
-- [main.cpp:73-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L121)
-- [Config.h:61-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L76)
+- [main.cpp:73-121](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L121)
+- [Config.h:61-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L76)
 
 ### Activity-Based Power Management
 - lastActivityMs tracks the latest user interaction or manual wake.
@@ -180,12 +180,12 @@ end
 ```
 
 **Diagram sources**
-- [main.cpp:164-175](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
-- [main.cpp:73-80](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L80)
+- [main.cpp:164-175](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
+- [main.cpp:73-80](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L80)
 
 **Section sources**
-- [main.cpp:73-80](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L80)
-- [main.cpp:164-175](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
+- [main.cpp:73-80](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L80)
+- [main.cpp:164-175](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
 
 ### Scene Management System
 - Scenes: boot, dashboard, main menu, WiFi scan, keyboard, MQTT config, device info, AP portal, confirmation, recording.
@@ -240,14 +240,14 @@ SceneManager --> InputManager : "reads"
 ```
 
 **Diagram sources**
-- [SceneManager.h:25-118](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L25-L118)
-- [DisplayManager.h:7-34](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L7-L34)
-- [InputManager.h:13-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L13-L32)
+- [SceneManager.h:25-118](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L25-L118)
+- [DisplayManager.h:7-34](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L7-L34)
+- [InputManager.h:13-32](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L13-L32)
 
 **Section sources**
-- [SceneManager.h:12-23](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L12-L23)
-- [SceneManager.cpp:131-292](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L131-L292)
-- [SceneManager.cpp:861-942](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L861-L942)
+- [SceneManager.h:12-23](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L12-L23)
+- [SceneManager.cpp:131-292](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L131-L292)
+- [SceneManager.cpp:861-942](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L861-L942)
 
 ### Button Input Handling
 - Buttons: A (front), B (side), C (power acts as C).
@@ -266,12 +266,12 @@ Latch --> Release
 ```
 
 **Diagram sources**
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
-- [InputManager.h:25-31](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L25-L31)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [InputManager.h:25-31](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L25-L31)
 
 **Section sources**
-- [InputManager.h:6-11](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L6-L11)
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [InputManager.h:6-11](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L6-L11)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
 
 ### Buzzer Feedback System
 - Tones for button press, success, error, recording start/stop.
@@ -294,12 +294,12 @@ Buzzer-->>Main : sequence of tones
 ```
 
 **Diagram sources**
-- [InputManager.cpp:20-27](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L20-L27)
-- [BuzzerManager.cpp:16-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
+- [InputManager.cpp:20-27](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L20-L27)
+- [BuzzerManager.cpp:16-44](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
 
 **Section sources**
-- [BuzzerManager.h:6-25](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h#L6-L25)
-- [BuzzerManager.cpp:16-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
+- [BuzzerManager.h:6-25](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h#L6-L25)
+- [BuzzerManager.cpp:16-44](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
 
 ### Display Buffer Management and Static Allocation
 - Static buffers for telemetry JSON and serialization to avoid stack overflow.
@@ -317,12 +317,12 @@ DisableSprite --> DirectLCD["Direct LCD drawing"]
 ```
 
 **Diagram sources**
-- [DisplayManager.cpp:17-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L17-L36)
-- [main.cpp:46-49](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L46-L49)
+- [DisplayManager.cpp:17-36](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L17-L36)
+- [main.cpp:46-49](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L46-L49)
 
 **Section sources**
-- [DisplayManager.cpp:17-46](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L17-L46)
-- [main.cpp:46-49](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L46-L49)
+- [DisplayManager.cpp:17-46](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L17-L46)
+- [main.cpp:46-49](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L46-L49)
 
 ### Power Optimization Techniques
 - WiFi sleep enabled to reduce idle current.
@@ -341,17 +341,17 @@ NormalPath --> End
 ```
 
 **Diagram sources**
-- [main.cpp:199-205](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L199-L205)
-- [main.cpp:266-269](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L266-L269)
-- [main.cpp:338-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L338-L340)
-- [Config.h:68-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)
+- [main.cpp:199-205](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L199-L205)
+- [main.cpp:266-269](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L266-L269)
+- [main.cpp:338-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L338-L340)
+- [Config.h:68-71](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)
 
 **Section sources**
-- [main.cpp:147-148](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L147-L148)
-- [main.cpp:199-205](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L199-L205)
-- [main.cpp:266-269](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L266-L269)
-- [main.cpp:338-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L338-L340)
-- [Config.h:68-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)
+- [main.cpp:147-148](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L147-L148)
+- [main.cpp:199-205](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L199-L205)
+- [main.cpp:266-269](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L266-L269)
+- [main.cpp:338-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L338-L340)
+- [Config.h:68-71](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)
 
 ### Motion Recording State Machine
 - Start recording with a pre-notification beep and transition to recording scene.
@@ -369,13 +369,13 @@ note right of Recording : "Blinking RED indicator,<br/>label, elapsed time"
 ```
 
 **Diagram sources**
-- [main.cpp:222-243](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L222-L243)
-- [main.cpp:246-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L246-L263)
-- [SceneManager.cpp:861-942](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L861-L942)
+- [main.cpp:222-243](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L222-L243)
+- [main.cpp:246-263](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L246-L263)
+- [SceneManager.cpp:861-942](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L861-L942)
 
 **Section sources**
-- [main.cpp:222-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L222-L263)
-- [SceneManager.cpp:861-942](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L861-L942)
+- [main.cpp:222-263](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L222-L263)
+- [SceneManager.cpp:861-942](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L861-L942)
 
 ## Dependency Analysis
 - The main loop depends on managers for input, sensors, network, BLE, buzzer, and configuration.
@@ -396,15 +396,15 @@ Scene --> Input
 ```
 
 **Diagram sources**
-- [Config.h:43-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [SceneManager.cpp:12-25](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L12-L25)
-- [DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
+- [Config.h:43-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [SceneManager.cpp:12-25](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L12-L25)
+- [DisplayManager.cpp:7-36](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
 
 **Section sources**
-- [Config.h:43-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [SceneManager.cpp:12-25](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L12-L25)
+- [Config.h:43-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [SceneManager.cpp:12-25](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L12-L25)
 
 ## Performance Considerations
 - Prefer Always On mode for critical UI responsiveness; otherwise use Auto Sleep to conserve power.
@@ -428,12 +428,12 @@ Scene --> Input
   - Check debounce and long press thresholds to avoid missed events.
 
 **Section sources**
-- [main.cpp:73-80](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L80)
-- [main.cpp:164-175](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
-- [main.cpp:213-216](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L213-L216)
-- [DisplayManager.cpp:38-46](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L38-L46)
-- [BuzzerManager.cpp:7-10](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L7-L10)
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [main.cpp:73-80](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L73-L80)
+- [main.cpp:164-175](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
+- [main.cpp:213-216](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L213-L216)
+- [DisplayManager.cpp:38-46](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L38-L46)
+- [BuzzerManager.cpp:7-10](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L7-L10)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
 
 ## Conclusion
 The firmware implements robust power-aware UI with explicit control over LCD brightness, adaptive update rates, and efficient rendering. The scene system cleanly separates concerns, while input and buzzer provide responsive user feedback. Static allocation and heap-aware sprite management help maintain stability under memory pressure. These mechanisms collectively optimize battery life while preserving usability.
@@ -445,19 +445,19 @@ The firmware implements robust power-aware UI with explicit control over LCD bri
 - Customize power settings
   - Adjust dim/off timeouts and brightness levels in configuration constants.
   - Choose Always On or Auto Sleep via displayMode in persistent configuration.
-  - Reference: [Config.h:61-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L76), [ConfigManager.h:7-17](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L17)
+  - Reference: [Config.h:61-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L76), [ConfigManager.h:7-17](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L17)
 
 - Modify UI scenes
   - Add new scenes by extending SceneID and implementing update handlers.
   - Use DisplayManager primitives to render headers, footers, menus, and messages.
-  - Reference: [SceneManager.h:12-23](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L12-L23), [DisplayManager.h:13-25](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L13-L25)
+  - Reference: [SceneManager.h:12-23](firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L12-L23), [DisplayManager.h:13-25](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L13-L25)
 
 - Implement custom button behaviors
   - Extend InputManager event checks and integrate with registerActivity for wake behavior.
   - Add new tones in BuzzerManager for custom feedback.
-  - Reference: [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55), [BuzzerManager.cpp:16-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
+  - Reference: [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55), [BuzzerManager.cpp:16-44](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L44)
 
 - Optimize battery life
   - Enable WiFi sleep and reduce speaker volume.
   - Use idle intervals for sensors and MQTT publishes when LCD is off.
-  - Reference: [main.cpp:147-148](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L147-L148), [main.cpp:338-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L338-L340), [Config.h:68-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)
+  - Reference: [main.cpp:147-148](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L147-L148), [main.cpp:338-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L338-L340), [Config.h:68-71](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)

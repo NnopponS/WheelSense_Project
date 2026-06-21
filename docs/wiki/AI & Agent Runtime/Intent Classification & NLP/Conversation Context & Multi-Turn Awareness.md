@@ -2,13 +2,13 @@
 
 <cite>
 **Referenced Files in This Document**
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [chat_actions.py](file://server/app/api/endpoints/chat_actions.py)
-- [agent_runtime_client.py](file://server/app/services/agent_runtime_client.py)
-- [test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
-- [context.py](file://server/app/mcp/context.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [chat_actions.py](server/app/api/endpoints/chat_actions.py)
+- [agent_runtime_client.py](server/app/services/agent_runtime_client.py)
+- [test_agent_runtime.py](server/tests/test_agent_runtime.py)
+- [context.py](server/app/mcp/context.py)
 </cite>
 
 ## Table of Contents
@@ -62,20 +62,20 @@ MCP --> Actor
 ```
 
 **Diagram sources**
-- [chat_actions.py:124-239](file://server/app/api/endpoints/chat_actions.py#L124-L239)
-- [agent_runtime_client.py:23-45](file://server/app/services/agent_runtime_client.py#L23-L45)
-- [service.py:346-519](file://server/app/agent_runtime/service.py#L346-L519)
-- [intent.py:76-107](file://server/app/agent_runtime/intent.py#L76-L107)
-- [conversation_fastpath.py:32-44](file://server/app/agent_runtime/conversation_fastpath.py#L32-L44)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [chat_actions.py:124-239](server/app/api/endpoints/chat_actions.py#L124-L239)
+- [agent_runtime_client.py:23-45](server/app/services/agent_runtime_client.py#L23-L45)
+- [service.py:346-519](server/app/agent_runtime/service.py#L346-L519)
+- [intent.py:76-107](server/app/agent_runtime/intent.py#L76-L107)
+- [conversation_fastpath.py:32-44](server/app/agent_runtime/conversation_fastpath.py#L32-L44)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 **Section sources**
-- [chat_actions.py:124-239](file://server/app/api/endpoints/chat_actions.py#L124-L239)
-- [agent_runtime_client.py:23-45](file://server/app/services/agent_runtime_client.py#L23-L45)
-- [service.py:346-519](file://server/app/agent_runtime/service.py#L346-L519)
-- [intent.py:76-107](file://server/app/agent_runtime/intent.py#L76-L107)
-- [conversation_fastpath.py:32-44](file://server/app/agent_runtime/conversation_fastpath.py#L32-L44)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [chat_actions.py:124-239](server/app/api/endpoints/chat_actions.py#L124-L239)
+- [agent_runtime_client.py:23-45](server/app/services/agent_runtime_client.py#L23-L45)
+- [service.py:346-519](server/app/agent_runtime/service.py#L346-L519)
+- [intent.py:76-107](server/app/agent_runtime/intent.py#L76-L107)
+- [conversation_fastpath.py:32-44](server/app/agent_runtime/conversation_fastpath.py#L32-L44)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 ## Core Components
 - ConversationContext: Tracks conversation state with a bounded message history, last entities, recent patient cards, focused patient ID, and last intent/playbook.
@@ -85,11 +85,11 @@ MCP --> Actor
 - MCP Actor Context: Provides workspace-scoped execution context for tools.
 
 **Section sources**
-- [intent.py:76-107](file://server/app/agent_runtime/intent.py#L76-L107)
-- [intent.py:347-800](file://server/app/agent_runtime/intent.py#L347-L800)
-- [service.py:202-320](file://server/app/agent_runtime/service.py#L202-L320)
-- [conversation_fastpath.py:32-44](file://server/app/agent_runtime/conversation_fastpath.py#L32-L44)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [intent.py:76-107](server/app/agent_runtime/intent.py#L76-L107)
+- [intent.py:347-800](server/app/agent_runtime/intent.py#L347-L800)
+- [service.py:202-320](server/app/agent_runtime/service.py#L202-L320)
+- [conversation_fastpath.py:32-44](server/app/agent_runtime/conversation_fastpath.py#L32-L44)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 ## Architecture Overview
 The system integrates conversation context across the runtime pipeline:
@@ -128,11 +128,11 @@ end
 ```
 
 **Diagram sources**
-- [chat_actions.py:174-181](file://server/app/api/endpoints/chat_actions.py#L174-L181)
-- [agent_runtime_client.py:23-45](file://server/app/services/agent_runtime_client.py#L23-L45)
-- [service.py:346-519](file://server/app/agent_runtime/service.py#L346-L519)
-- [intent.py:719-800](file://server/app/agent_runtime/intent.py#L719-L800)
-- [context.py:33-37](file://server/app/mcp/context.py#L33-L37)
+- [chat_actions.py:174-181](server/app/api/endpoints/chat_actions.py#L174-L181)
+- [agent_runtime_client.py:23-45](server/app/services/agent_runtime_client.py#L23-L45)
+- [service.py:346-519](server/app/agent_runtime/service.py#L346-L519)
+- [intent.py:719-800](server/app/agent_runtime/intent.py#L719-L800)
+- [context.py:33-37](server/app/mcp/context.py#L33-L37)
 
 ## Detailed Component Analysis
 
@@ -159,11 +159,11 @@ class ConversationContext {
 ```
 
 **Diagram sources**
-- [intent.py:76-107](file://server/app/agent_runtime/intent.py#L76-L107)
+- [intent.py:76-107](server/app/agent_runtime/intent.py#L76-L107)
 
 **Section sources**
-- [intent.py:76-107](file://server/app/agent_runtime/intent.py#L76-L107)
-- [test_agent_runtime.py:45-62](file://server/tests/test_agent_runtime.py#L45-L62)
+- [intent.py:76-107](server/app/agent_runtime/intent.py#L76-L107)
+- [test_agent_runtime.py:45-62](server/tests/test_agent_runtime.py#L45-L62)
 
 ### Context Window Management
 - The add_message method enforces a maximum of 10 messages.
@@ -179,11 +179,11 @@ Prune --> End
 ```
 
 **Diagram sources**
-- [intent.py:89-94](file://server/app/agent_runtime/intent.py#L89-L94)
+- [intent.py:89-94](server/app/agent_runtime/intent.py#L89-L94)
 
 **Section sources**
-- [intent.py:89-94](file://server/app/agent_runtime/intent.py#L89-L94)
-- [test_agent_runtime.py:45-53](file://server/tests/test_agent_runtime.py#L45-L53)
+- [intent.py:89-94](server/app/agent_runtime/intent.py#L89-L94)
+- [test_agent_runtime.py:45-53](server/tests/test_agent_runtime.py#L45-L53)
 
 ### Patient Focus Management
 - Roster ingestion: list_visible_patients updates last_patient_cards, last_entities, and sets last_focused_patient_id when a single patient is present.
@@ -202,10 +202,10 @@ Arg --> End
 ```
 
 **Diagram sources**
-- [service.py:69-120](file://server/app/agent_runtime/service.py#L69-L120)
+- [service.py:69-120](server/app/agent_runtime/service.py#L69-L120)
 
 **Section sources**
-- [service.py:69-120](file://server/app/agent_runtime/service.py#L69-L120)
+- [service.py:69-120](server/app/agent_runtime/service.py#L69-L120)
 
 ### Patient ID Resolution for Follow-Up Questions
 The pick_patient_id_for_followup function resolves patient_id for short follow-ups using:
@@ -235,10 +235,10 @@ Focused --> |No| ReturnNone
 ```
 
 **Diagram sources**
-- [intent.py:271-320](file://server/app/agent_runtime/intent.py#L271-L320)
+- [intent.py:271-320](server/app/agent_runtime/intent.py#L271-L320)
 
 **Section sources**
-- [intent.py:271-320](file://server/app/agent_runtime/intent.py#L271-L320)
+- [intent.py:271-320](server/app/agent_runtime/intent.py#L271-L320)
 
 ### Automatic Patient Context Detection
 Certain Thai phrases trigger automatic patient-scoped reads without explicit naming:
@@ -247,8 +247,8 @@ Certain Thai phrases trigger automatic patient-scoped reads without explicit nam
 - The classifier injects entity hints and may auto-run when confidence is high and no confirmation is required.
 
 **Section sources**
-- [intent.py:363-383](file://server/app/agent_runtime/intent.py#L363-L383)
-- [intent.py:755-776](file://server/app/agent_runtime/intent.py#L755-L776)
+- [intent.py:363-383](server/app/agent_runtime/intent.py#L363-L383)
+- [intent.py:755-776](server/app/agent_runtime/intent.py#L755-L776)
 
 ### Integration with Conversation History and Workspace-Scoped Context
 - Conversation history: messages are appended and pruned to the last 10 entries.
@@ -269,14 +269,14 @@ SRV-->>API : AgentRuntimeProposeResponse
 ```
 
 **Diagram sources**
-- [service.py:161-200](file://server/app/agent_runtime/service.py#L161-L200)
-- [service.py:152-158](file://server/app/agent_runtime/service.py#L152-L158)
-- [context.py:33-37](file://server/app/mcp/context.py#L33-L37)
+- [service.py:161-200](server/app/agent_runtime/service.py#L161-L200)
+- [service.py:152-158](server/app/agent_runtime/service.py#L152-L158)
+- [context.py:33-37](server/app/mcp/context.py#L33-L37)
 
 **Section sources**
-- [service.py:161-200](file://server/app/agent_runtime/service.py#L161-L200)
-- [service.py:152-158](file://server/app/agent_runtime/service.py#L152-L158)
-- [context.py:33-37](file://server/app/mcp/context.py#L33-L37)
+- [service.py:161-200](server/app/agent_runtime/service.py#L161-L200)
+- [service.py:152-158](server/app/agent_runtime/service.py#L152-L158)
+- [context.py:33-37](server/app/mcp/context.py#L33-L37)
 
 ### Practical Examples
 
@@ -286,8 +286,8 @@ SRV-->>API : AgentRuntimeProposeResponse
 - If last_focused_patient_id is set, immediate tool get_patient_vitals is executed with patient_id.
 
 **Section sources**
-- [intent.py:363-370](file://server/app/agent_runtime/intent.py#L363-L370)
-- [intent.py:755-776](file://server/app/agent_runtime/intent.py#L755-L776)
+- [intent.py:363-370](server/app/agent_runtime/intent.py#L363-L370)
+- [intent.py:755-776](server/app/agent_runtime/intent.py#L755-L776)
 
 #### Example 2: Patient Focus Management
 - User: "แสดงรายชื่อผู้ป่วย"
@@ -295,7 +295,7 @@ SRV-->>API : AgentRuntimeProposeResponse
 - Service updates last_patient_cards, last_entities, and last_focused_patient_id when a single patient is shown.
 
 **Section sources**
-- [service.py:81-98](file://server/app/agent_runtime/service.py#L81-L98)
+- [service.py:81-98](server/app/agent_runtime/service.py#L81-L98)
 
 #### Example 3: Multi-Turn Conversation Handling
 - Turn 1: "ผู้ป่วยมีใครบ้าง" → list_visible_patients → context updated with cards/entities.
@@ -303,8 +303,8 @@ SRV-->>API : AgentRuntimeProposeResponse
 - Turn 3: "ประวัติสุขภาพล่าสุด" → uses last_focused_patient_id for vitals.
 
 **Section sources**
-- [test_agent_runtime.py:100-142](file://server/tests/test_agent_runtime.py#L100-L142)
-- [intent.py:271-320](file://server/app/agent_runtime/intent.py#L271-L320)
+- [test_agent_runtime.py:100-142](server/tests/test_agent_runtime.py#L100-L142)
+- [intent.py:271-320](server/app/agent_runtime/intent.py#L271-L320)
 
 ## Dependency Analysis
 The system exhibits clear separation of concerns:
@@ -324,18 +324,18 @@ INT --> CTX["ConversationContext"]
 ```
 
 **Diagram sources**
-- [chat_actions.py:174-181](file://server/app/api/endpoints/chat_actions.py#L174-L181)
-- [agent_runtime_client.py:23-45](file://server/app/services/agent_runtime_client.py#L23-L45)
-- [service.py:346-519](file://server/app/agent_runtime/service.py#L346-L519)
-- [intent.py:719-800](file://server/app/agent_runtime/intent.py#L719-L800)
-- [context.py:33-37](file://server/app/mcp/context.py#L33-L37)
+- [chat_actions.py:174-181](server/app/api/endpoints/chat_actions.py#L174-L181)
+- [agent_runtime_client.py:23-45](server/app/services/agent_runtime_client.py#L23-L45)
+- [service.py:346-519](server/app/agent_runtime/service.py#L346-L519)
+- [intent.py:719-800](server/app/agent_runtime/intent.py#L719-L800)
+- [context.py:33-37](server/app/mcp/context.py#L33-L37)
 
 **Section sources**
-- [chat_actions.py:174-181](file://server/app/api/endpoints/chat_actions.py#L174-L181)
-- [agent_runtime_client.py:23-45](file://server/app/services/agent_runtime_client.py#L23-L45)
-- [service.py:346-519](file://server/app/agent_runtime/service.py#L346-L519)
-- [intent.py:719-800](file://server/app/agent_runtime/intent.py#L719-L800)
-- [context.py:33-37](file://server/app/mcp/context.py#L33-L37)
+- [chat_actions.py:174-181](server/app/api/endpoints/chat_actions.py#L174-L181)
+- [agent_runtime_client.py:23-45](server/app/services/agent_runtime_client.py#L23-L45)
+- [service.py:346-519](server/app/agent_runtime/service.py#L346-L519)
+- [intent.py:719-800](server/app/agent_runtime/intent.py#L719-L800)
+- [context.py:33-37](server/app/mcp/context.py#L33-L37)
 
 ## Performance Considerations
 - Context window pruning ensures constant-time message management and bounded memory usage.
@@ -350,8 +350,8 @@ Common issues and resolutions:
 - Low confidence fallback: If confidence falls below thresholds, the system falls back to AI chat; adjust prompts or ensure sufficient context is present.
 
 **Section sources**
-- [service.py:202-320](file://server/app/agent_runtime/service.py#L202-L320)
-- [intent.py:190-193](file://server/app/agent_runtime/intent.py#L190-L193)
+- [service.py:202-320](server/app/agent_runtime/service.py#L202-L320)
+- [intent.py:190-193](server/app/agent_runtime/intent.py#L190-L193)
 
 ## Conclusion
 The WheelSense AI runtime’s conversation context system provides robust multi-turn awareness through a bounded message history, persistent entity and patient card tracking, and intelligent patient focus management. It supports seamless Thai/English follow-ups, automatic patient-scoped reads, and workspace-scoped execution via MCP actor context. The design balances performance with flexibility, enabling both fast-path general conversation and deep, context-aware clinical workflows.

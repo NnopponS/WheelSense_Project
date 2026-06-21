@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [FloorplanCanvas.tsx](file://frontend/components/floorplan/FloorplanCanvas.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [floorplanLayout.ts](file://frontend/lib/floorplanLayout.ts)
-- [floorplanRoomResolve.ts](file://frontend/lib/floorplanRoomResolve.ts)
-- [floorplanSaveProvision.ts](file://frontend/lib/floorplanSaveProvision.ts)
-- [monitoringWorkspace.ts](file://frontend/lib/monitoringWorkspace.ts)
-- [types.ts](file://frontend/lib/types.ts)
-- [floorplans.py](file://server/app/api/endpoints/floorplans.py)
-- [floorplans_service.py](file://server/app/services/floorplans.py)
-- [floorplans_models.py](file://server/app/models/floorplans.py)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [localization_setup.py](file://server/app/services/localization_setup.py)
+- [FloorplanCanvas.tsx](frontend/components/floorplan/FloorplanCanvas.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [floorplanLayout.ts](frontend/lib/floorplanLayout.ts)
+- [floorplanRoomResolve.ts](frontend/lib/floorplanRoomResolve.ts)
+- [floorplanSaveProvision.ts](frontend/lib/floorplanSaveProvision.ts)
+- [monitoringWorkspace.ts](frontend/lib/monitoringWorkspace.ts)
+- [types.ts](frontend/lib/types.ts)
+- [floorplans.py](server/app/api/endpoints/floorplans.py)
+- [floorplans_service.py](server/app/services/floorplans.py)
+- [floorplans_models.py](server/app/models/floorplans.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [localization_setup.py](server/app/services/localization_setup.py)
 </cite>
 
 ## Table of Contents
@@ -70,32 +70,32 @@ MW -.-> FRV
 ```
 
 **Diagram sources**
-- [FloorplanCanvas.tsx:1-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplanSaveProvision.ts:1-64](file://frontend/lib/floorplanSaveProvision.ts#L1-L64)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [types.ts:1-482](file://frontend/lib/types.ts#L1-L482)
-- [floorplans.py:1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
-- [floorplans_service.py:1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans_models.py:1-48](file://server/app/models/floorplans.py#L1-L48)
-- [mqtt_handler.py:1-667](file://server/app/mqtt_handler.py#L1-L667)
-- [localization_setup.py:37-557](file://server/app/services/localization_setup.py#L37-L557)
+- [FloorplanCanvas.tsx:1-617](frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanSaveProvision.ts:1-64](frontend/lib/floorplanSaveProvision.ts#L1-L64)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [types.ts:1-482](frontend/lib/types.ts#L1-L482)
+- [floorplans.py:1-242](server/app/api/endpoints/floorplans.py#L1-L242)
+- [floorplans_service.py:1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans_models.py:1-48](server/app/models/floorplans.py#L1-L48)
+- [mqtt_handler.py:1-667](server/app/mqtt_handler.py#L1-L667)
+- [localization_setup.py:37-557](server/app/services/localization_setup.py#L37-L557)
 
 **Section sources**
-- [FloorplanCanvas.tsx:1-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplanSaveProvision.ts:1-64](file://frontend/lib/floorplanSaveProvision.ts#L1-L64)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [types.ts:1-482](file://frontend/lib/types.ts#L1-L482)
-- [floorplans.py:1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
-- [floorplans_service.py:1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans_models.py:1-48](file://server/app/models/floorplans.py#L1-L48)
-- [mqtt_handler.py:1-667](file://server/app/mqtt_handler.py#L1-L667)
-- [localization_setup.py:37-557](file://server/app/services/localization_setup.py#L37-L557)
+- [FloorplanCanvas.tsx:1-617](frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanSaveProvision.ts:1-64](frontend/lib/floorplanSaveProvision.ts#L1-L64)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [types.ts:1-482](frontend/lib/types.ts#L1-L482)
+- [floorplans.py:1-242](server/app/api/endpoints/floorplans.py#L1-L242)
+- [floorplans_service.py:1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans_models.py:1-48](server/app/models/floorplans.py#L1-L48)
+- [mqtt_handler.py:1-667](server/app/mqtt_handler.py#L1-L667)
+- [localization_setup.py:37-557](server/app/services/localization_setup.py#L37-L557)
 
 ## Core Components
 - FloorplanCanvas: An interactive SVG canvas for rendering rooms, dragging/resizing, panning, zooming, and displaying presence dots and chips.
@@ -109,11 +109,11 @@ Key responsibilities:
 - Preparing shapes for persistence and provisioning unmapped nodes.
 
 **Section sources**
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [FloorplanRoleViewer.tsx:567-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L1143)
-- [floorplanLayout.ts:35-103](file://frontend/lib/floorplanLayout.ts#L35-L103)
-- [floorplanRoomResolve.ts:24-108](file://frontend/lib/floorplanRoomResolve.ts#L24-L108)
-- [floorplanSaveProvision.ts:11-64](file://frontend/lib/floorplanSaveProvision.ts#L11-L64)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [FloorplanRoleViewer.tsx:567-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L1143)
+- [floorplanLayout.ts:35-103](frontend/lib/floorplanLayout.ts#L35-L103)
+- [floorplanRoomResolve.ts:24-108](frontend/lib/floorplanRoomResolve.ts#L24-L108)
+- [floorplanSaveProvision.ts:11-64](frontend/lib/floorplanSaveProvision.ts#L11-L64)
 
 ## Architecture Overview
 The floorplan visualization integrates frontend rendering with backend presence computation and MQTT-driven telemetry.
@@ -142,10 +142,10 @@ Viewer-->>Viewer : Render FloorplanCanvas with roomMetaById
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:639-780](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L639-L780)
-- [floorplans.py:135-177](file://server/app/api/endpoints/floorplans.py#L135-L177)
-- [floorplans_service.py:42-506](file://server/app/services/floorplans.py#L42-L506)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [FloorplanRoleViewer.tsx:639-780](frontend/components/floorplan/FloorplanRoleViewer.tsx#L639-L780)
+- [floorplans.py:135-177](server/app/api/endpoints/floorplans.py#L135-L177)
+- [floorplans_service.py:42-506](server/app/services/floorplans.py#L42-L506)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 ## Detailed Component Analysis
 
@@ -198,12 +198,12 @@ FloorplanCanvas --> FloorplanRoomMeta : "uses"
 ```
 
 **Diagram sources**
-- [FloorplanCanvas.tsx:1-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
-- [floorplanLayout.ts:1-11](file://frontend/lib/floorplanLayout.ts#L1-L11)
+- [FloorplanCanvas.tsx:1-617](frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
+- [floorplanLayout.ts:1-11](frontend/lib/floorplanLayout.ts#L1-L11)
 
 **Section sources**
-- [FloorplanCanvas.tsx:183-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
-- [floorplanLayout.ts:1-11](file://frontend/lib/floorplanLayout.ts#L1-L11)
+- [FloorplanCanvas.tsx:183-617](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L617)
+- [floorplanLayout.ts:1-11](frontend/lib/floorplanLayout.ts#L1-L11)
 
 ### FloorplanRoleViewer
 - Purpose: Role-aware floorplan viewer with presence, occupancy, and device summaries.
@@ -228,12 +228,12 @@ Meta --> Render["Render FloorplanCanvas + Inspector"]
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [floorplanRoomResolve.ts:24-82](file://frontend/lib/floorplanRoomResolve.ts#L24-L82)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [floorplanRoomResolve.ts:24-82](frontend/lib/floorplanRoomResolve.ts#L24-L82)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [floorplanRoomResolve.ts:24-82](file://frontend/lib/floorplanRoomResolve.ts#L24-L82)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [floorplanRoomResolve.ts:24-82](frontend/lib/floorplanRoomResolve.ts#L24-L82)
 
 ### Spatial Data Models and Coordinate Systems
 - Room shape model: id, label, x, y, w, h, optional device_id and node_device_id.
@@ -256,10 +256,10 @@ G --> H["Snap to grid and clamp bounds"]
 ```
 
 **Diagram sources**
-- [floorplanLayout.ts:35-72](file://frontend/lib/floorplanLayout.ts#L35-L72)
+- [floorplanLayout.ts:35-72](frontend/lib/floorplanLayout.ts#L35-L72)
 
 **Section sources**
-- [floorplanLayout.ts:35-72](file://frontend/lib/floorplanLayout.ts#L35-L72)
+- [floorplanLayout.ts:35-72](frontend/lib/floorplanLayout.ts#L35-L72)
 
 ### Room Resolution Mechanisms
 - Numeric ID precedence: room-{id} canonical IDs or pure numeric IDs.
@@ -281,10 +281,10 @@ D --> |None| X["No match"]
 ```
 
 **Diagram sources**
-- [floorplanRoomResolve.ts:24-82](file://frontend/lib/floorplanRoomResolve.ts#L24-L82)
+- [floorplanRoomResolve.ts:24-82](frontend/lib/floorplanRoomResolve.ts#L24-L82)
 
 **Section sources**
-- [floorplanRoomResolve.ts:24-82](file://frontend/lib/floorplanRoomResolve.ts#L24-L82)
+- [floorplanRoomResolve.ts:24-82](frontend/lib/floorplanRoomResolve.ts#L24-L82)
 
 ### Device Positioning Logic and Presence Visualization
 - Presence metadata:
@@ -313,12 +313,12 @@ S --> |No| I["Tone: info"]
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:123-130](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L123-L130)
-- [floorplans_service.py:326-506](file://server/app/services/floorplans.py#L326-L506)
+- [FloorplanRoleViewer.tsx:123-130](frontend/components/floorplan/FloorplanRoleViewer.tsx#L123-L130)
+- [floorplans_service.py:326-506](server/app/services/floorplans.py#L326-L506)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:223-281](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L281)
-- [floorplans_service.py:326-506](file://server/app/services/floorplans.py#L326-L506)
+- [FloorplanRoleViewer.tsx:223-281](frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L281)
+- [floorplans_service.py:326-506](server/app/services/floorplans.py#L326-L506)
 
 ### Real-time Presence Detection and Patient Tracking
 - Telemetry ingestion:
@@ -347,14 +347,14 @@ API-->>Viewer : Presence data rendered in inspector
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [floorplans_service.py:42-506](file://server/app/services/floorplans.py#L42-L506)
-- [floorplans.py:160-177](file://server/app/api/endpoints/floorplans.py#L160-L177)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [floorplans_service.py:42-506](server/app/services/floorplans.py#L42-L506)
+- [floorplans.py:160-177](server/app/api/endpoints/floorplans.py#L160-L177)
 
 **Section sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [floorplans_service.py:42-506](file://server/app/services/floorplans.py#L42-L506)
-- [floorplans.py:160-177](file://server/app/api/endpoints/floorplans.py#L160-L177)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [floorplans_service.py:42-506](server/app/services/floorplans.py#L42-L506)
+- [floorplans.py:160-177](server/app/api/endpoints/floorplans.py#L160-L177)
 
 ### Device Status Indicators and Smart Devices
 - Device status:
@@ -366,8 +366,8 @@ API-->>Viewer : Presence data rendered in inspector
   - Active alerts per room counted and shown as chips.
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:475-507](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L475-L507)
-- [floorplans_service.py:241-266](file://server/app/services/floorplans.py#L241-L266)
+- [FloorplanRoleViewer.tsx:475-507](frontend/components/floorplan/FloorplanRoleViewer.tsx#L475-L507)
+- [floorplans_service.py:241-266](server/app/services/floorplans.py#L241-L266)
 
 ### Save and Provision Workflows
 - Shape alignment:
@@ -387,12 +387,12 @@ R --> W["PUT /floorplans/layout"]
 ```
 
 **Diagram sources**
-- [floorplanSaveProvision.ts:11-64](file://frontend/lib/floorplanSaveProvision.ts#L11-L64)
-- [floorplans.py:202-242](file://server/app/api/endpoints/floorplans.py#L202-L242)
+- [floorplanSaveProvision.ts:11-64](frontend/lib/floorplanSaveProvision.ts#L11-L64)
+- [floorplans.py:202-242](server/app/api/endpoints/floorplans.py#L202-L242)
 
 **Section sources**
-- [floorplanSaveProvision.ts:11-64](file://frontend/lib/floorplanSaveProvision.ts#L11-L64)
-- [floorplans.py:202-242](file://server/app/api/endpoints/floorplans.py#L202-L242)
+- [floorplanSaveProvision.ts:11-64](frontend/lib/floorplanSaveProvision.ts#L11-L64)
+- [floorplans.py:202-242](server/app/api/endpoints/floorplans.py#L202-L242)
 
 ### Integration with MQTT Telemetry and Localization
 - Localization:
@@ -404,8 +404,8 @@ R --> W["PUT /floorplans/layout"]
   - Room transitions recorded in activity timeline when prediction room changes.
 
 **Section sources**
-- [localization_setup.py:493-557](file://server/app/services/localization_setup.py#L493-L557)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [localization_setup.py:493-557](server/app/services/localization_setup.py#L493-L557)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 ## Dependency Analysis
 - Frontend dependencies:
@@ -429,20 +429,20 @@ SVC --> MQTT["mqtt_handler.py"]
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [FloorplanCanvas.tsx:1-617](file://frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve.ts:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplanSaveProvision.ts:1-64](file://frontend/lib/floorplanSaveProvision.ts#L1-L64)
-- [floorplans.py:1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
-- [floorplans_service.py:1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans_models.py:1-48](file://server/app/models/floorplans.py#L1-L48)
-- [mqtt_handler.py:1-667](file://server/app/mqtt_handler.py#L1-L667)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [FloorplanCanvas.tsx:1-617](frontend/components/floorplan/FloorplanCanvas.tsx#L1-L617)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve.ts:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanSaveProvision.ts:1-64](frontend/lib/floorplanSaveProvision.ts#L1-L64)
+- [floorplans.py:1-242](server/app/api/endpoints/floorplans.py#L1-L242)
+- [floorplans_service.py:1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans_models.py:1-48](server/app/models/floorplans.py#L1-L48)
+- [mqtt_handler.py:1-667](server/app/mqtt_handler.py#L1-L667)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplans.py:1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
-- [floorplans_service.py:1-613](file://server/app/services/floorplans.py#L1-L613)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplans.py:1-242](server/app/api/endpoints/floorplans.py#L1-L242)
+- [floorplans_service.py:1-613](server/app/services/floorplans.py#L1-L613)
 
 ## Performance Considerations
 - Canvas rendering:
@@ -471,9 +471,9 @@ SVC --> MQTT["mqtt_handler.py"]
   - Presence dots fall back to initials when avatar URLs are unavailable or broken.
 
 **Section sources**
-- [floorplans.py:210-224](file://server/app/api/endpoints/floorplans.py#L210-L224)
-- [floorplans_service.py:32-506](file://server/app/services/floorplans.py#L32-L506)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [floorplans.py:210-224](server/app/api/endpoints/floorplans.py#L210-L224)
+- [floorplans_service.py:32-506](server/app/services/floorplans.py#L32-L506)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 ## Conclusion
 The WheelSense floorplan visualization combines an interactive SVG canvas with robust presence computation and MQTT-driven telemetry. Room resolution, coordinate normalization, and save/provision workflows ensure accurate and maintainable floorplan layouts. The system supports real-time presence detection, patient tracking, device status indicators, and integrates with localization algorithms and spatial analytics.
@@ -494,6 +494,6 @@ The WheelSense floorplan visualization combines an interactive SVG canvas with r
   - Use compact mode for embedded panels to save space.
 
 **Section sources**
-- [FloorplanCanvas.tsx:183-243](file://frontend/components/floorplan/FloorplanCanvas.tsx#L183-L243)
-- [floorplanRoomResolve.ts:24-82](file://frontend/lib/floorplanRoomResolve.ts#L24-L82)
-- [floorplanSaveProvision.ts:11-64](file://frontend/lib/floorplanSaveProvision.ts#L11-L64)
+- [FloorplanCanvas.tsx:183-243](frontend/components/floorplan/FloorplanCanvas.tsx#L183-L243)
+- [floorplanRoomResolve.ts:24-82](frontend/lib/floorplanRoomResolve.ts#L24-L82)
+- [floorplanSaveProvision.ts:11-64](frontend/lib/floorplanSaveProvision.ts#L11-L64)

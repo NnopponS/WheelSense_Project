@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/observer/messages/page.tsx)
-- [StaffWorkflowMailbox.tsx](file://frontend/components/messaging/StaffWorkflowMailbox.tsx)
-- [MessagingRecipientPicker.tsx](file://frontend/components/messaging/MessagingRecipientPicker.tsx)
-- [WorkflowMessageAttachmentViews.tsx](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx)
-- [workflowMessaging.ts](file://frontend/lib/workflowMessaging.ts)
-- [workflow.py](file://server/app/services/workflow.py)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/schemas/workflow.py)
-- [OperationsConsole.tsx](file://frontend/components/workflow/OperationsConsole.tsx)
-- [test_role_workflow_chat.py](file://server/tests/e2e/test_role_workflow_chat.py)
-- [test_workflow_domains.py](file://server/tests/test_workflow_domains.py)
+- [page.tsx](frontend/app/observer/messages/page.tsx)
+- [StaffWorkflowMailbox.tsx](frontend/components/messaging/StaffWorkflowMailbox.tsx)
+- [MessagingRecipientPicker.tsx](frontend/components/messaging/MessagingRecipientPicker.tsx)
+- [WorkflowMessageAttachmentViews.tsx](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx)
+- [workflowMessaging.ts](frontend/lib/workflowMessaging.ts)
+- [workflow.py](server/app/services/workflow.py)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/schemas/workflow.py)
+- [OperationsConsole.tsx](frontend/components/workflow/OperationsConsole.tsx)
+- [test_role_workflow_chat.py](server/tests/e2e/test_role_workflow_chat.py)
+- [test_workflow_domains.py](server/tests/test_workflow_domains.py)
 </cite>
 
 ## Table of Contents
@@ -63,20 +63,20 @@ SERVICE --> SCHEMAS
 ```
 
 **Diagram sources**
-- [page.tsx:1-7](file://frontend/app/observer/messages/page.tsx#L1-L7)
-- [StaffWorkflowMailbox.tsx:1-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
-- [MessagingRecipientPicker.tsx:1-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L1-L155)
-- [WorkflowMessageAttachmentViews.tsx:1-142](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L1-L142)
-- [workflowMessaging.ts:1-21](file://frontend/lib/workflowMessaging.ts#L1-L21)
-- [workflow.py:1-200](file://server/app/api/endpoints/workflow.py#L1-L200)
-- [workflow.py:1-200](file://server/app/services/workflow.py#L1-L200)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
-- [workflow.py:124-178](file://server/app/schemas/workflow.py#L124-L178)
+- [page.tsx:1-7](frontend/app/observer/messages/page.tsx#L1-L7)
+- [StaffWorkflowMailbox.tsx:1-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
+- [MessagingRecipientPicker.tsx:1-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L1-L155)
+- [WorkflowMessageAttachmentViews.tsx:1-142](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L1-L142)
+- [workflowMessaging.ts:1-21](frontend/lib/workflowMessaging.ts#L1-L21)
+- [workflow.py:1-200](server/app/api/endpoints/workflow.py#L1-L200)
+- [workflow.py:1-200](server/app/services/workflow.py#L1-L200)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
+- [workflow.py:124-178](server/app/schemas/workflow.py#L124-L178)
 
 **Section sources**
-- [page.tsx:1-7](file://frontend/app/observer/messages/page.tsx#L1-L7)
-- [StaffWorkflowMailbox.tsx:1-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
-- [workflow.py:1-200](file://server/app/api/endpoints/workflow.py#L1-L200)
+- [page.tsx:1-7](frontend/app/observer/messages/page.tsx#L1-L7)
+- [StaffWorkflowMailbox.tsx:1-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
+- [workflow.py:1-200](server/app/api/endpoints/workflow.py#L1-L200)
 
 ## Core Components
 - Observer Messages Page: Renders the observer’s workflow mailbox via the StaffWorkflowMailbox component.
@@ -89,15 +89,15 @@ SERVICE --> SCHEMAS
 - Models and Schemas: Define RoleMessage, attachments, and validation.
 
 **Section sources**
-- [page.tsx:1-7](file://frontend/app/observer/messages/page.tsx#L1-L7)
-- [StaffWorkflowMailbox.tsx:1-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
-- [MessagingRecipientPicker.tsx:1-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L1-L155)
-- [WorkflowMessageAttachmentViews.tsx:1-142](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L1-L142)
-- [workflowMessaging.ts:1-21](file://frontend/lib/workflowMessaging.ts#L1-L21)
-- [workflow.py:980-1179](file://server/app/services/workflow.py#L980-L1179)
-- [workflow.py:368-384](file://server/app/api/endpoints/workflow.py#L368-L384)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
-- [workflow.py:124-178](file://server/app/schemas/workflow.py#L124-L178)
+- [page.tsx:1-7](frontend/app/observer/messages/page.tsx#L1-L7)
+- [StaffWorkflowMailbox.tsx:1-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
+- [MessagingRecipientPicker.tsx:1-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L1-L155)
+- [WorkflowMessageAttachmentViews.tsx:1-142](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L1-L142)
+- [workflowMessaging.ts:1-21](frontend/lib/workflowMessaging.ts#L1-L21)
+- [workflow.py:980-1179](server/app/services/workflow.py#L980-L1179)
+- [workflow.py:368-384](server/app/api/endpoints/workflow.py#L368-L384)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
+- [workflow.py:124-178](server/app/schemas/workflow.py#L124-L178)
 
 ## Architecture Overview
 The observer messaging architecture integrates frontend UI with backend services and persistence:
@@ -123,11 +123,11 @@ API-->>Obs : "201 Created"
 ```
 
 **Diagram sources**
-- [StaffWorkflowMailbox.tsx:219-259](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L219-L259)
-- [workflow.py:354-365](file://server/app/api/endpoints/workflow.py#L354-L365)
-- [workflow.py:980-1017](file://server/app/services/workflow.py#L980-L1017)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
-- [workflow.py:160-178](file://server/app/schemas/workflow.py#L160-L178)
+- [StaffWorkflowMailbox.tsx:219-259](frontend/components/messaging/StaffWorkflowMailbox.tsx#L219-L259)
+- [workflow.py:354-365](server/app/api/endpoints/workflow.py#L354-L365)
+- [workflow.py:980-1017](server/app/services/workflow.py#L980-L1017)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
+- [workflow.py:160-178](server/app/schemas/workflow.py#L160-L178)
 
 ## Detailed Component Analysis
 
@@ -136,7 +136,7 @@ API-->>Obs : "201 Created"
 - Integrates with the observer role shell and navigation.
 
 **Section sources**
-- [page.tsx:1-7](file://frontend/app/observer/messages/page.tsx#L1-L7)
+- [page.tsx:1-7](frontend/app/observer/messages/page.tsx#L1-L7)
 
 ### StaffWorkflowMailbox (Observer)
 - Variant configuration: observer mailbox defaults to head_nurse as the default filter role for composition.
@@ -168,13 +168,13 @@ CloseCompose --> End(["Back to mailbox"])
 ```
 
 **Diagram sources**
-- [StaffWorkflowMailbox.tsx:153-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
+- [StaffWorkflowMailbox.tsx:153-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
 
 **Section sources**
-- [StaffWorkflowMailbox.tsx:84-123](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L84-L123)
-- [StaffWorkflowMailbox.tsx:167-183](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L167-L183)
-- [StaffWorkflowMailbox.tsx:595-645](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L595-L645)
-- [StaffWorkflowMailbox.tsx:685-701](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L685-L701)
+- [StaffWorkflowMailbox.tsx:84-123](frontend/components/messaging/StaffWorkflowMailbox.tsx#L84-L123)
+- [StaffWorkflowMailbox.tsx:167-183](frontend/components/messaging/StaffWorkflowMailbox.tsx#L167-L183)
+- [StaffWorkflowMailbox.tsx:595-645](frontend/components/messaging/StaffWorkflowMailbox.tsx#L595-L645)
+- [StaffWorkflowMailbox.tsx:685-701](frontend/components/messaging/StaffWorkflowMailbox.tsx#L685-L701)
 
 ### MessagingRecipientPicker
 - Filters recipients by role (including patient vs staff distinction).
@@ -182,8 +182,8 @@ CloseCompose --> End(["Back to mailbox"])
 - Presents candidate list with selection feedback.
 
 **Section sources**
-- [MessagingRecipientPicker.tsx:21-48](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L21-L48)
-- [MessagingRecipientPicker.tsx:68-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
+- [MessagingRecipientPicker.tsx:21-48](frontend/components/messaging/MessagingRecipientPicker.tsx#L21-L48)
+- [MessagingRecipientPicker.tsx:68-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
 
 ### WorkflowMessageAttachmentViews
 - Compose attachments:
@@ -194,9 +194,9 @@ CloseCompose --> End(["Back to mailbox"])
   - Uses cookie-authenticated endpoint for secure retrieval.
 
 **Section sources**
-- [WorkflowMessageAttachmentViews.tsx:26-103](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
-- [WorkflowMessageAttachmentViews.tsx:111-141](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L111-L141)
-- [workflowMessaging.ts:4-6](file://frontend/lib/workflowMessaging.ts#L4-L6)
+- [WorkflowMessageAttachmentViews.tsx:26-103](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
+- [WorkflowMessageAttachmentViews.tsx:111-141](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L111-L141)
+- [workflowMessaging.ts:4-6](frontend/lib/workflowMessaging.ts#L4-L6)
 
 ### Backend Workflow Service and Endpoints
 - Message creation:
@@ -263,17 +263,17 @@ RoleMessage <-- RoleMessageOut : "serialize"
 ```
 
 **Diagram sources**
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
-- [workflow.py:138-158](file://server/app/schemas/workflow.py#L138-L158)
-- [workflow.py:160-197](file://server/app/schemas/workflow.py#L160-L197)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
+- [workflow.py:138-158](server/app/schemas/workflow.py#L138-L158)
+- [workflow.py:160-197](server/app/schemas/workflow.py#L160-L197)
 
 **Section sources**
-- [workflow.py:980-1017](file://server/app/services/workflow.py#L980-L1017)
-- [workflow.py:1019-1055](file://server/app/services/workflow.py#L1019-L1055)
-- [workflow.py:1057-1080](file://server/app/services/workflow.py#L1057-L1080)
-- [workflow.py:1082-1100](file://server/app/services/workflow.py#L1082-L1100)
-- [workflow.py:354-384](file://server/app/api/endpoints/workflow.py#L354-L384)
-- [workflow.py:124-178](file://server/app/schemas/workflow.py#L124-L178)
+- [workflow.py:980-1017](server/app/services/workflow.py#L980-L1017)
+- [workflow.py:1019-1055](server/app/services/workflow.py#L1019-L1055)
+- [workflow.py:1057-1080](server/app/services/workflow.py#L1057-L1080)
+- [workflow.py:1082-1100](server/app/services/workflow.py#L1082-L1100)
+- [workflow.py:354-384](server/app/api/endpoints/workflow.py#L354-L384)
+- [workflow.py:124-178](server/app/schemas/workflow.py#L124-L178)
 
 ### Observer-Specific Communication Patterns
 - Observer receives role-based broadcasts and direct messages.
@@ -283,9 +283,9 @@ RoleMessage <-- RoleMessageOut : "serialize"
   - Operations Console supports replying to a workflow item by routing to its target role/user and attaching the message context.
 
 **Section sources**
-- [StaffWorkflowMailbox.tsx:104-122](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L104-L122)
-- [OperationsConsole.tsx:1160-1188](file://frontend/components/workflow/OperationsConsole.tsx#L1160-L1188)
-- [test_role_workflow_chat.py:46-89](file://server/tests/e2e/test_role_workflow_chat.py#L46-L89)
+- [StaffWorkflowMailbox.tsx:104-122](frontend/components/messaging/StaffWorkflowMailbox.tsx#L104-L122)
+- [OperationsConsole.tsx:1160-1188](frontend/components/workflow/OperationsConsole.tsx#L1160-L1188)
+- [test_role_workflow_chat.py:46-89](server/tests/e2e/test_role_workflow_chat.py#L46-L89)
 
 ### Message Routing and Thread Management
 - Routing:
@@ -296,17 +296,17 @@ RoleMessage <-- RoleMessageOut : "serialize"
   - Endpoints support retrieving messages for a specific workflow item.
 
 **Section sources**
-- [workflow.py:1019-1055](file://server/app/services/workflow.py#L1019-L1055)
-- [workflow.py:633-663](file://server/app/api/endpoints/workflow.py#L633-L663)
+- [workflow.py:1019-1055](server/app/services/workflow.py#L1019-L1055)
+- [workflow.py:633-663](server/app/api/endpoints/workflow.py#L633-L663)
 
 ### Audit Trail Maintenance
 - On send: logs an event in the messaging domain with details such as recipient role/user and attachment count.
 - On read/unread and delete: backend enforces permissions and updates state accordingly.
 
 **Section sources**
-- [workflow.py:997-1013](file://server/app/services/workflow.py#L997-L1013)
-- [workflow.py:1057-1080](file://server/app/services/workflow.py#L1057-L1080)
-- [workflow.py:1082-1100](file://server/app/services/workflow.py#L1082-L1100)
+- [workflow.py:997-1013](server/app/services/workflow.py#L997-L1013)
+- [workflow.py:1057-1080](server/app/services/workflow.py#L1057-L1080)
+- [workflow.py:1082-1100](server/app/services/workflow.py#L1082-L1100)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -329,20 +329,20 @@ UTILS --> API
 ```
 
 **Diagram sources**
-- [StaffWorkflowMailbox.tsx:1-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
-- [workflow.py:1-200](file://server/app/api/endpoints/workflow.py#L1-L200)
-- [workflow.py:1-200](file://server/app/services/workflow.py#L1-L200)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [workflow.py:1-200](file://server/app/schemas/workflow.py#L1-L200)
-- [workflowMessaging.ts:1-21](file://frontend/lib/workflowMessaging.ts#L1-L21)
+- [StaffWorkflowMailbox.tsx:1-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
+- [workflow.py:1-200](server/app/api/endpoints/workflow.py#L1-L200)
+- [workflow.py:1-200](server/app/services/workflow.py#L1-L200)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [workflow.py:1-200](server/app/schemas/workflow.py#L1-L200)
+- [workflowMessaging.ts:1-21](frontend/lib/workflowMessaging.ts#L1-L21)
 
 **Section sources**
-- [StaffWorkflowMailbox.tsx:1-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
-- [workflow.py:1-200](file://server/app/api/endpoints/workflow.py#L1-L200)
-- [workflow.py:1-200](file://server/app/services/workflow.py#L1-L200)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [workflow.py:1-200](file://server/app/schemas/workflow.py#L1-L200)
-- [workflowMessaging.ts:1-21](file://frontend/lib/workflowMessaging.ts#L1-L21)
+- [StaffWorkflowMailbox.tsx:1-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L1-L723)
+- [workflow.py:1-200](server/app/api/endpoints/workflow.py#L1-L200)
+- [workflow.py:1-200](server/app/services/workflow.py#L1-L200)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [workflow.py:1-200](server/app/schemas/workflow.py#L1-L200)
+- [workflowMessaging.ts:1-21](frontend/lib/workflowMessaging.ts#L1-L21)
 
 ## Performance Considerations
 - Pagination and limits:
@@ -373,12 +373,12 @@ Common issues and resolutions:
   - Observer can acknowledge directives scoped to their role.
 
 **Section sources**
-- [StaffWorkflowMailbox.tsx:219-259](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L219-L259)
-- [WorkflowMessageAttachmentViews.tsx:69-78](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L69-L78)
-- [workflow.py:1057-1080](file://server/app/services/workflow.py#L1057-L1080)
-- [workflow.py:1082-1100](file://server/app/services/workflow.py#L1082-L1100)
-- [test_role_workflow_chat.py:46-89](file://server/tests/e2e/test_role_workflow_chat.py#L46-L89)
-- [test_workflow_domains.py:378-416](file://server/tests/test_workflow_domains.py#L378-L416)
+- [StaffWorkflowMailbox.tsx:219-259](frontend/components/messaging/StaffWorkflowMailbox.tsx#L219-L259)
+- [WorkflowMessageAttachmentViews.tsx:69-78](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L69-L78)
+- [workflow.py:1057-1080](server/app/services/workflow.py#L1057-L1080)
+- [workflow.py:1082-1100](server/app/services/workflow.py#L1082-L1100)
+- [test_role_workflow_chat.py:46-89](server/tests/e2e/test_role_workflow_chat.py#L46-L89)
+- [test_workflow_domains.py:378-416](server/tests/test_workflow_domains.py#L378-L416)
 
 ## Conclusion
 The Observer Messaging & Communication system provides a robust, role-aware, and workflow-integrated messaging solution. The StaffWorkflowMailbox offers a streamlined compose and read experience, with recipient filtering, attachments, and thread-aware routing. Backend services enforce security and auditability while enabling seamless integration with care workflows. The included tests demonstrate end-to-end observer messaging and workflow item association, ensuring reliable team coordination and traceability.

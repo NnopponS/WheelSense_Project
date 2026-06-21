@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [chat_actions.py](file://server/app/schemas/chat_actions.py)
-- [models_chat_actions.py](file://server/app/models/chat_actions.py)
-- [ai_chat.py](file://server/app/services/ai_chat.py)
-- [mcp_server.py](file://server/app/mcp/server.py)
-- [AIChatPopup.tsx](file://frontend/components/ai/AIChatPopup.tsx)
-- [ActionPlanPreview.tsx](file://frontend/components/ai/ActionPlanPreview.tsx)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [chat_actions.py](server/app/schemas/chat_actions.py)
+- [models_chat_actions.py](server/app/models/chat_actions.py)
+- [ai_chat.py](server/app/services/ai_chat.py)
+- [mcp_server.py](server/app/mcp/server.py)
+- [AIChatPopup.tsx](frontend/components/ai/AIChatPopup.tsx)
+- [ActionPlanPreview.tsx](frontend/components/ai/ActionPlanPreview.tsx)
 </cite>
 
 ## Table of Contents
@@ -75,28 +75,28 @@ PLAN --> SCH
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [intent.py:347-1023](file://server/app/agent_runtime/intent.py#L347-L1023)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [ai_chat.py:1165-1249](file://server/app/services/ai_chat.py#L1165-L1249)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
-- [chat_actions.py:17-31](file://server/app/schemas/chat_actions.py#L17-L31)
-- [models_chat_actions.py:11-62](file://server/app/models/chat_actions.py#L11-L62)
-- [AIChatPopup.tsx:363-433](file://frontend/components/ai/AIChatPopup.tsx#L363-L433)
-- [ActionPlanPreview.tsx:260-292](file://frontend/components/ai/ActionPlanPreview.tsx#L260-L292)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [intent.py:347-1023](server/app/agent_runtime/intent.py#L347-L1023)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [ai_chat.py:1165-1249](server/app/services/ai_chat.py#L1165-L1249)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
+- [chat_actions.py:17-31](server/app/schemas/chat_actions.py#L17-L31)
+- [models_chat_actions.py:11-62](server/app/models/chat_actions.py#L11-L62)
+- [AIChatPopup.tsx:363-433](frontend/components/ai/AIChatPopup.tsx#L363-L433)
+- [ActionPlanPreview.tsx:260-292](frontend/components/ai/ActionPlanPreview.tsx#L260-L292)
 
 **Section sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [intent.py:347-1023](file://server/app/agent_runtime/intent.py#L347-L1023)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [ai_chat.py:1165-1249](file://server/app/services/ai_chat.py#L1165-L1249)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
-- [chat_actions.py:17-31](file://server/app/schemas/chat_actions.py#L17-L31)
-- [models_chat_actions.py:11-62](file://server/app/models/chat_actions.py#L11-L62)
-- [AIChatPopup.tsx:363-433](file://frontend/components/ai/AIChatPopup.tsx#L363-L433)
-- [ActionPlanPreview.tsx:260-292](file://frontend/components/ai/ActionPlanPreview.tsx#L260-L292)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [intent.py:347-1023](server/app/agent_runtime/intent.py#L347-L1023)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [ai_chat.py:1165-1249](server/app/services/ai_chat.py#L1165-L1249)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
+- [chat_actions.py:17-31](server/app/schemas/chat_actions.py#L17-L31)
+- [models_chat_actions.py:11-62](server/app/models/chat_actions.py#L11-L62)
+- [AIChatPopup.tsx:363-433](frontend/components/ai/AIChatPopup.tsx#L363-L433)
+- [ActionPlanPreview.tsx:260-292](frontend/components/ai/ActionPlanPreview.tsx#L260-L292)
 
 ## Core Components
 - IntentClassifier: Regex-based and semantic intent detection, compound intent parsing, confidence scoring, and execution plan building.
@@ -108,15 +108,15 @@ PLAN --> SCH
 - Frontend Integration: Confirms and executes proposals, displays affected entities and permissions.
 
 **Section sources**
-- [intent.py:347-1023](file://server/app/agent_runtime/intent.py#L347-L1023)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [chat_actions.py:17-31](file://server/app/schemas/chat_actions.py#L17-L31)
-- [models_chat_actions.py:11-62](file://server/app/models/chat_actions.py#L11-L62)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
-- [AIChatPopup.tsx:363-433](file://frontend/components/ai/AIChatPopup.tsx#L363-L433)
-- [ActionPlanPreview.tsx:260-292](file://frontend/components/ai/ActionPlanPreview.tsx#L260-L292)
+- [intent.py:347-1023](server/app/agent_runtime/intent.py#L347-L1023)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [chat_actions.py:17-31](server/app/schemas/chat_actions.py#L17-L31)
+- [models_chat_actions.py:11-62](server/app/models/chat_actions.py#L11-L62)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
+- [AIChatPopup.tsx:363-433](frontend/components/ai/AIChatPopup.tsx#L363-L433)
+- [ActionPlanPreview.tsx:260-292](frontend/components/ai/ActionPlanPreview.tsx#L260-L292)
 
 ## Architecture Overview
 The proposal stage selects among:
@@ -164,13 +164,13 @@ API-->>User : AgentRuntimeProposeResponse
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-1023](file://server/app/agent_runtime/intent.py#L347-L1023)
-- [ai_chat.py:1165-1249](file://server/app/services/ai_chat.py#L1165-L1249)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
-- [models_chat_actions.py:11-62](file://server/app/models/chat_actions.py#L11-L62)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-1023](server/app/agent_runtime/intent.py#L347-L1023)
+- [ai_chat.py:1165-1249](server/app/services/ai_chat.py#L1165-L1249)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
+- [models_chat_actions.py:11-62](server/app/models/chat_actions.py#L11-L62)
 
 ## Detailed Component Analysis
 
@@ -196,13 +196,13 @@ AutoRun --> End
 ```
 
 **Diagram sources**
-- [intent.py:887-915](file://server/app/agent_runtime/intent.py#L887-L915)
-- [intent.py:916-1011](file://server/app/agent_runtime/intent.py#L916-L1011)
-- [service.py:202-321](file://server/app/agent_runtime/service.py#L202-L321)
+- [intent.py:887-915](server/app/agent_runtime/intent.py#L887-L915)
+- [intent.py:916-1011](server/app/agent_runtime/intent.py#L916-L1011)
+- [service.py:202-321](server/app/agent_runtime/service.py#L202-L321)
 
 **Section sources**
-- [intent.py:347-1023](file://server/app/agent_runtime/intent.py#L347-L1023)
-- [service.py:202-321](file://server/app/agent_runtime/service.py#L202-L321)
+- [intent.py:347-1023](server/app/agent_runtime/intent.py#L347-L1023)
+- [service.py:202-321](server/app/agent_runtime/service.py#L202-L321)
 
 ### LLM Tool Routing Mechanism (MCP-native)
 - Role-based tool allow-list: Tools are exposed to the LLM based on the acting user’s role.
@@ -235,22 +235,22 @@ end
 ```
 
 **Diagram sources**
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [ai_chat.py:1165-1249](file://server/app/services/ai_chat.py#L1165-L1249)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [ai_chat.py:1165-1249](server/app/services/ai_chat.py#L1165-L1249)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
 
 **Section sources**
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [ai_chat.py:1165-1249](file://server/app/services/ai_chat.py#L1165-L1249)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [ai_chat.py:1165-1249](server/app/services/ai_chat.py#L1165-L1249)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
 
 ### Conversation Fast Path for General Chat
 - Conservative heuristic: Messages that are short, lack digits, and do not hint at domain-specific commands are routed directly to the AI chat model.
 - Prevents unnecessary intent/classification overhead for small talk.
 
 **Section sources**
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [service.py:356-367](file://server/app/agent_runtime/service.py#L356-L367)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [service.py:356-367](server/app/agent_runtime/service.py#L356-L367)
 
 ### Execution Plan Building and Affected Entity Tracking
 - ExecutionPlan aggregates steps, permission basis, affected entities, and risk level.
@@ -283,11 +283,11 @@ ExecutionPlan "1" --> "*" ExecutionPlanStep : "contains"
 ```
 
 **Diagram sources**
-- [agent_runtime.py:10-30](file://server/app/schemas/agent_runtime.py#L10-L30)
+- [agent_runtime.py:10-30](server/app/schemas/agent_runtime.py#L10-L30)
 
 **Section sources**
-- [intent.py:916-1011](file://server/app/agent_runtime/intent.py#L916-L1011)
-- [agent_runtime.py:10-30](file://server/app/schemas/agent_runtime.py#L10-L30)
+- [intent.py:916-1011](server/app/agent_runtime/intent.py#L916-L1011)
+- [agent_runtime.py:10-30](server/app/schemas/agent_runtime.py#L10-L30)
 
 ### Permission Basis Determination
 - Permission basis is derived from tool names and intent metadata.
@@ -295,17 +295,17 @@ ExecutionPlan "1" --> "*" ExecutionPlanStep : "contains"
 - For intent classification, permission basis is taken from the intent metadata.
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [llm_tool_router.py:136-170](file://server/app/agent_runtime/llm_tool_router.py#L136-L170)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [llm_tool_router.py:136-170](server/app/agent_runtime/llm_tool_router.py#L136-L170)
 
 ### Automatic Tool Execution for High-Confidence Read-Only Operations
 - High-confidence read-only tools (e.g., list_visible_patients, list_active_alerts) are executed immediately and grounded answers are produced.
 - Patient-scoped reads (e.g., get_patient_vitals, get_patient_timeline) may auto-run even with entities present.
 
 **Section sources**
-- [service.py:281-310](file://server/app/agent_runtime/service.py#L281-L310)
-- [intent.py:47-56](file://server/app/agent_runtime/intent.py#L47-L56)
-- [intent.py:61-66](file://server/app/agent_runtime/intent.py#L61-L66)
+- [service.py:281-310](server/app/agent_runtime/service.py#L281-L310)
+- [intent.py:47-56](server/app/agent_runtime/intent.py#L47-L56)
+- [intent.py:61-66](server/app/agent_runtime/intent.py#L61-L66)
 
 ### Transition from Proposal to Confirmation
 - When a plan is generated, the system returns mode="plan" with an execution plan and an action payload.
@@ -324,12 +324,12 @@ API-->>UI : execution_result
 ```
 
 **Diagram sources**
-- [AIChatPopup.tsx:363-433](file://frontend/components/ai/AIChatPopup.tsx#L363-L433)
-- [ai_chat.py:1198-1249](file://server/app/services/ai_chat.py#L1198-L1249)
+- [AIChatPopup.tsx:363-433](frontend/components/ai/AIChatPopup.tsx#L363-L433)
+- [ai_chat.py:1198-1249](server/app/services/ai_chat.py#L1198-L1249)
 
 **Section sources**
-- [AIChatPopup.tsx:363-433](file://frontend/components/ai/AIChatPopup.tsx#L363-L433)
-- [ai_chat.py:1198-1249](file://server/app/services/ai_chat.py#L1198-L1249)
+- [AIChatPopup.tsx:363-433](frontend/components/ai/AIChatPopup.tsx#L363-L433)
+- [ai_chat.py:1198-1249](server/app/services/ai_chat.py#L1198-L1249)
 
 ### Practical Examples
 
@@ -347,11 +347,11 @@ API-->>UI : execution_result
   - Message matches small talk pattern; AI reply is returned without intent/classification.
 
 **Section sources**
-- [intent.py:887-915](file://server/app/agent_runtime/intent.py#L887-L915)
-- [intent.py:916-1011](file://server/app/agent_runtime/intent.py#L916-L1011)
-- [service.py:281-310](file://server/app/agent_runtime/service.py#L281-L310)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [intent.py:887-915](server/app/agent_runtime/intent.py#L887-L915)
+- [intent.py:916-1011](server/app/agent_runtime/intent.py#L916-L1011)
+- [service.py:281-310](server/app/agent_runtime/service.py#L281-L310)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 ## Dependency Analysis
 - Agent runtime orchestrator depends on:
@@ -372,22 +372,22 @@ SRV --> SCH["schemas/chat_actions.py"]
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [intent.py:347-1023](file://server/app/agent_runtime/intent.py#L347-L1023)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [ai_chat.py:1165-1249](file://server/app/services/ai_chat.py#L1165-L1249)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
-- [models_chat_actions.py:11-62](file://server/app/models/chat_actions.py#L11-L62)
-- [chat_actions.py:17-31](file://server/app/schemas/chat_actions.py#L17-L31)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [intent.py:347-1023](server/app/agent_runtime/intent.py#L347-L1023)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [ai_chat.py:1165-1249](server/app/services/ai_chat.py#L1165-L1249)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
+- [models_chat_actions.py:11-62](server/app/models/chat_actions.py#L11-L62)
+- [chat_actions.py:17-31](server/app/schemas/chat_actions.py#L17-L31)
 
 **Section sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [intent.py:347-1023](file://server/app/agent_runtime/intent.py#L347-L1023)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [ai_chat.py:1165-1249](file://server/app/services/ai_chat.py#L1165-L1249)
-- [mcp_server.py:122-146](file://server/app/mcp/server.py#L122-L146)
-- [models_chat_actions.py:11-62](file://server/app/models/chat_actions.py#L11-L62)
-- [chat_actions.py:17-31](file://server/app/schemas/chat_actions.py#L17-L31)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [intent.py:347-1023](server/app/agent_runtime/intent.py#L347-L1023)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [ai_chat.py:1165-1249](server/app/services/ai_chat.py#L1165-L1249)
+- [mcp_server.py:122-146](server/app/mcp/server.py#L122-L146)
+- [models_chat_actions.py:11-62](server/app/models/chat_actions.py#L11-L62)
+- [chat_actions.py:17-31](server/app/schemas/chat_actions.py#L17-L31)
 
 ## Performance Considerations
 - Semantic embeddings are lazily loaded and cached per model name to avoid repeated initialization.
@@ -405,10 +405,10 @@ Common issues and resolutions:
 - MCP tool execution errors: Logged with exception details; UI surfaces user-friendly messages.
 
 **Section sources**
-- [service.py:378-382](file://server/app/agent_runtime/service.py#L378-L382)
-- [service.py:427-442](file://server/app/agent_runtime/service.py#L427-L442)
-- [llm_tool_router.py:231-263](file://server/app/agent_runtime/llm_tool_router.py#L231-L263)
-- [llm_tool_router.py:285-299](file://server/app/agent_runtime/llm_tool_router.py#L285-L299)
+- [service.py:378-382](server/app/agent_runtime/service.py#L378-L382)
+- [service.py:427-442](server/app/agent_runtime/service.py#L427-L442)
+- [llm_tool_router.py:231-263](server/app/agent_runtime/llm_tool_router.py#L231-L263)
+- [llm_tool_router.py:285-299](server/app/agent_runtime/llm_tool_router.py#L285-L299)
 
 ## Conclusion
 The Action Proposal Stage integrates multiple pathways to handle user intent efficiently: conversation fast-path for small talk, LLM-native MCP tool routing for precise tool selection, and robust intent classification with plan building for complex or risky operations. High-confidence read-only tools are auto-executed for quick responses, while write operations are presented as plans requiring confirmation. The system tracks affected entities and permission basis, persists proposals, and provides a clear transition to confirmation and execution.
@@ -423,11 +423,11 @@ The Action Proposal Stage integrates multiple pathways to handle user intent eff
 - ChatActionProposeIn: defines the proposal payload persisted for confirmation/execution.
 
 **Section sources**
-- [agent_runtime.py:32-57](file://server/app/schemas/agent_runtime.py#L32-L57)
-- [chat_actions.py:17-31](file://server/app/schemas/chat_actions.py#L17-L31)
+- [agent_runtime.py:32-57](server/app/schemas/agent_runtime.py#L32-L57)
+- [chat_actions.py:17-31](server/app/schemas/chat_actions.py#L17-L31)
 
 ### B. Frontend Integration Notes
 - Confirm and execute flows are handled by the frontend component, which posts to the chat actions endpoints and updates UI state based on step results.
 
 **Section sources**
-- [AIChatPopup.tsx:363-433](file://frontend/components/ai/AIChatPopup.tsx#L363-L433)
+- [AIChatPopup.tsx:363-433](frontend/components/ai/AIChatPopup.tsx#L363-L433)

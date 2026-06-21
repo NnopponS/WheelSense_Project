@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [server.py](file://server/app/mcp/server.py)
-- [context.py](file://server/app/mcp/context.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [mcp_auth.py](file://server/app/api/endpoints/mcp_auth.py)
-- [mcp_auth_schemas.py](file://server/app/schemas/mcp_auth.py)
-- [mcp_tokens.py](file://server/app/models/mcp_tokens.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [main.py](file://server/app/main.py)
-- [config.py](file://server/app/config.py)
-- [MCP-README.md](file://docs/MCP-README.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [server.py](server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [auth.py](server/app/mcp/auth.py)
+- [mcp_auth.py](server/app/api/endpoints/mcp_auth.py)
+- [mcp_auth_schemas.py](server/app/schemas/mcp_auth.py)
+- [mcp_tokens.py](server/app/models/mcp_tokens.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [main.py](server/app/main.py)
+- [config.py](server/app/config.py)
+- [MCP-README.md](docs/MCP-README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 </cite>
 
 ## Table of Contents
@@ -48,16 +48,16 @@ FastMCP --> Prompts["MCP Prompts<br/>server/app/mcp/server.py"]
 ```
 
 **Diagram sources**
-- [main.py:117-122](file://server/app/main.py#L117-L122)
-- [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
-- [auth.py:16-29](file://server/app/mcp/auth.py#L16-L29)
-- [context.py:8-21](file://server/app/mcp/context.py#L8-L21)
+- [main.py:117-122](server/app/main.py#L117-L122)
+- [server.py:110-111](server/app/mcp/server.py#L110-L111)
+- [auth.py:16-29](server/app/mcp/auth.py#L16-L29)
+- [context.py:8-21](server/app/mcp/context.py#L8-L21)
 
 **Section sources**
-- [main.py:117-122](file://server/app/main.py#L117-L122)
-- [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
-- [auth.py:16-29](file://server/app/mcp/auth.py#L16-L29)
-- [context.py:8-21](file://server/app/mcp/context.py#L8-L21)
+- [main.py:117-122](server/app/main.py#L117-L122)
+- [server.py:110-111](server/app/mcp/server.py#L110-L111)
+- [auth.py:16-29](server/app/mcp/auth.py#L16-L29)
+- [context.py:8-21](server/app/mcp/context.py#L8-L21)
 
 ## Core Components
 This section outlines the core building blocks of the MCP server implementation.
@@ -95,11 +95,11 @@ This section outlines the core building blocks of the MCP server implementation.
   - Tools implement workspace scoping, visibility policies, and domain-specific validations.
 
 **Section sources**
-- [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
-- [server.py:179-281](file://server/app/mcp/server.py#L179-L281)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
-- [MCP-README.md:36-79](file://docs/MCP-README.md#L36-L79)
+- [server.py:110-111](server/app/mcp/server.py#L110-L111)
+- [server.py:179-281](server/app/mcp/server.py#L179-L281)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
+- [MCP-README.md:36-79](docs/MCP-README.md#L36-L79)
 
 ## Architecture Overview
 The MCP server architecture integrates tightly with the WheelSense backend to provide secure, scope-based access to workspace data and operations.
@@ -138,16 +138,16 @@ FastMCPApp --> AnalyticsSvc
 ```
 
 **Diagram sources**
-- [main.py:117-122](file://server/app/main.py#L117-L122)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
-- [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
+- [main.py:117-122](server/app/main.py#L117-L122)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
+- [server.py:110-111](server/app/mcp/server.py#L110-L111)
 
 **Section sources**
-- [main.py:117-122](file://server/app/main.py#L117-L122)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
-- [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
+- [main.py:117-122](server/app/main.py#L117-L122)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
+- [server.py:110-111](server/app/mcp/server.py#L110-L111)
 
 ## Detailed Component Analysis
 
@@ -169,12 +169,12 @@ end
 ```
 
 **Diagram sources**
-- [main.py:24-25](file://server/app/main.py#L24-L25)
-- [main.py:117-122](file://server/app/main.py#L117-L122)
+- [main.py:24-25](server/app/main.py#L24-L25)
+- [main.py:117-122](server/app/main.py#L117-L122)
 
 **Section sources**
-- [main.py:24-25](file://server/app/main.py#L24-L25)
-- [main.py:117-122](file://server/app/main.py#L117-L122)
+- [main.py:24-25](server/app/main.py#L24-L25)
+- [main.py:117-122](server/app/main.py#L117-L122)
 
 ### Authentication Wrapper Implementation
 The McpAuthMiddleware enforces origin validation, Bearer token authentication, and MCP token revocation checks. It resolves effective scopes and injects actor context.
@@ -199,14 +199,14 @@ Middleware-->>Client : Forward to FastMCP app
 ```
 
 **Diagram sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [mcp_auth.py:94-178](file://server/app/api/endpoints/mcp_auth.py#L94-L178)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [mcp_auth.py:94-178](server/app/api/endpoints/mcp_auth.py#L94-L178)
 
 **Section sources**
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [mcp_auth.py:94-178](file://server/app/api/endpoints/mcp_auth.py#L94-L178)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [mcp_auth.py:94-178](server/app/api/endpoints/mcp_auth.py#L94-L178)
 
 ### MCP Context System
 The actor context system manages authenticated user identity, workspace scope, role, and effective scopes using contextvars. It ensures that every MCP operation runs within the correct context.
@@ -229,10 +229,10 @@ McpActorContext <.. ContextManager : "used by"
 ```
 
 **Diagram sources**
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 **Section sources**
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 ### MCP Resource System
 The MCP resource system exposes live data feeds via wheelsense:// URIs. Resources are registered with metadata and MIME types.
@@ -249,10 +249,10 @@ Error --> Respond
 ```
 
 **Diagram sources**
-- [server.py:179-221](file://server/app/mcp/server.py#L179-L221)
+- [server.py:179-221](server/app/mcp/server.py#L179-L221)
 
 **Section sources**
-- [server.py:179-221](file://server/app/mcp/server.py#L179-L221)
+- [server.py:179-221](server/app/mcp/server.py#L179-L221)
 
 ### MCP Tool Registration Patterns
 Tools are registered with structured output schemas, permission annotations, and scope enforcement. Each tool validates actor context, applies workspace scoping, and performs domain-specific validations.
@@ -272,12 +272,12 @@ FastMCP-->>Client : Structured Output
 ```
 
 **Diagram sources**
-- [server.py:283-312](file://server/app/mcp/server.py#L283-L312)
-- [server.py:354-385](file://server/app/mcp/server.py#L354-L385)
+- [server.py:283-312](server/app/mcp/server.py#L283-L312)
+- [server.py:354-385](server/app/mcp/server.py#L354-L385)
 
 **Section sources**
-- [server.py:283-312](file://server/app/mcp/server.py#L283-L312)
-- [server.py:354-385](file://server/app/mcp/server.py#L354-L385)
+- [server.py:283-312](server/app/mcp/server.py#L283-L312)
+- [server.py:354-385](server/app/mcp/server.py#L354-L385)
 
 ### Practical Examples
 
@@ -290,9 +290,9 @@ To implement a custom MCP tool:
 5. Return structured output
 
 Example pattern reference:
-- Tool registration with annotations: [server.py:283-296](file://server/app/mcp/server.py#L283-L296)
-- Scope enforcement: [server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- Workspace scoping: [server.py:367-371](file://server/app/mcp/server.py#L367-L371)
+- Tool registration with annotations: [server.py:283-296](server/app/mcp/server.py#L283-L296)
+- Scope enforcement: [server.py:113-117](server/app/mcp/server.py#L113-L117)
+- Workspace scoping: [server.py:367-371](server/app/mcp/server.py#L367-L371)
 
 #### Context Validation and Secure Data Access
 Secure data access patterns include:
@@ -302,14 +302,14 @@ Secure data access patterns include:
 - Workspace-scoped database queries
 
 Example pattern reference:
-- Actor context requirement: [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- Visibility policy: [dependencies.py:328-351](file://server/app/api/dependencies.py#L328-L351)
-- Workspace scoping: [server.py:135-161](file://server/app/mcp/server.py#L135-L161)
+- Actor context requirement: [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- Visibility policy: [dependencies.py:328-351](server/app/api/dependencies.py#L328-L351)
+- Workspace scoping: [server.py:135-161](server/app/mcp/server.py#L135-L161)
 
 **Section sources**
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [server.py:283-296](file://server/app/mcp/server.py#L283-L296)
-- [dependencies.py:328-351](file://server/app/api/dependencies.py#L328-L351)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [server.py:283-296](server/app/mcp/server.py#L283-L296)
+- [dependencies.py:328-351](server/app/api/dependencies.py#L328-L351)
 
 ## Dependency Analysis
 The MCP server depends on several backend components for authentication, authorization, and domain operations.
@@ -327,14 +327,14 @@ Deps --> Models
 ```
 
 **Diagram sources**
-- [server.py:1-106](file://server/app/mcp/server.py#L1-L106)
-- [auth.py:1-28](file://server/app/mcp/auth.py#L1-L28)
-- [dependencies.py:1-22](file://server/app/api/dependencies.py#L1-L22)
+- [server.py:1-106](server/app/mcp/server.py#L1-L106)
+- [auth.py:1-28](server/app/mcp/auth.py#L1-L28)
+- [dependencies.py:1-22](server/app/api/dependencies.py#L1-L22)
 
 **Section sources**
-- [server.py:1-106](file://server/app/mcp/server.py#L1-L106)
-- [auth.py:1-28](file://server/app/mcp/auth.py#L1-L28)
-- [dependencies.py:1-22](file://server/app/api/dependencies.py#L1-L22)
+- [server.py:1-106](server/app/mcp/server.py#L1-L106)
+- [auth.py:1-28](server/app/mcp/auth.py#L1-L28)
+- [dependencies.py:1-22](server/app/api/dependencies.py#L1-L22)
 
 ## Performance Considerations
 - Asynchronous database operations: All MCP tools use async database sessions to avoid blocking I/O.
@@ -365,9 +365,9 @@ Error handling patterns:
 - WWW-Authenticate headers for 401 responses
 
 **Section sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [MCP-README.md:371-399](file://docs/MCP-README.md#L371-L399)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [MCP-README.md:371-399](docs/MCP-README.md#L371-L399)
 
 ## Conclusion
 The WheelSense MCP server implementation provides a robust, secure, and extensible foundation for AI-assisted operations in healthcare environments. It leverages FastMCP for standardized protocol compliance, implements comprehensive role-based access control, and ensures workspace-scoped data access. The modular design facilitates easy extension with custom tools and resources while maintaining strong security boundaries.
@@ -382,9 +382,9 @@ Environment variables and settings:
 - Database and MQTT settings for integrated operations
 
 **Section sources**
-- [main.py:24-25](file://server/app/main.py#L24-L25)
-- [config.py:76-77](file://server/app/config.py#L76-L77)
-- [config.py:105-110](file://server/app/config.py#L105-L110)
+- [main.py:24-25](server/app/main.py#L24-L25)
+- [config.py:76-77](server/app/config.py#L76-L77)
+- [config.py:105-110](server/app/config.py#L105-L110)
 
 ### Logging and Debugging
 - Centralized logging configuration in main application
@@ -393,8 +393,8 @@ Environment variables and settings:
 - Production-ready logging with structured formatting
 
 **Section sources**
-- [main.py:18-23](file://server/app/main.py#L18-L23)
-- [server.py:107-108](file://server/app/mcp/server.py#L107-L108)
+- [main.py:18-23](server/app/main.py#L18-L23)
+- [server.py:107-108](server/app/mcp/server.py#L107-L108)
 
 ### MCP Token Management
 External MCP clients can obtain scope-narrowed tokens:
@@ -403,6 +403,6 @@ External MCP clients can obtain scope-narrowed tokens:
 - Token lifecycle management with expiry and revocation tracking
 
 **Section sources**
-- [mcp_auth.py:94-178](file://server/app/api/endpoints/mcp_auth.py#L94-L178)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [mcp_auth_schemas.py:140-212](file://server/app/schemas/mcp_auth.py#L140-L212)
+- [mcp_auth.py:94-178](server/app/api/endpoints/mcp_auth.py#L94-L178)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth_schemas.py:140-212](server/app/schemas/mcp_auth.py#L140-L212)

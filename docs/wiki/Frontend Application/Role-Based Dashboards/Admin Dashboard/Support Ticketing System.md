@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [SupportTicketList.tsx](file://frontend/components/admin/SupportTicketList.tsx)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [AdminSupportPage.tsx](file://frontend/app/admin/support/page.tsx)
-- [HeadNurseSupportPage.tsx](file://frontend/app/head-nurse/support/page.tsx)
-- [SupervisorSupportPage.tsx](file://frontend/app/supervisor/support/page.tsx)
-- [PatientSupportPage.tsx](file://frontend/app/patient/support/page.tsx)
-- [support.py (models)](file://server/app/models/support.py)
-- [support.py (schemas)](file://server/app/schemas/support.py)
-- [support.py (endpoints)](file://server/app/api/endpoints/support.py)
-- [support.py (service)](file://server/app/services/support.py)
-- [api.ts](file://frontend/lib/api.ts)
-- [task-scope-types.ts](file://frontend/lib/api/task-scope-types.ts)
-- [constants.ts](file://frontend/lib/constants.ts)
+- [SupportTicketList.tsx](frontend/components/admin/SupportTicketList.tsx)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [AdminSupportPage.tsx](frontend/app/admin/support/page.tsx)
+- [HeadNurseSupportPage.tsx](frontend/app/head-nurse/support/page.tsx)
+- [SupervisorSupportPage.tsx](frontend/app/supervisor/support/page.tsx)
+- [PatientSupportPage.tsx](frontend/app/patient/support/page.tsx)
+- [support.py (models)](server/app/models/support.py)
+- [support.py (schemas)](server/app/schemas/support.py)
+- [support.py (endpoints)](server/app/api/endpoints/support.py)
+- [support.py (service)](server/app/services/support.py)
+- [api.ts](frontend/lib/api.ts)
+- [task-scope-types.ts](frontend/lib/api/task-scope-types.ts)
+- [constants.ts](frontend/lib/constants.ts)
 </cite>
 
 ## Table of Contents
@@ -65,28 +65,28 @@ API --> CONST
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [AdminSupportPage.tsx:1-650](file://frontend/app/admin/support/page.tsx#L1-L650)
-- [SupportTicketList.tsx:1-331](file://frontend/components/admin/SupportTicketList.tsx#L1-L331)
-- [api.ts:465-490](file://frontend/lib/api.ts#L465-L490)
-- [support.py (endpoints):62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [support.py (service):124-292](file://server/app/services/support.py#L124-L292)
-- [support.py (models):10-98](file://server/app/models/support.py#L10-L98)
-- [support.py (schemas):10-76](file://server/app/schemas/support.py#L10-L76)
-- [task-scope-types.ts:59-64](file://frontend/lib/api/task-scope-types.ts#L59-L64)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [AdminSupportPage.tsx:1-650](frontend/app/admin/support/page.tsx#L1-L650)
+- [SupportTicketList.tsx:1-331](frontend/components/admin/SupportTicketList.tsx#L1-L331)
+- [api.ts:465-490](frontend/lib/api.ts#L465-L490)
+- [support.py (endpoints):62-170](server/app/api/endpoints/support.py#L62-L170)
+- [support.py (service):124-292](server/app/services/support.py#L124-L292)
+- [support.py (models):10-98](server/app/models/support.py#L10-L98)
+- [support.py (schemas):10-76](server/app/schemas/support.py#L10-L76)
+- [task-scope-types.ts:59-64](frontend/lib/api/task-scope-types.ts#L59-L64)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
 
 **Section sources**
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [AdminSupportPage.tsx:1-650](file://frontend/app/admin/support/page.tsx#L1-L650)
-- [SupportTicketList.tsx:1-331](file://frontend/components/admin/SupportTicketList.tsx#L1-L331)
-- [api.ts:465-490](file://frontend/lib/api.ts#L465-L490)
-- [support.py (endpoints):62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [support.py (service):124-292](file://server/app/services/support.py#L124-L292)
-- [support.py (models):10-98](file://server/app/models/support.py#L10-L98)
-- [support.py (schemas):10-76](file://server/app/schemas/support.py#L10-L76)
-- [task-scope-types.ts:59-64](file://frontend/lib/api/task-scope-types.ts#L59-L64)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [AdminSupportPage.tsx:1-650](frontend/app/admin/support/page.tsx#L1-L650)
+- [SupportTicketList.tsx:1-331](frontend/components/admin/SupportTicketList.tsx#L1-L331)
+- [api.ts:465-490](frontend/lib/api.ts#L465-L490)
+- [support.py (endpoints):62-170](server/app/api/endpoints/support.py#L62-L170)
+- [support.py (service):124-292](server/app/services/support.py#L124-L292)
+- [support.py (models):10-98](server/app/models/support.py#L10-L98)
+- [support.py (schemas):10-76](server/app/schemas/support.py#L10-L76)
+- [task-scope-types.ts:59-64](frontend/lib/api/task-scope-types.ts#L59-L64)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
 
 ## Core Components
 - Report Issue Form: Allows authenticated users to submit tickets with title, description, category, and priority. Submissions are sent to the backend via a scoped endpoint.
@@ -96,12 +96,12 @@ API --> CONST
 - Data Models and Schemas: Define the structure of tickets, comments, attachments, and API contracts.
 
 **Section sources**
-- [ReportIssueForm.tsx:37-87](file://frontend/components/support/ReportIssueForm.tsx#L37-L87)
-- [AdminSupportPage.tsx:128-247](file://frontend/app/admin/support/page.tsx#L128-L247)
-- [SupportTicketList.tsx:59-331](file://frontend/components/admin/SupportTicketList.tsx#L59-L331)
-- [support.py (service):124-206](file://server/app/services/support.py#L124-L206)
-- [support.py (models):10-98](file://server/app/models/support.py#L10-L98)
-- [support.py (schemas):10-76](file://server/app/schemas/support.py#L10-L76)
+- [ReportIssueForm.tsx:37-87](frontend/components/support/ReportIssueForm.tsx#L37-L87)
+- [AdminSupportPage.tsx:128-247](frontend/app/admin/support/page.tsx#L128-L247)
+- [SupportTicketList.tsx:59-331](frontend/components/admin/SupportTicketList.tsx#L59-L331)
+- [support.py (service):124-206](server/app/services/support.py#L124-L206)
+- [support.py (models):10-98](server/app/models/support.py#L10-L98)
+- [support.py (schemas):10-76](server/app/schemas/support.py#L10-L76)
 
 ## Architecture Overview
 The system follows a clean separation of concerns:
@@ -131,18 +131,18 @@ RF-->>U : Show success and reset form
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
-- [api.ts:465-471](file://frontend/lib/api.ts#L465-L471)
-- [support.py (endpoints):89-98](file://server/app/api/endpoints/support.py#L89-L98)
-- [support.py (service):154-177](file://server/app/services/support.py#L154-L177)
-- [support.py (models):10-42](file://server/app/models/support.py#L10-L42)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [api.ts:465-471](frontend/lib/api.ts#L465-L471)
+- [support.py (endpoints):89-98](server/app/api/endpoints/support.py#L89-L98)
+- [support.py (service):154-177](server/app/services/support.py#L154-L177)
+- [support.py (models):10-42](server/app/models/support.py#L10-L42)
 
 **Section sources**
-- [ReportIssueForm.tsx:37-87](file://frontend/components/support/ReportIssueForm.tsx#L37-L87)
-- [api.ts:465-471](file://frontend/lib/api.ts#L465-L471)
-- [support.py (endpoints):89-98](file://server/app/api/endpoints/support.py#L89-L98)
-- [support.py (service):154-177](file://server/app/services/support.py#L154-L177)
-- [support.py (models):10-42](file://server/app/models/support.py#L10-L42)
+- [ReportIssueForm.tsx:37-87](frontend/components/support/ReportIssueForm.tsx#L37-L87)
+- [api.ts:465-471](frontend/lib/api.ts#L465-L471)
+- [support.py (endpoints):89-98](server/app/api/endpoints/support.py#L89-L98)
+- [support.py (service):154-177](server/app/services/support.py#L154-L177)
+- [support.py (models):10-42](server/app/models/support.py#L10-L42)
 
 ## Detailed Component Analysis
 
@@ -167,13 +167,13 @@ HandleError --> End
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:45-87](file://frontend/components/support/ReportIssueForm.tsx#L45-L87)
-- [api.ts:465-471](file://frontend/lib/api.ts#L465-L471)
+- [ReportIssueForm.tsx:45-87](frontend/components/support/ReportIssueForm.tsx#L45-L87)
+- [api.ts:465-471](frontend/lib/api.ts#L465-L471)
 
 **Section sources**
-- [ReportIssueForm.tsx:37-111](file://frontend/components/support/ReportIssueForm.tsx#L37-L111)
-- [ReportIssueForm.tsx:112-199](file://frontend/components/support/ReportIssueForm.tsx#L112-L199)
-- [api.ts:465-471](file://frontend/lib/api.ts#L465-L471)
+- [ReportIssueForm.tsx:37-111](frontend/components/support/ReportIssueForm.tsx#L37-L111)
+- [ReportIssueForm.tsx:112-199](frontend/components/support/ReportIssueForm.tsx#L112-L199)
+- [api.ts:465-471](frontend/lib/api.ts#L465-L471)
 
 ### Admin Support Dashboard
 - Purpose: Central place for administrators and head nurses to manage support tickets and related service requests.
@@ -206,17 +206,17 @@ API-->>ATL : Refreshed ticket
 ```
 
 **Diagram sources**
-- [AdminSupportPage.tsx:181-220](file://frontend/app/admin/support/page.tsx#L181-L220)
-- [api.ts:473-489](file://frontend/lib/api.ts#L473-L489)
-- [support.py (endpoints):100-122](file://server/app/api/endpoints/support.py#L100-L122)
-- [support.py (service):143-206](file://server/app/services/support.py#L143-L206)
+- [AdminSupportPage.tsx:181-220](frontend/app/admin/support/page.tsx#L181-L220)
+- [api.ts:473-489](frontend/lib/api.ts#L473-L489)
+- [support.py (endpoints):100-122](server/app/api/endpoints/support.py#L100-L122)
+- [support.py (service):143-206](server/app/services/support.py#L143-L206)
 
 **Section sources**
-- [AdminSupportPage.tsx:128-247](file://frontend/app/admin/support/page.tsx#L128-L247)
-- [AdminSupportPage.tsx:248-649](file://frontend/app/admin/support/page.tsx#L248-L649)
-- [api.ts:473-489](file://frontend/lib/api.ts#L473-L489)
-- [support.py (endpoints):100-122](file://server/app/api/endpoints/support.py#L100-L122)
-- [support.py (service):143-206](file://server/app/services/support.py#L143-L206)
+- [AdminSupportPage.tsx:128-247](frontend/app/admin/support/page.tsx#L128-L247)
+- [AdminSupportPage.tsx:248-649](frontend/app/admin/support/page.tsx#L248-L649)
+- [api.ts:473-489](frontend/lib/api.ts#L473-L489)
+- [support.py (endpoints):100-122](server/app/api/endpoints/support.py#L100-L122)
+- [support.py (service):143-206](server/app/services/support.py#L143-L206)
 
 ### Support Ticket List (Admin)
 - Purpose: Provide a searchable, filterable, paginated table of tickets for quick navigation and triage.
@@ -233,11 +233,11 @@ Paginate --> Render["Render table rows"]
 ```
 
 **Diagram sources**
-- [SupportTicketList.tsx:173-207](file://frontend/components/admin/SupportTicketList.tsx#L173-L207)
-- [api.ts:465-471](file://frontend/lib/api.ts#L465-L471)
+- [SupportTicketList.tsx:173-207](frontend/components/admin/SupportTicketList.tsx#L173-L207)
+- [api.ts:465-471](frontend/lib/api.ts#L465-L471)
 
 **Section sources**
-- [SupportTicketList.tsx:59-331](file://frontend/components/admin/SupportTicketList.tsx#L59-L331)
+- [SupportTicketList.tsx:59-331](frontend/components/admin/SupportTicketList.tsx#L59-L331)
 
 ### Backend Data Models and Schemas
 - Models:
@@ -292,11 +292,11 @@ SupportTicket "1" <-- "many" SupportTicketAttachment : "has attachments"
 ```
 
 **Diagram sources**
-- [support.py (models):10-98](file://server/app/models/support.py#L10-L98)
+- [support.py (models):10-98](server/app/models/support.py#L10-L98)
 
 **Section sources**
-- [support.py (models):10-98](file://server/app/models/support.py#L10-L98)
-- [support.py (schemas):10-76](file://server/app/schemas/support.py#L10-L76)
+- [support.py (models):10-98](server/app/models/support.py#L10-L98)
+- [support.py (schemas):10-76](server/app/schemas/support.py#L10-L76)
 
 ### API Endpoints and Service Layer
 - Endpoints:
@@ -329,12 +329,12 @@ EP-->>Client : SupportTicketOut
 ```
 
 **Diagram sources**
-- [support.py (endpoints):111-122](file://server/app/api/endpoints/support.py#L111-L122)
-- [support.py (service):180-206](file://server/app/services/support.py#L180-L206)
+- [support.py (endpoints):111-122](server/app/api/endpoints/support.py#L111-L122)
+- [support.py (service):180-206](server/app/services/support.py#L180-L206)
 
 **Section sources**
-- [support.py (endpoints):62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [support.py (service):124-292](file://server/app/services/support.py#L124-L292)
+- [support.py (endpoints):62-170](server/app/api/endpoints/support.py#L62-L170)
+- [support.py (service):124-292](server/app/services/support.py#L124-L292)
 
 ### Role-Based Access and Escalation
 - Visibility: Non-managers can only see their own tickets; managers (admin, head_nurse) can see all tickets in the workspace.
@@ -342,8 +342,8 @@ EP-->>Client : SupportTicketOut
 - Self-Tickets: Admins can create self-service tickets when flagged appropriately.
 
 **Section sources**
-- [support.py (service):68-79](file://server/app/services/support.py#L68-L79)
-- [support.py (service):180-196](file://server/app/services/support.py#L180-L196)
+- [support.py (service):68-79](server/app/services/support.py#L68-L79)
+- [support.py (service):180-196](server/app/services/support.py#L180-L196)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -368,23 +368,23 @@ API --> CONST["constants.ts"]
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [AdminSupportPage.tsx:1-650](file://frontend/app/admin/support/page.tsx#L1-L650)
-- [SupportTicketList.tsx:1-331](file://frontend/components/admin/SupportTicketList.tsx#L1-L331)
-- [api.ts:465-490](file://frontend/lib/api.ts#L465-L490)
-- [support.py (endpoints):62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [support.py (service):124-292](file://server/app/services/support.py#L124-L292)
-- [support.py (models):10-98](file://server/app/models/support.py#L10-L98)
-- [task-scope-types.ts:59-64](file://frontend/lib/api/task-scope-types.ts#L59-L64)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [AdminSupportPage.tsx:1-650](frontend/app/admin/support/page.tsx#L1-L650)
+- [SupportTicketList.tsx:1-331](frontend/components/admin/SupportTicketList.tsx#L1-L331)
+- [api.ts:465-490](frontend/lib/api.ts#L465-L490)
+- [support.py (endpoints):62-170](server/app/api/endpoints/support.py#L62-L170)
+- [support.py (service):124-292](server/app/services/support.py#L124-L292)
+- [support.py (models):10-98](server/app/models/support.py#L10-L98)
+- [task-scope-types.ts:59-64](frontend/lib/api/task-scope-types.ts#L59-L64)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
 
 **Section sources**
-- [api.ts:465-490](file://frontend/lib/api.ts#L465-L490)
-- [support.py (endpoints):62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [support.py (service):124-292](file://server/app/services/support.py#L124-L292)
-- [support.py (models):10-98](file://server/app/models/support.py#L10-L98)
-- [task-scope-types.ts:59-64](file://frontend/lib/api/task-scope-types.ts#L59-L64)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
+- [api.ts:465-490](frontend/lib/api.ts#L465-L490)
+- [support.py (endpoints):62-170](server/app/api/endpoints/support.py#L62-L170)
+- [support.py (service):124-292](server/app/services/support.py#L124-L292)
+- [support.py (models):10-98](server/app/models/support.py#L10-L98)
+- [task-scope-types.ts:59-64](frontend/lib/api/task-scope-types.ts#L59-L64)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
 
 ## Performance Considerations
 - Pagination and Limits: The list endpoint supports a configurable limit to prevent large payloads.
@@ -402,10 +402,10 @@ Common issues and resolutions:
 - API Timeout or Network Errors: The API client surfaces timeouts and network failures; retry after checking connectivity.
 
 **Section sources**
-- [support.py (service):194-196](file://server/app/services/support.py#L194-L196)
-- [support.py (service):243-247](file://server/app/services/support.py#L243-L247)
-- [support.py (service):53-65](file://server/app/services/support.py#L53-L65)
-- [api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
+- [support.py (service):194-196](server/app/services/support.py#L194-L196)
+- [support.py (service):243-247](server/app/services/support.py#L243-L247)
+- [support.py (service):53-65](server/app/services/support.py#L53-L65)
+- [api.ts:209-297](frontend/lib/api.ts#L209-L297)
 
 ## Conclusion
 The Support Ticketing System integrates a robust frontend UI with a secure, role-aware backend. Administrators and head nurses can efficiently triage, assign, update, and resolve tickets while regular users can report issues and collaborate through comments and attachments. The system’s design emphasizes clarity, scalability, and maintainability through typed contracts, layered services, and strict access controls.

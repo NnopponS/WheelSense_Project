@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [Observer Devices Page](file://frontend/app/observer/devices/page.tsx)
-- [Observer Monitoring Redirect](file://frontend/app/observer/monitoring/page.tsx)
-- [Device Detail Drawer](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [Floor Map Workspace](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [Room Smart Devices Panel](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
-- [Device Online Utility](file://frontend/lib/deviceOnline.ts)
-- [Smart Device Online Utility](file://frontend/lib/smartDeviceOnline.ts)
-- [Device Hardware Tabs](file://frontend/lib/deviceHardwareTabs.ts)
-- [Device Types and Interfaces](file://frontend/lib/types.ts)
-- [Server Devices API](file://server/app/api/endpoints/devices.py)
-- [ADR: Fleet Control Plane](file://docs/adr/0010-phase2-device-fleet-control-plane.md)
+- [Observer Devices Page](frontend/app/observer/devices/page.tsx)
+- [Observer Monitoring Redirect](frontend/app/observer/monitoring/page.tsx)
+- [Device Detail Drawer](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [Floor Map Workspace](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [Room Smart Devices Panel](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
+- [Device Online Utility](frontend/lib/deviceOnline.ts)
+- [Smart Device Online Utility](frontend/lib/smartDeviceOnline.ts)
+- [Device Hardware Tabs](frontend/lib/deviceHardwareTabs.ts)
+- [Device Types and Interfaces](frontend/lib/types.ts)
+- [Server Devices API](server/app/api/endpoints/devices.py)
+- [ADR: Fleet Control Plane](docs/adr/0010-phase2-device-fleet-control-plane.md)
 </cite>
 
 ## Table of Contents
@@ -72,28 +72,28 @@ DDD --> SDEV
 ```
 
 **Diagram sources**
-- [Observer Devices Page:55-258](file://frontend/app/observer/devices/page.tsx#L55-L258)
-- [Observer Monitoring Redirect:1-6](file://frontend/app/observer/monitoring/page.tsx#L1-L6)
-- [Device Detail Drawer:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [Floor Map Workspace:77-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Smart Device Online Utility:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [Device Hardware Tabs:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [Device Types and Interfaces:92-205](file://frontend/lib/types.ts#L92-L205)
-- [Server Devices API:90-263](file://server/app/api/endpoints/devices.py#L90-L263)
+- [Observer Devices Page:55-258](frontend/app/observer/devices/page.tsx#L55-L258)
+- [Observer Monitoring Redirect:1-6](frontend/app/observer/monitoring/page.tsx#L1-L6)
+- [Device Detail Drawer:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [Floor Map Workspace:77-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Smart Device Online Utility:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [Device Hardware Tabs:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [Device Types and Interfaces:92-205](frontend/lib/types.ts#L92-L205)
+- [Server Devices API:90-263](server/app/api/endpoints/devices.py#L90-L263)
 
 **Section sources**
-- [Observer Devices Page:55-258](file://frontend/app/observer/devices/page.tsx#L55-L258)
-- [Observer Monitoring Redirect:1-6](file://frontend/app/observer/monitoring/page.tsx#L1-L6)
-- [Device Detail Drawer:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [Floor Map Workspace:77-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Smart Device Online Utility:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [Device Hardware Tabs:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [Device Types and Interfaces:92-205](file://frontend/lib/types.ts#L92-L205)
-- [Server Devices API:90-263](file://server/app/api/endpoints/devices.py#L90-L263)
+- [Observer Devices Page:55-258](frontend/app/observer/devices/page.tsx#L55-L258)
+- [Observer Monitoring Redirect:1-6](frontend/app/observer/monitoring/page.tsx#L1-L6)
+- [Device Detail Drawer:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [Floor Map Workspace:77-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Smart Device Online Utility:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [Device Hardware Tabs:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [Device Types and Interfaces:92-205](frontend/lib/types.ts#L92-L205)
+- [Server Devices API:90-263](server/app/api/endpoints/devices.py#L90-L263)
 
 ## Core Components
 - Observer Devices Page: Presents a fleet dashboard with device registration status, connectivity indicators, localization predictions, alerts, and telemetry. It computes online/offline status, high-confidence predictions, and aggregates summary statistics.
@@ -104,13 +104,13 @@ DDD --> SDEV
 - Server Devices API: Exposes endpoints for listing devices, retrieving device details, sending commands, and managing registry entries.
 
 **Section sources**
-- [Observer Devices Page:55-258](file://frontend/app/observer/devices/page.tsx#L55-L258)
-- [Device Detail Drawer:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [Floor Map Workspace:77-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Device Hardware Tabs:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [Server Devices API:90-263](file://server/app/api/endpoints/devices.py#L90-L263)
+- [Observer Devices Page:55-258](frontend/app/observer/devices/page.tsx#L55-L258)
+- [Device Detail Drawer:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [Floor Map Workspace:77-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Device Hardware Tabs:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [Server Devices API:90-263](server/app/api/endpoints/devices.py#L90-L263)
 
 ## Architecture Overview
 The Observer Device Monitoring interface follows a React Query-driven data fetching pattern with server endpoints. The Observer dashboard aggregates device lists, localization predictions, alerts, and vitals to render a comprehensive fleet view. Device-specific actions (e.g., snapshots, registry edits) are handled via the Device Detail Drawer. Administrators use the Floor Map Workspace to connect rooms and node devices and assign patients. Smart devices are managed via the Room Smart Devices Panel. The server exposes device command dispatch and registry operations.
@@ -130,14 +130,14 @@ API-->>Dev : Device detail, activity log, command dispatch
 ```
 
 **Diagram sources**
-- [Observer Devices Page:59-95](file://frontend/app/observer/devices/page.tsx#L59-L95)
-- [Server Devices API:90-263](file://server/app/api/endpoints/devices.py#L90-L263)
-- [Device Detail Drawer:299-331](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L299-L331)
+- [Observer Devices Page:59-95](frontend/app/observer/devices/page.tsx#L59-L95)
+- [Server Devices API:90-263](server/app/api/endpoints/devices.py#L90-L263)
+- [Device Detail Drawer:299-331](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L299-L331)
 
 **Section sources**
-- [Observer Devices Page:59-95](file://frontend/app/observer/devices/page.tsx#L59-L95)
-- [Server Devices API:90-263](file://server/app/api/endpoints/devices.py#L90-L263)
-- [Device Detail Drawer:299-331](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L299-L331)
+- [Observer Devices Page:59-95](frontend/app/observer/devices/page.tsx#L59-L95)
+- [Server Devices API:90-263](server/app/api/endpoints/devices.py#L90-L263)
+- [Device Detail Drawer:299-331](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L299-L331)
 
 ## Detailed Component Analysis
 
@@ -159,11 +159,11 @@ Render --> End(["Interactive dashboard"])
 ```
 
 **Diagram sources**
-- [Observer Devices Page:55-158](file://frontend/app/observer/devices/page.tsx#L55-L158)
+- [Observer Devices Page:55-158](frontend/app/observer/devices/page.tsx#L55-L158)
 
 **Section sources**
-- [Observer Devices Page:55-158](file://frontend/app/observer/devices/page.tsx#L55-L158)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
+- [Observer Devices Page:55-158](frontend/app/observer/devices/page.tsx#L55-L158)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
 
 ### Device Detail Drawer
 The Device Detail Drawer provides:
@@ -190,14 +190,14 @@ API-->>Drawer : Command dispatched
 ```
 
 **Diagram sources**
-- [Device Detail Drawer:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Server Devices API:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
+- [Device Detail Drawer:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Server Devices API:241-263](server/app/api/endpoints/devices.py#L241-L263)
 
 **Section sources**
-- [Device Detail Drawer:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Server Devices API:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
+- [Device Detail Drawer:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Server Devices API:241-263](server/app/api/endpoints/devices.py#L241-L263)
 
 ### Floor Map Workspace
 The Floor Map Workspace enables:
@@ -223,12 +223,12 @@ API-->>FMW : Room updated
 ```
 
 **Diagram sources**
-- [Floor Map Workspace:118-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L441)
-- [Device Types and Interfaces:209-224](file://frontend/lib/types.ts#L209-L224)
+- [Floor Map Workspace:118-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L441)
+- [Device Types and Interfaces:209-224](frontend/lib/types.ts#L209-L224)
 
 **Section sources**
-- [Floor Map Workspace:118-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L441)
-- [Device Types and Interfaces:209-224](file://frontend/lib/types.ts#L209-L224)
+- [Floor Map Workspace:118-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L441)
+- [Device Types and Interfaces:209-224](frontend/lib/types.ts#L209-L224)
 
 ### Room Smart Devices Panel
 The Room Smart Devices Panel manages Home Assistant integrations:
@@ -253,10 +253,10 @@ Delete --> Reload
 ```
 
 **Diagram sources**
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
 
 **Section sources**
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
 
 ### Device Types Supported by Observers
 Supported hardware types include:
@@ -268,8 +268,8 @@ Supported hardware types include:
 These types are used for filtering, presentation, and telemetry categorization.
 
 **Section sources**
-- [Device Hardware Tabs:5-11](file://frontend/lib/deviceHardwareTabs.ts#L5-L11)
-- [Device Types and Interfaces:94-98](file://frontend/lib/types.ts#L94-L98)
+- [Device Hardware Tabs:5-11](frontend/lib/deviceHardwareTabs.ts#L5-L11)
+- [Device Types and Interfaces:94-98](frontend/lib/types.ts#L94-L98)
 
 ### Device Assignment Workflows
 - Patient assignment/unlink: From the Device Detail Drawer, assign or unlink a patient to a device with a default device role inferred from hardware type.
@@ -287,12 +287,12 @@ API-->>Drawer : Room updated
 ```
 
 **Diagram sources**
-- [Device Detail Drawer:487-563](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L487-L563)
-- [Server Devices API:224-239](file://server/app/api/endpoints/devices.py#L224-L239)
+- [Device Detail Drawer:487-563](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L487-L563)
+- [Server Devices API:224-239](server/app/api/endpoints/devices.py#L224-L239)
 
 **Section sources**
-- [Device Detail Drawer:487-563](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L487-L563)
-- [Server Devices API:224-239](file://server/app/api/endpoints/devices.py#L224-L239)
+- [Device Detail Drawer:487-563](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L487-L563)
+- [Server Devices API:224-239](server/app/api/endpoints/devices.py#L224-L239)
 
 ### Device Command Execution
 The platform supports device command dispatch:
@@ -310,12 +310,12 @@ API-->>Drawer : Command history
 ```
 
 **Diagram sources**
-- [Server Devices API:90-123](file://server/app/api/endpoints/devices.py#L90-L123)
-- [Server Devices API:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
+- [Server Devices API:90-123](server/app/api/endpoints/devices.py#L90-L123)
+- [Server Devices API:241-263](server/app/api/endpoints/devices.py#L241-L263)
 
 **Section sources**
-- [Server Devices API:90-123](file://server/app/api/endpoints/devices.py#L90-L123)
-- [Server Devices API:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
+- [Server Devices API:90-123](server/app/api/endpoints/devices.py#L90-L123)
+- [Server Devices API:241-263](server/app/api/endpoints/devices.py#L241-L263)
 
 ### Integration with Broader Monitoring Ecosystem
 - Home Assistant integration: Smart devices are mapped per room and toggled active/inactive for monitoring.
@@ -323,9 +323,9 @@ API-->>Drawer : Command history
 - Activity logging: Device and registry actions are logged for auditability.
 
 **Section sources**
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [Floor Map Workspace:355-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
-- [Server Devices API:224-239](file://server/app/api/endpoints/devices.py#L224-L239)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Floor Map Workspace:355-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
+- [Server Devices API:224-239](server/app/api/endpoints/devices.py#L224-L239)
 
 ## Dependency Analysis
 The Observer Devices Dashboard depends on:
@@ -346,24 +346,24 @@ RSD["Room Smart Devices Panel"] --> TYPES
 ```
 
 **Diagram sources**
-- [Observer Devices Page:55-258](file://frontend/app/observer/devices/page.tsx#L55-L258)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Device Hardware Tabs:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [Device Detail Drawer:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [Device Types and Interfaces:92-205](file://frontend/lib/types.ts#L92-L205)
-- [Floor Map Workspace:77-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [Server Devices API:90-263](file://server/app/api/endpoints/devices.py#L90-L263)
+- [Observer Devices Page:55-258](frontend/app/observer/devices/page.tsx#L55-L258)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Device Hardware Tabs:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [Device Detail Drawer:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [Device Types and Interfaces:92-205](frontend/lib/types.ts#L92-L205)
+- [Floor Map Workspace:77-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Server Devices API:90-263](server/app/api/endpoints/devices.py#L90-L263)
 
 **Section sources**
-- [Observer Devices Page:55-258](file://frontend/app/observer/devices/page.tsx#L55-L258)
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Device Hardware Tabs:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [Device Detail Drawer:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [Device Types and Interfaces:92-205](file://frontend/lib/types.ts#L92-L205)
-- [Floor Map Workspace:77-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
-- [Room Smart Devices Panel:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [Server Devices API:90-263](file://server/app/api/endpoints/devices.py#L90-L263)
+- [Observer Devices Page:55-258](frontend/app/observer/devices/page.tsx#L55-L258)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Device Hardware Tabs:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [Device Detail Drawer:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [Device Types and Interfaces:92-205](frontend/lib/types.ts#L92-L205)
+- [Floor Map Workspace:77-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L734)
+- [Room Smart Devices Panel:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [Server Devices API:90-263](server/app/api/endpoints/devices.py#L90-L263)
 
 ## Performance Considerations
 - Polling intervals: Queries use configured stale times and polling intervals to balance freshness and load.
@@ -382,10 +382,10 @@ Common issues and resolutions:
 - Smart device not visible: Ensure the device is added under the correct room and marked active.
 
 **Section sources**
-- [Device Online Utility:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [Device Detail Drawer:565-579](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L565-L579)
-- [Floor Map Workspace:436-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L436-L441)
-- [Room Smart Devices Panel:68-87](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L68-L87)
+- [Device Online Utility:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [Device Detail Drawer:565-579](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L565-L579)
+- [Floor Map Workspace:436-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L436-L441)
+- [Room Smart Devices Panel:68-87](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L68-L87)
 
 ## Conclusion
 The Observer Device Monitoring interface provides a comprehensive, real-time view of device fleet health, connectivity, localization, and telemetry. Administrators can manage device assignments, integrate smart devices, and execute commands through a unified set of components and server endpoints. The design emphasizes observability, actionable insights, and seamless integration with the broader monitoring ecosystem.
@@ -401,15 +401,15 @@ The Observer Device Monitoring interface provides a comprehensive, real-time vie
 - Smart device management: Use the Room Smart Devices Panel to activate or deactivate devices and verify their state in the monitoring view.
 
 **Section sources**
-- [Observer Devices Page:241-246](file://frontend/app/observer/devices/page.tsx#L241-L246)
-- [Device Detail Drawer:670-749](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L670-L749)
-- [Floor Map Workspace:547-553](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L547-L553)
-- [Room Smart Devices Panel:101-120](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L101-L120)
+- [Observer Devices Page:241-246](frontend/app/observer/devices/page.tsx#L241-L246)
+- [Device Detail Drawer:670-749](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L670-L749)
+- [Floor Map Workspace:547-553](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L547-L553)
+- [Room Smart Devices Panel:101-120](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L101-L120)
 
 ### Alert Correlation and Maintenance Scheduling Integration
 - Alerts: The dashboard counts active alerts per device, aiding correlation with connectivity or telemetry anomalies.
 - Maintenance scheduling: Use device health snapshots and activity logs to inform preventive maintenance schedules and resource allocation.
 
 **Section sources**
-- [Observer Devices Page:141-142](file://frontend/app/observer/devices/page.tsx#L141-L142)
-- [Device Detail Drawer:321-331](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L321-L331)
+- [Observer Devices Page:141-142](frontend/app/observer/devices/page.tsx#L141-L142)
+- [Device Detail Drawer:321-331](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L321-L331)

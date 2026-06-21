@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [server/app/mcp/server.py](file://server/app/mcp/server.py)
-- [server/app/agent_runtime/service.py](file://server/app/agent_runtime/service.py)
-- [server/app/api/endpoints/workflow.py](file://server/app/api/endpoints/workflow.py)
-- [server/app/api/endpoints/devices.py](file://server/app/api/endpoints/devices.py)
-- [server/app/api/endpoints/analytics.py](file://server/app/api/endpoints/analytics.py)
-- [server/app/api/endpoints/homeassistant.py](file://server/app/api/endpoints/homeassistant.py)
-- [server/app/services/localization_setup.py](file://server/app/services/localization_setup.py)
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [frontend/components/workflow/WorkflowTasksHubContent.tsx](file://frontend/components/workflow/WorkflowTasksHubContent.tsx)
+- [README.md](README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [server/app/mcp/server.py](server/app/mcp/server.py)
+- [server/app/agent_runtime/service.py](server/app/agent_runtime/service.py)
+- [server/app/api/endpoints/workflow.py](server/app/api/endpoints/workflow.py)
+- [server/app/api/endpoints/devices.py](server/app/api/endpoints/devices.py)
+- [server/app/api/endpoints/analytics.py](server/app/api/endpoints/analytics.py)
+- [server/app/api/endpoints/homeassistant.py](server/app/api/endpoints/homeassistant.py)
+- [server/app/services/localization_setup.py](server/app/services/localization_setup.py)
+- [server/AGENTS.md](server/AGENTS.md)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [frontend/components/workflow/WorkflowTasksHubContent.tsx](frontend/components/workflow/WorkflowTasksHubContent.tsx)
 </cite>
 
 ## Table of Contents
@@ -62,12 +62,12 @@ WEB --> |"HTTP/HTTPS"| API
 ```
 
 **Diagram sources**
-- [README.md:7-19](file://README.md#L7-L19)
-- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
+- [README.md:7-19](README.md#L7-L19)
+- [ARCHITECTURE.md:3-21](ARCHITECTURE.md#L3-L21)
 
 **Section sources**
-- [README.md:1-74](file://README.md#L1-L74)
-- [ARCHITECTURE.md:1-275](file://ARCHITECTURE.md#L1-L275)
+- [README.md:1-74](README.md#L1-L74)
+- [ARCHITECTURE.md:1-275](ARCHITECTURE.md#L1-L275)
 
 ## Core Components
 - Real-time wheelchair monitoring and room localization: MQTT telemetry ingestion, RSSI-based room prediction, and floorplan presence rendering.
@@ -78,13 +78,13 @@ WEB --> |"HTTP/HTTPS"| API
 - Analytics reporting: alert summaries, vitals averages, and ward-level statistics.
 
 **Section sources**
-- [ARCHITECTURE.md:23-275](file://ARCHITECTURE.md#L23-L275)
-- [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
-- [server/app/agent_runtime/service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [server/app/api/endpoints/workflow.py:1-1013](file://server/app/api/endpoints/workflow.py#L1-L1013)
-- [server/app/api/endpoints/devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [server/app/api/endpoints/analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [server/app/api/endpoints/homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
+- [ARCHITECTURE.md:23-275](ARCHITECTURE.md#L23-L275)
+- [server/app/mcp/server.py:1-2803](server/app/mcp/server.py#L1-L2803)
+- [server/app/agent_runtime/service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [server/app/api/endpoints/workflow.py:1-1013](server/app/api/endpoints/workflow.py#L1-L1013)
+- [server/app/api/endpoints/devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [server/app/api/endpoints/analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [server/app/api/endpoints/homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
 
 ## Architecture Overview
 The MCP server exposes a protected tool registry and resources, with a first-party agent runtime orchestrating plan/ground/execute flows. The frontend proxies API calls and renders role-specific dashboards. Device telemetry and camera commands traverse MQTT to the server, which enforces workspace and role-based access.
@@ -119,12 +119,12 @@ S --> HA
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:140-218](file://ARCHITECTURE.md#L140-L218)
-- [server/app/mcp/server.py:110-2803](file://server/app/mcp/server.py#L110-L2803)
-- [server/app/agent_runtime/service.py:122-146](file://server/app/agent_runtime/service.py#L122-L146)
+- [ARCHITECTURE.md:140-218](ARCHITECTURE.md#L140-L218)
+- [server/app/mcp/server.py:110-2803](server/app/mcp/server.py#L110-L2803)
+- [server/app/agent_runtime/service.py:122-146](server/app/agent_runtime/service.py#L122-L146)
 
 **Section sources**
-- [ARCHITECTURE.md:23-184](file://ARCHITECTURE.md#L23-L184)
+- [ARCHITECTURE.md:23-184](ARCHITECTURE.md#L23-L184)
 
 ## Detailed Feature Analysis
 
@@ -156,17 +156,17 @@ API-->>Frontend : Presence and alerts for dashboards
 ```
 
 **Diagram sources**
-- [server/AGENTS.md:48-58](file://server/AGENTS.md#L48-L58)
-- [server/app/services/localization_setup.py:330-557](file://server/app/services/localization_setup.py#L330-L557)
+- [server/AGENTS.md:48-58](server/AGENTS.md#L48-L58)
+- [server/app/services/localization_setup.py:330-557](server/app/services/localization_setup.py#L330-L557)
 
 Practical examples:
 - Admin readiness check: Repair missing facility/floor/room/node bindings and reset strategy to max_rssi.
 - Observer monitoring: View floor map occupancy and active alerts; drill into room details.
 
 **Section sources**
-- [server/AGENTS.md:48-58](file://server/AGENTS.md#L48-L58)
-- [server/app/services/localization_setup.py:330-557](file://server/app/services/localization_setup.py#L330-L557)
-- [ARCHITECTURE.md:164-220](file://ARCHITECTURE.md#L164-L220)
+- [server/AGENTS.md:48-58](server/AGENTS.md#L48-L58)
+- [server/app/services/localization_setup.py:330-557](server/app/services/localization_setup.py#L330-L557)
+- [ARCHITECTURE.md:164-220](ARCHITECTURE.md#L164-L220)
 
 ### Secure AI Agent Runtime with MCP Integration
 - Business value: Intelligent, role-aware assistance for clinical tasks, device control, and triage without bypassing access policies.
@@ -199,18 +199,18 @@ AR-->>Chat : ExecutionStepList and completion
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:81-127](file://ARCHITECTURE.md#L81-L127)
-- [server/app/agent_runtime/service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [server/app/mcp/server.py:113-133](file://server/app/mcp/server.py#L113-L133)
+- [ARCHITECTURE.md:81-127](ARCHITECTURE.md#L81-L127)
+- [server/app/agent_runtime/service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [server/app/mcp/server.py:113-133](server/app/mcp/server.py#L113-L133)
 
 Practical examples:
 - Clinical triage assistant: Summarize active alerts and visible patients; propose targeted actions with permission basis.
 - Device control assistant: Validate scope and describe exact command before execution.
 
 **Section sources**
-- [ARCHITECTURE.md:23-127](file://ARCHITECTURE.md#L23-L127)
-- [server/app/agent_runtime/service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
+- [ARCHITECTURE.md:23-127](ARCHITECTURE.md#L23-L127)
+- [server/app/agent_runtime/service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [server/app/mcp/server.py:1-2803](server/app/mcp/server.py#L1-L2803)
 
 ### Role-based Dashboards
 - Business value: Tailored interfaces reduce cognitive load and ensure appropriate access for each role.
@@ -245,16 +245,16 @@ P --> P3["Messages"]
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:185-220](file://ARCHITECTURE.md#L185-L220)
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [ARCHITECTURE.md:185-220](ARCHITECTURE.md#L185-L220)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 Practical examples:
 - Head nurse dashboard: Kanban board for tasks, staff member sheet, and room overview.
 - Observer monitoring: Live floor map with alert counts and room capture capability.
 
 **Section sources**
-- [ARCHITECTURE.md:185-220](file://ARCHITECTURE.md#L185-L220)
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [ARCHITECTURE.md:185-220](ARCHITECTURE.md#L185-L220)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ### Workflow Orchestration and Care Task Management
 - Business value: Unified, auditable workflows improve care coordination, reduce handoff errors, and maintain compliance.
@@ -283,16 +283,16 @@ Complete --> End(["Audit Trail Recorded"])
 ```
 
 **Diagram sources**
-- [server/app/api/endpoints/workflow.py:110-800](file://server/app/api/endpoints/workflow.py#L110-L800)
-- [frontend/components/workflow/WorkflowTasksHubContent.tsx:1-569](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
+- [server/app/api/endpoints/workflow.py:110-800](server/app/api/endpoints/workflow.py#L110-L800)
+- [frontend/components/workflow/WorkflowTasksHubContent.tsx:1-569](frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
 
 Practical examples:
 - Observer creates a task for an assigned patient and marks it in progress or completed.
 - Supervisor claims a task and hands it off to another role with a note.
 
 **Section sources**
-- [server/app/api/endpoints/workflow.py:1-1013](file://server/app/api/endpoints/workflow.py#L1-L1013)
-- [frontend/components/workflow/WorkflowTasksHubContent.tsx:1-569](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
+- [server/app/api/endpoints/workflow.py:1-1013](server/app/api/endpoints/workflow.py#L1-L1013)
+- [frontend/components/workflow/WorkflowTasksHubContent.tsx:1-569](frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
 
 ### Device Fleet Management with Smart Home Integration
 - Business value: Centralized device control and visibility streamline maintenance and room operations.
@@ -320,16 +320,16 @@ API-->>User : Command status and logs
 ```
 
 **Diagram sources**
-- [server/app/api/endpoints/devices.py:63-311](file://server/app/api/endpoints/devices.py#L63-L311)
-- [server/app/api/endpoints/homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
+- [server/app/api/endpoints/devices.py:63-311](server/app/api/endpoints/devices.py#L63-L311)
+- [server/app/api/endpoints/homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
 
 Practical examples:
 - Admin registers a camera and triggers a photo capture.
 - Observer controls a light in a patient’s room via Home Assistant.
 
 **Section sources**
-- [server/app/api/endpoints/devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [server/app/api/endpoints/homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
+- [server/app/api/endpoints/devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [server/app/api/endpoints/homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
 
 ### Analytics Reporting
 - Business value: Data-driven insights improve safety metrics, resource allocation, and quality measures.
@@ -344,8 +344,8 @@ Practical examples:
 - Supervisor reviews vitals averages over a configurable window.
 
 **Section sources**
-- [server/app/api/endpoints/analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [ARCHITECTURE.md:240-267](file://ARCHITECTURE.md#L240-L267)
+- [server/app/api/endpoints/analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [ARCHITECTURE.md:240-267](ARCHITECTURE.md#L240-L267)
 
 ## Dependency Analysis
 The system exhibits clear separation of concerns:
@@ -365,12 +365,12 @@ MCP --> SRV
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
-- [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
+- [server/app/mcp/server.py:1-2803](server/app/mcp/server.py#L1-L2803)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
-- [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
+- [server/app/mcp/server.py:1-2803](server/app/mcp/server.py#L1-L2803)
 
 ## Performance Considerations
 - MQTT ingestion and caching: Minimize repeated reads by leveraging recent telemetry vectors and floorplan caches.
@@ -388,10 +388,10 @@ Common issues and resolutions:
 - Home Assistant integration: Confirm token configuration and entity mapping; verify device activation and room scoping.
 
 **Section sources**
-- [server/app/mcp/server.py:113-133](file://server/app/mcp/server.py#L113-L133)
-- [server/app/api/endpoints/devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
-- [server/AGENTS.md:48-58](file://server/AGENTS.md#L48-L58)
-- [server/app/api/endpoints/homeassistant.py:187-255](file://server/app/api/endpoints/homeassistant.py#L187-L255)
+- [server/app/mcp/server.py:113-133](server/app/mcp/server.py#L113-L133)
+- [server/app/api/endpoints/devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
+- [server/AGENTS.md:48-58](server/AGENTS.md#L48-L58)
+- [server/app/api/endpoints/homeassistant.py:187-255](server/app/api/endpoints/homeassistant.py#L187-L255)
 
 ## Conclusion
 The WheelSense Platform delivers a cohesive, secure, and scalable solution for real-time wheelchair monitoring, intelligent AI assistance, role-based dashboards, workflow orchestration, device fleet management, and analytics. Its MCP-first architecture and strict scope enforcement ensure safe, auditable operations while enabling flexible integrations with MQTT and Home Assistant. The documented workflows and integration patterns provide a clear path for adoption across administrative, clinical, and patient roles.

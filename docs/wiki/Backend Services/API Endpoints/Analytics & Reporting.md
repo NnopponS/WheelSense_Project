@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [analytics.py](file://server/app/api/endpoints/analytics.py)
-- [analytics.py](file://server/app/schemas/analytics.py)
-- [analytics.py](file://server/app/services/analytics.py)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
-- [calendar.py](file://server/app/api/endpoints/calendar.py)
-- [calendar.py](file://server/app/schemas/calendar.py)
-- [test_analytics.py](file://server/tests/test_analytics.py)
-- [report-utils.ts](file://frontend/components/reports/report-utils.ts)
-- [KPIStatCard.tsx](file://frontend/components/dashboard/KPIStatCard.tsx)
-- [openapi.generated.json](file://server/openapi.generated.json)
-- [frontend.openapi.json](file://frontend/.openapi.json)
+- [analytics.py](server/app/api/endpoints/analytics.py)
+- [analytics.py](server/app/schemas/analytics.py)
+- [analytics.py](server/app/services/analytics.py)
+- [alerts.py](server/app/api/endpoints/alerts.py)
+- [calendar.py](server/app/api/endpoints/calendar.py)
+- [calendar.py](server/app/schemas/calendar.py)
+- [test_analytics.py](server/tests/test_analytics.py)
+- [report-utils.ts](frontend/components/reports/report-utils.ts)
+- [KPIStatCard.tsx](frontend/components/dashboard/KPIStatCard.tsx)
+- [openapi.generated.json](server/openapi.generated.json)
+- [frontend.openapi.json](frontend/.openapi.json)
 </cite>
 
 ## Table of Contents
@@ -59,28 +59,28 @@ KPIC --> FOAS
 ```
 
 **Diagram sources**
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-25](file://server/app/schemas/analytics.py#L1-L25)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [alerts.py:1-134](file://server/app/api/endpoints/alerts.py#L1-L134)
-- [calendar.py:1-56](file://server/app/api/endpoints/calendar.py#L1-L56)
-- [calendar.py:1-31](file://server/app/schemas/calendar.py#L1-L31)
-- [openapi.generated.json:4825-4872](file://server/openapi.generated.json#L4825-L4872)
-- [report-utils.ts:1-52](file://frontend/components/reports/report-utils.ts#L1-L52)
-- [KPIStatCard.tsx:1-53](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L53)
-- [frontend.openapi.json:23117-23171](file://frontend/.openapi.json#L23117-L23171)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-25](server/app/schemas/analytics.py#L1-L25)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [alerts.py:1-134](server/app/api/endpoints/alerts.py#L1-L134)
+- [calendar.py:1-56](server/app/api/endpoints/calendar.py#L1-L56)
+- [calendar.py:1-31](server/app/schemas/calendar.py#L1-L31)
+- [openapi.generated.json:4825-4872](server/openapi.generated.json#L4825-L4872)
+- [report-utils.ts:1-52](frontend/components/reports/report-utils.ts#L1-L52)
+- [KPIStatCard.tsx:1-53](frontend/components/dashboard/KPIStatCard.tsx#L1-L53)
+- [frontend.openapi.json:23117-23171](frontend/.openapi.json#L23117-L23171)
 
 **Section sources**
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-25](file://server/app/schemas/analytics.py#L1-L25)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [alerts.py:1-134](file://server/app/api/endpoints/alerts.py#L1-L134)
-- [calendar.py:1-56](file://server/app/api/endpoints/calendar.py#L1-L56)
-- [calendar.py:1-31](file://server/app/schemas/calendar.py#L1-L31)
-- [openapi.generated.json:4825-4872](file://server/openapi.generated.json#L4825-L4872)
-- [report-utils.ts:1-52](file://frontend/components/reports/report-utils.ts#L1-L52)
-- [KPIStatCard.tsx:1-53](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L53)
-- [frontend.openapi.json:23117-23171](file://frontend/.openapi.json#L23117-L23171)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-25](server/app/schemas/analytics.py#L1-L25)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [alerts.py:1-134](server/app/api/endpoints/alerts.py#L1-L134)
+- [calendar.py:1-56](server/app/api/endpoints/calendar.py#L1-L56)
+- [calendar.py:1-31](server/app/schemas/calendar.py#L1-L31)
+- [openapi.generated.json:4825-4872](server/openapi.generated.json#L4825-L4872)
+- [report-utils.ts:1-52](frontend/components/reports/report-utils.ts#L1-L52)
+- [KPIStatCard.tsx:1-53](frontend/components/dashboard/KPIStatCard.tsx#L1-L53)
+- [frontend.openapi.json:23117-23171](frontend/.openapi.json#L23117-L23171)
 
 ## Core Components
 - Analytics endpoints: alert summary, vitals averages, ward summary.
@@ -89,11 +89,11 @@ KPIC --> FOAS
 - Frontend KPI cards and CSV report utilities for visualization and export.
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [alerts.py:29-132](file://server/app/api/endpoints/alerts.py#L29-L132)
-- [calendar.py:25-55](file://server/app/api/endpoints/calendar.py#L25-L55)
-- [KPIStatCard.tsx:8-53](file://frontend/components/dashboard/KPIStatCard.tsx#L8-L53)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [alerts.py:29-132](server/app/api/endpoints/alerts.py#L29-L132)
+- [calendar.py:25-55](server/app/api/endpoints/calendar.py#L25-L55)
+- [KPIStatCard.tsx:8-53](frontend/components/dashboard/KPIStatCard.tsx#L8-L53)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 ## Architecture Overview
 The analytics layer composes FastAPI endpoints, SQLAlchemy queries, and Pydantic schemas. Services encapsulate computation and aggregation logic. OpenAPI documents the contract for clients. Frontend components consume these endpoints and render KPIs and reports.
@@ -113,9 +113,9 @@ API-->>Client : 200 OK + JSON
 ```
 
 **Diagram sources**
-- [analytics.py:28-38](file://server/app/api/endpoints/analytics.py#L28-L38)
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
-- [openapi.generated.json:4825-4858](file://server/openapi.generated.json#L4825-L4858)
+- [analytics.py:28-38](server/app/api/endpoints/analytics.py#L28-L38)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
+- [openapi.generated.json:4825-4858](server/openapi.generated.json#L4825-L4858)
 
 ## Detailed Component Analysis
 
@@ -163,10 +163,10 @@ Notes:
 - Filtering and pagination are not exposed by these endpoints; they compute aggregates over the workspace scope.
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [analytics.py:18-87](file://server/app/services/analytics.py#L18-L87)
-- [openapi.generated.json:4825-4872](file://server/openapi.generated.json#L4825-L4872)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:18-87](server/app/services/analytics.py#L18-L87)
+- [openapi.generated.json:4825-4872](server/openapi.generated.json#L4825-L4872)
 
 ### Alert Management Endpoints
 - Base path: /api/alerts
@@ -210,8 +210,8 @@ Access control highlights:
 - Alert endpoints enforce visibility checks against patient records.
 
 **Section sources**
-- [alerts.py:29-132](file://server/app/api/endpoints/alerts.py#L29-L132)
-- [test_analytics.py:108-149](file://server/tests/test_analytics.py#L108-L149)
+- [alerts.py:29-132](server/app/api/endpoints/alerts.py#L29-L132)
+- [test_analytics.py:108-149](server/tests/test_analytics.py#L108-L149)
 
 ### Calendar Integration Endpoints
 - Base path: /api/calendar
@@ -237,8 +237,8 @@ Schema:
   - metadata: object
 
 **Section sources**
-- [calendar.py:25-55](file://server/app/api/endpoints/calendar.py#L25-L55)
-- [calendar.py:13-31](file://server/app/schemas/calendar.py#L13-L31)
+- [calendar.py:25-55](server/app/api/endpoints/calendar.py#L25-L55)
+- [calendar.py:13-31](server/app/schemas/calendar.py#L13-L31)
 
 ### Data Visualization Data Endpoints
 - Analytics KPIs:
@@ -251,8 +251,8 @@ Schema:
   - Report utilities provide CSV building and download helpers.
 
 **Section sources**
-- [KPIStatCard.tsx:8-53](file://frontend/components/dashboard/KPIStatCard.tsx#L8-L53)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [KPIStatCard.tsx:8-53](frontend/components/dashboard/KPIStatCard.tsx#L8-L53)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 ### Real-Time Analytics Streaming and Historical Aggregation
 - Real-time ingestion:
@@ -263,9 +263,9 @@ Schema:
   - No SSE or WebSocket endpoints are present in the analyzed files. Real-time dashboards typically poll analytics endpoints or use separate streaming channels not covered here.
 
 **Section sources**
-- [sim_controller.py:800-866](file://server/sim_controller.py#L800-L866)
-- [mqtt_handler.py:139-172](file://server/app/mqtt_handler.py#L139-L172)
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
+- [sim_controller.py:800-866](server/sim_controller.py#L800-L866)
+- [mqtt_handler.py:139-172](server/app/mqtt_handler.py#L139-L172)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
 
 ### Performance Metrics Endpoints
 - No dedicated performance metrics endpoints were identified in the analyzed files. Metrics can be derived from analytics aggregations or external profiling.
@@ -311,16 +311,16 @@ CalendarEndpoint --> CalendarService : "calls"
 ```
 
 **Diagram sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [alerts.py:29-132](file://server/app/api/endpoints/alerts.py#L29-L132)
-- [calendar.py:25-55](file://server/app/api/endpoints/calendar.py#L25-L55)
-- [analytics.py:18-87](file://server/app/services/analytics.py#L18-L87)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [alerts.py:29-132](server/app/api/endpoints/alerts.py#L29-L132)
+- [calendar.py:25-55](server/app/api/endpoints/calendar.py#L25-L55)
+- [analytics.py:18-87](server/app/services/analytics.py#L18-L87)
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [alerts.py:29-132](file://server/app/api/endpoints/alerts.py#L29-L132)
-- [calendar.py:25-55](file://server/app/api/endpoints/calendar.py#L25-L55)
-- [analytics.py:18-87](file://server/app/services/analytics.py#L18-L87)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [alerts.py:29-132](server/app/api/endpoints/alerts.py#L29-L132)
+- [calendar.py:25-55](server/app/api/endpoints/calendar.py#L25-L55)
+- [analytics.py:18-87](server/app/services/analytics.py#L18-L87)
 
 ## Performance Considerations
 - Use appropriate query windows:
@@ -343,8 +343,8 @@ CalendarEndpoint --> CalendarService : "calls"
   - Tests demonstrate expected transitions: active → acknowledged → resolved, with proper timestamps and notes.
 
 **Section sources**
-- [test_analytics.py:108-149](file://server/tests/test_analytics.py#L108-L149)
-- [openapi.generated.json:4540-4637](file://server/openapi.generated.json#L4540-L4637)
+- [test_analytics.py:108-149](server/tests/test_analytics.py#L108-L149)
+- [openapi.generated.json:4540-4637](server/openapi.generated.json#L4540-L4637)
 
 ## Conclusion
 The analytics and reporting surface provides robust KPI computation, alert lifecycle management, and calendar read projections. Clients should leverage the documented schemas and endpoints, apply appropriate filtering and limits, and integrate with frontend components for visualization and export. For real-time dashboards, polling analytics endpoints or extending the platform with streaming channels is recommended.
@@ -385,9 +385,9 @@ The analytics and reporting surface provides robust KPI computation, alert lifec
   - metadata: object
 
 **Section sources**
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [calendar.py:13-31](file://server/app/schemas/calendar.py#L13-L31)
-- [frontend.openapi.json:23117-23171](file://frontend/.openapi.json#L23117-L23171)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [calendar.py:13-31](server/app/schemas/calendar.py#L13-L31)
+- [frontend.openapi.json:23117-23171](frontend/.openapi.json#L23117-L23171)
 
 ### Filtering and Pagination Patterns
 - Analytics:
@@ -397,8 +397,8 @@ The analytics and reporting surface provides robust KPI computation, alert lifec
   - Visibility enforced per role and patient access rules.
 
 **Section sources**
-- [alerts.py:30-55](file://server/app/api/endpoints/alerts.py#L30-L55)
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
+- [alerts.py:30-55](server/app/api/endpoints/alerts.py#L30-L55)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
 
 ### Data Export Capabilities
 - CSV export:
@@ -407,7 +407,7 @@ The analytics and reporting surface provides robust KPI computation, alert lifec
   - Template-based naming with time window included.
 
 **Section sources**
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 ### Real-Time Dashboard Data Updates
 - Current state:

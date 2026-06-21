@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/supervisor/prescriptions/page.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [medication.py](file://server/app/api/endpoints/medication.py)
-- [medication.py](file://server/app/models/medication.py)
-- [medication.py](file://server/app/schemas/medication.py)
-- [medication.py](file://server/app/services/medication.py)
-- [page.tsx](file://frontend/app/observer/prescriptions/page.tsx)
-- [page.tsx](file://frontend/app/admin/patients/[id]/page.tsx)
-- [page.tsx](file://frontend/app/admin/patients/page.tsx)
-- [page.tsx](file://frontend/app/head-nurse/staff/page.tsx)
-- [page.tsx](file://frontend/app/observer/patients/page.tsx)
-- [Supervisor-code-review.md](file://Code_Review/iter-2/Supervisor-code-review.md)
+- [page.tsx](frontend/app/supervisor/prescriptions/page.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [medication.py](server/app/api/endpoints/medication.py)
+- [medication.py](server/app/models/medication.py)
+- [medication.py](server/app/schemas/medication.py)
+- [medication.py](server/app/services/medication.py)
+- [page.tsx](frontend/app/observer/prescriptions/page.tsx)
+- [page.tsx](frontend/app/admin/patients/[id]/page.tsx)
+- [page.tsx](frontend/app/admin/patients/page.tsx)
+- [page.tsx](frontend/app/head-nurse/staff/page.tsx)
+- [page.tsx](frontend/app/observer/patients/page.tsx)
+- [Supervisor-code-review.md](Code_Review/iter-2/Supervisor-code-review.md)
 </cite>
 
 ## Table of Contents
@@ -59,16 +59,16 @@ MODEL --> SCHEMA
 ```
 
 **Diagram sources**
-- [page.tsx:66-324](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
-- [page.tsx:29-49](file://frontend/app/observer/prescriptions/page.tsx#L29-L49)
-- [api.ts:810-864](file://frontend/lib/api.ts#L810-L864)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
+- [page.tsx:66-324](frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
+- [page.tsx:29-49](frontend/app/observer/prescriptions/page.tsx#L29-L49)
+- [api.ts:810-864](frontend/lib/api.ts#L810-L864)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
 
 **Section sources**
-- [Supervisor-code-review.md:9-26](file://Code_Review/iter-2/Supervisor-code-review.md#L9-L26)
+- [Supervisor-code-review.md:9-26](Code_Review/iter-2/Supervisor-code-review.md#L9-L26)
 
 ## Core Components
 - Supervisor Prescriptions Page: Provides a form to create new prescriptions and a table to list existing prescriptions with key attributes such as medication name, dosage, frequency, patient, specialist, status, and creation time.
@@ -77,12 +77,12 @@ MODEL --> SCHEMA
 - Services and Models: Implement business logic for listing and creating prescriptions and pharmacy orders, backed by SQLAlchemy models and Pydantic schemas.
 
 **Section sources**
-- [page.tsx:66-324](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
-- [api.ts:810-864](file://frontend/lib/api.ts#L810-L864)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
+- [page.tsx:66-324](frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
+- [api.ts:810-864](frontend/lib/api.ts#L810-L864)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
 
 ## Architecture Overview
 The supervisor creates a prescription via the frontend form, which calls the typed API client to POST to the backend. The backend validates the request, enforces role-based access, persists the record, and returns the created resource. The supervisor can then view the newly created prescription in the list table. Observer and admin dashboards also consume the same endpoints to present relevant views.
@@ -114,11 +114,11 @@ API-->>Sup : "Prescriptions data"
 ```
 
 **Diagram sources**
-- [page.tsx:97-123](file://frontend/app/supervisor/prescriptions/page.tsx#L97-L123)
-- [api.ts:860-864](file://frontend/lib/api.ts#L860-L864)
-- [medication.py:58-73](file://server/app/api/endpoints/medication.py#L58-L73)
-- [medication.py:22-44](file://server/app/services/medication.py#L22-L44)
-- [medication.py:10-28](file://server/app/models/medication.py#L10-L28)
+- [page.tsx:97-123](frontend/app/supervisor/prescriptions/page.tsx#L97-L123)
+- [api.ts:860-864](frontend/lib/api.ts#L860-L864)
+- [medication.py:58-73](server/app/api/endpoints/medication.py#L58-L73)
+- [medication.py:22-44](server/app/services/medication.py#L22-L44)
+- [medication.py:10-28](server/app/models/medication.py#L10-L28)
 
 ## Detailed Component Analysis
 
@@ -147,19 +147,19 @@ ShowErrors --> RenderForm
 ```
 
 **Diagram sources**
-- [page.tsx:66-324](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
+- [page.tsx:66-324](frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
 
 **Section sources**
-- [page.tsx:36-123](file://frontend/app/supervisor/prescriptions/page.tsx#L36-L123)
-- [page.tsx:125-201](file://frontend/app/supervisor/prescriptions/page.tsx#L125-L201)
-- [page.tsx:207-324](file://frontend/app/supervisor/prescriptions/page.tsx#L207-L324)
+- [page.tsx:36-123](frontend/app/supervisor/prescriptions/page.tsx#L36-L123)
+- [page.tsx:125-201](frontend/app/supervisor/prescriptions/page.tsx#L125-L201)
+- [page.tsx:207-324](frontend/app/supervisor/prescriptions/page.tsx#L207-L324)
 
 ### Observer Prescriptions Page
 - Purpose: Provide observers with a read-only view of prescriptions and associated patient information.
 - Features: Lists prescriptions with medication, dosage/frequency, patient, status, route, and creation time.
 
 **Section sources**
-- [page.tsx:29-49](file://frontend/app/observer/prescriptions/page.tsx#L29-L49)
+- [page.tsx:29-49](frontend/app/observer/prescriptions/page.tsx#L29-L49)
 
 ### Typed API Client Methods
 - Methods used by supervisor and observer dashboards:
@@ -170,8 +170,8 @@ ShowErrors --> RenderForm
   - requestPharmacyOrder(payload): Allows a patient to request a pharmacy order.
 
 **Section sources**
-- [api.ts:810-864](file://frontend/lib/api.ts#L810-L864)
-- [api.ts:854-858](file://frontend/lib/api.ts#L854-L858)
+- [api.ts:810-864](frontend/lib/api.ts#L810-L864)
+- [api.ts:854-858](frontend/lib/api.ts#L854-L858)
 
 ### Backend Endpoints: Prescriptions and Pharmacy Orders
 - Prescriptions:
@@ -189,7 +189,7 @@ Access control:
 - Pharmacy Orders: Similar role restrictions; patient requests require linking to a valid active prescription.
 
 **Section sources**
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
 
 ### Services and Data Models
 - PrescriptionService:
@@ -204,9 +204,9 @@ Access control:
   - Strong typing for create/update operations and output models, including validation constraints and allowed statuses.
 
 **Section sources**
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
 
 ### Implementation of Prescription Management Components
 - Medication Tracking Cards:
@@ -217,9 +217,9 @@ Access control:
   - The API supports listing and creating pharmacy orders, enabling coordination between prescriptions and pharmacy fulfillment.
 
 **Section sources**
-- [page.tsx:161-201](file://frontend/app/supervisor/prescriptions/page.tsx#L161-L201)
-- [medication.py:11-47](file://server/app/schemas/medication.py#L11-L47)
-- [medication.py:92-169](file://server/app/api/endpoints/medication.py#L92-L169)
+- [page.tsx:161-201](frontend/app/supervisor/prescriptions/page.tsx#L161-L201)
+- [medication.py:11-47](server/app/schemas/medication.py#L11-L47)
+- [medication.py:92-169](server/app/api/endpoints/medication.py#L92-L169)
 
 ### Features and Workflows
 - Medication Reconciliation:
@@ -232,9 +232,9 @@ Access control:
   - Pharmacy orders can be listed and updated; unique order_number prevents duplication and supports tracking.
 
 **Section sources**
-- [medication.py:35-56](file://server/app/api/endpoints/medication.py#L35-L56)
-- [medication.py:92-116](file://server/app/api/endpoints/medication.py#L92-L116)
-- [medication.py:30-54](file://server/app/models/medication.py#L30-L54)
+- [medication.py:35-56](server/app/api/endpoints/medication.py#L35-L56)
+- [medication.py:92-116](server/app/api/endpoints/medication.py#L92-L116)
+- [medication.py:30-54](server/app/models/medication.py#L30-L54)
 
 ### Examples: Supervisor Prescription Workflows
 - Create a new prescription:
@@ -246,8 +246,8 @@ Access control:
   - Use listPharmacyOrders to track fulfillment status and request new orders when needed.
 
 **Section sources**
-- [page.tsx:85-123](file://frontend/app/supervisor/prescriptions/page.tsx#L85-L123)
-- [api.ts:810-864](file://frontend/lib/api.ts#L810-L864)
+- [page.tsx:85-123](frontend/app/supervisor/prescriptions/page.tsx#L85-L123)
+- [api.ts:810-864](frontend/lib/api.ts#L810-L864)
 
 ### Examples: Prescription Review Processes
 - Observer review:
@@ -256,9 +256,9 @@ Access control:
   - Admins can edit patient medications lists and cross-reference with supervisor-created prescriptions.
 
 **Section sources**
-- [page.tsx:29-49](file://frontend/app/observer/prescriptions/page.tsx#L29-L49)
-- [page.tsx:471-497](file://frontend/app/admin/patients/[id]/page.tsx#L471-L497)
-- [page.tsx:63-89](file://frontend/app/admin/patients/page.tsx#L63-L89)
+- [page.tsx:29-49](frontend/app/observer/prescriptions/page.tsx#L29-L49)
+- [page.tsx:471-497](frontend/app/admin/patients/[id]/page.tsx#L471-L497)
+- [page.tsx:63-89](frontend/app/admin/patients/page.tsx#L63-L89)
 
 ### Examples: Medication Safety Protocols
 - Status management:
@@ -267,8 +267,8 @@ Access control:
   - Track start and end dates to prevent expired or future-dated medications from being dispensed.
 
 **Section sources**
-- [medication.py:11-22](file://server/app/schemas/medication.py#L11-L22)
-- [medication.py:24-27](file://server/app/models/medication.py#L24-L27)
+- [medication.py:11-22](server/app/schemas/medication.py#L11-L22)
+- [medication.py:24-27](server/app/models/medication.py#L24-L27)
 
 ### Examples: Pharmaceutical Workflow Management Activities
 - Request orders:
@@ -277,8 +277,8 @@ Access control:
   - Supervisors and head nurses can update order status and track fulfillment.
 
 **Section sources**
-- [medication.py:131-152](file://server/app/api/endpoints/medication.py#L131-L152)
-- [medication.py:155-169](file://server/app/api/endpoints/medication.py#L155-L169)
+- [medication.py:131-152](server/app/api/endpoints/medication.py#L131-L152)
+- [medication.py:155-169](server/app/api/endpoints/medication.py#L155-L169)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -302,19 +302,19 @@ MODEL --> SCHEMA["Schemas<br/>medication.py"]
 ```
 
 **Diagram sources**
-- [page.tsx:66-324](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
-- [page.tsx:29-49](file://frontend/app/observer/prescriptions/page.tsx#L29-L49)
-- [api.ts:810-864](file://frontend/lib/api.ts#L810-L864)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
+- [page.tsx:66-324](frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
+- [page.tsx:29-49](frontend/app/observer/prescriptions/page.tsx#L29-L49)
+- [api.ts:810-864](frontend/lib/api.ts#L810-L864)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
 
 **Section sources**
-- [page.tsx:66-324](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
-- [page.tsx:29-49](file://frontend/app/observer/prescriptions/page.tsx#L29-L49)
-- [api.ts:810-864](file://frontend/lib/api.ts#L810-L864)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [page.tsx:66-324](frontend/app/supervisor/prescriptions/page.tsx#L66-L324)
+- [page.tsx:29-49](frontend/app/observer/prescriptions/page.tsx#L29-L49)
+- [api.ts:810-864](frontend/lib/api.ts#L810-L864)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
 
 ## Performance Considerations
 - Pagination and limits: Backend endpoints specify reasonable limits for listing resources to avoid heavy queries.
@@ -334,9 +334,9 @@ MODEL --> SCHEMA["Schemas<br/>medication.py"]
   - Some endpoints enforce visibility checks; ensure the current user has access to the specified patient.
 
 **Section sources**
-- [medication.py:35-56](file://server/app/api/endpoints/medication.py#L35-L56)
-- [medication.py:58-73](file://server/app/api/endpoints/medication.py#L58-L73)
-- [api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
+- [medication.py:35-56](server/app/api/endpoints/medication.py#L35-L56)
+- [medication.py:58-73](server/app/api/endpoints/medication.py#L58-L73)
+- [api.ts:209-297](frontend/lib/api.ts#L209-L297)
 
 ## Conclusion
 The Prescription & Medication Oversight feature integrates a supervisor-friendly interface for creating and reviewing prescriptions with robust backend APIs for managing prescriptions and pharmacy orders. The system supports medication reconciliation, safety monitoring via status and date controls, and workflow coordination with pharmacy services. The typed API client and shared UI components ensure consistent behavior across supervisor, observer, and admin dashboards.

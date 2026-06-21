@@ -2,14 +2,14 @@
 
 <cite>
 **Referenced Files in This Document**
-- [tasks.py](file://server/app/models/tasks.py)
-- [tasks.py](file://server/app/schemas/tasks.py)
-- [tasks.py](file://server/app/services/tasks.py)
-- [tasks.py](file://server/app/api/endpoints/tasks.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/services/workflow.py)
-- [1aac0f420dfc_add_task_management_tables.py](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py)
-- [a1b2c3d4e5f7_add_unified_task_management.py](file://server/alembic/versions/a1b2c3d4e5f7_add_unified_task_management.py)
+- [tasks.py](server/app/models/tasks.py)
+- [tasks.py](server/app/schemas/tasks.py)
+- [tasks.py](server/app/services/tasks.py)
+- [tasks.py](server/app/api/endpoints/tasks.py)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/services/workflow.py)
+- [1aac0f420dfc_add_task_management_tables.py](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py)
+- [a1b2c3d4e5f7_add_unified_task_management.py](server/alembic/versions/a1b2c3d4e5f7_add_unified_task_management.py)
 </cite>
 
 ## Table of Contents
@@ -58,24 +58,24 @@ M_workflow --> MIG2
 ```
 
 **Diagram sources**
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
-- [workflow.py:41-197](file://server/app/models/workflow.py#L41-L197)
-- [tasks.py:44-150](file://server/app/schemas/tasks.py#L44-L150)
-- [tasks.py:44-690](file://server/app/services/tasks.py#L44-L690)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
-- [tasks.py:1-265](file://server/app/api/endpoints/tasks.py#L1-L265)
-- [a1b2c3d4e5f7_add_unified_task_management.py:23-102](file://server/alembic/versions/a1b2c3d4e5f7_add_unified_task_management.py#L23-L102)
-- [1aac0f420dfc_add_task_management_tables.py:21-135](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L21-L135)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
+- [workflow.py:41-197](server/app/models/workflow.py#L41-L197)
+- [tasks.py:44-150](server/app/schemas/tasks.py#L44-L150)
+- [tasks.py:44-690](server/app/services/tasks.py#L44-L690)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
+- [tasks.py:1-265](server/app/api/endpoints/tasks.py#L1-L265)
+- [a1b2c3d4e5f7_add_unified_task_management.py:23-102](server/alembic/versions/a1b2c3d4e5f7_add_unified_task_management.py#L23-L102)
+- [1aac0f420dfc_add_task_management_tables.py:21-135](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L21-L135)
 
 **Section sources**
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
-- [workflow.py:41-197](file://server/app/models/workflow.py#L41-L197)
-- [tasks.py:44-150](file://server/app/schemas/tasks.py#L44-L150)
-- [tasks.py:44-690](file://server/app/services/tasks.py#L44-L690)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
-- [tasks.py:1-265](file://server/app/api/endpoints/tasks.py#L1-L265)
-- [a1b2c3d4e5f7_add_unified_task_management.py:23-102](file://server/alembic/versions/a1b2c3d4e5f7_add_unified_task_management.py#L23-L102)
-- [1aac0f420dfc_add_task_management_tables.py:21-135](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L21-L135)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
+- [workflow.py:41-197](server/app/models/workflow.py#L41-L197)
+- [tasks.py:44-150](server/app/schemas/tasks.py#L44-L150)
+- [tasks.py:44-690](server/app/services/tasks.py#L44-L690)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
+- [tasks.py:1-265](server/app/api/endpoints/tasks.py#L1-L265)
+- [a1b2c3d4e5f7_add_unified_task_management.py:23-102](server/alembic/versions/a1b2c3d4e5f7_add_unified_task_management.py#L23-L102)
+- [1aac0f420dfc_add_task_management_tables.py:21-135](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L21-L135)
 
 ## Core Components
 - Unified Task Management (Tasks and Reports):
@@ -90,12 +90,12 @@ M_workflow --> MIG2
   - Endpoints expose filtering, board aggregation, creation/update/deletion, report submission, and routine reset.
 
 **Section sources**
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
-- [tasks.py:44-150](file://server/app/schemas/tasks.py#L44-L150)
-- [tasks.py:44-690](file://server/app/services/tasks.py#L44-L690)
-- [workflow.py:41-197](file://server/app/models/workflow.py#L41-L197)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
-- [tasks.py:1-265](file://server/app/api/endpoints/tasks.py#L1-L265)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
+- [tasks.py:44-150](server/app/schemas/tasks.py#L44-L150)
+- [tasks.py:44-690](server/app/services/tasks.py#L44-L690)
+- [workflow.py:41-197](server/app/models/workflow.py#L41-L197)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
+- [tasks.py:1-265](server/app/api/endpoints/tasks.py#L1-L265)
 
 ## Architecture Overview
 The system enforces role-based visibility, workspace scoping, and patient visibility constraints. Creation and updates are audited. Reporting triggers automatic status completion and timeline entries. Routine tasks can be reset by authorized roles.
@@ -116,11 +116,11 @@ Service --> DB_workflow
 ```
 
 **Diagram sources**
-- [tasks.py:1-265](file://server/app/api/endpoints/tasks.py#L1-L265)
-- [tasks.py:44-690](file://server/app/services/tasks.py#L44-L690)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
-- [workflow.py:41-197](file://server/app/models/workflow.py#L41-L197)
+- [tasks.py:1-265](server/app/api/endpoints/tasks.py#L1-L265)
+- [tasks.py:44-690](server/app/services/tasks.py#L44-L690)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
+- [workflow.py:41-197](server/app/models/workflow.py#L41-L197)
 
 ## Detailed Component Analysis
 
@@ -175,11 +175,11 @@ Task "1" --> "*" TaskReport : "has"
 ```
 
 **Diagram sources**
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
 
 **Section sources**
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
-- [tasks.py:44-150](file://server/app/schemas/tasks.py#L44-L150)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
+- [tasks.py:44-150](server/app/schemas/tasks.py#L44-L150)
 
 ### Task Lifecycle and CRUD
 - Creation:
@@ -232,14 +232,14 @@ E-->>C : 201 Created
 ```
 
 **Diagram sources**
-- [tasks.py:127-216](file://server/app/api/endpoints/tasks.py#L127-L216)
-- [tasks.py:123-396](file://server/app/services/tasks.py#L123-L396)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
+- [tasks.py:127-216](server/app/api/endpoints/tasks.py#L127-L216)
+- [tasks.py:123-396](server/app/services/tasks.py#L123-L396)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
 
 **Section sources**
-- [tasks.py:127-216](file://server/app/api/endpoints/tasks.py#L127-L216)
-- [tasks.py:123-396](file://server/app/services/tasks.py#L123-L396)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
+- [tasks.py:127-216](server/app/api/endpoints/tasks.py#L127-L216)
+- [tasks.py:123-396](server/app/services/tasks.py#L123-L396)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
 
 ### Role-Based Visibility and Filtering
 - Listing and retrieval:
@@ -268,12 +268,12 @@ Deny --> End(["End"])
 ```
 
 **Diagram sources**
-- [tasks.py:47-101](file://server/app/services/tasks.py#L47-L101)
-- [tasks.py:665-687](file://server/app/services/tasks.py#L665-L687)
+- [tasks.py:47-101](server/app/services/tasks.py#L47-L101)
+- [tasks.py:665-687](server/app/services/tasks.py#L665-L687)
 
 **Section sources**
-- [tasks.py:47-101](file://server/app/services/tasks.py#L47-L101)
-- [tasks.py:665-687](file://server/app/services/tasks.py#L665-L687)
+- [tasks.py:47-101](server/app/services/tasks.py#L47-L101)
+- [tasks.py:665-687](server/app/services/tasks.py#L665-L687)
 
 ### Task Board and Enrichment
 - Task board aggregates tasks by assigned user for a given shift_date, with counts per status and enriched user/person info.
@@ -297,12 +297,12 @@ E-->>C : 200 OK
 ```
 
 **Diagram sources**
-- [tasks.py:80-99](file://server/app/api/endpoints/tasks.py#L80-L99)
-- [tasks.py:475-550](file://server/app/services/tasks.py#L475-L550)
+- [tasks.py:80-99](server/app/api/endpoints/tasks.py#L80-L99)
+- [tasks.py:475-550](server/app/services/tasks.py#L475-L550)
 
 **Section sources**
-- [tasks.py:80-99](file://server/app/api/endpoints/tasks.py#L80-L99)
-- [tasks.py:475-550](file://server/app/services/tasks.py#L475-L550)
+- [tasks.py:80-99](server/app/api/endpoints/tasks.py#L80-L99)
+- [tasks.py:475-550](server/app/services/tasks.py#L475-L550)
 
 ### Assignment Logic and Handoffs
 - Assignment modes:
@@ -324,20 +324,20 @@ Save --> Done["Done"]
 ```
 
 **Diagram sources**
-- [workflow.py:524-621](file://server/app/services/workflow.py#L524-L621)
-- [tasks.py:123-208](file://server/app/services/tasks.py#L123-L208)
+- [workflow.py:524-621](server/app/services/workflow.py#L524-L621)
+- [tasks.py:123-208](server/app/services/tasks.py#L123-L208)
 
 **Section sources**
-- [workflow.py:524-621](file://server/app/services/workflow.py#L524-L621)
-- [tasks.py:123-208](file://server/app/services/tasks.py#L123-L208)
+- [workflow.py:524-621](server/app/services/workflow.py#L524-L621)
+- [tasks.py:123-208](server/app/services/tasks.py#L123-L208)
 
 ### Priority, Due Dates, and Completion Tracking
 - Priority and due_at are stored on Task; status transitions update completed_at accordingly.
 - Routine tasks include shift_date for daily recurrence.
 
 **Section sources**
-- [tasks.py:45-78](file://server/app/models/tasks.py#L45-L78)
-- [tasks.py:209-295](file://server/app/services/tasks.py#L209-L295)
+- [tasks.py:45-78](server/app/models/tasks.py#L45-L78)
+- [tasks.py:209-295](server/app/services/tasks.py#L209-L295)
 
 ### Audit Trails and Timeline Integration
 - Audit events:
@@ -347,12 +347,12 @@ Save --> Done["Done"]
   - Submission of task reports creates an ActivityTimeline entry for the patient.
 
 **Section sources**
-- [tasks.py:187-201](file://server/app/services/tasks.py#L187-L201)
-- [tasks.py:243-253](file://server/app/services/tasks.py#L243-L253)
-- [tasks.py:281-291](file://server/app/services/tasks.py#L281-L291)
-- [tasks.py:357-371](file://server/app/services/tasks.py#L357-L371)
-- [tasks.py:457-470](file://server/app/services/tasks.py#L457-L470)
-- [workflow.py:180-197](file://server/app/models/workflow.py#L180-L197)
+- [tasks.py:187-201](server/app/services/tasks.py#L187-L201)
+- [tasks.py:243-253](server/app/services/tasks.py#L243-L253)
+- [tasks.py:281-291](server/app/services/tasks.py#L281-L291)
+- [tasks.py:357-371](server/app/services/tasks.py#L357-L371)
+- [tasks.py:457-470](server/app/services/tasks.py#L457-L470)
+- [workflow.py:180-197](server/app/models/workflow.py#L180-L197)
 
 ### Integration with Workflow Jobs
 - Unified Tasks:
@@ -363,9 +363,9 @@ Save --> Done["Done"]
   - When tasks are linked to workflow jobs, visibility depends on job visibility rules.
 
 **Section sources**
-- [tasks.py:72-75](file://server/app/models/tasks.py#L72-L75)
-- [workflow.py:59-65](file://server/app/models/workflow.py#L59-L65)
-- [workflow.py:784-800](file://server/app/services/workflow.py#L784-L800)
+- [tasks.py:72-75](server/app/models/tasks.py#L72-L75)
+- [workflow.py:59-65](server/app/models/workflow.py#L59-L65)
+- [workflow.py:784-800](server/app/services/workflow.py#L784-L800)
 
 ### Practical Examples
 - Create a task:
@@ -386,8 +386,8 @@ Save --> Done["Done"]
   - Behavior: resets routine tasks for a shift_date
 
 **Section sources**
-- [tasks.py:127-216](file://server/app/api/endpoints/tasks.py#L127-L216)
-- [tasks.py:123-396](file://server/app/services/tasks.py#L123-L396)
+- [tasks.py:127-216](server/app/api/endpoints/tasks.py#L127-L216)
+- [tasks.py:123-396](server/app/services/tasks.py#L123-L396)
 
 ## Dependency Analysis
 - Models:
@@ -408,16 +408,16 @@ AUDIT --> MODELS_WF["models/workflow.py"]
 ```
 
 **Diagram sources**
-- [tasks.py:1-265](file://server/app/api/endpoints/tasks.py#L1-L265)
-- [tasks.py:44-690](file://server/app/services/tasks.py#L44-L690)
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
-- [workflow.py:41-197](file://server/app/models/workflow.py#L41-L197)
+- [tasks.py:1-265](server/app/api/endpoints/tasks.py#L1-L265)
+- [tasks.py:44-690](server/app/services/tasks.py#L44-L690)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
+- [workflow.py:41-197](server/app/models/workflow.py#L41-L197)
 
 **Section sources**
-- [tasks.py:1-265](file://server/app/api/endpoints/tasks.py#L1-L265)
-- [tasks.py:44-690](file://server/app/services/tasks.py#L44-L690)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
+- [tasks.py:1-265](server/app/api/endpoints/tasks.py#L1-L265)
+- [tasks.py:44-690](server/app/services/tasks.py#L44-L690)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
 
 ## Performance Considerations
 - Indexes:
@@ -432,9 +432,9 @@ AUDIT --> MODELS_WF["models/workflow.py"]
   - Avoid retrieving unnecessary enriched fields when not needed.
 
 **Section sources**
-- [tasks.py:26-32](file://server/app/models/tasks.py#L26-L32)
-- [tasks.py:87-91](file://server/app/models/tasks.py#L87-L91)
-- [tasks.py:552-611](file://server/app/services/tasks.py#L552-L611)
+- [tasks.py:26-32](server/app/models/tasks.py#L26-L32)
+- [tasks.py:87-91](server/app/models/tasks.py#L87-L91)
+- [tasks.py:552-611](server/app/services/tasks.py#L552-L611)
 
 ## Troubleshooting Guide
 - Common errors:
@@ -446,10 +446,10 @@ AUDIT --> MODELS_WF["models/workflow.py"]
   - Review audit_trail_events for domain “task” and actions (create, update, delete, submit_report, reset_routine_tasks) to trace operations.
 
 **Section sources**
-- [tasks.py:32-42](file://server/app/api/endpoints/tasks.py#L32-L42)
-- [tasks.py:209-295](file://server/app/services/tasks.py#L209-L295)
-- [tasks.py:296-396](file://server/app/services/tasks.py#L296-L396)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
+- [tasks.py:32-42](server/app/api/endpoints/tasks.py#L32-L42)
+- [tasks.py:209-295](server/app/services/tasks.py#L209-L295)
+- [tasks.py:296-396](server/app/services/tasks.py#L296-L396)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
 
 ## Conclusion
 The WheelSense task management system provides a robust, auditable, and role-aware solution for managing both ad-hoc and routine tasks. It integrates seamlessly with workflow jobs and shift checklists, supports flexible assignment modes, and offers comprehensive visibility controls and reporting capabilities. The unified model and schema enable structured task execution and completion tracking, while audit trails and timeline integrations provide strong operational oversight.

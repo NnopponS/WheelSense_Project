@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [devices.py](file://server/app/schemas/devices.py)
-- [device_management.py](file://server/app/services/device_management.py)
-- [telemetry.py](file://server/app/api/endpoints/telemetry.py)
-- [localization.py](file://server/app/api/endpoints/localization.py)
-- [localization.py](file://server/app/schemas/localization.py)
-- [models_telemetry.py](file://server/app/models/telemetry.py)
-- [cameras.py](file://server/app/api/endpoints/cameras.py)
-- [camera_schemas.py](file://server/app/schemas/camera.py)
-- [device_activity.py](file://server/app/services/device_activity.py)
-- [activity_models.py](file://server/app/models/activity.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [devices.py](server/app/schemas/devices.py)
+- [device_management.py](server/app/services/device_management.py)
+- [telemetry.py](server/app/api/endpoints/telemetry.py)
+- [localization.py](server/app/api/endpoints/localization.py)
+- [localization.py](server/app/schemas/localization.py)
+- [models_telemetry.py](server/app/models/telemetry.py)
+- [cameras.py](server/app/api/endpoints/cameras.py)
+- [camera_schemas.py](server/app/schemas/camera.py)
+- [device_activity.py](server/app/services/device_activity.py)
+- [activity_models.py](server/app/models/activity.py)
 </cite>
 
 ## Table of Contents
@@ -69,30 +69,30 @@ E4 -. uses .-> S3
 ```
 
 **Diagram sources**
-- [devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [devices.py:1-93](file://server/app/schemas/devices.py#L1-L93)
-- [device_management.py:1-800](file://server/app/services/device_management.py#L1-L800)
-- [telemetry.py:1-73](file://server/app/api/endpoints/telemetry.py#L1-L73)
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization.py:1-93](file://server/app/schemas/localization.py#L1-L93)
-- [cameras.py:1-91](file://server/app/api/endpoints/cameras.py#L1-L91)
-- [camera_schemas.py:1-22](file://server/app/schemas/camera.py#L1-L22)
-- [models_telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [device_activity.py:1-61](file://server/app/services/device_activity.py#L1-L61)
-- [activity_models.py:1-90](file://server/app/models/activity.py#L1-L90)
+- [devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [devices.py:1-93](server/app/schemas/devices.py#L1-L93)
+- [device_management.py:1-800](server/app/services/device_management.py#L1-L800)
+- [telemetry.py:1-73](server/app/api/endpoints/telemetry.py#L1-L73)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization.py:1-93](server/app/schemas/localization.py#L1-L93)
+- [cameras.py:1-91](server/app/api/endpoints/cameras.py#L1-L91)
+- [camera_schemas.py:1-22](server/app/schemas/camera.py#L1-L22)
+- [models_telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [device_activity.py:1-61](server/app/services/device_activity.py#L1-L61)
+- [activity_models.py:1-90](server/app/models/activity.py#L1-L90)
 
 **Section sources**
-- [devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [devices.py:1-93](file://server/app/schemas/devices.py#L1-L93)
-- [device_management.py:1-800](file://server/app/services/device_management.py#L1-L800)
-- [telemetry.py:1-73](file://server/app/api/endpoints/telemetry.py#L1-L73)
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization.py:1-93](file://server/app/schemas/localization.py#L1-L93)
-- [cameras.py:1-91](file://server/app/api/endpoints/cameras.py#L1-L91)
-- [camera_schemas.py:1-22](file://server/app/schemas/camera.py#L1-L22)
-- [models_telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [device_activity.py:1-61](file://server/app/services/device_activity.py#L1-L61)
-- [activity_models.py:1-90](file://server/app/models/activity.py#L1-L90)
+- [devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [devices.py:1-93](server/app/schemas/devices.py#L1-L93)
+- [device_management.py:1-800](server/app/services/device_management.py#L1-L800)
+- [telemetry.py:1-73](server/app/api/endpoints/telemetry.py#L1-L73)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization.py:1-93](server/app/schemas/localization.py#L1-L93)
+- [cameras.py:1-91](server/app/api/endpoints/cameras.py#L1-L91)
+- [camera_schemas.py:1-22](server/app/schemas/camera.py#L1-L22)
+- [models_telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [device_activity.py:1-61](server/app/services/device_activity.py#L1-L61)
+- [activity_models.py:1-90](server/app/models/activity.py#L1-L90)
 
 ## Core Components
 - Device Registry API: CRUD and listing for devices, with role-based access controls.
@@ -104,12 +104,12 @@ E4 -. uses .-> S3
 - Device Activity Logging: Best-effort event logging for device registry and command actions.
 
 **Section sources**
-- [devices.py:63-311](file://server/app/api/endpoints/devices.py#L63-L311)
-- [device_management.py:597-800](file://server/app/services/device_management.py#L597-L800)
-- [telemetry.py:15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
-- [localization.py:52-396](file://server/app/api/endpoints/localization.py#L52-L396)
-- [cameras.py:19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
-- [device_activity.py:16-61](file://server/app/services/device_activity.py#L16-L61)
+- [devices.py:63-311](server/app/api/endpoints/devices.py#L63-L311)
+- [device_management.py:597-800](server/app/services/device_management.py#L597-L800)
+- [telemetry.py:15-73](server/app/api/endpoints/telemetry.py#L15-L73)
+- [localization.py:52-396](server/app/api/endpoints/localization.py#L52-L396)
+- [cameras.py:19-91](server/app/api/endpoints/cameras.py#L19-L91)
+- [device_activity.py:16-61](server/app/services/device_activity.py#L16-L61)
 
 ## Architecture Overview
 The device management architecture integrates HTTP endpoints, service layers, and database models. Commands are dispatched to devices via MQTT topics, while telemetry is ingested and normalized. Localization leverages RSSI vectors and training data to predict room occupancy.
@@ -132,10 +132,10 @@ Loc-->>Client : Model trained stats
 ```
 
 **Diagram sources**
-- [devices.py:136-144](file://server/app/api/endpoints/devices.py#L136-L144)
-- [device_management.py:162-214](file://server/app/services/device_management.py#L162-L214)
-- [models_telemetry.py:132-154](file://server/app/models/telemetry.py#L132-L154)
-- [localization.py:129-160](file://server/app/api/endpoints/localization.py#L129-L160)
+- [devices.py:136-144](server/app/api/endpoints/devices.py#L136-L144)
+- [device_management.py:162-214](server/app/services/device_management.py#L162-L214)
+- [models_telemetry.py:132-154](server/app/models/telemetry.py#L132-L154)
+- [localization.py:129-160](server/app/api/endpoints/localization.py#L129-L160)
 
 ## Detailed Component Analysis
 
@@ -166,14 +166,14 @@ Log3 --> Done3([Success])
 ```
 
 **Diagram sources**
-- [devices.py:186-240](file://server/app/api/endpoints/devices.py#L186-L240)
-- [device_management.py:597-800](file://server/app/services/device_management.py#L597-L800)
-- [device_activity.py:16-61](file://server/app/services/device_activity.py#L16-L61)
+- [devices.py:186-240](server/app/api/endpoints/devices.py#L186-L240)
+- [device_management.py:597-800](server/app/services/device_management.py#L597-L800)
+- [device_activity.py:16-61](server/app/services/device_activity.py#L16-L61)
 
 **Section sources**
-- [devices.py:63-240](file://server/app/api/endpoints/devices.py#L63-L240)
-- [device_management.py:597-800](file://server/app/services/device_management.py#L597-L800)
-- [device_activity.py:16-61](file://server/app/services/device_activity.py#L16-L61)
+- [devices.py:63-240](server/app/api/endpoints/devices.py#L63-L240)
+- [device_management.py:597-800](server/app/services/device_management.py#L597-L800)
+- [device_activity.py:16-61](server/app/services/device_activity.py#L16-L61)
 
 ### Telemetry Data Ingestion and Monitoring
 - Mobile telemetry ingestion endpoint accepts structured payloads and normalizes device records when auto-registration is enabled.
@@ -202,16 +202,16 @@ API-->>Client : Array of RSSI samples
 ```
 
 **Diagram sources**
-- [devices.py:136-144](file://server/app/api/endpoints/devices.py#L136-L144)
-- [device_management.py:162-214](file://server/app/services/device_management.py#L162-L214)
-- [telemetry.py:15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
-- [models_telemetry.py:132-154](file://server/app/models/telemetry.py#L132-L154)
+- [devices.py:136-144](server/app/api/endpoints/devices.py#L136-L144)
+- [device_management.py:162-214](server/app/services/device_management.py#L162-L214)
+- [telemetry.py:15-73](server/app/api/endpoints/telemetry.py#L15-L73)
+- [models_telemetry.py:132-154](server/app/models/telemetry.py#L132-L154)
 
 **Section sources**
-- [devices.py:136-144](file://server/app/api/endpoints/devices.py#L136-L144)
-- [device_management.py:162-214](file://server/app/services/device_management.py#L162-L214)
-- [telemetry.py:15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
-- [models_telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
+- [devices.py:136-144](server/app/api/endpoints/devices.py#L136-L144)
+- [device_management.py:162-214](server/app/services/device_management.py#L162-L214)
+- [telemetry.py:15-73](server/app/api/endpoints/telemetry.py#L15-L73)
+- [models_telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
 
 ### Localization Service Integration
 - Strategy configuration and readiness checks.
@@ -244,16 +244,16 @@ API-->>Manager : Predicted room
 ```
 
 **Diagram sources**
-- [localization.py:62-127](file://server/app/api/endpoints/localization.py#L62-L127)
-- [localization.py:191-231](file://server/app/api/endpoints/localization.py#L191-L231)
-- [localization.py:233-396](file://server/app/api/endpoints/localization.py#L233-L396)
-- [localization.py:1-93](file://server/app/schemas/localization.py#L1-L93)
-- [models_telemetry.py:156-222](file://server/app/models/telemetry.py#L156-L222)
+- [localization.py:62-127](server/app/api/endpoints/localization.py#L62-L127)
+- [localization.py:191-231](server/app/api/endpoints/localization.py#L191-L231)
+- [localization.py:233-396](server/app/api/endpoints/localization.py#L233-L396)
+- [localization.py:1-93](server/app/schemas/localization.py#L1-L93)
+- [models_telemetry.py:156-222](server/app/models/telemetry.py#L156-L222)
 
 **Section sources**
-- [localization.py:52-396](file://server/app/api/endpoints/localization.py#L52-L396)
-- [localization.py:1-93](file://server/app/schemas/localization.py#L1-L93)
-- [models_telemetry.py:156-222](file://server/app/models/telemetry.py#L156-L222)
+- [localization.py:52-396](server/app/api/endpoints/localization.py#L52-L396)
+- [localization.py:1-93](server/app/schemas/localization.py#L1-L93)
+- [models_telemetry.py:156-222](server/app/models/telemetry.py#L156-L222)
 
 ### Camera Device APIs and Image Capture Control
 - Camera command dispatch for start_stream and set_resolution.
@@ -280,16 +280,16 @@ Cam-->>Operator : Deleted record
 ```
 
 **Diagram sources**
-- [devices.py:283-311](file://server/app/api/endpoints/devices.py#L283-L311)
-- [cameras.py:19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
-- [camera_schemas.py:1-22](file://server/app/schemas/camera.py#L1-L22)
-- [models_telemetry.py:95-104](file://server/app/models/telemetry.py#L95-L104)
+- [devices.py:283-311](server/app/api/endpoints/devices.py#L283-L311)
+- [cameras.py:19-91](server/app/api/endpoints/cameras.py#L19-L91)
+- [camera_schemas.py:1-22](server/app/schemas/camera.py#L1-L22)
+- [models_telemetry.py:95-104](server/app/models/telemetry.py#L95-L104)
 
 **Section sources**
-- [devices.py:265-311](file://server/app/api/endpoints/devices.py#L265-L311)
-- [cameras.py:19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
-- [camera_schemas.py:1-22](file://server/app/schemas/camera.py#L1-L22)
-- [models_telemetry.py:95-104](file://server/app/models/telemetry.py#L95-L104)
+- [devices.py:265-311](server/app/api/endpoints/devices.py#L265-L311)
+- [cameras.py:19-91](server/app/api/endpoints/cameras.py#L19-L91)
+- [camera_schemas.py:1-22](server/app/schemas/camera.py#L1-L22)
+- [models_telemetry.py:95-104](server/app/models/telemetry.py#L95-L104)
 
 ### Device Assignment Workflows and Patient-Device Linking
 - Assign or unassign a patient from a device; logs pairing/unpairing events.
@@ -313,13 +313,13 @@ end
 ```
 
 **Diagram sources**
-- [devices.py:146-184](file://server/app/api/endpoints/devices.py#L146-L184)
-- [device_activity.py:16-61](file://server/app/services/device_activity.py#L16-L61)
+- [devices.py:146-184](server/app/api/endpoints/devices.py#L146-L184)
+- [device_activity.py:16-61](server/app/services/device_activity.py#L16-L61)
 
 **Section sources**
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:146-184](file://server/app/api/endpoints/devices.py#L146-L184)
-- [device_activity.py:16-61](file://server/app/services/device_activity.py#L16-L61)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:146-184](server/app/api/endpoints/devices.py#L146-L184)
+- [device_activity.py:16-61](server/app/services/device_activity.py#L16-L61)
 
 ### Device Health Monitoring Endpoints
 - Device activity timeline for recent events.
@@ -339,12 +339,12 @@ API-->>Viewer : Alerts for device
 ```
 
 **Diagram sources**
-- [devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
-- [activity_models.py:49-90](file://server/app/models/activity.py#L49-L90)
+- [devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
+- [activity_models.py:49-90](server/app/models/activity.py#L49-L90)
 
 **Section sources**
-- [devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
-- [activity_models.py:49-90](file://server/app/models/activity.py#L49-L90)
+- [devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
+- [activity_models.py:49-90](server/app/models/activity.py#L49-L90)
 
 ## Dependency Analysis
 - Endpoints depend on services for business logic and on schemas for validation.
@@ -363,26 +363,26 @@ EPC --> SCHC["schemas/camera.py"]
 ```
 
 **Diagram sources**
-- [devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [device_management.py:1-800](file://server/app/services/device_management.py#L1-L800)
-- [device_activity.py:1-61](file://server/app/services/device_activity.py#L1-L61)
-- [telemetry.py:1-73](file://server/app/api/endpoints/telemetry.py#L1-L73)
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization.py:1-93](file://server/app/schemas/localization.py#L1-L93)
-- [cameras.py:1-91](file://server/app/api/endpoints/cameras.py#L1-L91)
-- [camera_schemas.py:1-22](file://server/app/schemas/camera.py#L1-L22)
-- [models_telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
+- [devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [device_management.py:1-800](server/app/services/device_management.py#L1-L800)
+- [device_activity.py:1-61](server/app/services/device_activity.py#L1-L61)
+- [telemetry.py:1-73](server/app/api/endpoints/telemetry.py#L1-L73)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization.py:1-93](server/app/schemas/localization.py#L1-L93)
+- [cameras.py:1-91](server/app/api/endpoints/cameras.py#L1-L91)
+- [camera_schemas.py:1-22](server/app/schemas/camera.py#L1-L22)
+- [models_telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
 
 **Section sources**
-- [devices.py:1-311](file://server/app/api/endpoints/devices.py#L1-L311)
-- [device_management.py:1-800](file://server/app/services/device_management.py#L1-L800)
-- [device_activity.py:1-61](file://server/app/services/device_activity.py#L1-L61)
-- [telemetry.py:1-73](file://server/app/api/endpoints/telemetry.py#L1-L73)
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization.py:1-93](file://server/app/schemas/localization.py#L1-L93)
-- [cameras.py:1-91](file://server/app/api/endpoints/cameras.py#L1-L91)
-- [camera_schemas.py:1-22](file://server/app/schemas/camera.py#L1-L22)
-- [models_telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
+- [devices.py:1-311](server/app/api/endpoints/devices.py#L1-L311)
+- [device_management.py:1-800](server/app/services/device_management.py#L1-L800)
+- [device_activity.py:1-61](server/app/services/device_activity.py#L1-L61)
+- [telemetry.py:1-73](server/app/api/endpoints/telemetry.py#L1-L73)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization.py:1-93](server/app/schemas/localization.py#L1-L93)
+- [cameras.py:1-91](server/app/api/endpoints/cameras.py#L1-L91)
+- [camera_schemas.py:1-22](server/app/schemas/camera.py#L1-L22)
+- [models_telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
 
 ## Performance Considerations
 - Batch ingestion: Group telemetry submissions to reduce round trips and database load.
@@ -402,11 +402,11 @@ EPC --> SCHC["schemas/camera.py"]
 - Photo retrieval: If file is missing, the endpoint returns 404; ensure storage paths are valid and accessible.
 
 **Section sources**
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [device_management.py:597-620](file://server/app/services/device_management.py#L597-L620)
-- [device_activity.py:16-61](file://server/app/services/device_activity.py#L16-L61)
-- [cameras.py:56-74](file://server/app/api/endpoints/cameras.py#L56-L74)
-- [activity_models.py:49-90](file://server/app/models/activity.py#L49-L90)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [device_management.py:597-620](server/app/services/device_management.py#L597-L620)
+- [device_activity.py:16-61](server/app/services/device_activity.py#L16-L61)
+- [cameras.py:56-74](server/app/api/endpoints/cameras.py#L56-L74)
+- [activity_models.py:49-90](server/app/models/activity.py#L49-L90)
 
 ## Conclusion
 The device management APIs provide a robust foundation for registering, configuring, and monitoring devices, integrating telemetry and localization, and managing camera operations. By leveraging role-based access, structured schemas, and best-effort activity logging, the system supports scalable fleet control and reliable device lifecycle management.
@@ -444,8 +444,8 @@ The device management APIs provide a robust foundation for registering, configur
   - Response: DeviceCommandOut
 
 **Section sources**
-- [devices.py:63-311](file://server/app/api/endpoints/devices.py#L63-L311)
-- [devices.py:12-43](file://server/app/schemas/devices.py#L12-L43)
+- [devices.py:63-311](server/app/api/endpoints/devices.py#L63-L311)
+- [devices.py:12-43](server/app/schemas/devices.py#L12-L43)
 
 ### API Reference: Telemetry Ingestion and Queries
 - POST /api/devices/mobile/ingest
@@ -460,10 +460,10 @@ The device management APIs provide a robust foundation for registering, configur
   - Response: array of RSSI readings
 
 **Section sources**
-- [devices.py:136-144](file://server/app/api/endpoints/devices.py#L136-L144)
-- [devices.py:69-93](file://server/app/schemas/devices.py#L69-L93)
-- [telemetry.py:15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
-- [models_telemetry.py:20-51](file://server/app/models/telemetry.py#L20-L51)
+- [devices.py:136-144](server/app/api/endpoints/devices.py#L136-L144)
+- [devices.py:69-93](server/app/schemas/devices.py#L69-L93)
+- [telemetry.py:15-73](server/app/api/endpoints/telemetry.py#L15-L73)
+- [models_telemetry.py:20-51](server/app/models/telemetry.py#L20-L51)
 
 ### API Reference: Localization
 - GET /api/localization
@@ -507,9 +507,9 @@ The device management APIs provide a robust foundation for registering, configur
   - Response: LocalizationCalibrationTrainOut
 
 **Section sources**
-- [localization.py:52-396](file://server/app/api/endpoints/localization.py#L52-L396)
-- [localization.py:1-93](file://server/app/schemas/localization.py#L1-L93)
-- [models_telemetry.py:53-222](file://server/app/models/telemetry.py#L53-L222)
+- [localization.py:52-396](server/app/api/endpoints/localization.py#L52-L396)
+- [localization.py:1-93](server/app/schemas/localization.py#L1-L93)
+- [models_telemetry.py:53-222](server/app/models/telemetry.py#L53-L222)
 
 ### API Reference: Cameras
 - GET /api/cameras/photos
@@ -529,10 +529,10 @@ The device management APIs provide a robust foundation for registering, configur
   - Response: command dispatch info
 
 **Section sources**
-- [cameras.py:19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
-- [camera_schemas.py:1-22](file://server/app/schemas/camera.py#L1-L22)
-- [devices.py:265-311](file://server/app/api/endpoints/devices.py#L265-L311)
-- [models_telemetry.py:95-104](file://server/app/models/telemetry.py#L95-L104)
+- [cameras.py:19-91](server/app/api/endpoints/cameras.py#L19-L91)
+- [camera_schemas.py:1-22](server/app/schemas/camera.py#L1-L22)
+- [devices.py:265-311](server/app/api/endpoints/devices.py#L265-L311)
+- [models_telemetry.py:95-104](server/app/models/telemetry.py#L95-L104)
 
 ### Device Activity Timeline
 - GET /api/devices/activity
@@ -541,8 +541,8 @@ The device management APIs provide a robust foundation for registering, configur
   - Response: array of DeviceActivityEventOut
 
 **Section sources**
-- [devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
-- [device_activity.py:48-61](file://server/app/services/device_activity.py#L48-L61)
+- [devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
+- [device_activity.py:48-61](server/app/services/device_activity.py#L48-L61)
 
 ### Device Assignment and Linking
 - POST /api/devices/{device_id}/patient
@@ -551,12 +551,12 @@ The device management APIs provide a robust foundation for registering, configur
   - Response: {status, patient_id, device_role, assigned_at?}
 
 **Section sources**
-- [devices.py:146-184](file://server/app/api/endpoints/devices.py#L146-L184)
+- [devices.py:146-184](server/app/api/endpoints/devices.py#L146-L184)
 
 ### Data Models Overview
 - Telemetry tables: IMUTelemetry, RSSIReading, RoomPrediction, RSSITrainingData, MotionTrainingData, PhotoRecord, NodeStatusTelemetry, MobileDeviceTelemetry, LocalizationConfig, LocalizationCalibrationSession, LocalizationCalibrationSample.
 - Activity tables: ActivityTimeline, Alert.
 
 **Section sources**
-- [models_telemetry.py:20-222](file://server/app/models/telemetry.py#L20-L222)
-- [activity_models.py:14-90](file://server/app/models/activity.py#L14-L90)
+- [models_telemetry.py:20-222](server/app/models/telemetry.py#L20-L222)
+- [activity_models.py:14-90](server/app/models/activity.py#L14-L90)

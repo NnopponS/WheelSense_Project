@@ -2,22 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [language_bridge.py](file://server/app/agent_runtime/language_bridge.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [server.py](file://server/app/mcp/server.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [context.py](file://server/app/mcp/context.py)
-- [__init__.py](file://server/app/mcp/__init__.py)
-- [agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [chat_actions.py](file://server/app/api/endpoints/chat_actions.py)
-- [config.py](file://server/app/config.py)
-- [agent_runtime_client.py](file://server/app/services/agent_runtime_client.py)
-- [mcp_auth.py](file://server/app/api/endpoints/mcp_auth.py)
-- [MCP-README.md](file://docs/MCP-README.md)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [language_bridge.py](server/app/agent_runtime/language_bridge.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [server.py](server/app/mcp/server.py)
+- [auth.py](server/app/mcp/auth.py)
+- [context.py](server/app/mcp/context.py)
+- [__init__.py](server/app/mcp/__init__.py)
+- [agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [chat_actions.py](server/app/api/endpoints/chat_actions.py)
+- [config.py](server/app/config.py)
+- [agent_runtime_client.py](server/app/services/agent_runtime_client.py)
+- [mcp_auth.py](server/app/api/endpoints/mcp_auth.py)
+- [MCP-README.md](docs/MCP-README.md)
 </cite>
 
 ## Table of Contents
@@ -95,25 +95,25 @@ Config --> MCP_Server
 ```
 
 **Diagram sources**
-- [main.py:14-55](file://server/app/agent_runtime/main.py#L14-L55)
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [intent.py:1-800](file://server/app/agent_runtime/intent.py#L1-L800)
-- [language_bridge.py:1-125](file://server/app/agent_runtime/language_bridge.py#L1-L125)
-- [conversation_fastpath.py:1-45](file://server/app/agent_runtime/conversation_fastpath.py#L1-L45)
-- [llm_tool_router.py:1-366](file://server/app/agent_runtime/llm_tool_router.py#L1-L366)
-- [server.py:110-800](file://server/app/mcp/server.py#L110-L800)
-- [auth.py:16-190](file://server/app/mcp/auth.py#L16-L190)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [chat_actions.py:124-300](file://server/app/api/endpoints/chat_actions.py#L124-L300)
-- [config.py:68-95](file://server/app/config.py#L68-L95)
-- [agent_runtime_client.py:23-65](file://server/app/services/agent_runtime_client.py#L23-L65)
+- [main.py:14-55](server/app/agent_runtime/main.py#L14-L55)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [intent.py:1-800](server/app/agent_runtime/intent.py#L1-L800)
+- [language_bridge.py:1-125](server/app/agent_runtime/language_bridge.py#L1-L125)
+- [conversation_fastpath.py:1-45](server/app/agent_runtime/conversation_fastpath.py#L1-L45)
+- [llm_tool_router.py:1-366](server/app/agent_runtime/llm_tool_router.py#L1-L366)
+- [server.py:110-800](server/app/mcp/server.py#L110-L800)
+- [auth.py:16-190](server/app/mcp/auth.py#L16-L190)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [chat_actions.py:124-300](server/app/api/endpoints/chat_actions.py#L124-L300)
+- [config.py:68-95](server/app/config.py#L68-L95)
+- [agent_runtime_client.py:23-65](server/app/services/agent_runtime_client.py#L23-L65)
 
 **Section sources**
-- [main.py:14-55](file://server/app/agent_runtime/main.py#L14-L55)
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [server.py:110-800](file://server/app/mcp/server.py#L110-L800)
-- [chat_actions.py:124-300](file://server/app/api/endpoints/chat_actions.py#L124-L300)
-- [config.py:68-95](file://server/app/config.py#L68-L95)
+- [main.py:14-55](server/app/agent_runtime/main.py#L14-L55)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [server.py:110-800](server/app/mcp/server.py#L110-L800)
+- [chat_actions.py:124-300](server/app/api/endpoints/chat_actions.py#L124-L300)
+- [config.py:68-95](server/app/config.py#L68-L95)
 
 ## Core Components
 - Agent Runtime API: Exposes internal endpoints for proposing and executing plans with an internal secret guard.
@@ -128,16 +128,16 @@ Config --> MCP_Server
 - Configuration: Centralized settings for AI providers, routing modes, and internal service URLs.
 
 **Section sources**
-- [main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
-- [service.py:346-561](file://server/app/agent_runtime/service.py#L346-L561)
-- [intent.py:347-800](file://server/app/agent_runtime/intent.py#L347-L800)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [server.py:110-800](file://server/app/mcp/server.py#L110-L800)
-- [auth.py:16-190](file://server/app/mcp/auth.py#L16-L190)
-- [chat_actions.py:124-300](file://server/app/api/endpoints/chat_actions.py#L124-L300)
-- [config.py:68-95](file://server/app/config.py#L68-L95)
+- [main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
+- [service.py:346-561](server/app/agent_runtime/service.py#L346-L561)
+- [intent.py:347-800](server/app/agent_runtime/intent.py#L347-L800)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [server.py:110-800](server/app/mcp/server.py#L110-L800)
+- [auth.py:16-190](server/app/mcp/auth.py#L16-L190)
+- [chat_actions.py:124-300](server/app/api/endpoints/chat_actions.py#L124-L300)
+- [config.py:68-95](server/app/config.py#L68-L95)
 
 ## Architecture Overview
 The system integrates front-end chat with agent runtime orchestration and MCP tool execution. The chat actions API triggers agent runtime propose, which may return either a grounded answer or an execution plan. The plan is presented to the user for confirmation and then executed.
@@ -182,13 +182,13 @@ API-->>FE : Proposal with reply/actions
 ```
 
 **Diagram sources**
-- [chat_actions.py:174-239](file://server/app/api/endpoints/chat_actions.py#L174-L239)
-- [agent_runtime_client.py:23-45](file://server/app/services/agent_runtime_client.py#L23-L45)
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-800](file://server/app/agent_runtime/intent.py#L347-L800)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [server.py:110-800](file://server/app/mcp/server.py#L110-L800)
+- [chat_actions.py:174-239](server/app/api/endpoints/chat_actions.py#L174-L239)
+- [agent_runtime_client.py:23-45](server/app/services/agent_runtime_client.py#L23-L45)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-800](server/app/agent_runtime/intent.py#L347-L800)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [server.py:110-800](server/app/mcp/server.py#L110-L800)
 
 ## Detailed Component Analysis
 
@@ -222,14 +222,14 @@ Mode --> |plan| Confirm["collect_plan_confirmation_reply()"] --> End
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-800](file://server/app/agent_runtime/intent.py#L347-L800)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-800](server/app/agent_runtime/intent.py#L347-L800)
 
 **Section sources**
-- [main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
+- [main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
 
 ### Intent Classification System
 - Regex patterns for high-confidence matches (Thai + English)
@@ -273,13 +273,13 @@ ExecutionPlan --> ExecutionPlanStep : "contains"
 ```
 
 **Diagram sources**
-- [intent.py:347-800](file://server/app/agent_runtime/intent.py#L347-L800)
-- [agent_runtime.py:21-30](file://server/app/schemas/agent_runtime.py#L21-L30)
+- [intent.py:347-800](server/app/agent_runtime/intent.py#L347-L800)
+- [agent_runtime.py:21-30](server/app/schemas/agent_runtime.py#L21-L30)
 
 **Section sources**
-- [intent.py:16-194](file://server/app/agent_runtime/intent.py#L16-L194)
-- [intent.py:347-800](file://server/app/agent_runtime/intent.py#L347-L800)
-- [agent_runtime.py:10-30](file://server/app/schemas/agent_runtime.py#L10-L30)
+- [intent.py:16-194](server/app/agent_runtime/intent.py#L16-L194)
+- [intent.py:347-800](server/app/agent_runtime/intent.py#L347-L800)
+- [agent_runtime.py:10-30](server/app/schemas/agent_runtime.py#L10-L30)
 
 ### Language Bridge and Conversation Fast Path
 - Language Bridge: Optional LLM normalization to English for intent classification, respecting timeouts and provider selection.
@@ -299,13 +299,13 @@ Skip --> Classify
 ```
 
 **Diagram sources**
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 **Section sources**
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [config.py:83-84](file://server/app/config.py#L83-L84)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [config.py:83-84](server/app/config.py#L83-L84)
 
 ### LLM Tool Router (Experimental)
 - Builds OpenAI-style tool definitions from registered MCP workspace tools
@@ -337,12 +337,12 @@ end
 ```
 
 **Diagram sources**
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [service.py:369-382](file://server/app/agent_runtime/service.py#L369-L382)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [service.py:369-382](server/app/agent_runtime/service.py#L369-L382)
 
 **Section sources**
-- [llm_tool_router.py:84-104](file://server/app/agent_runtime/llm_tool_router.py#L84-L104)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [llm_tool_router.py:84-104](server/app/agent_runtime/llm_tool_router.py#L84-L104)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
 
 ### MCP Server Implementation, Authentication, and Authorization
 - FastMCP server exposing tools, prompts, and resources
@@ -368,16 +368,16 @@ Srv-->>Ext : JSON response or SSE stream
 ```
 
 **Diagram sources**
-- [auth.py:30-143](file://server/app/mcp/auth.py#L30-L143)
-- [context.py:24-38](file://server/app/mcp/context.py#L24-L38)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [server.py:283-313](file://server/app/mcp/server.py#L283-L313)
+- [auth.py:30-143](server/app/mcp/auth.py#L30-L143)
+- [context.py:24-38](server/app/mcp/context.py#L24-L38)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [server.py:283-313](server/app/mcp/server.py#L283-L313)
 
 **Section sources**
-- [server.py:110-800](file://server/app/mcp/server.py#L110-L800)
-- [auth.py:16-190](file://server/app/mcp/auth.py#L16-L190)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [mcp_auth.py:93-178](file://server/app/api/endpoints/mcp_auth.py#L93-L178)
+- [server.py:110-800](server/app/mcp/server.py#L110-L800)
+- [auth.py:16-190](server/app/mcp/auth.py#L16-L190)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [mcp_auth.py:93-178](server/app/api/endpoints/mcp_auth.py#L93-L178)
 
 ### Agent Runtime Service, Conversation Management, and Workflow Integration
 - Propose returns either a grounded answer or an action payload encapsulating an execution plan
@@ -411,12 +411,12 @@ API-->>Client : Final reply
 ```
 
 **Diagram sources**
-- [chat_actions.py:174-299](file://server/app/api/endpoints/chat_actions.py#L174-L299)
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
+- [chat_actions.py:174-299](server/app/api/endpoints/chat_actions.py#L174-L299)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
 
 **Section sources**
-- [chat_actions.py:124-300](file://server/app/api/endpoints/chat_actions.py#L124-L300)
-- [service.py:346-561](file://server/app/agent_runtime/service.py#L346-L561)
+- [chat_actions.py:124-300](server/app/api/endpoints/chat_actions.py#L124-L300)
+- [service.py:346-561](server/app/agent_runtime/service.py#L346-L561)
 
 ### Practical Examples and Custom Tool Development
 - Using MCP from external clients via Streamable HTTP transport
@@ -424,16 +424,16 @@ API-->>Client : Final reply
 - Developing custom tools by adding entries to the MCP registry and updating permissions
 
 Examples and references:
-- [MCP-README.md:233-287](file://docs/MCP-README.md#L233-L287)
-- [MCP-README.md:113-150](file://docs/MCP-README.md#L113-L150)
-- [MCP-README.md:157-175](file://docs/MCP-README.md#L157-L175)
-- [MCP-README.md:300-356](file://docs/MCP-README.md#L300-L356)
+- [MCP-README.md:233-287](docs/MCP-README.md#L233-L287)
+- [MCP-README.md:113-150](docs/MCP-README.md#L113-L150)
+- [MCP-README.md:157-175](docs/MCP-README.md#L157-L175)
+- [MCP-README.md:300-356](docs/MCP-README.md#L300-L356)
 
 **Section sources**
-- [MCP-README.md:113-150](file://docs/MCP-README.md#L113-L150)
-- [MCP-README.md:157-175](file://docs/MCP-README.md#L157-L175)
-- [MCP-README.md:233-287](file://docs/MCP-README.md#L233-L287)
-- [MCP-README.md:300-356](file://docs/MCP-README.md#L300-L356)
+- [MCP-README.md:113-150](docs/MCP-README.md#L113-L150)
+- [MCP-README.md:157-175](docs/MCP-README.md#L157-L175)
+- [MCP-README.md:233-287](docs/MCP-README.md#L233-L287)
+- [MCP-README.md:300-356](docs/MCP-README.md#L300-L356)
 
 ## Dependency Analysis
 - Agent Runtime depends on:
@@ -463,22 +463,22 @@ MCP_Server --> Context["Actor Context"]
 ```
 
 **Diagram sources**
-- [main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
-- [service.py:346-561](file://server/app/agent_runtime/service.py#L346-L561)
-- [chat_actions.py:174-239](file://server/app/api/endpoints/chat_actions.py#L174-L239)
-- [agent_runtime_client.py:23-65](file://server/app/services/agent_runtime_client.py#L23-L65)
-- [server.py:110-800](file://server/app/mcp/server.py#L110-L800)
-- [auth.py:16-190](file://server/app/mcp/auth.py#L16-L190)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
+- [main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
+- [service.py:346-561](server/app/agent_runtime/service.py#L346-L561)
+- [chat_actions.py:174-239](server/app/api/endpoints/chat_actions.py#L174-L239)
+- [agent_runtime_client.py:23-65](server/app/services/agent_runtime_client.py#L23-L65)
+- [server.py:110-800](server/app/mcp/server.py#L110-L800)
+- [auth.py:16-190](server/app/mcp/auth.py#L16-L190)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
 
 **Section sources**
-- [main.py:30-55](file://server/app/agent_runtime/main.py#L30-L55)
-- [service.py:346-561](file://server/app/agent_runtime/service.py#L346-L561)
-- [chat_actions.py:174-239](file://server/app/api/endpoints/chat_actions.py#L174-L239)
-- [agent_runtime_client.py:23-65](file://server/app/services/agent_runtime_client.py#L23-L65)
-- [server.py:110-800](file://server/app/mcp/server.py#L110-L800)
-- [auth.py:16-190](file://server/app/mcp/auth.py#L16-L190)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
+- [main.py:30-55](server/app/agent_runtime/main.py#L30-L55)
+- [service.py:346-561](server/app/agent_runtime/service.py#L346-L561)
+- [chat_actions.py:174-239](server/app/api/endpoints/chat_actions.py#L174-L239)
+- [agent_runtime_client.py:23-65](server/app/services/agent_runtime_client.py#L23-L65)
+- [server.py:110-800](server/app/mcp/server.py#L110-L800)
+- [auth.py:16-190](server/app/mcp/auth.py#L16-L190)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
 
 ## Performance Considerations
 - Conversation fast path reduces latency for general chit-chat by bypassing MCP and intent classification.
@@ -499,11 +499,11 @@ Common issues and resolutions:
 - LLM tool router failures: Switch to intent-based routing; verify provider configuration and model availability.
 
 **Section sources**
-- [chat_actions.py:182-186](file://server/app/api/endpoints/chat_actions.py#L182-L186)
-- [service.py:380-382](file://server/app/agent_runtime/service.py#L380-L382)
-- [auth.py:36-50](file://server/app/mcp/auth.py#L36-L50)
-- [server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [config.py:74-76](file://server/app/config.py#L74-L76)
+- [chat_actions.py:182-186](server/app/api/endpoints/chat_actions.py#L182-L186)
+- [service.py:380-382](server/app/agent_runtime/service.py#L380-L382)
+- [auth.py:36-50](server/app/mcp/auth.py#L36-L50)
+- [server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [config.py:74-76](server/app/config.py#L74-L76)
 
 ## Conclusion
 The WheelSense AI and agent runtime integrates intent classification, multilingual normalization, and MCP tool execution into a robust, secure, and user-friendly chat interface. The three-stage flow ensures transparency and safety for potentially risky operations, while the MCP server enforces strict scope-based authorization. Configuration options allow tuning for performance and accuracy, and the provided examples facilitate quick adoption and extension.
@@ -521,7 +521,7 @@ The WheelSense AI and agent runtime integrates intent classification, multilingu
   - mcp_allowed_origins, mcp_require_origin
 
 **Section sources**
-- [config.py:68-95](file://server/app/config.py#L68-L95)
+- [config.py:68-95](server/app/config.py#L68-L95)
 
 ### MCP Tools and Scopes Overview
 - Tools span system, workspace, patient, device, alert, room, workflow, and messaging domains
@@ -529,6 +529,6 @@ The WheelSense AI and agent runtime integrates intent classification, multilingu
 - OAuth metadata endpoint supports protected resource discovery
 
 **Section sources**
-- [MCP-README.md:44-112](file://docs/MCP-README.md#L44-L112)
-- [MCP-README.md:157-175](file://docs/MCP-README.md#L157-L175)
-- [MCP-README.md:136-150](file://docs/MCP-README.md#L136-L150)
+- [MCP-README.md:44-112](docs/MCP-README.md#L44-L112)
+- [MCP-README.md:157-175](docs/MCP-README.md#L157-L175)
+- [MCP-README.md:136-150](docs/MCP-README.md#L136-L150)

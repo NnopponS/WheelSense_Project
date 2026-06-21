@@ -2,24 +2,24 @@
 
 <cite>
 **Referenced Files in This Document**
-- [analytics.py](file://server/app/services/analytics.py)
-- [analytics.py](file://server/app/schemas/analytics.py)
-- [analytics.py](file://server/app/api/endpoints/analytics.py)
-- [analytics.py](file://server/app/mcp/server.py)
-- [OperationsConsole.tsx](file://frontend/components/workflow/OperationsConsole.tsx)
-- [ReportPreviewTable.tsx](file://frontend/components/reports/ReportPreviewTable.tsx)
-- [report-utils.ts](file://frontend/components/reports/report-utils.ts)
-- [KPIStatCard.tsx](file://frontend/components/dashboard/KPIStatCard.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [floorplans.py](file://server/app/services/floorplans.py)
-- [localization.py](file://server/app/api/endpoints/localization.py)
-- [retention_worker.py](file://server/app/workers/retention_worker.py)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [RoomDetailDrawer.tsx](file://frontend/components/admin/monitoring/RoomDetailDrawer.tsx)
-- [RoomSmartDevicesPanel.tsx](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
-- [FacilityFloorToolbar.tsx](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
-- [patientMetrics.ts](file://frontend/lib/patientMetrics.ts)
+- [analytics.py](server/app/services/analytics.py)
+- [analytics.py](server/app/schemas/analytics.py)
+- [analytics.py](server/app/api/endpoints/analytics.py)
+- [analytics.py](server/app/mcp/server.py)
+- [OperationsConsole.tsx](frontend/components/workflow/OperationsConsole.tsx)
+- [ReportPreviewTable.tsx](frontend/components/reports/ReportPreviewTable.tsx)
+- [report-utils.ts](frontend/components/reports/report-utils.ts)
+- [KPIStatCard.tsx](frontend/components/dashboard/KPIStatCard.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [floorplans.py](server/app/services/floorplans.py)
+- [localization.py](server/app/api/endpoints/localization.py)
+- [retention_worker.py](server/app/workers/retention_worker.py)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [RoomDetailDrawer.tsx](frontend/components/admin/monitoring/RoomDetailDrawer.tsx)
+- [RoomSmartDevicesPanel.tsx](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
+- [FacilityFloorToolbar.tsx](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
+- [patientMetrics.ts](frontend/lib/patientMetrics.ts)
 </cite>
 
 ## Table of Contents
@@ -73,26 +73,26 @@ S_API --> S_SRV
 ```
 
 **Diagram sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
-- [localization.py:191-230](file://server/app/api/endpoints/localization.py#L191-L230)
-- [retention_worker.py:42-87](file://server/app/workers/retention_worker.py#L42-L87)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [ReportPreviewTable.tsx:22-66](file://frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
-- [FloorplanRoleViewer.tsx:42-246](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
+- [localization.py:191-230](server/app/api/endpoints/localization.py#L191-L230)
+- [retention_worker.py:42-87](server/app/workers/retention_worker.py#L42-L87)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [ReportPreviewTable.tsx:22-66](frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
+- [FloorplanRoleViewer.tsx:42-246](frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [ReportPreviewTable.tsx:22-66](file://frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
-- [FloorplanRoleViewer.tsx:42-246](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [ReportPreviewTable.tsx:22-66](frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
+- [FloorplanRoleViewer.tsx:42-246](frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
 
 ## Core Components
 - Analytics endpoints: Provide alert summaries, vitals averages, and ward summaries for role-scoped access.
@@ -104,15 +104,15 @@ S_API --> S_SRV
 - Retention worker: Periodically prunes old telemetry to maintain performance and storage hygiene.
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [OperationsConsole.tsx:731-761](file://frontend/components/workflow/OperationsConsole.tsx#L731-L761)
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
-- [localization.py:191-230](file://server/app/api/endpoints/localization.py#L191-L230)
-- [retention_worker.py:42-87](file://server/app/workers/retention_worker.py#L42-L87)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [OperationsConsole.tsx:731-761](frontend/components/workflow/OperationsConsole.tsx#L731-L761)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
+- [localization.py:191-230](server/app/api/endpoints/localization.py#L191-L230)
+- [retention_worker.py:42-87](server/app/workers/retention_worker.py#L42-L87)
 
 ## Architecture Overview
 The analytics pipeline integrates frontend dashboards and reporting with backend services and models. Real-time presence feeds and vitals streams inform KPIs and reports. Predictive localization augments presence when live signals are unavailable. Retention policies ensure long-term sustainability.
@@ -144,8 +144,8 @@ API-->>UI : JSON summary
 ```
 
 **Diagram sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 ## Detailed Component Analysis
 
@@ -188,12 +188,12 @@ AnalyticsService --> WardSummaryOut : "returns"
 ```
 
 **Diagram sources**
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 **Section sources**
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 ### Real-Time Metrics and KPI Generation
 - KPIStatCard renders value, label, optional trend percentage, and status tones.
@@ -223,14 +223,14 @@ SVC-->>MCP : Structured analytics payload
 ```
 
 **Diagram sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [OperationsConsole.tsx:2529-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2529-L2556)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [OperationsConsole.tsx:2529-2556](frontend/components/workflow/OperationsConsole.tsx#L2529-L2556)
 
 **Section sources**
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [OperationsConsole.tsx:2529-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2529-L2556)
-- [analytics.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [OperationsConsole.tsx:2529-2556](frontend/components/workflow/OperationsConsole.tsx#L2529-L2556)
+- [analytics.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 ### Trend Analysis and Forecasting Capabilities
 - Trending percentages are computed in the reporting builder and displayed in KPI cards.
@@ -241,8 +241,8 @@ Practical usage:
 - Presence projections from localization augment occupancy when live signals are missing.
 
 **Section sources**
-- [OperationsConsole.tsx:342-381](file://frontend/components/workflow/OperationsConsole.tsx#L342-L381)
-- [localization.py:191-230](file://server/app/api/endpoints/localization.py#L191-L230)
+- [OperationsConsole.tsx:342-381](frontend/components/workflow/OperationsConsole.tsx#L342-L381)
+- [localization.py:191-230](server/app/api/endpoints/localization.py#L191-L230)
 
 ### Customizable Reporting Features
 - Report templates: Ward overview, alert summary, vitals window, handover notes, workflow audit.
@@ -263,16 +263,16 @@ Download --> End
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:731-761](file://frontend/components/workflow/OperationsConsole.tsx#L731-L761)
-- [OperationsConsole.tsx:365-761](file://frontend/components/workflow/OperationsConsole.tsx#L365-L761)
-- [ReportPreviewTable.tsx:22-66](file://frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [OperationsConsole.tsx:731-761](frontend/components/workflow/OperationsConsole.tsx#L731-L761)
+- [OperationsConsole.tsx:365-761](frontend/components/workflow/OperationsConsole.tsx#L365-L761)
+- [ReportPreviewTable.tsx:22-66](frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 **Section sources**
-- [OperationsConsole.tsx:731-761](file://frontend/components/workflow/OperationsConsole.tsx#L731-L761)
-- [OperationsConsole.tsx:365-761](file://frontend/components/workflow/OperationsConsole.tsx#L365-L761)
-- [ReportPreviewTable.tsx:22-66](file://frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [OperationsConsole.tsx:731-761](frontend/components/workflow/OperationsConsole.tsx#L731-L761)
+- [OperationsConsole.tsx:365-761](frontend/components/workflow/OperationsConsole.tsx#L365-L761)
+- [ReportPreviewTable.tsx:22-66](frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 ### Floorplan Visualization System
 - DashboardFloorplanPanel embeds FloorplanRoleViewer to display presence overlays.
@@ -299,16 +299,16 @@ Viewer-->>Dash : Render presence overlay
 ```
 
 **Diagram sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:42-246](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
-- [localization.py:191-230](file://server/app/api/endpoints/localization.py#L191-L230)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:42-246](frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
+- [localization.py:191-230](server/app/api/endpoints/localization.py#L191-L230)
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:42-246](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
-- [localization.py:191-230](file://server/app/api/endpoints/localization.py#L191-L230)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:42-246](frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
+- [localization.py:191-230](server/app/api/endpoints/localization.py#L191-L230)
 
 ### Device Utilization Reports and Room Mapping
 - Admin Floor Map Workspace manages floor layouts, assigns node devices to rooms, and provisions unmapped nodes.
@@ -326,14 +326,14 @@ Refresh --> Viewer["FloorplanRoleViewer Presence"]
 ```
 
 **Diagram sources**
-- [FloorMapWorkspace.tsx:355-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
-- [RoomDetailDrawer.tsx:20-88](file://frontend/components/admin/monitoring/RoomDetailDrawer.tsx#L20-L88)
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [FloorMapWorkspace.tsx:355-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
+- [RoomDetailDrawer.tsx:20-88](frontend/components/admin/monitoring/RoomDetailDrawer.tsx#L20-L88)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
 
 **Section sources**
-- [FloorMapWorkspace.tsx:355-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
-- [RoomDetailDrawer.tsx:20-88](file://frontend/components/admin/monitoring/RoomDetailDrawer.tsx#L20-L88)
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [FloorMapWorkspace.tsx:355-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
+- [RoomDetailDrawer.tsx:20-88](frontend/components/admin/monitoring/RoomDetailDrawer.tsx#L20-L88)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
 
 ### Dashboard Components and Interactive Charts
 - KPIStatCard renders status-colored cards with trend indicators.
@@ -343,16 +343,16 @@ Refresh --> Viewer["FloorplanRoleViewer Presence"]
 Note: Interactive chart libraries are present in the frontend lockfile; however, explicit chart components are not shown in the referenced files. The KPI and table components serve as building blocks for dashboards.
 
 **Section sources**
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [ReportPreviewTable.tsx:22-66](file://frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [ReportPreviewTable.tsx:22-66](frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
 
 ### Data Export Capabilities
 - CSV export: Build CSV from columns and rows, escape cells, and download with a generated filename.
 - Filename template: Wheelsense label slug combined with window hours.
 
 **Section sources**
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 ### Analytics Data Models and Aggregation Strategies
 - AlertSummaryOut aggregates counts and groups by type.
@@ -360,8 +360,8 @@ Note: Interactive chart libraries are present in the frontend lockfile; however,
 - WardSummaryOut counts patients and active alerts.
 
 **Section sources**
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 ### Performance Optimization
 - Retention worker periodically deletes old IMU, RSSI, and prediction records to control dataset size.
@@ -369,9 +369,9 @@ Note: Interactive chart libraries are present in the frontend lockfile; however,
 - Presence building filters and sorts predictions to show the most recent and confident assignments.
 
 **Section sources**
-- [retention_worker.py:42-87](file://server/app/workers/retention_worker.py#L42-L87)
-- [FloorMapWorkspace.tsx:7-12](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L7-L12)
-- [floorplans.py:395-419](file://server/app/services/floorplans.py#L395-L419)
+- [retention_worker.py:42-87](server/app/workers/retention_worker.py#L42-L87)
+- [FloorMapWorkspace.tsx:7-12](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L7-L12)
+- [floorplans.py:395-419](server/app/services/floorplans.py#L395-L419)
 
 ## Dependency Analysis
 The analytics system exhibits clean separation of concerns:
@@ -395,26 +395,26 @@ RET["retention_worker.py"] --> EP
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [ReportPreviewTable.tsx:22-66](file://frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
-- [FloorplanRoleViewer.tsx:42-246](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
-- [localization.py:191-230](file://server/app/api/endpoints/localization.py#L191-L230)
-- [retention_worker.py:42-87](file://server/app/workers/retention_worker.py#L42-L87)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [ReportPreviewTable.tsx:22-66](frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
+- [FloorplanRoleViewer.tsx:42-246](frontend/components/floorplan/FloorplanRoleViewer.tsx#L42-L246)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
+- [localization.py:191-230](server/app/api/endpoints/localization.py#L191-L230)
+- [retention_worker.py:42-87](server/app/workers/retention_worker.py#L42-L87)
 
 **Section sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
-- [localization.py:191-230](file://server/app/api/endpoints/localization.py#L191-L230)
-- [retention_worker.py:42-87](file://server/app/workers/retention_worker.py#L42-L87)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
+- [localization.py:191-230](server/app/api/endpoints/localization.py#L191-L230)
+- [retention_worker.py:42-87](server/app/workers/retention_worker.py#L42-L87)
 
 ## Performance Considerations
 - Use appropriate hours windows for vitals averages to balance responsiveness and stability.
@@ -432,10 +432,10 @@ Common issues and remedies:
 - Slow dashboard refreshes: Adjust query polling/stale times and enable caching where applicable.
 
 **Section sources**
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
-- [FloorplanRoleViewer.tsx:223-246](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L246)
-- [report-utils.ts:11-31](file://frontend/components/reports/report-utils.ts#L11-L31)
-- [FloorMapWorkspace.tsx:7-12](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L7-L12)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
+- [FloorplanRoleViewer.tsx:223-246](frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L246)
+- [report-utils.ts:11-31](frontend/components/reports/report-utils.ts#L11-L31)
+- [FloorMapWorkspace.tsx:7-12](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L7-L12)
 
 ## Conclusion
 WheelSense provides a robust foundation for analytics and reporting: real-time KPIs, customizable reports, floorplan presence, and operational hygiene through retention. While forecasting is not implemented, rolling averages and presence projections offer strong situational awareness. The modular design enables extension for advanced analytics and automated distribution.
@@ -453,10 +453,10 @@ WheelSense provides a robust foundation for analytics and reporting: real-time K
   - Export to CSV for offline analysis or sharing.
 
 **Section sources**
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [FacilityFloorToolbar.tsx:1-118](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
-- [OperationsConsole.tsx:731-761](file://frontend/components/workflow/OperationsConsole.tsx#L731-L761)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [FacilityFloorToolbar.tsx:1-118](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L1-L118)
+- [OperationsConsole.tsx:731-761](frontend/components/workflow/OperationsConsole.tsx#L731-L761)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 ### Data Privacy, Security, and Compliance
 - Access control: Analytics endpoints restrict roles to administrative and supervisory positions.
@@ -464,5 +464,5 @@ WheelSense provides a robust foundation for analytics and reporting: real-time K
 - Secure export: CSV downloads occur client-side with no server-side persistence of report payloads.
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [retention_worker.py:42-87](file://server/app/workers/retention_worker.py#L42-L87)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [retention_worker.py:42-87](server/app/workers/retention_worker.py#L42-L87)

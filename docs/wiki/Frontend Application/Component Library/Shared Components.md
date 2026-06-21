@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [HubTabBar.tsx](file://frontend/components/shared/HubTabBar.tsx)
-- [PatientList.tsx](file://frontend/components/shared/PatientList.tsx)
-- [UserAvatar.tsx](file://frontend/components/shared/UserAvatar.tsx)
-- [SearchableListboxPicker.tsx](file://frontend/components/shared/SearchableListboxPicker.tsx)
-- [ProfileImageEditorModal.tsx](file://frontend/components/shared/ProfileImageEditorModal.tsx)
-- [AdminPatientsQuickFind.tsx](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx)
-- [page.tsx](file://frontend/app/supervisor/patients/page.tsx)
-- [page.tsx](file://frontend/app/head-nurse/tasks/page.tsx)
-- [types.ts](file://frontend/lib/types.ts)
-- [constants.ts](file://frontend/lib/constants.ts)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [HubTabBar.tsx](frontend/components/shared/HubTabBar.tsx)
+- [PatientList.tsx](frontend/components/shared/PatientList.tsx)
+- [UserAvatar.tsx](frontend/components/shared/UserAvatar.tsx)
+- [SearchableListboxPicker.tsx](frontend/components/shared/SearchableListboxPicker.tsx)
+- [ProfileImageEditorModal.tsx](frontend/components/shared/ProfileImageEditorModal.tsx)
+- [AdminPatientsQuickFind.tsx](frontend/components/admin/patients/AdminPatientsQuickFind.tsx)
+- [page.tsx](frontend/app/supervisor/patients/page.tsx)
+- [page.tsx](frontend/app/head-nurse/tasks/page.tsx)
+- [types.ts](frontend/lib/types.ts)
+- [constants.ts](frontend/lib/constants.ts)
 </cite>
 
 ## Table of Contents
@@ -71,20 +71,20 @@ HNTP -.-> CON
 ```
 
 **Diagram sources**
-- [HubTabBar.tsx:29-73](file://frontend/components/shared/HubTabBar.tsx#L29-L73)
-- [page.tsx:20-34](file://frontend/app/supervisor/patients/page.tsx#L20-L34)
-- [page.tsx:14-33](file://frontend/app/head-nurse/tasks/page.tsx#L14-L33)
-- [AdminPatientsQuickFind.tsx:19-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
-- [types.ts:12-78](file://frontend/lib/types.ts#L12-L78)
-- [constants.ts:4-26](file://frontend/lib/constants.ts#L4-L26)
+- [HubTabBar.tsx:29-73](frontend/components/shared/HubTabBar.tsx#L29-L73)
+- [page.tsx:20-34](frontend/app/supervisor/patients/page.tsx#L20-L34)
+- [page.tsx:14-33](frontend/app/head-nurse/tasks/page.tsx#L14-L33)
+- [AdminPatientsQuickFind.tsx:19-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
+- [types.ts:12-78](frontend/lib/types.ts#L12-L78)
+- [constants.ts:4-26](frontend/lib/constants.ts#L4-L26)
 
 **Section sources**
-- [HubTabBar.tsx:29-73](file://frontend/components/shared/HubTabBar.tsx#L29-L73)
-- [page.tsx:20-34](file://frontend/app/supervisor/patients/page.tsx#L20-L34)
-- [page.tsx:14-33](file://frontend/app/head-nurse/tasks/page.tsx#L14-L33)
-- [AdminPatientsQuickFind.tsx:19-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
-- [types.ts:12-78](file://frontend/lib/types.ts#L12-L78)
-- [constants.ts:4-26](file://frontend/lib/constants.ts#L4-L26)
+- [HubTabBar.tsx:29-73](frontend/components/shared/HubTabBar.tsx#L29-L73)
+- [page.tsx:20-34](frontend/app/supervisor/patients/page.tsx#L20-L34)
+- [page.tsx:14-33](frontend/app/head-nurse/tasks/page.tsx#L14-L33)
+- [AdminPatientsQuickFind.tsx:19-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
+- [types.ts:12-78](frontend/lib/types.ts#L12-L78)
+- [constants.ts:4-26](frontend/lib/constants.ts#L4-L26)
 
 ## Core Components
 - AlertPanel: Displays and manages alert notifications with filtering and acknowledgment/resolution actions.
@@ -95,12 +95,12 @@ HNTP -.-> CON
 - ProfileImageEditorModal: Modal editor for changing profile images via URL or uploaded file.
 
 **Section sources**
-- [AlertPanel.tsx:10-17](file://frontend/components/shared/AlertPanel.tsx#L10-L17)
-- [HubTabBar.tsx:16-23](file://frontend/components/shared/HubTabBar.tsx#L16-L23)
-- [PatientList.tsx:21-38](file://frontend/components/shared/PatientList.tsx#L21-L38)
-- [UserAvatar.tsx:5-12](file://frontend/components/shared/UserAvatar.tsx#L5-L12)
-- [SearchableListboxPicker.tsx:21-59](file://frontend/components/shared/SearchableListboxPicker.tsx#L21-L59)
-- [ProfileImageEditorModal.tsx:15-18](file://frontend/components/shared/ProfileImageEditorModal.tsx#L15-L18)
+- [AlertPanel.tsx:10-17](frontend/components/shared/AlertPanel.tsx#L10-L17)
+- [HubTabBar.tsx:16-23](frontend/components/shared/HubTabBar.tsx#L16-L23)
+- [PatientList.tsx:21-38](frontend/components/shared/PatientList.tsx#L21-L38)
+- [UserAvatar.tsx:5-12](frontend/components/shared/UserAvatar.tsx#L5-L12)
+- [SearchableListboxPicker.tsx:21-59](frontend/components/shared/SearchableListboxPicker.tsx#L21-L59)
+- [ProfileImageEditorModal.tsx:15-18](frontend/components/shared/ProfileImageEditorModal.tsx#L15-L18)
 
 ## Architecture Overview
 These shared components are designed for composability and reuse across roles. They rely on:
@@ -123,13 +123,13 @@ Shared-->>Role : Render UI and events
 ```
 
 **Diagram sources**
-- [AlertPanel.tsx:27-27](file://frontend/components/shared/AlertPanel.tsx#L27-L27)
-- [HubTabBar.tsx:30-30](file://frontend/components/shared/HubTabBar.tsx#L30-L30)
-- [PatientList.tsx:75-75](file://frontend/components/shared/PatientList.tsx#L75-L75)
-- [UserAvatar.tsx:34-34](file://frontend/components/shared/UserAvatar.tsx#L34-L34)
-- [SearchableListboxPicker.tsx:65-65](file://frontend/components/shared/SearchableListboxPicker.tsx#L65-L65)
-- [ProfileImageEditorModal.tsx:24-24](file://frontend/components/shared/ProfileImageEditorModal.tsx#L24-L24)
-- [types.ts:12-78](file://frontend/lib/types.ts#L12-L78)
+- [AlertPanel.tsx:27-27](frontend/components/shared/AlertPanel.tsx#L27-L27)
+- [HubTabBar.tsx:30-30](frontend/components/shared/HubTabBar.tsx#L30-L30)
+- [PatientList.tsx:75-75](frontend/components/shared/PatientList.tsx#L75-L75)
+- [UserAvatar.tsx:34-34](frontend/components/shared/UserAvatar.tsx#L34-L34)
+- [SearchableListboxPicker.tsx:65-65](frontend/components/shared/SearchableListboxPicker.tsx#L65-L65)
+- [ProfileImageEditorModal.tsx:24-24](frontend/components/shared/ProfileImageEditorModal.tsx#L24-L24)
+- [types.ts:12-78](frontend/lib/types.ts#L12-L78)
 
 ## Detailed Component Analysis
 
@@ -168,11 +168,11 @@ RenderCards --> End(["Done"])
 ```
 
 **Diagram sources**
-- [AlertPanel.tsx:29-148](file://frontend/components/shared/AlertPanel.tsx#L29-L148)
+- [AlertPanel.tsx:29-148](frontend/components/shared/AlertPanel.tsx#L29-L148)
 
 **Section sources**
-- [AlertPanel.tsx:10-17](file://frontend/components/shared/AlertPanel.tsx#L10-L17)
-- [AlertPanel.tsx:29-148](file://frontend/components/shared/AlertPanel.tsx#L29-L148)
+- [AlertPanel.tsx:10-17](frontend/components/shared/AlertPanel.tsx#L10-L17)
+- [AlertPanel.tsx:29-148](frontend/components/shared/AlertPanel.tsx#L29-L148)
 
 ### HubTabBar
 - Purpose: Provide an underline-style tab bar for hub pages; maintains active tab via URL query parameter.
@@ -206,11 +206,11 @@ TabBar-->>User : Re-render with active tab highlighted
 ```
 
 **Diagram sources**
-- [HubTabBar.tsx:29-73](file://frontend/components/shared/HubTabBar.tsx#L29-L73)
+- [HubTabBar.tsx:29-73](frontend/components/shared/HubTabBar.tsx#L29-L73)
 
 **Section sources**
-- [HubTabBar.tsx:16-23](file://frontend/components/shared/HubTabBar.tsx#L16-L23)
-- [HubTabBar.tsx:29-73](file://frontend/components/shared/HubTabBar.tsx#L29-L73)
+- [HubTabBar.tsx:16-23](frontend/components/shared/HubTabBar.tsx#L16-L23)
+- [HubTabBar.tsx:29-73](frontend/components/shared/HubTabBar.tsx#L29-L73)
 
 ### PatientList
 - Purpose: Render a grid/list of patients with optional search and admin filters.
@@ -256,12 +256,12 @@ RenderGrid --> End(["Done"])
 ```
 
 **Diagram sources**
-- [PatientList.tsx:74-244](file://frontend/components/shared/PatientList.tsx#L74-L244)
+- [PatientList.tsx:74-244](frontend/components/shared/PatientList.tsx#L74-L244)
 
 **Section sources**
-- [PatientList.tsx:21-38](file://frontend/components/shared/PatientList.tsx#L21-L38)
-- [PatientList.tsx:74-244](file://frontend/components/shared/PatientList.tsx#L74-L244)
-- [types.ts:54-78](file://frontend/lib/types.ts#L54-L78)
+- [PatientList.tsx:21-38](frontend/components/shared/PatientList.tsx#L21-L38)
+- [PatientList.tsx:74-244](frontend/components/shared/PatientList.tsx#L74-L244)
+- [types.ts:54-78](frontend/lib/types.ts#L54-L78)
 
 ### UserAvatar
 - Purpose: Display a user’s avatar image or initials with fallback styling.
@@ -303,12 +303,12 @@ UserAvatar --> UserAvatarProps : "uses"
 ```
 
 **Diagram sources**
-- [UserAvatar.tsx:5-33](file://frontend/components/shared/UserAvatar.tsx#L5-L33)
+- [UserAvatar.tsx:5-33](frontend/components/shared/UserAvatar.tsx#L5-L33)
 
 **Section sources**
-- [UserAvatar.tsx:5-12](file://frontend/components/shared/UserAvatar.tsx#L5-L12)
-- [UserAvatar.tsx:27-67](file://frontend/components/shared/UserAvatar.tsx#L27-L67)
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
+- [UserAvatar.tsx:5-12](frontend/components/shared/UserAvatar.tsx#L5-L12)
+- [UserAvatar.tsx:27-67](frontend/components/shared/UserAvatar.tsx#L27-L67)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
 
 ### SearchableListboxPicker
 - Purpose: Accessible combobox/listbox for selecting an option from a searchable list.
@@ -361,11 +361,11 @@ CloseList --> End(["Done"])
 ```
 
 **Diagram sources**
-- [SearchableListboxPicker.tsx:65-364](file://frontend/components/shared/SearchableListboxPicker.tsx#L65-L364)
+- [SearchableListboxPicker.tsx:65-364](frontend/components/shared/SearchableListboxPicker.tsx#L65-L364)
 
 **Section sources**
-- [SearchableListboxPicker.tsx:21-59](file://frontend/components/shared/SearchableListboxPicker.tsx#L21-L59)
-- [SearchableListboxPicker.tsx:65-364](file://frontend/components/shared/SearchableListboxPicker.tsx#L65-L364)
+- [SearchableListboxPicker.tsx:21-59](frontend/components/shared/SearchableListboxPicker.tsx#L21-L59)
+- [SearchableListboxPicker.tsx:65-364](frontend/components/shared/SearchableListboxPicker.tsx#L65-L364)
 
 ### ProfileImageEditorModal
 - Purpose: Modal for changing profile image via URL or uploaded file.
@@ -403,11 +403,11 @@ Modal->>User : Close modal
 ```
 
 **Diagram sources**
-- [ProfileImageEditorModal.tsx:20-307](file://frontend/components/shared/ProfileImageEditorModal.tsx#L20-L307)
+- [ProfileImageEditorModal.tsx:20-307](frontend/components/shared/ProfileImageEditorModal.tsx#L20-L307)
 
 **Section sources**
-- [ProfileImageEditorModal.tsx:15-18](file://frontend/components/shared/ProfileImageEditorModal.tsx#L15-L18)
-- [ProfileImageEditorModal.tsx:20-307](file://frontend/components/shared/ProfileImageEditorModal.tsx#L20-L307)
+- [ProfileImageEditorModal.tsx:15-18](frontend/components/shared/ProfileImageEditorModal.tsx#L15-L18)
+- [ProfileImageEditorModal.tsx:20-307](frontend/components/shared/ProfileImageEditorModal.tsx#L20-L307)
 
 ## Dependency Analysis
 - Shared components depend on:
@@ -434,20 +434,20 @@ HNTP --> CON
 ```
 
 **Diagram sources**
-- [types.ts:12-78](file://frontend/lib/types.ts#L12-L78)
-- [constants.ts:4-26](file://frontend/lib/constants.ts#L4-L26)
-- [HubTabBar.tsx:29-73](file://frontend/components/shared/HubTabBar.tsx#L29-L73)
-- [page.tsx:20-34](file://frontend/app/supervisor/patients/page.tsx#L20-L34)
-- [page.tsx:14-33](file://frontend/app/head-nurse/tasks/page.tsx#L14-L33)
-- [AdminPatientsQuickFind.tsx:19-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
+- [types.ts:12-78](frontend/lib/types.ts#L12-L78)
+- [constants.ts:4-26](frontend/lib/constants.ts#L4-L26)
+- [HubTabBar.tsx:29-73](frontend/components/shared/HubTabBar.tsx#L29-L73)
+- [page.tsx:20-34](frontend/app/supervisor/patients/page.tsx#L20-L34)
+- [page.tsx:14-33](frontend/app/head-nurse/tasks/page.tsx#L14-L33)
+- [AdminPatientsQuickFind.tsx:19-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
 
 **Section sources**
-- [types.ts:12-78](file://frontend/lib/types.ts#L12-L78)
-- [constants.ts:4-26](file://frontend/lib/constants.ts#L4-L26)
-- [HubTabBar.tsx:29-73](file://frontend/components/shared/HubTabBar.tsx#L29-L73)
-- [page.tsx:20-34](file://frontend/app/supervisor/patients/page.tsx#L20-L34)
-- [page.tsx:14-33](file://frontend/app/head-nurse/tasks/page.tsx#L14-L33)
-- [AdminPatientsQuickFind.tsx:19-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
+- [types.ts:12-78](frontend/lib/types.ts#L12-L78)
+- [constants.ts:4-26](frontend/lib/constants.ts#L4-L26)
+- [HubTabBar.tsx:29-73](frontend/components/shared/HubTabBar.tsx#L29-L73)
+- [page.tsx:20-34](frontend/app/supervisor/patients/page.tsx#L20-L34)
+- [page.tsx:14-33](frontend/app/head-nurse/tasks/page.tsx#L14-L33)
+- [AdminPatientsQuickFind.tsx:19-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
 
 ## Performance Considerations
 - Use controlled props where appropriate to avoid unnecessary re-renders.
@@ -495,11 +495,11 @@ HNTP --> CON
   - Route constants define role-specific paths; shared components consume these routes for navigation.
 
 **Section sources**
-- [HubTabBar.tsx:29-73](file://frontend/components/shared/HubTabBar.tsx#L29-L73)
-- [page.tsx:20-34](file://frontend/app/supervisor/patients/page.tsx#L20-L34)
-- [page.tsx:14-33](file://frontend/app/head-nurse/tasks/page.tsx#L14-L33)
-- [AdminPatientsQuickFind.tsx:19-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
-- [constants.ts:4-26](file://frontend/lib/constants.ts#L4-L26)
+- [HubTabBar.tsx:29-73](frontend/components/shared/HubTabBar.tsx#L29-L73)
+- [page.tsx:20-34](frontend/app/supervisor/patients/page.tsx#L20-L34)
+- [page.tsx:14-33](frontend/app/head-nurse/tasks/page.tsx#L14-L33)
+- [AdminPatientsQuickFind.tsx:19-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
+- [constants.ts:4-26](frontend/lib/constants.ts#L4-L26)
 
 ## Usage Examples
 - Supervisor patients hub:
@@ -510,9 +510,9 @@ HNTP --> CON
   - Render ProfileImageEditorModal conditionally; pass open and onClose; UserAvatar previews current or new image.
 
 **Section sources**
-- [page.tsx:20-34](file://frontend/app/supervisor/patients/page.tsx#L20-L34)
-- [AdminPatientsQuickFind.tsx:19-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
-- [ProfileImageEditorModal.tsx:20-307](file://frontend/components/shared/ProfileImageEditorModal.tsx#L20-L307)
+- [page.tsx:20-34](frontend/app/supervisor/patients/page.tsx#L20-L34)
+- [AdminPatientsQuickFind.tsx:19-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L38)
+- [ProfileImageEditorModal.tsx:20-307](frontend/components/shared/ProfileImageEditorModal.tsx#L20-L307)
 
 ## Troubleshooting Guide
 - Alerts not updating:
@@ -529,12 +529,12 @@ HNTP --> CON
   - Inspect error state and API response; ensure allowed URL scheme or valid file type.
 
 **Section sources**
-- [AlertPanel.tsx:14-16](file://frontend/components/shared/AlertPanel.tsx#L14-L16)
-- [HubTabBar.tsx:30-32](file://frontend/components/shared/HubTabBar.tsx#L30-L32)
-- [PatientList.tsx:74-88](file://frontend/components/shared/PatientList.tsx#L74-L88)
-- [UserAvatar.tsx:34-41](file://frontend/components/shared/UserAvatar.tsx#L34-L41)
-- [SearchableListboxPicker.tsx:123-126](file://frontend/components/shared/SearchableListboxPicker.tsx#L123-L126)
-- [ProfileImageEditorModal.tsx:172-182](file://frontend/components/shared/ProfileImageEditorModal.tsx#L172-L182)
+- [AlertPanel.tsx:14-16](frontend/components/shared/AlertPanel.tsx#L14-L16)
+- [HubTabBar.tsx:30-32](frontend/components/shared/HubTabBar.tsx#L30-L32)
+- [PatientList.tsx:74-88](frontend/components/shared/PatientList.tsx#L74-L88)
+- [UserAvatar.tsx:34-41](frontend/components/shared/UserAvatar.tsx#L34-L41)
+- [SearchableListboxPicker.tsx:123-126](frontend/components/shared/SearchableListboxPicker.tsx#L123-L126)
+- [ProfileImageEditorModal.tsx:172-182](frontend/components/shared/ProfileImageEditorModal.tsx#L172-L182)
 
 ## Conclusion
 The shared components provide a consistent, accessible, and customizable foundation across WheelSense roles. Their controlled props, i18n integration, and responsive designs enable seamless composition in role dashboards while supporting workspace scoping and efficient data flows.

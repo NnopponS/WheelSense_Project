@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ActionPlanPreview.tsx](file://frontend/components/ai/ActionPlanPreview.tsx)
-- [ExecutionStepList.tsx](file://frontend/components/ai/ExecutionStepList.tsx)
-- [AIChatPopup.tsx](file://frontend/components/ai/AIChatPopup.tsx)
-- [chat_actions.py](file://server/app/api/endpoints/chat_actions.py)
-- [ai_chat.py](file://server/app/services/ai_chat.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [chat_actions.py (model)](file://server/app/models/chat_actions.py)
-- [chat_actions.py (schema)](file://server/app/schemas/chat_actions.py)
-- [test_chat_actions_integration.py](file://server/tests/test_chat_actions_integration.py)
+- [ActionPlanPreview.tsx](frontend/components/ai/ActionPlanPreview.tsx)
+- [ExecutionStepList.tsx](frontend/components/ai/ExecutionStepList.tsx)
+- [AIChatPopup.tsx](frontend/components/ai/AIChatPopup.tsx)
+- [chat_actions.py](server/app/api/endpoints/chat_actions.py)
+- [ai_chat.py](server/app/services/ai_chat.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [chat_actions.py (model)](server/app/models/chat_actions.py)
+- [chat_actions.py (schema)](server/app/schemas/chat_actions.py)
+- [test_chat_actions_integration.py](server/tests/test_chat_actions_integration.py)
 </cite>
 
 ## Table of Contents
@@ -55,22 +55,22 @@ SVC --> DBM
 ```
 
 **Diagram sources**
-- [AIChatPopup.tsx:1-38](file://frontend/components/ai/AIChatPopup.tsx#L1-L38)
-- [ActionPlanPreview.tsx:1-361](file://frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
-- [ExecutionStepList.tsx:1-295](file://frontend/components/ai/ExecutionStepList.tsx#L1-L295)
-- [chat_actions.py:1-300](file://server/app/api/endpoints/chat_actions.py#L1-L300)
-- [ai_chat.py:1198-1361](file://server/app/services/ai_chat.py#L1198-L1361)
-- [service.py:450-561](file://server/app/agent_runtime/service.py#L450-L561)
-- [chat_actions.py (model):1-62](file://server/app/models/chat_actions.py#L1-L62)
+- [AIChatPopup.tsx:1-38](frontend/components/ai/AIChatPopup.tsx#L1-L38)
+- [ActionPlanPreview.tsx:1-361](frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
+- [ExecutionStepList.tsx:1-295](frontend/components/ai/ExecutionStepList.tsx#L1-L295)
+- [chat_actions.py:1-300](server/app/api/endpoints/chat_actions.py#L1-L300)
+- [ai_chat.py:1198-1361](server/app/services/ai_chat.py#L1198-L1361)
+- [service.py:450-561](server/app/agent_runtime/service.py#L450-L561)
+- [chat_actions.py (model):1-62](server/app/models/chat_actions.py#L1-L62)
 
 **Section sources**
-- [ActionPlanPreview.tsx:1-361](file://frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
-- [ExecutionStepList.tsx:1-295](file://frontend/components/ai/ExecutionStepList.tsx#L1-L295)
-- [AIChatPopup.tsx:1-38](file://frontend/components/ai/AIChatPopup.tsx#L1-L38)
-- [chat_actions.py:1-300](file://server/app/api/endpoints/chat_actions.py#L1-L300)
-- [ai_chat.py:1198-1361](file://server/app/services/ai_chat.py#L1198-L1361)
-- [service.py:450-561](file://server/app/agent_runtime/service.py#L450-L561)
-- [chat_actions.py (model):1-62](file://server/app/models/chat_actions.py#L1-L62)
+- [ActionPlanPreview.tsx:1-361](frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
+- [ExecutionStepList.tsx:1-295](frontend/components/ai/ExecutionStepList.tsx#L1-L295)
+- [AIChatPopup.tsx:1-38](frontend/components/ai/AIChatPopup.tsx#L1-L38)
+- [chat_actions.py:1-300](server/app/api/endpoints/chat_actions.py#L1-L300)
+- [ai_chat.py:1198-1361](server/app/services/ai_chat.py#L1198-L1361)
+- [service.py:450-561](server/app/agent_runtime/service.py#L450-L561)
+- [chat_actions.py (model):1-62](server/app/models/chat_actions.py#L1-L62)
 
 ## Core Components
 - ActionPlanPreview: Presents the AI-generated confirmation message, risk level, affected entities, and required permissions; provides Approve/Reject controls.
@@ -80,11 +80,11 @@ SVC --> DBM
 - Agent runtime: Generates the plan, constructs the confirmation message, and executes steps.
 
 **Section sources**
-- [ActionPlanPreview.tsx:117-361](file://frontend/components/ai/ActionPlanPreview.tsx#L117-L361)
-- [ExecutionStepList.tsx:218-295](file://frontend/components/ai/ExecutionStepList.tsx#L218-L295)
-- [chat_actions.py:124-259](file://server/app/api/endpoints/chat_actions.py#L124-L259)
-- [ai_chat.py:1198-1361](file://server/app/services/ai_chat.py#L1198-L1361)
-- [service.py:454-561](file://server/app/agent_runtime/service.py#L454-L561)
+- [ActionPlanPreview.tsx:117-361](frontend/components/ai/ActionPlanPreview.tsx#L117-L361)
+- [ExecutionStepList.tsx:218-295](frontend/components/ai/ExecutionStepList.tsx#L218-L295)
+- [chat_actions.py:124-259](server/app/api/endpoints/chat_actions.py#L124-L259)
+- [ai_chat.py:1198-1361](server/app/services/ai_chat.py#L1198-L1361)
+- [service.py:454-561](server/app/agent_runtime/service.py#L454-L561)
 
 ## Architecture Overview
 The confirmation stage centers on an ExecutionPlan produced by the agent runtime. The plan is serialized into a ChatAction proposal, presented to the user via the ActionPlanPreview, and then confirmed or rejected. Approval transitions to execution; rejection prevents execution.
@@ -107,10 +107,10 @@ UI-->>User : "Transition to execution or stay on confirmation"
 ```
 
 **Diagram sources**
-- [ActionPlanPreview.tsx:328-357](file://frontend/components/ai/ActionPlanPreview.tsx#L328-L357)
-- [chat_actions.py:242-258](file://server/app/api/endpoints/chat_actions.py#L242-L258)
-- [ai_chat.py:1198-1361](file://server/app/services/ai_chat.py#L1198-L1361)
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
+- [ActionPlanPreview.tsx:328-357](frontend/components/ai/ActionPlanPreview.tsx#L328-L357)
+- [chat_actions.py:242-258](server/app/api/endpoints/chat_actions.py#L242-L258)
+- [ai_chat.py:1198-1361](server/app/services/ai_chat.py#L1198-L1361)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
 
 ## Detailed Component Analysis
 
@@ -132,16 +132,16 @@ Controls --> End(["User interaction"])
 ```
 
 **Diagram sources**
-- [ActionPlanPreview.tsx:68-115](file://frontend/components/ai/ActionPlanPreview.tsx#L68-L115)
-- [ActionPlanPreview.tsx:128-201](file://frontend/components/ai/ActionPlanPreview.tsx#L128-L201)
-- [ActionPlanPreview.tsx:243-246](file://frontend/components/ai/ActionPlanPreview.tsx#L243-L246)
-- [ActionPlanPreview.tsx:291-304](file://frontend/components/ai/ActionPlanPreview.tsx#L291-L304)
-- [ActionPlanPreview.tsx:250-254](file://frontend/components/ai/ActionPlanPreview.tsx#L250-L254)
+- [ActionPlanPreview.tsx:68-115](frontend/components/ai/ActionPlanPreview.tsx#L68-L115)
+- [ActionPlanPreview.tsx:128-201](frontend/components/ai/ActionPlanPreview.tsx#L128-L201)
+- [ActionPlanPreview.tsx:243-246](frontend/components/ai/ActionPlanPreview.tsx#L243-L246)
+- [ActionPlanPreview.tsx:291-304](frontend/components/ai/ActionPlanPreview.tsx#L291-L304)
+- [ActionPlanPreview.tsx:250-254](frontend/components/ai/ActionPlanPreview.tsx#L250-L254)
 
 **Section sources**
-- [ActionPlanPreview.tsx:1-361](file://frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
-- [service.py:454-502](file://server/app/agent_runtime/service.py#L454-L502)
-- [ai_chat.py:1075-1101](file://server/app/services/ai_chat.py#L1075-L1101)
+- [ActionPlanPreview.tsx:1-361](frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
+- [service.py:454-502](server/app/agent_runtime/service.py#L454-L502)
+- [ai_chat.py:1075-1101](server/app/services/ai_chat.py#L1075-L1101)
 
 ### Permission Validation and Access Control
 - Visibility checks: The backend ensures the requesting user can see the action before confirming.
@@ -159,12 +159,12 @@ D --> G["Audit log 'confirm'/'reject'"]
 ```
 
 **Diagram sources**
-- [ai_chat.py:1198-1231](file://server/app/services/ai_chat.py#L1198-L1231)
-- [chat_actions.py:116-121](file://server/app/api/endpoints/chat_actions.py#L116-L121)
+- [ai_chat.py:1198-1231](server/app/services/ai_chat.py#L1198-L1231)
+- [chat_actions.py:116-121](server/app/api/endpoints/chat_actions.py#L116-L121)
 
 **Section sources**
-- [ai_chat.py:1198-1231](file://server/app/services/ai_chat.py#L1198-L1231)
-- [chat_actions.py:116-121](file://server/app/api/endpoints/chat_actions.py#L116-L121)
+- [ai_chat.py:1198-1231](server/app/services/ai_chat.py#L1198-L1231)
+- [chat_actions.py:116-121](server/app/api/endpoints/chat_actions.py#L116-L121)
 
 ### User Interaction Patterns: Approve or Modify
 - Approve: The user confirms the action; the backend updates status to confirmed and records confirmation metadata.
@@ -187,14 +187,14 @@ API-->>UI : "Show rejection notice"
 ```
 
 **Diagram sources**
-- [ActionPlanPreview.tsx:328-357](file://frontend/components/ai/ActionPlanPreview.tsx#L328-L357)
-- [chat_actions.py:242-258](file://server/app/api/endpoints/chat_actions.py#L242-L258)
-- [ai_chat.py:1198-1231](file://server/app/services/ai_chat.py#L1198-L1231)
+- [ActionPlanPreview.tsx:328-357](frontend/components/ai/ActionPlanPreview.tsx#L328-L357)
+- [chat_actions.py:242-258](server/app/api/endpoints/chat_actions.py#L242-L258)
+- [ai_chat.py:1198-1231](server/app/services/ai_chat.py#L1198-L1231)
 
 **Section sources**
-- [ActionPlanPreview.tsx:328-357](file://frontend/components/ai/ActionPlanPreview.tsx#L328-L357)
-- [chat_actions.py:242-258](file://server/app/api/endpoints/chat_actions.py#L242-L258)
-- [ai_chat.py:1198-1231](file://server/app/services/ai_chat.py#L1198-L1231)
+- [ActionPlanPreview.tsx:328-357](frontend/components/ai/ActionPlanPreview.tsx#L328-L357)
+- [chat_actions.py:242-258](server/app/api/endpoints/chat_actions.py#L242-L258)
+- [ai_chat.py:1198-1231](server/app/services/ai_chat.py#L1198-L1231)
 
 ### Transition to Execution Stage Upon Approval
 - Approved actions move to the execution stage, where the agent runtime executes the plan step-by-step.
@@ -216,16 +216,16 @@ API-->>UI : "Update step statuses and results"
 ```
 
 **Diagram sources**
-- [ExecutionStepList.tsx:218-295](file://frontend/components/ai/ExecutionStepList.tsx#L218-L295)
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1361](file://server/app/services/ai_chat.py#L1234-L1361)
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
+- [ExecutionStepList.tsx:218-295](frontend/components/ai/ExecutionStepList.tsx#L218-L295)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1361](server/app/services/ai_chat.py#L1234-L1361)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
 
 **Section sources**
-- [ExecutionStepList.tsx:1-295](file://frontend/components/ai/ExecutionStepList.tsx#L1-L295)
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1361](file://server/app/services/ai_chat.py#L1234-L1361)
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
+- [ExecutionStepList.tsx:1-295](frontend/components/ai/ExecutionStepList.tsx#L1-L295)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1361](server/app/services/ai_chat.py#L1234-L1361)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
 
 ### Rejection Handling and Prevention of Execution
 - Rejected actions cannot be executed; attempting to execute a rejected action raises a conflict error.
@@ -239,12 +239,12 @@ X -- No --> NR["No execution attempted"]
 ```
 
 **Diagram sources**
-- [ai_chat.py:1247-1249](file://server/app/services/ai_chat.py#L1247-L1249)
-- [test_chat_actions_integration.py:546-589](file://server/tests/test_chat_actions_integration.py#L546-L589)
+- [ai_chat.py:1247-1249](server/app/services/ai_chat.py#L1247-L1249)
+- [test_chat_actions_integration.py:546-589](server/tests/test_chat_actions_integration.py#L546-L589)
 
 **Section sources**
-- [ai_chat.py:1247-1249](file://server/app/services/ai_chat.py#L1247-L1249)
-- [test_chat_actions_integration.py:546-589](file://server/tests/test_chat_actions_integration.py#L546-L589)
+- [ai_chat.py:1247-1249](server/app/services/ai_chat.py#L1247-L1249)
+- [test_chat_actions_integration.py:546-589](server/tests/test_chat_actions_integration.py#L546-L589)
 
 ### Practical Examples and Decision-Making Processes
 - Example scenario: A plan proposes multiple steps affecting patients and rooms. The preview highlights risk, permissions, and affected entities. The user reviews and approves.
@@ -268,16 +268,16 @@ Svc --> DBM["chat_actions.py (model)"]
 ```
 
 **Diagram sources**
-- [ActionPlanPreview.tsx:1-361](file://frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
-- [ExecutionStepList.tsx:1-295](file://frontend/components/ai/ExecutionStepList.tsx#L1-L295)
-- [chat_actions.py:1-300](file://server/app/api/endpoints/chat_actions.py#L1-L300)
-- [ai_chat.py:1198-1361](file://server/app/services/ai_chat.py#L1198-L1361)
-- [service.py:450-561](file://server/app/agent_runtime/service.py#L450-L561)
-- [chat_actions.py (model):1-62](file://server/app/models/chat_actions.py#L1-L62)
+- [ActionPlanPreview.tsx:1-361](frontend/components/ai/ActionPlanPreview.tsx#L1-L361)
+- [ExecutionStepList.tsx:1-295](frontend/components/ai/ExecutionStepList.tsx#L1-L295)
+- [chat_actions.py:1-300](server/app/api/endpoints/chat_actions.py#L1-L300)
+- [ai_chat.py:1198-1361](server/app/services/ai_chat.py#L1198-L1361)
+- [service.py:450-561](server/app/agent_runtime/service.py#L450-L561)
+- [chat_actions.py (model):1-62](server/app/models/chat_actions.py#L1-L62)
 
 **Section sources**
-- [chat_actions.py (schema):1-102](file://server/app/schemas/chat_actions.py#L1-L102)
-- [chat_actions.py (model):1-62](file://server/app/models/chat_actions.py#L1-L62)
+- [chat_actions.py (schema):1-102](server/app/schemas/chat_actions.py#L1-L102)
+- [chat_actions.py (model):1-62](server/app/models/chat_actions.py#L1-L62)
 
 ## Performance Considerations
 - Entity resolution: Batched entity resolution in the preview avoids redundant network calls and surfaces unresolved entities gracefully.
@@ -293,10 +293,10 @@ Svc --> DBM["chat_actions.py (model)"]
 - Conversation linkage: When retrieving actions, ensure the user has visibility to the associated conversation.
 
 **Section sources**
-- [ai_chat.py:1211-1217](file://server/app/services/ai_chat.py#L1211-L1217)
-- [ai_chat.py:1247-1249](file://server/app/services/ai_chat.py#L1247-L1249)
-- [test_chat_actions_integration.py:546-589](file://server/tests/test_chat_actions_integration.py#L546-L589)
-- [chat_actions.py:116-121](file://server/app/api/endpoints/chat_actions.py#L116-L121)
+- [ai_chat.py:1211-1217](server/app/services/ai_chat.py#L1211-L1217)
+- [ai_chat.py:1247-1249](server/app/services/ai_chat.py#L1247-L1249)
+- [test_chat_actions_integration.py:546-589](server/tests/test_chat_actions_integration.py#L546-L589)
+- [chat_actions.py:116-121](server/app/api/endpoints/chat_actions.py#L116-L121)
 
 ## Conclusion
 The confirmation stage ensures safe, transparent, and auditable transitions from proposed actions to execution. The ActionPlanPreview communicates risks, permissions, and affected entities, while the confirm endpoint enforces access control and state transitions. Approved actions proceed to execution; rejected actions remain non-executable. This design balances automation with user control and compliance.

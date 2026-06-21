@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [NetworkManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
-- [BLEManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
-- [BLEManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
-- [APPortalManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.h)
-- [APPortalManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp)
-- [Config.h](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [main.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [telemetry.py](file://server/app/models/telemetry.py)
-- [telemetry.py (API)](file://server/app/api/endpoints/telemetry.py)
+- [NetworkManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [NetworkManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [BLEManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
+- [BLEManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
+- [APPortalManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.h)
+- [APPortalManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp)
+- [Config.h](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [main.cpp](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [telemetry.py](server/app/models/telemetry.py)
+- [telemetry.py (API)](server/app/api/endpoints/telemetry.py)
 </cite>
 
 ## Table of Contents
@@ -60,24 +60,24 @@ API --> MODELS
 ```
 
 **Diagram sources**
-- [NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
-- [BLEManager.cpp:66-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
-- [APPortalManager.cpp:120-171](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L171)
-- [Config.h:44-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L76)
-- [main.cpp:153-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [telemetry.py:20-130](file://server/app/models/telemetry.py#L20-L130)
-- [telemetry.py (API):15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
+- [NetworkManager.cpp:12-32](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [BLEManager.cpp:66-94](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
+- [APPortalManager.cpp:120-171](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L171)
+- [Config.h:44-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L76)
+- [main.cpp:153-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [telemetry.py:20-130](server/app/models/telemetry.py#L20-L130)
+- [telemetry.py (API):15-73](server/app/api/endpoints/telemetry.py#L15-L73)
 
 **Section sources**
-- [NetworkManager.h:8-58](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L58)
-- [BLEManager.h:19-50](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L19-L50)
-- [APPortalManager.h:9-30](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.h#L9-L30)
-- [Config.h:15-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L15-L76)
-- [main.cpp:123-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L340)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [telemetry.py:20-130](file://server/app/models/telemetry.py#L20-L130)
-- [telemetry.py (API):15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
+- [NetworkManager.h:8-58](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L58)
+- [BLEManager.h:19-50](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L19-L50)
+- [APPortalManager.h:9-30](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.h#L9-L30)
+- [Config.h:15-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L15-L76)
+- [main.cpp:123-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L340)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [telemetry.py:20-130](server/app/models/telemetry.py#L20-L130)
+- [telemetry.py (API):15-73](server/app/api/endpoints/telemetry.py#L15-L73)
 
 ## Core Components
 - NetworkManager: Manages WiFi connection, MQTT client lifecycle, reconnection backoff, topic subscriptions, and telemetry publishing.
@@ -87,11 +87,11 @@ API --> MODELS
 - Server MQTT handler: Subscribes to topics, parses telemetry, persists structured data, and publishes derived topics (room, vitals, alerts).
 
 **Section sources**
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-- [BLEManager.cpp:96-108](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
-- [APPortalManager.cpp:120-196](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L196)
-- [main.cpp:153-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [BLEManager.cpp:96-108](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
+- [APPortalManager.cpp:120-196](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L196)
+- [main.cpp:153-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
 
 ## Architecture Overview
 The system follows a publish-subscribe pattern:
@@ -120,10 +120,10 @@ SRV-->>NM : "Send control/command ack"
 ```
 
 **Diagram sources**
-- [TELEMETRY_CONTRACT.md:7-13](file://firmware/TELEMETRY_CONTRACT.md#L7-L13)
-- [NetworkManager.cpp:117-127](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L117-L127)
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
-- [telemetry.py:20-130](file://server/app/models/telemetry.py#L20-L130)
+- [TELEMETRY_CONTRACT.md:7-13](firmware/TELEMETRY_CONTRACT.md#L7-L13)
+- [NetworkManager.cpp:117-127](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L117-L127)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
+- [telemetry.py:20-130](server/app/models/telemetry.py#L20-L130)
 
 ## Detailed Component Analysis
 
@@ -148,12 +148,12 @@ MQTTLoop --> End
 ```
 
 **Diagram sources**
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
 
 **Section sources**
-- [NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-- [NetworkManager.h:14-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L14-L29)
+- [NetworkManager.cpp:12-32](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [NetworkManager.h:14-29](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L14-L29)
 
 ### MQTT Communication Protocol
 - Topics:
@@ -184,14 +184,14 @@ NM->>MQTT : "subscribe()"
 ```
 
 **Diagram sources**
-- [TELEMETRY_CONTRACT.md:7-13](file://firmware/TELEMETRY_CONTRACT.md#L7-L13)
-- [NetworkManager.cpp:96-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L96-L133)
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
+- [TELEMETRY_CONTRACT.md:7-13](firmware/TELEMETRY_CONTRACT.md#L7-L13)
+- [NetworkManager.cpp:96-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L96-L133)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
 
 **Section sources**
-- [NetworkManager.cpp:96-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L96-L133)
-- [TELEMETRY_CONTRACT.md:7-13](file://firmware/TELEMETRY_CONTRACT.md#L7-L13)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [NetworkManager.cpp:96-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L96-L133)
+- [TELEMETRY_CONTRACT.md:7-13](firmware/TELEMETRY_CONTRACT.md#L7-L13)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 ### BLE Scanning System
 - BLE scanning runs continuously on a dedicated task with active scanning enabled.
@@ -212,15 +212,15 @@ Prune --> Task
 ```
 
 **Diagram sources**
-- [BLEManager.cpp:110-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
-- [BLEManager.cpp:96-108](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
+- [BLEManager.cpp:110-121](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
+- [BLEManager.cpp:33-62](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
+- [BLEManager.cpp:96-108](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
 
 **Section sources**
-- [BLEManager.h:19-50](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L19-L50)
-- [BLEManager.cpp:66-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
-- [BLEManager.cpp:110-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
-- [BLEManager.cpp:140-147](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L140-L147)
+- [BLEManager.h:19-50](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L19-L50)
+- [BLEManager.cpp:66-94](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
+- [BLEManager.cpp:110-121](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
+- [BLEManager.cpp:140-147](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L140-L147)
 
 ### AP Portal Functionality
 - Starts an AP with a generated SSID and serves a captive web portal.
@@ -244,14 +244,14 @@ AP->>NM : "reconfigureFromConfig()"
 ```
 
 **Diagram sources**
-- [APPortalManager.cpp:120-171](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L171)
-- [APPortalManager.cpp:224-248](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L224-L248)
-- [APPortalManager.cpp:173-190](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L173-L190)
+- [APPortalManager.cpp:120-171](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L171)
+- [APPortalManager.cpp:224-248](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L224-L248)
+- [APPortalManager.cpp:173-190](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L173-L190)
 
 **Section sources**
-- [APPortalManager.h:9-30](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.h#L9-L30)
-- [APPortalManager.cpp:120-196](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L196)
-- [APPortalManager.cpp:224-248](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L224-L248)
+- [APPortalManager.h:9-30](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.h#L9-L30)
+- [APPortalManager.cpp:120-196](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L196)
+- [APPortalManager.cpp:224-248](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L224-L248)
 
 ### Network Update Scheduling and Adaptive Intervals
 - The main loop schedules:
@@ -273,14 +273,14 @@ Publish --> Done["End cycle"]
 ```
 
 **Diagram sources**
-- [main.cpp:189-219](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L189-L219)
-- [main.cpp:265-269](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L269)
-- [Config.h:68-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L76)
+- [main.cpp:189-219](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L189-L219)
+- [main.cpp:265-269](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L269)
+- [Config.h:68-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L76)
 
 **Section sources**
-- [main.cpp:189-219](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L189-L219)
-- [main.cpp:265-269](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L269)
-- [Config.h:44-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L76)
+- [main.cpp:189-219](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L189-L219)
+- [main.cpp:265-269](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L269)
+- [Config.h:44-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L76)
 
 ### Telemetry Publishing System
 - Payload structure includes device identity, firmware version, sequence number, timestamp, IMU, motion, recording state, RSSI list, and battery metrics.
@@ -303,21 +303,21 @@ end
 ```
 
 **Diagram sources**
-- [main.cpp:275-333](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L275-L333)
-- [NetworkManager.cpp:276-282](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
-- [TELEMETRY_CONTRACT.md:15-23](file://firmware/TELEMETRY_CONTRACT.md#L15-L23)
+- [main.cpp:275-333](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L275-L333)
+- [NetworkManager.cpp:276-282](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
+- [TELEMETRY_CONTRACT.md:15-23](firmware/TELEMETRY_CONTRACT.md#L15-L23)
 
 **Section sources**
-- [main.cpp:275-333](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L275-L333)
-- [NetworkManager.cpp:276-282](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
-- [TELEMETRY_CONTRACT.md:15-23](file://firmware/TELEMETRY_CONTRACT.md#L15-L23)
+- [main.cpp:275-333](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L275-L333)
+- [NetworkManager.cpp:276-282](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
+- [TELEMETRY_CONTRACT.md:15-23](firmware/TELEMETRY_CONTRACT.md#L15-L23)
 
 ### Network State Management During AP Portal Activation and WiFi Scans
 - Network updates are intentionally skipped while AP portal is active to avoid interfering with AP operation.
 - WiFi scan scenes similarly pause network updates to ensure reliable scanning.
 
 **Section sources**
-- [main.cpp:189-195](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L189-L195)
+- [main.cpp:189-195](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L189-L195)
 
 ## Dependency Analysis
 - Firmware dependencies:
@@ -344,21 +344,21 @@ API["API Endpoints"] --> MODELS
 ```
 
 **Diagram sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [NetworkManager.cpp:8-10](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L8-L10)
-- [BLEManager.cpp:1-5](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L5)
-- [APPortalManager.cpp:1-5](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L1-L5)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [telemetry.py:20-130](file://server/app/models/telemetry.py#L20-L130)
-- [telemetry.py (API):15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [NetworkManager.cpp:8-10](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L8-L10)
+- [BLEManager.cpp:1-5](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L5)
+- [APPortalManager.cpp:1-5](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L1-L5)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [telemetry.py:20-130](server/app/models/telemetry.py#L20-L130)
+- [telemetry.py (API):15-73](server/app/api/endpoints/telemetry.py#L15-L73)
 
 **Section sources**
-- [NetworkManager.cpp:8-10](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L8-L10)
-- [BLEManager.cpp:1-5](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L5)
-- [APPortalManager.cpp:1-5](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L1-L5)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [telemetry.py:20-130](file://server/app/models/telemetry.py#L20-L130)
-- [telemetry.py (API):15-73](file://server/app/api/endpoints/telemetry.py#L15-L73)
+- [NetworkManager.cpp:8-10](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L8-L10)
+- [BLEManager.cpp:1-5](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L5)
+- [APPortalManager.cpp:1-5](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L1-L5)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [telemetry.py:20-130](server/app/models/telemetry.py#L20-L130)
+- [telemetry.py (API):15-73](server/app/api/endpoints/telemetry.py#L15-L73)
 
 ## Performance Considerations
 - Exponential backoff prevents network storms during repeated reconnections.
@@ -383,10 +383,10 @@ API["API Endpoints"] --> MODELS
   - Validate configuration save and reconfigureFromConfig behavior.
 
 **Section sources**
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-- [NetworkManager.cpp:276-282](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
-- [BLEManager.cpp:110-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
-- [APPortalManager.cpp:120-196](file://firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L196)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [NetworkManager.cpp:276-282](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
+- [BLEManager.cpp:110-121](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
+- [APPortalManager.cpp:120-196](firmware/M5StickCPlus2_BLEGateway/src/managers/APPortalManager.cpp#L120-L196)
 
 ## Conclusion
 The networking stack integrates robust WiFi and MQTT connectivity, efficient BLE scanning, and a user-friendly AP portal for configuration. The server-side handler transforms raw telemetry into structured insights, enabling room prediction, vitals ingestion, and alerting. Adaptive scheduling and power-aware design ensure reliability and longevity in real-world deployments.
@@ -403,17 +403,17 @@ The networking stack integrates robust WiFi and MQTT connectivity, efficient BLE
   - Room and vitals: listen for room predictions and vitals topics for downstream processing.
 
   **Section sources**
-  - [TELEMETRY_CONTRACT.md:7-13](file://firmware/TELEMETRY_CONTRACT.md#L7-L13)
-  - [NetworkManager.cpp:117-127](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L117-L127)
-  - [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
+  - [TELEMETRY_CONTRACT.md:7-13](firmware/TELEMETRY_CONTRACT.md#L7-L13)
+  - [NetworkManager.cpp:117-127](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L117-L127)
+  - [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
 
 - Customizing BLE scanning parameters
   - Adjust scan interval/window and rest period to trade off discovery latency vs. power.
   - Tune node staleness threshold to filter transient entries.
 
   **Section sources**
-  - [BLEManager.cpp:88-91](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L88-L91)
-  - [BLEManager.cpp:46-47](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L46-L47)
+  - [BLEManager.cpp:88-91](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L88-L91)
+  - [BLEManager.cpp:46-47](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L46-L47)
 
 - Troubleshooting network connectivity issues
   - Monitor WiFi reconnection attempts and exponential backoff behavior.
@@ -421,13 +421,13 @@ The networking stack integrates robust WiFi and MQTT connectivity, efficient BLE
   - Temporarily disable AP portal and WiFi scan scenes to isolate issues.
 
   **Section sources**
-  - [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-  - [Config.h:44-49](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L49)
+  - [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+  - [Config.h:44-49](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L49)
 
 - Extending communication protocols
   - Add new MQTT topics and handlers on the server; update device subscriptions and publishers accordingly.
   - Define new telemetry fields and ensure both sides serialize/deserialize consistently.
 
   **Section sources**
-  - [TELEMETRY_CONTRACT.md:15-23](file://firmware/TELEMETRY_CONTRACT.md#L15-L23)
-  - [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+  - [TELEMETRY_CONTRACT.md:15-23](firmware/TELEMETRY_CONTRACT.md#L15-L23)
+  - [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)

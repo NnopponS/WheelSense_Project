@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [device_management.py](file://server/app/services/device_management.py)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [homeassistant.py](file://server/app/services/homeassistant.py)
-- [homeassistant.py (endpoint)](file://server/app/api/endpoints/homeassistant.py)
-- [models/core.py](file://server/app/models/core.py)
-- [schemas/devices.py](file://server/app/schemas/devices.py)
-- [schemas/homeassistant.py](file://server/app/schemas/homeassistant.py)
-- [configuration.yaml](file://server/homeassistant/configuration.yaml)
-- [motion_light.yaml](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
-- [confirmable_notification.yaml](file://server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml)
-- [RoomSmartDevicesPanel.tsx](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
-- [page.tsx (patient room controls)](file://frontend/app/patient/room-controls/page.tsx)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
+- [device_management.py](server/app/services/device_management.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [homeassistant.py](server/app/services/homeassistant.py)
+- [homeassistant.py (endpoint)](server/app/api/endpoints/homeassistant.py)
+- [models/core.py](server/app/models/core.py)
+- [schemas/devices.py](server/app/schemas/devices.py)
+- [schemas/homeassistant.py](server/app/schemas/homeassistant.py)
+- [configuration.yaml](server/homeassistant/configuration.yaml)
+- [motion_light.yaml](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
+- [confirmable_notification.yaml](server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml)
+- [RoomSmartDevicesPanel.tsx](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
+- [page.tsx (patient room controls)](frontend/app/patient/room-controls/page.tsx)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
 </cite>
 
 ## Table of Contents
@@ -80,32 +80,32 @@ BP2 --> CONF
 ```
 
 **Diagram sources**
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [homeassistant.py (endpoint):65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [models/core.py:27-124](file://server/app/models/core.py#L27-L124)
-- [schemas/devices.py:26-42](file://server/app/schemas/devices.py#L26-L42)
-- [schemas/homeassistant.py:7-46](file://server/app/schemas/homeassistant.py#L7-L46)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [motion_light.yaml:1-58](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L58)
-- [confirmable_notification.yaml:1-51](file://server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml#L1-L51)
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [page.tsx (patient room controls):156-387](file://frontend/app/patient/room-controls/page.tsx#L156-L387)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [homeassistant.py (endpoint):65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [models/core.py:27-124](server/app/models/core.py#L27-L124)
+- [schemas/devices.py:26-42](server/app/schemas/devices.py#L26-L42)
+- [schemas/homeassistant.py:7-46](server/app/schemas/homeassistant.py#L7-L46)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [motion_light.yaml:1-58](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L58)
+- [confirmable_notification.yaml:1-51](server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml#L1-L51)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [page.tsx (patient room controls):156-387](frontend/app/patient/room-controls/page.tsx#L156-L387)
 
 **Section sources**
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [homeassistant.py (endpoint):65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [models/core.py:27-124](file://server/app/models/core.py#L27-L124)
-- [schemas/devices.py:26-42](file://server/app/schemas/devices.py#L26-L42)
-- [schemas/homeassistant.py:7-46](file://server/app/schemas/homeassistant.py#L7-L46)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [motion_light.yaml:1-58](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L58)
-- [confirmable_notification.yaml:1-51](file://server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml#L1-L51)
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [page.tsx (patient room controls):156-387](file://frontend/app/patient/room-controls/page.tsx#L156-L387)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [homeassistant.py (endpoint):65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [models/core.py:27-124](server/app/models/core.py#L27-L124)
+- [schemas/devices.py:26-42](server/app/schemas/devices.py#L26-L42)
+- [schemas/homeassistant.py:7-46](server/app/schemas/homeassistant.py#L7-L46)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [motion_light.yaml:1-58](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L58)
+- [confirmable_notification.yaml:1-51](server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml#L1-L51)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [page.tsx (patient room controls):156-387](frontend/app/patient/room-controls/page.tsx#L156-L387)
 
 ## Core Components
 - Device registry and MQTT command dispatch:
@@ -122,11 +122,11 @@ BP2 --> CONF
   - Patients can view room controls and device summaries
 
 **Section sources**
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [homeassistant.py (endpoint):65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [page.tsx (patient room controls):156-387](file://frontend/app/patient/room-controls/page.tsx#L156-L387)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [homeassistant.py (endpoint):65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [page.tsx (patient room controls):156-387](frontend/app/patient/room-controls/page.tsx#L156-L387)
 
 ## Architecture Overview
 The system implements a bidirectional integration:
@@ -149,8 +149,8 @@ API-->>FE : HAResponse {status, message, data}
 ```
 
 **Diagram sources**
-- [homeassistant.py (endpoint):187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
-- [homeassistant.py:42-73](file://server/app/services/homeassistant.py#L42-L73)
+- [homeassistant.py (endpoint):187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
+- [homeassistant.py:42-73](server/app/services/homeassistant.py#L42-L73)
 
 ```mermaid
 sequenceDiagram
@@ -171,9 +171,9 @@ MH->>DB : Update DeviceCommandDispatch status
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:108-125](file://server/app/mqtt_handler.py#L108-L125)
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [models/core.py:65-84](file://server/app/models/core.py#L65-L84)
+- [mqtt_handler.py:108-125](server/app/mqtt_handler.py#L108-L125)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [models/core.py:65-84](server/app/models/core.py#L65-L84)
 
 ## Detailed Component Analysis
 
@@ -200,16 +200,16 @@ Pending --> End
 ```
 
 **Diagram sources**
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [models/core.py:65-84](file://server/app/models/core.py#L65-L84)
-- [mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [models/core.py:65-84](server/app/models/core.py#L65-L84)
+- [mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
 
 **Section sources**
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [device_management.py:1441-1454](file://server/app/services/device_management.py#L1441-L1454)
-- [models/core.py:65-84](file://server/app/models/core.py#L65-L84)
-- [mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
-- [test_mqtt_handler.py:596-636](file://server/tests/test_mqtt_handler.py#L596-L636)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [device_management.py:1441-1454](server/app/services/device_management.py#L1441-L1454)
+- [models/core.py:65-84](server/app/models/core.py#L65-L84)
+- [mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
+- [test_mqtt_handler.py:596-636](server/tests/test_mqtt_handler.py#L596-L636)
 
 ### MQTT Ingestion Pipeline
 - Subscriptions:
@@ -240,14 +240,14 @@ Ack --> AckDB["Update DeviceCommandDispatch"]
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mqtt_handler.py:139-278](file://server/app/mqtt_handler.py#L139-L278)
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mqtt_handler.py:139-278](server/app/mqtt_handler.py#L139-L278)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
 
 **Section sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mqtt_handler.py:139-278](file://server/app/mqtt_handler.py#L139-L278)
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mqtt_handler.py:139-278](server/app/mqtt_handler.py#L139-L278)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
 
 ### Home Assistant Bridge Integration
 - Device mapping:
@@ -281,13 +281,13 @@ SmartDevice <.. HomeAssistantService : "mapped by admin"
 ```
 
 **Diagram sources**
-- [models/core.py:104-124](file://server/app/models/core.py#L104-L124)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
+- [models/core.py:104-124](server/app/models/core.py#L104-L124)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
 
 **Section sources**
-- [homeassistant.py (endpoint):65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [models/core.py:104-124](file://server/app/models/core.py#L104-L124)
+- [homeassistant.py (endpoint):65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [models/core.py:104-124](server/app/models/core.py#L104-L124)
 
 ### Frontend Device Provisioning and Control
 - RoomSmartDevicesPanel:
@@ -311,13 +311,13 @@ API->>DB : Remove SmartDevice
 ```
 
 **Diagram sources**
-- [RoomSmartDevicesPanel.tsx:46-87](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L46-L87)
-- [homeassistant.py (endpoint):84-186](file://server/app/api/endpoints/homeassistant.py#L84-L186)
+- [RoomSmartDevicesPanel.tsx:46-87](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L46-L87)
+- [homeassistant.py (endpoint):84-186](server/app/api/endpoints/homeassistant.py#L84-L186)
 
 **Section sources**
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
-- [page.tsx (patient room controls):156-387](file://frontend/app/patient/room-controls/page.tsx#L156-L387)
-- [homeassistant.py (endpoint):65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [page.tsx (patient room controls):156-387](frontend/app/patient/room-controls/page.tsx#L156-L387)
+- [homeassistant.py (endpoint):65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
 
 ### Home Assistant Blueprints and Automations
 - Blueprints included:
@@ -326,9 +326,9 @@ API->>DB : Remove SmartDevice
 - These enable low-code automation scenarios for room control and alerts
 
 **Section sources**
-- [motion_light.yaml:1-58](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L58)
-- [confirmable_notification.yaml:1-51](file://server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml#L1-L51)
-- [configuration.yaml:53-58](file://server/homeassistant/configuration.yaml#L53-L58)
+- [motion_light.yaml:1-58](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L58)
+- [confirmable_notification.yaml:1-51](server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml#L1-L51)
+- [configuration.yaml:53-58](server/homeassistant/configuration.yaml#L53-L58)
 
 ## Dependency Analysis
 - DeviceCommandDispatch depends on Device and Workspace for scoping and auditing
@@ -347,22 +347,22 @@ FE_Panel["RoomSmartDevicesPanel"] --> HA_EP
 ```
 
 **Diagram sources**
-- [models/core.py:65-84](file://server/app/models/core.py#L65-L84)
-- [models/core.py:27-45](file://server/app/models/core.py#L27-L45)
-- [models/core.py:104-124](file://server/app/models/core.py#L104-L124)
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
-- [homeassistant.py (endpoint):65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [models/core.py:65-84](server/app/models/core.py#L65-L84)
+- [models/core.py:27-45](server/app/models/core.py#L27-L45)
+- [models/core.py:104-124](server/app/models/core.py#L104-L124)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
+- [homeassistant.py (endpoint):65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
 
 **Section sources**
-- [models/core.py:27-124](file://server/app/models/core.py#L27-L124)
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
-- [homeassistant.py (endpoint):65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [RoomSmartDevicesPanel.tsx:16-174](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
+- [models/core.py:27-124](server/app/models/core.py#L27-L124)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
+- [homeassistant.py (endpoint):65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [RoomSmartDevicesPanel.tsx:16-174](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L174)
 
 ## Performance Considerations
 - MQTT batching and chunked photo assembly prevent memory spikes during large payloads
@@ -384,10 +384,10 @@ Common issues and resolutions:
   - Ensure photo chunks are complete and persisted; check camera status snapshot updates
 
 **Section sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [device_management.py:1312-1367](file://server/app/services/device_management.py#L1312-L1367)
-- [homeassistant.py:20-41](file://server/app/services/homeassistant.py#L20-L41)
-- [test_mqtt_handler.py:638-650](file://server/tests/test_mqtt_handler.py#L638-L650)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [device_management.py:1312-1367](server/app/services/device_management.py#L1312-L1367)
+- [homeassistant.py:20-41](server/app/services/homeassistant.py#L20-L41)
+- [test_mqtt_handler.py:638-650](server/tests/test_mqtt_handler.py#L638-L650)
 
 ## Conclusion
 The WheelSense Platform provides a robust, bidirectional integration for smart home devices:
@@ -404,16 +404,16 @@ The WheelSense Platform provides a robust, bidirectional integration for smart h
 - Device command dispatches are workspace-scoped and audited
 
 **Section sources**
-- [device_management.py:50-68](file://server/app/services/device_management.py#L50-L68)
-- [homeassistant.py:20-24](file://server/app/services/homeassistant.py#L20-L24)
+- [device_management.py:50-68](server/app/services/device_management.py#L50-L68)
+- [homeassistant.py:20-24](server/app/services/homeassistant.py#L20-L24)
 
 ### Device Capability Mapping
 - SmartDevice model supports arbitrary config for features and capabilities
 - Device types include light, switch, climate, fan, etc., enabling flexible room control
 
 **Section sources**
-- [models/core.py:104-124](file://server/app/models/core.py#L104-L124)
-- [schemas/homeassistant.py:8-34](file://server/app/schemas/homeassistant.py#L8-L34)
+- [models/core.py:104-124](server/app/models/core.py#L104-L124)
+- [schemas/homeassistant.py:8-34](server/app/schemas/homeassistant.py#L8-L34)
 
 ### Command Queuing and Retry Logic
 - DeviceCommandDispatch tracks sent/acked/failed states and error messages
@@ -421,6 +421,6 @@ The WheelSense Platform provides a robust, bidirectional integration for smart h
 - HA service calls return immediate feedback; higher-level retries can be implemented at the caller level
 
 **Section sources**
-- [models/core.py:65-84](file://server/app/models/core.py#L65-L84)
-- [device_management.py:1357-1364](file://server/app/services/device_management.py#L1357-L1364)
-- [homeassistant.py:42-73](file://server/app/services/homeassistant.py#L42-L73)
+- [models/core.py:65-84](server/app/models/core.py#L65-L84)
+- [device_management.py:1357-1364](server/app/services/device_management.py#L1357-L1364)
+- [homeassistant.py:42-73](server/app/services/homeassistant.py#L42-L73)

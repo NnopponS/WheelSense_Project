@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [homeassistant.py](file://server/app/api/endpoints/homeassistant.py)
-- [motion.py](file://server/app/api/endpoints/motion.py)
-- [rooms.py](file://server/app/api/endpoints/rooms.py)
-- [homeassistant.py](file://server/app/schemas/homeassistant.py)
-- [homeassistant.py](file://server/app/services/homeassistant.py)
-- [core.py](file://server/app/models/core.py)
-- [core.py](file://server/app/schemas/core.py)
-- [config.py](file://server/app/config.py)
-- [configuration.yaml](file://server/homeassistant/configuration.yaml)
-- [automations.yaml](file://server/homeassistant/automations.yaml)
-- [motion_light.yaml](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
-- [notify_leaving_zone.yaml](file://server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml)
-- [scripts.yaml](file://server/homeassistant/scripts.yaml)
+- [homeassistant.py](server/app/api/endpoints/homeassistant.py)
+- [motion.py](server/app/api/endpoints/motion.py)
+- [rooms.py](server/app/api/endpoints/rooms.py)
+- [homeassistant.py](server/app/schemas/homeassistant.py)
+- [homeassistant.py](server/app/services/homeassistant.py)
+- [core.py](server/app/models/core.py)
+- [core.py](server/app/schemas/core.py)
+- [config.py](server/app/config.py)
+- [configuration.yaml](server/homeassistant/configuration.yaml)
+- [automations.yaml](server/homeassistant/automations.yaml)
+- [motion_light.yaml](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
+- [notify_leaving_zone.yaml](server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml)
+- [scripts.yaml](server/homeassistant/scripts.yaml)
 </cite>
 
 ## Table of Contents
@@ -74,20 +74,20 @@ HA_CONF -.-> BP_ZONE
 ```
 
 **Diagram sources**
-- [homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [rooms.py:50-158](file://server/app/api/endpoints/rooms.py#L50-L158)
-- [motion.py:49-218](file://server/app/api/endpoints/motion.py#L49-L218)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [core.py:104-124](file://server/app/models/core.py#L104-L124)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [motion_light.yaml:1-59](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
-- [notify_leaving_zone.yaml:1-51](file://server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)
+- [homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [rooms.py:50-158](server/app/api/endpoints/rooms.py#L50-L158)
+- [motion.py:49-218](server/app/api/endpoints/motion.py#L49-L218)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [core.py:104-124](server/app/models/core.py#L104-L124)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [motion_light.yaml:1-59](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
+- [notify_leaving_zone.yaml:1-51](server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)
 
 **Section sources**
-- [homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
-- [rooms.py:1-158](file://server/app/api/endpoints/rooms.py#L1-L158)
-- [motion.py:1-218](file://server/app/api/endpoints/motion.py#L1-L218)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
+- [homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
+- [rooms.py:1-158](server/app/api/endpoints/rooms.py#L1-L158)
+- [motion.py:1-218](server/app/api/endpoints/motion.py#L1-L218)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
 
 ## Core Components
 - Home Assistant Bridge API
@@ -107,12 +107,12 @@ HA_CONF -.-> BP_ZONE
   - Automation blueprints for motion-activated lighting and zone exit notifications
 
 **Section sources**
-- [homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [rooms.py:50-158](file://server/app/api/endpoints/rooms.py#L50-L158)
-- [motion.py:49-218](file://server/app/api/endpoints/motion.py#L49-L218)
-- [configuration.yaml:21-57](file://server/homeassistant/configuration.yaml#L21-L57)
-- [motion_light.yaml:1-59](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
-- [notify_leaving_zone.yaml:1-51](file://server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)
+- [homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [rooms.py:50-158](server/app/api/endpoints/rooms.py#L50-L158)
+- [motion.py:49-218](server/app/api/endpoints/motion.py#L49-L218)
+- [configuration.yaml:21-57](server/homeassistant/configuration.yaml#L21-L57)
+- [motion_light.yaml:1-59](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
+- [notify_leaving_zone.yaml:1-51](server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)
 
 ## Architecture Overview
 The system integrates a FastAPI backend with Home Assistant and MQTT for motion telemetry. The Home Assistant service encapsulates HTTP calls to the HA REST API, while the motion pipeline uses MQTT to control devices and ML routines to classify motion.
@@ -132,8 +132,8 @@ API-->>Client : "HAResponse {status,message,data}"
 ```
 
 **Diagram sources**
-- [homeassistant.py:187-224](file://server/app/api/endpoints/homeassistant.py#L187-L224)
-- [homeassistant.py:42-73](file://server/app/services/homeassistant.py#L42-L73)
+- [homeassistant.py:187-224](server/app/api/endpoints/homeassistant.py#L187-L224)
+- [homeassistant.py:42-73](server/app/services/homeassistant.py#L42-L73)
 
 ## Detailed Component Analysis
 
@@ -180,10 +180,10 @@ Behavior Notes
 - HA service failures return 502 with guidance to check token
 
 **Section sources**
-- [homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:7-46](file://server/app/schemas/homeassistant.py#L7-L46)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [core.py:104-124](file://server/app/models/core.py#L104-L124)
+- [homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:7-46](server/app/schemas/homeassistant.py#L7-L46)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [core.py:104-124](server/app/models/core.py#L104-L124)
 
 #### Class Diagram: Home Assistant Entities and Service
 ```mermaid
@@ -216,9 +216,9 @@ HomeAssistantService --> SmartDevice : "reads ha_entity_id"
 ```
 
 **Diagram sources**
-- [core.py:104-124](file://server/app/models/core.py#L104-L124)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [homeassistant.py:42-46](file://server/app/schemas/homeassistant.py#L42-L46)
+- [core.py:104-124](server/app/models/core.py#L104-L124)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [homeassistant.py:42-46](server/app/schemas/homeassistant.py#L42-L46)
 
 ### Room Control Endpoints
 Manage rooms within a workspace, including hierarchical associations to floors and facilities.
@@ -243,8 +243,8 @@ Request/Response Schemas
   - Fields include name, description, floor_id, room_type, node_device_id, adjacent_rooms, config
 
 **Section sources**
-- [rooms.py:50-158](file://server/app/api/endpoints/rooms.py#L50-L158)
-- [core.py:17-31](file://server/app/schemas/core.py#L17-L31)
+- [rooms.py:50-158](server/app/api/endpoints/rooms.py#L50-L158)
+- [core.py:17-31](server/app/schemas/core.py#L17-L31)
 
 #### Sequence Diagram: Device Control Flow
 ```mermaid
@@ -265,8 +265,8 @@ API-->>Client : "HAResponse {status : 'success',data : {entity_id}}"
 ```
 
 **Diagram sources**
-- [homeassistant.py:187-224](file://server/app/api/endpoints/homeassistant.py#L187-L224)
-- [homeassistant.py:42-73](file://server/app/services/homeassistant.py#L42-L73)
+- [homeassistant.py:187-224](server/app/api/endpoints/homeassistant.py#L187-L224)
+- [homeassistant.py:42-73](server/app/services/homeassistant.py#L42-L73)
 
 ### Motion Detection Integration
 Supports recording, training, prediction, and model lifecycle management.
@@ -302,8 +302,8 @@ Error Handling
 - 400 for insufficient training data or model readiness
 
 **Section sources**
-- [motion.py:49-218](file://server/app/api/endpoints/motion.py#L49-L218)
-- [core.py:44-59](file://server/app/schemas/core.py#L44-L59)
+- [motion.py:49-218](server/app/api/endpoints/motion.py#L49-L218)
+- [core.py:44-59](server/app/schemas/core.py#L44-L59)
 
 #### Flowchart: Motion Training Pipeline
 ```mermaid
@@ -321,7 +321,7 @@ Stats --> End
 ```
 
 **Diagram sources**
-- [motion.py:111-178](file://server/app/api/endpoints/motion.py#L111-L178)
+- [motion.py:111-178](server/app/api/endpoints/motion.py#L111-L178)
 
 ### Home Assistant Configuration and Blueprints
 Enable motion-based automation and notifications without custom code.
@@ -344,11 +344,11 @@ Integration Patterns
 - Combine motion predictions with presence/zone states for contextual actions
 
 **Section sources**
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [automations.yaml:1-2](file://server/homeassistant/automations.yaml#L1-L2)
-- [motion_light.yaml:1-59](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
-- [notify_leaving_zone.yaml:1-51](file://server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)
-- [scripts.yaml:1-2](file://server/homeassistant/scripts.yaml#L1-L2)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [automations.yaml:1-2](server/homeassistant/automations.yaml#L1-L2)
+- [motion_light.yaml:1-59](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
+- [notify_leaving_zone.yaml:1-51](server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)
+- [scripts.yaml:1-2](server/homeassistant/scripts.yaml#L1-L2)
 
 ## Dependency Analysis
 - API endpoints depend on:
@@ -377,22 +377,22 @@ API_MOTION --> FEAT["Feature Engineering & ML"]
 ```
 
 **Diagram sources**
-- [homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
-- [homeassistant.py:1-46](file://server/app/schemas/homeassistant.py#L1-L46)
-- [core.py:104-124](file://server/app/models/core.py#L104-L124)
-- [homeassistant.py:1-76](file://server/app/services/homeassistant.py#L1-L76)
-- [config.py:64-67](file://server/app/config.py#L64-L67)
-- [rooms.py:1-158](file://server/app/api/endpoints/rooms.py#L1-L158)
-- [core.py:17-31](file://server/app/schemas/core.py#L17-L31)
-- [motion.py:1-218](file://server/app/api/endpoints/motion.py#L1-L218)
+- [homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
+- [homeassistant.py:1-46](server/app/schemas/homeassistant.py#L1-L46)
+- [core.py:104-124](server/app/models/core.py#L104-L124)
+- [homeassistant.py:1-76](server/app/services/homeassistant.py#L1-L76)
+- [config.py:64-67](server/app/config.py#L64-L67)
+- [rooms.py:1-158](server/app/api/endpoints/rooms.py#L1-L158)
+- [core.py:17-31](server/app/schemas/core.py#L17-L31)
+- [motion.py:1-218](server/app/api/endpoints/motion.py#L1-L218)
 
 **Section sources**
-- [homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
-- [rooms.py:1-158](file://server/app/api/endpoints/rooms.py#L1-L158)
-- [motion.py:1-218](file://server/app/api/endpoints/motion.py#L1-L218)
-- [homeassistant.py:1-76](file://server/app/services/homeassistant.py#L1-L76)
-- [config.py:64-67](file://server/app/config.py#L64-L67)
-- [core.py:104-124](file://server/app/models/core.py#L104-L124)
+- [homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
+- [rooms.py:1-158](server/app/api/endpoints/rooms.py#L1-L158)
+- [motion.py:1-218](server/app/api/endpoints/motion.py#L1-L218)
+- [homeassistant.py:1-76](server/app/services/homeassistant.py#L1-L76)
+- [config.py:64-67](server/app/config.py#L64-L67)
+- [core.py:104-124](server/app/models/core.py#L104-L124)
 
 ## Performance Considerations
 - Asynchronous HTTP and MQTT clients minimize blocking during HA and device communications
@@ -419,11 +419,11 @@ Common Issues and Resolutions
   - Resolution: Train model with sufficient sessions and labels
 
 **Section sources**
-- [homeassistant.py:211-216](file://server/app/api/endpoints/homeassistant.py#L211-L216)
-- [homeassistant.py:22-40](file://server/app/services/homeassistant.py#L22-L40)
-- [motion.py:75-77](file://server/app/api/endpoints/motion.py#L75-L77)
-- [motion.py:105-107](file://server/app/api/endpoints/motion.py#L105-L107)
-- [motion.py:186-187](file://server/app/api/endpoints/motion.py#L186-L187)
+- [homeassistant.py:211-216](server/app/api/endpoints/homeassistant.py#L211-L216)
+- [homeassistant.py:22-40](server/app/services/homeassistant.py#L22-L40)
+- [motion.py:75-77](server/app/api/endpoints/motion.py#L75-L77)
+- [motion.py:105-107](server/app/api/endpoints/motion.py#L105-L107)
+- [motion.py:186-187](server/app/api/endpoints/motion.py#L186-L187)
 
 ## Conclusion
 The smart home integration provides a robust foundation for:
@@ -463,9 +463,9 @@ By adhering to the documented schemas and patterns, teams can extend the system 
   - POST /api/motion/model/load
 
 **Section sources**
-- [homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [rooms.py:50-158](file://server/app/api/endpoints/rooms.py#L50-L158)
-- [motion.py:49-218](file://server/app/api/endpoints/motion.py#L49-L218)
+- [homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [rooms.py:50-158](server/app/api/endpoints/rooms.py#L50-L158)
+- [motion.py:49-218](server/app/api/endpoints/motion.py#L49-L218)
 
 ### Configuration Requirements
 - Home Assistant
@@ -476,7 +476,7 @@ By adhering to the documented schemas and patterns, teams can extend the system 
   - Use motion_light.yaml and notify_leaving_zone.yaml to define automation behaviors
 
 **Section sources**
-- [config.py:64-67](file://server/app/config.py#L64-L67)
-- [config.py:23-37](file://server/app/config.py#L23-L37)
-- [motion_light.yaml:1-59](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
-- [notify_leaving_zone.yaml:1-51](file://server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)
+- [config.py:64-67](server/app/config.py#L64-L67)
+- [config.py:23-37](server/app/config.py#L23-L37)
+- [motion_light.yaml:1-59](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml#L1-L59)
+- [notify_leaving_zone.yaml:1-51](server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml#L1-L51)

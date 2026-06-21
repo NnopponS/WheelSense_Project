@@ -2,24 +2,24 @@
 
 <cite>
 **Referenced Files in This Document**
-- [package.json](file://frontend/package.json)
-- [next.config.ts](file://frontend/next.config.ts)
-- [app/layout.tsx](file://frontend/app/layout.tsx)
-- [components/providers/AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [lib/types.ts](file://frontend/lib/types.ts)
-- [lib/constants.ts](file://frontend/lib/constants.ts)
-- [lib/permissions.ts](file://frontend/lib/permissions.ts)
-- [lib/sidebarConfig.ts](file://frontend/lib/sidebarConfig.ts)
-- [lib/api.ts](file://frontend/lib/api.ts)
-- [hooks/useAuth.tsx](file://frontend/hooks/useAuth.tsx)
-- [hooks/useNotifications.tsx](file://frontend/hooks/useNotifications.tsx)
-- [components/RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [app/admin/layout.tsx](file://frontend/app/admin/layout.tsx)
-- [app/head-nurse/layout.tsx](file://frontend/app/head-nurse/layout.tsx)
-- [app/supervisor/layout.tsx](file://frontend/app/supervisor/layout.tsx)
-- [app/observer/layout.tsx](file://frontend/app/observer/layout.tsx)
-- [app/patient/layout.tsx](file://frontend/app/patient/layout.tsx)
-- [components/ui/button.tsx](file://frontend/components/ui/button.tsx)
+- [package.json](frontend/package.json)
+- [next.config.ts](frontend/next.config.ts)
+- [app/layout.tsx](frontend/app/layout.tsx)
+- [components/providers/AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [lib/types.ts](frontend/lib/types.ts)
+- [lib/constants.ts](frontend/lib/constants.ts)
+- [lib/permissions.ts](frontend/lib/permissions.ts)
+- [lib/sidebarConfig.ts](frontend/lib/sidebarConfig.ts)
+- [lib/api.ts](frontend/lib/api.ts)
+- [hooks/useAuth.tsx](frontend/hooks/useAuth.tsx)
+- [hooks/useNotifications.tsx](frontend/hooks/useNotifications.tsx)
+- [components/RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [app/admin/layout.tsx](frontend/app/admin/layout.tsx)
+- [app/head-nurse/layout.tsx](frontend/app/head-nurse/layout.tsx)
+- [app/supervisor/layout.tsx](frontend/app/supervisor/layout.tsx)
+- [app/observer/layout.tsx](frontend/app/observer/layout.tsx)
+- [app/patient/layout.tsx](frontend/app/patient/layout.tsx)
+- [components/ui/button.tsx](frontend/components/ui/button.tsx)
 </cite>
 
 ## Table of Contents
@@ -64,15 +64,15 @@ O["Global Styles<br/>app/globals.css"] -.-> P["Tailwind & Design Tokens"]
 ```
 
 **Diagram sources**
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
-- [components/providers/AppProviders.tsx:1-43](file://frontend/components/providers/AppProviders.tsx#L1-L43)
-- [components/RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
-- [lib/api.ts:1-120](file://frontend/lib/api.ts#L1-L120)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
+- [components/providers/AppProviders.tsx:1-43](frontend/components/providers/AppProviders.tsx#L1-L43)
+- [components/RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
+- [lib/api.ts:1-120](frontend/lib/api.ts#L1-L120)
 
 **Section sources**
-- [package.json:1-58](file://frontend/package.json#L1-L58)
-- [next.config.ts:1-30](file://frontend/next.config.ts#L1-L30)
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
+- [package.json:1-58](frontend/package.json#L1-L58)
+- [next.config.ts:1-30](frontend/next.config.ts#L1-L30)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
 
 ## Core Components
 - AppProviders: Central provider container enabling theme switching, internationalization, authentication, React Query caching, and toast notifications.
@@ -82,11 +82,11 @@ O["Global Styles<br/>app/globals.css"] -.-> P["Tailwind & Design Tokens"]
 - UI Library: Radix primitives and Tailwind-based components with variant-driven design system.
 
 **Section sources**
-- [components/providers/AppProviders.tsx:1-43](file://frontend/components/providers/AppProviders.tsx#L1-L43)
-- [components/RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
-- [lib/api.ts:118-297](file://frontend/lib/api.ts#L118-L297)
-- [lib/permissions.ts:1-111](file://frontend/lib/permissions.ts#L1-L111)
-- [lib/sidebarConfig.ts:1-300](file://frontend/lib/sidebarConfig.ts#L1-L300)
+- [components/providers/AppProviders.tsx:1-43](frontend/components/providers/AppProviders.tsx#L1-L43)
+- [components/RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
+- [lib/api.ts:118-297](frontend/lib/api.ts#L118-L297)
+- [lib/permissions.ts:1-111](frontend/lib/permissions.ts#L1-L111)
+- [lib/sidebarConfig.ts:1-300](frontend/lib/sidebarConfig.ts#L1-L300)
 
 ## Architecture Overview
 The frontend composes role-specific dashboards behind unified guards. Authentication and role checks occur in the RoleShell, while global providers manage theme, i18n, and state. The API client proxies requests to the backend via the Next.js app API route.
@@ -115,10 +115,10 @@ end
 ```
 
 **Diagram sources**
-- [components/RoleShell.tsx:37-66](file://frontend/components/RoleShell.tsx#L37-L66)
-- [hooks/useAuth.tsx:88-97](file://frontend/hooks/useAuth.tsx#L88-L97)
-- [lib/api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
-- [next.config.ts:25-27](file://frontend/next.config.ts#L25-L27)
+- [components/RoleShell.tsx:37-66](frontend/components/RoleShell.tsx#L37-L66)
+- [hooks/useAuth.tsx:88-97](frontend/hooks/useAuth.tsx#L88-L97)
+- [lib/api.ts:209-297](frontend/lib/api.ts#L209-L297)
+- [next.config.ts:25-27](frontend/next.config.ts#L25-L27)
 
 ## Detailed Component Analysis
 
@@ -140,19 +140,19 @@ Home --> Done
 ```
 
 **Diagram sources**
-- [components/RoleShell.tsx:37-66](file://frontend/components/RoleShell.tsx#L37-L66)
-- [lib/permissions.ts:107-109](file://frontend/lib/permissions.ts#L107-L109)
-- [next.config.ts:6-24](file://frontend/next.config.ts#L6-L24)
-- [lib/constants.ts:4-26](file://frontend/lib/constants.ts#L4-L26)
+- [components/RoleShell.tsx:37-66](frontend/components/RoleShell.tsx#L37-L66)
+- [lib/permissions.ts:107-109](frontend/lib/permissions.ts#L107-L109)
+- [next.config.ts:6-24](frontend/next.config.ts#L6-L24)
+- [lib/constants.ts:4-26](frontend/lib/constants.ts#L4-L26)
 
 **Section sources**
-- [app/admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [app/head-nurse/layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [app/supervisor/layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [app/observer/layout.tsx:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [app/patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
-- [next.config.ts:6-24](file://frontend/next.config.ts#L6-L24)
-- [lib/constants.ts:4-26](file://frontend/lib/constants.ts#L4-L26)
+- [app/admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [app/head-nurse/layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [app/supervisor/layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [app/observer/layout.tsx:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [app/patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
+- [next.config.ts:6-24](frontend/next.config.ts#L6-L24)
+- [lib/constants.ts:4-26](frontend/lib/constants.ts#L4-L26)
 
 ### State Management Patterns
 - Providers: AppProviders composes ThemeProvider, QueryClientProvider, I18nProvider, AuthProvider, and SonnerToaster.
@@ -198,14 +198,14 @@ AppProviders --> useNotifications : "consumes"
 ```
 
 **Diagram sources**
-- [components/providers/AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [hooks/useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
-- [hooks/useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
+- [components/providers/AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [hooks/useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
+- [hooks/useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
 
 **Section sources**
-- [components/providers/AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [hooks/useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
-- [hooks/useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
+- [components/providers/AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [hooks/useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
+- [hooks/useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
 
 ### Form Handling and Validation
 - Validation library: Zod is used alongside React Hook Form for robust form validation.
@@ -219,8 +219,8 @@ Practical usage pattern:
 - Display field-level errors and handle submission via the API client.
 
 **Section sources**
-- [package.json:16-44](file://frontend/package.json#L16-L44)
-- [components/ui/button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
+- [package.json:16-44](frontend/package.json#L16-L44)
+- [components/ui/button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
 
 ### Component Library and Design System
 - Base components: Button, Card, Dialog, Dropdown Menu, Input, Label, Progress, Select, Separator, Sheet, Switch, Table, Tabs, Textarea, and more.
@@ -254,10 +254,10 @@ Dialog <.. Table : "contains"
 ```
 
 **Diagram sources**
-- [components/ui/button.tsx:6-33](file://frontend/components/ui/button.tsx#L6-L33)
+- [components/ui/button.tsx:6-33](frontend/components/ui/button.tsx#L6-L33)
 
 **Section sources**
-- [components/ui/button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
+- [components/ui/button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
 
 ### Theming System and Responsive Design
 - ThemeProvider: Supports light, dark, and system themes with opt-out of transition on change for instant switching.
@@ -265,8 +265,8 @@ Dialog <.. Table : "contains"
 - Accessibility: Focus-visible outlines, semantic markup, and keyboard navigation supported by Radix UI.
 
 **Section sources**
-- [components/providers/AppProviders.tsx:26-31](file://frontend/components/providers/AppProviders.tsx#L26-L31)
-- [app/patient/layout.tsx:10-22](file://frontend/app/patient/layout.tsx#L10-L22)
+- [components/providers/AppProviders.tsx:26-31](frontend/components/providers/AppProviders.tsx#L26-L31)
+- [app/patient/layout.tsx:10-22](frontend/app/patient/layout.tsx#L10-L22)
 
 ### Accessibility Compliance
 - Radix UI primitives ensure ARIA-compliant interactions.
@@ -274,8 +274,8 @@ Dialog <.. Table : "contains"
 - Semantic HTML and proper labeling via Label components.
 
 **Section sources**
-- [components/ui/button.tsx:41-52](file://frontend/components/ui/button.tsx#L41-L52)
-- [app/patient/layout.tsx:13-21](file://frontend/app/patient/layout.tsx#L13-L21)
+- [components/ui/button.tsx:41-52](frontend/components/ui/button.tsx#L41-L52)
+- [app/patient/layout.tsx:13-21](frontend/app/patient/layout.tsx#L13-L21)
 
 ### Integration with Backend APIs
 - API base: All requests are prefixed with /api and proxied to the backend.
@@ -298,12 +298,12 @@ API-->>UI : Typed alerts[]
 ```
 
 **Diagram sources**
-- [lib/api.ts:491-498](file://frontend/lib/api.ts#L491-L498)
-- [next.config.ts:25-27](file://frontend/next.config.ts#L25-L27)
+- [lib/api.ts:491-498](frontend/lib/api.ts#L491-L498)
+- [next.config.ts:25-27](frontend/next.config.ts#L25-L27)
 
 **Section sources**
-- [lib/constants.ts:1-2](file://frontend/lib/constants.ts#L1-L2)
-- [lib/api.ts:118-297](file://frontend/lib/api.ts#L118-L297)
+- [lib/constants.ts:1-2](frontend/lib/constants.ts#L1-L2)
+- [lib/api.ts:118-297](frontend/lib/api.ts#L118-L297)
 
 ### Real-Time Updates and Notifications
 - Polling: Alerts, tasks, workflow jobs, and messages are polled at intervals.
@@ -324,11 +324,11 @@ Proceed --> Wait
 ```
 
 **Diagram sources**
-- [hooks/useNotifications.tsx:203-297](file://frontend/hooks/useNotifications.tsx#L203-L297)
-- [hooks/useNotifications.tsx:299-351](file://frontend/hooks/useNotifications.tsx#L299-L351)
+- [hooks/useNotifications.tsx:203-297](frontend/hooks/useNotifications.tsx#L203-L297)
+- [hooks/useNotifications.tsx:299-351](frontend/hooks/useNotifications.tsx#L299-L351)
 
 **Section sources**
-- [hooks/useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
+- [hooks/useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
 
 ### Offline Capabilities
 - The application relies on network connectivity for backend access and does not implement a service worker or offline-first caching strategy.
@@ -349,8 +349,8 @@ Proceed --> Wait
 Navigation is driven by capability filters and role-specific configs.
 
 **Section sources**
-- [lib/sidebarConfig.ts:60-275](file://frontend/lib/sidebarConfig.ts#L60-L275)
-- [lib/permissions.ts:26-93](file://frontend/lib/permissions.ts#L26-L93)
+- [lib/sidebarConfig.ts:60-275](frontend/lib/sidebarConfig.ts#L60-L275)
+- [lib/permissions.ts:26-93](frontend/lib/permissions.ts#L26-L93)
 
 ## Dependency Analysis
 External libraries and their roles:
@@ -375,11 +375,11 @@ Components --> Pages["Role Pages"]
 ```
 
 **Diagram sources**
-- [package.json:13-44](file://frontend/package.json#L13-L44)
-- [components/providers/AppProviders.tsx:3-40](file://frontend/components/providers/AppProviders.tsx#L3-L40)
+- [package.json:13-44](frontend/package.json#L13-L44)
+- [components/providers/AppProviders.tsx:3-40](frontend/components/providers/AppProviders.tsx#L3-L40)
 
 **Section sources**
-- [package.json:13-44](file://frontend/package.json#L13-L44)
+- [package.json:13-44](frontend/package.json#L13-L44)
 
 ## Performance Considerations
 - React Compiler: Enabled in Next config for improved rendering performance.
@@ -389,8 +389,8 @@ Components --> Pages["Role Pages"]
 - Bundle analysis: Monitor with Next.js analyzer to identify large dependencies.
 
 **Section sources**
-- [next.config.ts:5](file://frontend/next.config.ts#L5)
-- [components/providers/AppProviders.tsx:14-22](file://frontend/components/providers/AppProviders.tsx#L14-L22)
+- [next.config.ts:5](frontend/next.config.ts#L5)
+- [components/providers/AppProviders.tsx:14-22](frontend/components/providers/AppProviders.tsx#L14-L22)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -400,9 +400,9 @@ Common issues and resolutions:
 - Toast interruptions: Urgent alerts trigger sound and persistent toasts; use actions to navigate to relevant views.
 
 **Section sources**
-- [lib/api.ts:251-286](file://frontend/lib/api.ts#L251-L286)
-- [components/RoleShell.tsx:44-66](file://frontend/components/RoleShell.tsx#L44-L66)
-- [hooks/useNotifications.tsx:253-288](file://frontend/hooks/useNotifications.tsx#L253-L288)
+- [lib/api.ts:251-286](frontend/lib/api.ts#L251-L286)
+- [components/RoleShell.tsx:44-66](frontend/components/RoleShell.tsx#L44-L66)
+- [hooks/useNotifications.tsx:253-288](frontend/hooks/useNotifications.tsx#L253-L288)
 
 ## Conclusion
 The WheelSense frontend leverages Next.js 16’s App Router to deliver role-focused, accessible, and responsive dashboards. A cohesive provider stack, strong typing, and capability-driven navigation ensure maintainability and scalability. Integrating real-time notifications and a robust API client enables timely, actionable insights across roles.
@@ -413,19 +413,19 @@ The WheelSense frontend leverages Next.js 16’s App Router to deliver role-focu
 - Customizing a Button variant:
   - Use the Button component with variant and size props to match design tokens.
   - Extend CVA variants sparingly and document new options centrally.
-  - Reference: [components/ui/button.tsx:6-33](file://frontend/components/ui/button.tsx#L6-L33)
+  - Reference: [components/ui/button.tsx:6-33](frontend/components/ui/button.tsx#L6-L33)
 
 - Adding a new role navigation item:
   - Extend the role’s NavGroup in sidebarConfig with a new NavItem.
   - Optionally add a capability requirement and badge.
-  - Reference: [lib/sidebarConfig.ts:22-45](file://frontend/lib/sidebarConfig.ts#L22-L45)
+  - Reference: [lib/sidebarConfig.ts:22-45](frontend/lib/sidebarConfig.ts#L22-L45)
 
 - Implementing a new role dashboard:
   - Create a new page under the role’s directory in app/.
   - Wrap with RoleShell via a layout if needed.
-  - Reference: [app/admin/layout.tsx:10](file://frontend/app/admin/layout.tsx#L10)
+  - Reference: [app/admin/layout.tsx:10](frontend/app/admin/layout.tsx#L10)
 
 - Extending the API client:
   - Add a new typed endpoint in lib/api.ts following the existing request pattern.
   - Export a convenience method and type-safe response.
-  - Reference: [lib/api.ts:342-383](file://frontend/lib/api.ts#L342-L383)
+  - Reference: [lib/api.ts:342-383](frontend/lib/api.ts#L342-L383)

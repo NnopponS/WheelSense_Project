@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [MCP-README.md](file://docs/MCP-README.md)
-- [server.py](file://server/app/mcp/server.py)
-- [context.py](file://server/app/mcp/context.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [test_mcp_server.py](file://server/tests/test_mcp_server.py)
-- [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
-- [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
-- [0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [MCP-README.md](docs/MCP-README.md)
+- [server.py](server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [auth.py](server/app/mcp/auth.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [test_mcp_server.py](server/tests/test_mcp_server.py)
+- [test_mcp_auth.py](server/tests/test_mcp_auth.py)
+- [0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
+- [0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
 </cite>
 
 ## Table of Contents
@@ -71,31 +71,31 @@ J --> C
 ```
 
 **Diagram sources**
-- [server.py](file://server/app/mcp/server.py)
-- [context.py](file://server/app/mcp/context.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [MCP-README.md](file://docs/MCP-README.md)
-- [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
-- [test_mcp_server.py](file://server/tests/test_mcp_server.py)
-- [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
+- [server.py](server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [auth.py](server/app/mcp/auth.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [MCP-README.md](docs/MCP-README.md)
+- [0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
+- [test_mcp_server.py](server/tests/test_mcp_server.py)
+- [test_mcp_auth.py](server/tests/test_mcp_auth.py)
 
 **Section sources**
-- [MCP-README.md](file://docs/MCP-README.md)
-- [server.py](file://server/app/mcp/server.py)
-- [context.py](file://server/app/mcp/context.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [test_mcp_server.py](file://server/tests/test_mcp_server.py)
-- [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
-- [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
-- [0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [MCP-README.md](docs/MCP-README.md)
+- [server.py](server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [auth.py](server/app/mcp/auth.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [test_mcp_server.py](server/tests/test_mcp_server.py)
+- [test_mcp_auth.py](server/tests/test_mcp_auth.py)
+- [0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
+- [0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
 
 ## Core Components
 - MCP Server: Declares tools, resources, and prompts; enforces scopes; streams responses.
@@ -111,13 +111,13 @@ Key responsibilities:
 - Agent runtime enables LLM-native tool selection and plan generation.
 
 **Section sources**
-- [server.py](file://server/app/mcp/server.py)
-- [context.py](file://server/app/mcp/context.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
+- [server.py](server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [auth.py](server/app/mcp/auth.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
 
 ## Architecture Overview
 The MCP runtime integrates with the agent runtime and chat actions to deliver a secure, role-scoped tool execution pipeline.
@@ -143,17 +143,17 @@ AR->>MCP : "Build plan and confirm before execution"
 ```
 
 **Diagram sources**
-- [auth.py](file://server/app/mcp/auth.py)
-- [server.py](file://server/app/mcp/server.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
+- [auth.py](server/app/mcp/auth.py)
+- [server.py](server/app/mcp/server.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
 
 **Section sources**
-- [auth.py](file://server/app/mcp/auth.py)
-- [server.py](file://server/app/mcp/server.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [auth.py](server/app/mcp/auth.py)
+- [server.py](server/app/mcp/server.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Detailed Component Analysis
 
@@ -169,12 +169,12 @@ Common patterns:
 - Return structured JSON payloads suitable for AI consumption.
 
 Example references:
-- Tool registration and annotations: [server.py](file://server/app/mcp/server.py)
-- Scope enforcement helpers: [server.py](file://server/app/mcp/server.py)
-- Actor context accessors: [server.py](file://server/app/mcp/server.py)
+- Tool registration and annotations: [server.py](server/app/mcp/server.py)
+- Scope enforcement helpers: [server.py](server/app/mcp/server.py)
+- Actor context accessors: [server.py](server/app/mcp/server.py)
 
 **Section sources**
-- [server.py](file://server/app/mcp/server.py)
+- [server.py](server/app/mcp/server.py)
 
 ### Output Schema Design
 - Tools return dictionaries designed for downstream AI grounding and chat rendering.
@@ -187,7 +187,7 @@ Guidelines:
 - Keep output minimal and deterministic for repeatable tool calls.
 
 **Section sources**
-- [server.py](file://server/app/mcp/server.py)
+- [server.py](server/app/mcp/server.py)
 
 ### Tool Annotation System (Metadata)
 - ToolAnnotations provide hints for AI assistants:
@@ -198,12 +198,12 @@ Guidelines:
 - These hints influence whether read-only tools auto-execute during propose and whether write tools require confirmation.
 
 Reference:
-- Tool annotations usage: [server.py](file://server/app/mcp/server.py)
-- Tool annotations reference: [MCP-README.md](file://docs/MCP-README.md)
+- Tool annotations usage: [server.py](server/app/mcp/server.py)
+- Tool annotations reference: [MCP-README.md](docs/MCP-README.md)
 
 **Section sources**
-- [server.py](file://server/app/mcp/server.py)
-- [MCP-README.md](file://docs/MCP-README.md)
+- [server.py](server/app/mcp/server.py)
+- [MCP-README.md](docs/MCP-README.md)
 
 ### Context Integration Patterns
 - Actor context encapsulates user_id, workspace_id, role, patient_id, caregiver_id, and scopes.
@@ -216,13 +216,13 @@ Patterns:
 - Expose resources for current user, visible patients, active alerts, and rooms.
 
 References:
-- Actor context dataclass and helpers: [context.py](file://server/app/mcp/context.py)
-- Resource definitions: [server.py](file://server/app/mcp/server.py)
-- Execution wrapper: [server.py](file://server/app/mcp/server.py)
+- Actor context dataclass and helpers: [context.py](server/app/mcp/context.py)
+- Resource definitions: [server.py](server/app/mcp/server.py)
+- Execution wrapper: [server.py](server/app/mcp/server.py)
 
 **Section sources**
-- [context.py](file://server/app/mcp/context.py)
-- [server.py](file://server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [server.py](server/app/mcp/server.py)
 
 ### Permission and Scope Requirements
 - Roles map to sets of MCP scopes; effective scopes are resolved from tokens.
@@ -235,13 +235,13 @@ Scope matrix highlights:
 - Patient: limited to self-related data and room controls.
 
 References:
-- Role-to-scope mapping: [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- OAuth metadata schema: [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- Auth middleware and token handling: [auth.py](file://server/app/mcp/auth.py)
+- Role-to-scope mapping: [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- OAuth metadata schema: [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- Auth middleware and token handling: [auth.py](server/app/mcp/auth.py)
 
 **Section sources**
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- [auth.py](file://server/app/mcp/auth.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- [auth.py](server/app/mcp/auth.py)
 
 ### Agent Runtime Tool Routing and Execution
 - LLM-native routing builds a tool catalog per role and selects tools from the MCP registry.
@@ -249,18 +249,18 @@ References:
 - Execution plan generation and 3-stage chat flow (propose → confirm → execute) are coordinated by internal endpoints.
 
 References:
-- Tool catalog and routing: [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- Internal propose/execute endpoints: [main.py](file://server/app/agent_runtime/main.py)
-- Execution orchestration: [service.py](file://server/app/agent_runtime/service.py)
-- ADR on LLM-native routing: [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
-- Chat actions flow: [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- Tool catalog and routing: [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- Internal propose/execute endpoints: [main.py](server/app/agent_runtime/main.py)
+- Execution orchestration: [service.py](server/app/agent_runtime/service.py)
+- ADR on LLM-native routing: [0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
+- Chat actions flow: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 **Section sources**
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ### Practical Examples and Patterns
 - Read-only tool example: list_visible_patients returns filtered patient summaries.
@@ -269,12 +269,12 @@ References:
 - Prompt example: role-specific playbooks guide AI behavior.
 
 References:
-- Tool examples: [server.py](file://server/app/mcp/server.py)
-- Resource examples: [server.py](file://server/app/mcp/server.py)
-- Prompt examples: [server.py](file://server/app/mcp/server.py)
+- Tool examples: [server.py](server/app/mcp/server.py)
+- Resource examples: [server.py](server/app/mcp/server.py)
+- Prompt examples: [server.py](server/app/mcp/server.py)
 
 **Section sources**
-- [server.py](file://server/app/mcp/server.py)
+- [server.py](server/app/mcp/server.py)
 
 ### Error Handling and Status Codes
 - Standard HTTP codes: 200 success, 401/403 authentication/scopes, 404 not found, 500 server error.
@@ -282,12 +282,12 @@ References:
 - WWW-Authenticate header is set on 401 with resource metadata.
 
 References:
-- Error handling and status codes: [MCP-README.md](file://docs/MCP-README.md)
-- Auth middleware error responses: [auth.py](file://server/app/mcp/auth.py)
+- Error handling and status codes: [MCP-README.md](docs/MCP-README.md)
+- Auth middleware error responses: [auth.py](server/app/mcp/auth.py)
 
 **Section sources**
-- [MCP-README.md](file://docs/MCP-README.md)
-- [auth.py](file://server/app/mcp/auth.py)
+- [MCP-README.md](docs/MCP-README.md)
+- [auth.py](server/app/mcp/auth.py)
 
 ### Testing Strategies
 Unit and integration testing approaches:
@@ -295,12 +295,12 @@ Unit and integration testing approaches:
 - MCP auth tests: OAuth metadata, token creation, scope narrowing, listing/retrieval, revocation, TTL validation, DB persistence.
 
 References:
-- MCP server tests: [test_mcp_server.py](file://server/tests/test_mcp_server.py)
-- MCP auth tests: [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
+- MCP server tests: [test_mcp_server.py](server/tests/test_mcp_server.py)
+- MCP auth tests: [test_mcp_auth.py](server/tests/test_mcp_auth.py)
 
 **Section sources**
-- [test_mcp_server.py](file://server/tests/test_mcp_server.py)
-- [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
+- [test_mcp_server.py](server/tests/test_mcp_server.py)
+- [test_mcp_auth.py](server/tests/test_mcp_auth.py)
 
 ## Dependency Analysis
 MCP tool development depends on:
@@ -322,22 +322,22 @@ Rt --> OA
 ```
 
 **Diagram sources**
-- [server.py](file://server/app/mcp/server.py)
-- [context.py](file://server/app/mcp/context.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
+- [server.py](server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [auth.py](server/app/mcp/auth.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
 
 **Section sources**
-- [server.py](file://server/app/mcp/server.py)
-- [context.py](file://server/app/mcp/context.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
+- [server.py](server/app/mcp/server.py)
+- [context.py](server/app/mcp/context.py)
+- [auth.py](server/app/mcp/auth.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
 
 ## Performance Considerations
 - Prefer read-only tools for propose when feasible; they can auto-execute to reduce latency.
@@ -355,14 +355,14 @@ Common issues and resolutions:
 - SSE compatibility: legacy endpoint may require authenticated streaming; verify transport and headers.
 
 References:
-- Error handling and status codes: [MCP-README.md](file://docs/MCP-README.md)
-- Auth middleware and headers: [auth.py](file://server/app/mcp/auth.py)
-- SSE behavior and security notes: [0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- Error handling and status codes: [MCP-README.md](docs/MCP-README.md)
+- Auth middleware and headers: [auth.py](server/app/mcp/auth.py)
+- SSE behavior and security notes: [0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
 
 **Section sources**
-- [MCP-README.md](file://docs/MCP-README.md)
-- [auth.py](file://server/app/mcp/auth.py)
-- [0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [MCP-README.md](docs/MCP-README.md)
+- [auth.py](server/app/mcp/auth.py)
+- [0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
 
 ## Conclusion
 By following this guide, you can develop MCP tools that are secure, well-annotated, and integrated with the WheelSense runtime. Use role-based scopes, structured outputs, and clear annotations to maximize AI usability. Leverage the agent runtime’s LLM-native routing for intelligent tool selection and adhere to the 3-stage chat flow for safe, auditable operations.
@@ -380,10 +380,10 @@ By following this guide, you can develop MCP tools that are secure, well-annotat
 - Write unit and integration tests covering auth, scope enforcement, and behavior.
 
 **Section sources**
-- [server.py](file://server/app/mcp/server.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- [test_mcp_server.py](file://server/tests/test_mcp_server.py)
-- [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
+- [server.py](server/app/mcp/server.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- [test_mcp_server.py](server/tests/test_mcp_server.py)
+- [test_mcp_auth.py](server/tests/test_mcp_auth.py)
 
 ### B. Permission Classifications
 - Read-only tools: safe to auto-execute during propose.
@@ -392,8 +392,8 @@ By following this guide, you can develop MCP tools that are secure, well-annotat
 - Open-world tools: may call external APIs; handle with caution.
 
 **Section sources**
-- [MCP-README.md](file://docs/MCP-README.md)
-- [server.py](file://server/app/mcp/server.py)
+- [MCP-README.md](docs/MCP-README.md)
+- [server.py](server/app/mcp/server.py)
 
 ### C. Security Best Practices
 - Never expose tokens; store securely and rotate regularly.
@@ -402,6 +402,6 @@ By following this guide, you can develop MCP tools that are secure, well-annotat
 - Revoke tokens promptly when no longer needed.
 
 **Section sources**
-- [MCP-README.md](file://docs/MCP-README.md)
-- [auth.py](file://server/app/mcp/auth.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
+- [MCP-README.md](docs/MCP-README.md)
+- [auth.py](server/app/mcp/auth.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)

@@ -2,21 +2,21 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/admin/account-management/page.tsx)
-- [AddCaregiverModal.tsx](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx)
-- [EditCaregiverModal.tsx](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx)
-- [CaregiverCardGrid.tsx](file://frontend/components/admin/caregivers/CaregiverCardGrid.tsx)
-- [CaregiverDetailPane.tsx](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
-- [StaffRoutineAndCalendarPanel.tsx](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
-- [CalendarView.tsx](file://frontend/components/calendar/CalendarView.tsx)
-- [scheduleEventMapper.ts](file://frontend/components/calendar/scheduleEventMapper.ts)
-- [permissions.ts](file://frontend/lib/permissions.ts)
-- [users.py](file://server/app/api/endpoints/users.py)
-- [caregivers.py](file://server/app/api/endpoints/caregivers.py)
-- [profile_images.py](file://server/app/api/endpoints/profile_images.py)
-- [profile_image_storage.py](file://server/app/services/profile_image_storage.py)
-- [users.py (model)](file://server/app/models/users.py)
-- [caregivers.py (model)](file://server/app/models/caregivers.py)
+- [page.tsx](frontend/app/admin/account-management/page.tsx)
+- [AddCaregiverModal.tsx](frontend/components/admin/caregivers/AddCaregiverModal.tsx)
+- [EditCaregiverModal.tsx](frontend/components/admin/caregivers/EditCaregiverModal.tsx)
+- [CaregiverCardGrid.tsx](frontend/components/admin/caregivers/CaregiverCardGrid.tsx)
+- [CaregiverDetailPane.tsx](frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
+- [StaffRoutineAndCalendarPanel.tsx](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
+- [CalendarView.tsx](frontend/components/calendar/CalendarView.tsx)
+- [scheduleEventMapper.ts](frontend/components/calendar/scheduleEventMapper.ts)
+- [permissions.ts](frontend/lib/permissions.ts)
+- [users.py](server/app/api/endpoints/users.py)
+- [caregivers.py](server/app/api/endpoints/caregivers.py)
+- [profile_images.py](server/app/api/endpoints/profile_images.py)
+- [profile_image_storage.py](server/app/services/profile_image_storage.py)
+- [users.py (model)](server/app/models/users.py)
+- [caregivers.py (model)](server/app/models/caregivers.py)
 </cite>
 
 ## Table of Contents
@@ -76,24 +76,24 @@ IMGAPI --> CM
 ```
 
 **Diagram sources**
-- [page.tsx:68-800](file://frontend/app/admin/account-management/page.tsx#L68-L800)
-- [AddCaregiverModal.tsx:17-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L17-L93)
-- [EditCaregiverModal.tsx:205-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L205-L466)
-- [CaregiverDetailPane.tsx:741-800](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
-- [StaffRoutineAndCalendarPanel.tsx:38-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
-- [CalendarView.tsx:74-496](file://frontend/components/calendar/CalendarView.tsx#L74-L496)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
-- [caregivers.py:100-269](file://server/app/api/endpoints/caregivers.py#L100-L269)
-- [profile_images.py:28-34](file://server/app/api/endpoints/profile_images.py#L28-L34)
-- [users.py (model):9-57](file://server/app/models/users.py#L9-L57)
-- [caregivers.py (model):22-166](file://server/app/models/caregivers.py#L22-L166)
+- [page.tsx:68-800](frontend/app/admin/account-management/page.tsx#L68-L800)
+- [AddCaregiverModal.tsx:17-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L17-L93)
+- [EditCaregiverModal.tsx:205-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L205-L466)
+- [CaregiverDetailPane.tsx:741-800](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
+- [StaffRoutineAndCalendarPanel.tsx:38-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
+- [CalendarView.tsx:74-496](frontend/components/calendar/CalendarView.tsx#L74-L496)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
+- [caregivers.py:100-269](server/app/api/endpoints/caregivers.py#L100-L269)
+- [profile_images.py:28-34](server/app/api/endpoints/profile_images.py#L28-L34)
+- [users.py (model):9-57](server/app/models/users.py#L9-L57)
+- [caregivers.py (model):22-166](server/app/models/caregivers.py#L22-L166)
 
 **Section sources**
-- [page.tsx:68-800](file://frontend/app/admin/account-management/page.tsx#L68-L800)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
-- [caregivers.py:100-269](file://server/app/api/endpoints/caregivers.py#L100-L269)
+- [page.tsx:68-800](frontend/app/admin/account-management/page.tsx#L68-L800)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
+- [caregivers.py:100-269](server/app/api/endpoints/caregivers.py#L100-L269)
 
 ## Core Components
 - Admin Account Management page: Lists users, filters by kind and role, searches by text, and edits user attributes including role, status, and caregiver/patient linkage. Supports creating new users and soft-deleting accounts.
@@ -105,14 +105,14 @@ IMGAPI --> CM
 - Backend APIs: Provide user CRUD, caregiver CRUD, zone/shift management, and profile image storage.
 
 **Section sources**
-- [page.tsx:68-800](file://frontend/app/admin/account-management/page.tsx#L68-L800)
-- [AddCaregiverModal.tsx:17-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L17-L93)
-- [EditCaregiverModal.tsx:205-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L205-L466)
-- [CaregiverDetailPane.tsx:741-800](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
-- [StaffRoutineAndCalendarPanel.tsx:38-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
-- [caregivers.py:100-269](file://server/app/api/endpoints/caregivers.py#L100-L269)
+- [page.tsx:68-800](frontend/app/admin/account-management/page.tsx#L68-L800)
+- [AddCaregiverModal.tsx:17-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L17-L93)
+- [EditCaregiverModal.tsx:205-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L205-L466)
+- [CaregiverDetailPane.tsx:741-800](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
+- [StaffRoutineAndCalendarPanel.tsx:38-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
+- [caregivers.py:100-269](server/app/api/endpoints/caregivers.py#L100-L269)
 
 ## Architecture Overview
 The Admin Dashboard enforces capabilities to gate actions. The frontend composes queries and mutations against backend endpoints. Backend endpoints validate roles and workspace scoping, persist changes, and return normalized data.
@@ -141,10 +141,10 @@ UI-->>Admin : Confirmation
 ```
 
 **Diagram sources**
-- [page.tsx:68-323](file://frontend/app/admin/account-management/page.tsx#L68-L323)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [users.py:35-86](file://server/app/api/endpoints/users.py#L35-L86)
-- [users.py (model):9-57](file://server/app/models/users.py#L9-L57)
+- [page.tsx:68-323](frontend/app/admin/account-management/page.tsx#L68-L323)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [users.py:35-86](server/app/api/endpoints/users.py#L35-L86)
+- [users.py (model):9-57](server/app/models/users.py#L9-L57)
 
 ## Detailed Component Analysis
 
@@ -181,12 +181,12 @@ Refresh --> View
 ```
 
 **Diagram sources**
-- [page.tsx:68-388](file://frontend/app/admin/account-management/page.tsx#L68-L388)
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
+- [page.tsx:68-388](frontend/app/admin/account-management/page.tsx#L68-L388)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
 
 **Section sources**
-- [page.tsx:68-800](file://frontend/app/admin/account-management/page.tsx#L68-L800)
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
+- [page.tsx:68-800](frontend/app/admin/account-management/page.tsx#L68-L800)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
 
 ### Caregiver Onboarding Modal
 - Responsibilities:
@@ -217,14 +217,14 @@ Modal-->>Admin : Close on success
 ```
 
 **Diagram sources**
-- [AddCaregiverModal.tsx:52-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
-- [caregivers.py:110-117](file://server/app/api/endpoints/caregivers.py#L110-L117)
-- [users.py:23-33](file://server/app/api/endpoints/users.py#L23-L33)
+- [AddCaregiverModal.tsx:52-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
+- [caregivers.py:110-117](server/app/api/endpoints/caregivers.py#L110-L117)
+- [users.py:23-33](server/app/api/endpoints/users.py#L23-L33)
 
 **Section sources**
-- [AddCaregiverModal.tsx:17-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L17-L93)
-- [caregivers.py:110-117](file://server/app/api/endpoints/caregivers.py#L110-L117)
-- [users.py:23-33](file://server/app/api/endpoints/users.py#L23-L33)
+- [AddCaregiverModal.tsx:17-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L17-L93)
+- [caregivers.py:110-117](server/app/api/endpoints/caregivers.py#L110-L117)
+- [users.py:23-33](server/app/api/endpoints/users.py#L23-L33)
 
 ### Caregiver Editing Modal
 - Responsibilities:
@@ -234,8 +234,8 @@ Modal-->>Admin : Close on success
   - Multi-section form with validation and error feedback.
 
 **Section sources**
-- [EditCaregiverModal.tsx:205-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L205-L466)
-- [caregivers.py:205-231](file://server/app/api/endpoints/caregivers.py#L205-L231)
+- [EditCaregiverModal.tsx:205-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L205-L466)
+- [caregivers.py:205-231](server/app/api/endpoints/caregivers.py#L205-L231)
 
 ### Caregiver Detail Pane
 - Responsibilities:
@@ -262,16 +262,16 @@ Pane-->>Admin : Updated view
 ```
 
 **Diagram sources**
-- [CaregiverDetailPane.tsx:533-737](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L533-L737)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [users.py:74-86](file://server/app/api/endpoints/users.py#L74-L86)
-- [caregivers.py:272-367](file://server/app/api/endpoints/caregivers.py#L272-L367)
+- [CaregiverDetailPane.tsx:533-737](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L533-L737)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [users.py:74-86](server/app/api/endpoints/users.py#L74-L86)
+- [caregivers.py:272-367](server/app/api/endpoints/caregivers.py#L272-L367)
 
 **Section sources**
-- [CaregiverDetailPane.tsx:741-800](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [users.py:74-86](file://server/app/api/endpoints/users.py#L74-L86)
-- [caregivers.py:272-367](file://server/app/api/endpoints/caregivers.py#L272-L367)
+- [CaregiverDetailPane.tsx:741-800](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [users.py:74-86](server/app/api/endpoints/users.py#L74-L86)
+- [caregivers.py:272-367](server/app/api/endpoints/caregivers.py#L272-L367)
 
 ### Staff Routine and Calendar Panel
 - Responsibilities:
@@ -301,14 +301,14 @@ Panel->>Sched : Invalidate and refetch
 ```
 
 **Diagram sources**
-- [StaffRoutineAndCalendarPanel.tsx:38-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
-- [CalendarView.tsx:74-496](file://frontend/components/calendar/CalendarView.tsx#L74-L496)
-- [scheduleEventMapper.ts:25-58](file://frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
+- [StaffRoutineAndCalendarPanel.tsx:38-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
+- [CalendarView.tsx:74-496](frontend/components/calendar/CalendarView.tsx#L74-L496)
+- [scheduleEventMapper.ts:25-58](frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
 
 **Section sources**
-- [StaffRoutineAndCalendarPanel.tsx:38-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
-- [CalendarView.tsx:74-496](file://frontend/components/calendar/CalendarView.tsx#L74-L496)
-- [scheduleEventMapper.ts:25-58](file://frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
+- [StaffRoutineAndCalendarPanel.tsx:38-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
+- [CalendarView.tsx:74-496](frontend/components/calendar/CalendarView.tsx#L74-L496)
+- [scheduleEventMapper.ts:25-58](frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
 
 ### Profile Image Upload Handling
 - Caregiver profile images:
@@ -333,14 +333,14 @@ IMGAPI-->>Admin : Image file
 ```
 
 **Diagram sources**
-- [caregivers.py:234-256](file://server/app/api/endpoints/caregivers.py#L234-L256)
-- [profile_image_storage.py:16-30](file://server/app/services/profile_image_storage.py#L16-L30)
-- [profile_images.py:28-34](file://server/app/api/endpoints/profile_images.py#L28-L34)
+- [caregivers.py:234-256](server/app/api/endpoints/caregivers.py#L234-L256)
+- [profile_image_storage.py:16-30](server/app/services/profile_image_storage.py#L16-L30)
+- [profile_images.py:28-34](server/app/api/endpoints/profile_images.py#L28-L34)
 
 **Section sources**
-- [caregivers.py:234-256](file://server/app/api/endpoints/caregivers.py#L234-L256)
-- [profile_image_storage.py:16-30](file://server/app/services/profile_image_storage.py#L16-L30)
-- [profile_images.py:28-34](file://server/app/api/endpoints/profile_images.py#L28-L34)
+- [caregivers.py:234-256](server/app/api/endpoints/caregivers.py#L234-L256)
+- [profile_image_storage.py:16-30](server/app/services/profile_image_storage.py#L16-L30)
+- [profile_images.py:28-34](server/app/api/endpoints/profile_images.py#L28-L34)
 
 ## Dependency Analysis
 - Frontend permission gating depends on capability definitions and role-to-capability mappings.
@@ -363,22 +363,22 @@ SRC --> SEM["scheduleEventMapper.ts"]
 ```
 
 **Diagram sources**
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [page.tsx:68-323](file://frontend/app/admin/account-management/page.tsx#L68-L323)
-- [AddCaregiverModal.tsx:52-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
-- [CaregiverDetailPane.tsx:741-800](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
-- [caregivers.py:110-269](file://server/app/api/endpoints/caregivers.py#L110-L269)
-- [StaffRoutineAndCalendarPanel.tsx:38-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
-- [CalendarView.tsx:74-496](file://frontend/components/calendar/CalendarView.tsx#L74-L496)
-- [scheduleEventMapper.ts:25-58](file://frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [page.tsx:68-323](frontend/app/admin/account-management/page.tsx#L68-L323)
+- [AddCaregiverModal.tsx:52-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
+- [CaregiverDetailPane.tsx:741-800](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L741-L800)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
+- [caregivers.py:110-269](server/app/api/endpoints/caregivers.py#L110-L269)
+- [StaffRoutineAndCalendarPanel.tsx:38-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L38-L314)
+- [CalendarView.tsx:74-496](frontend/components/calendar/CalendarView.tsx#L74-L496)
+- [scheduleEventMapper.ts:25-58](frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
 
 **Section sources**
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
-- [caregivers.py:110-269](file://server/app/api/endpoints/caregivers.py#L110-L269)
-- [CalendarView.tsx:74-496](file://frontend/components/calendar/CalendarView.tsx#L74-L496)
-- [scheduleEventMapper.ts:25-58](file://frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
+- [caregivers.py:110-269](server/app/api/endpoints/caregivers.py#L110-L269)
+- [CalendarView.tsx:74-496](frontend/components/calendar/CalendarView.tsx#L74-L496)
+- [scheduleEventMapper.ts:25-58](frontend/components/calendar/scheduleEventMapper.ts#L25-L58)
 
 ## Performance Considerations
 - Client-side caching and stale-time configuration reduce redundant network requests for lists and detail panels.
@@ -405,10 +405,10 @@ SRC --> SEM["scheduleEventMapper.ts"]
   - Resolution: Use JPEG under the size limit; previous hosted files are removed on successful replacement.
 
 **Section sources**
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
-- [page.tsx:341-388](file://frontend/app/admin/account-management/page.tsx#L341-L388)
-- [caregivers.py:234-256](file://server/app/api/endpoints/caregivers.py#L234-L256)
-- [profile_image_storage.py:16-30](file://server/app/services/profile_image_storage.py#L16-L30)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
+- [page.tsx:341-388](frontend/app/admin/account-management/page.tsx#L341-L388)
+- [caregivers.py:234-256](server/app/api/endpoints/caregivers.py#L234-L256)
+- [profile_image_storage.py:16-30](server/app/services/profile_image_storage.py#L16-L30)
 
 ## Conclusion
 The Account Management feature provides a comprehensive, capability-gated interface for provisioning and managing users, onboarding caregivers, and coordinating care teams. The frontend integrates seamlessly with backend APIs to support role assignment, account status management, and caregiver-specific workflows including scheduling and calendar integration. Adhering to capability checks and following the documented admin workflows ensures safe and efficient administration across roles and workspaces.

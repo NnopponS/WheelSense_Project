@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [language_bridge.py](file://server/app/agent_runtime/language_bridge.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [config.py](file://server/app/config.py)
-- [agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [mcp_server.py](file://server/app/mcp/server.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [language_bridge.py](server/app/agent_runtime/language_bridge.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [config.py](server/app/config.py)
+- [agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [mcp_server.py](server/app/mcp/server.py)
 </cite>
 
 ## Table of Contents
@@ -64,20 +64,20 @@ B --> H
 ```
 
 **Diagram sources**
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [main.py](file://server/app/agent_runtime/main.py)
-- [language_bridge.py](file://server/app/agent_runtime/language_bridge.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [mcp_server.py](file://server/app/mcp/server.py)
-- [config.py](file://server/app/config.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [main.py](server/app/agent_runtime/main.py)
+- [language_bridge.py](server/app/agent_runtime/language_bridge.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [mcp_server.py](server/app/mcp/server.py)
+- [config.py](server/app/config.py)
 
 **Section sources**
-- [main.py:14-55](file://server/app/agent_runtime/main.py#L14-L55)
-- [service.py:1-120](file://server/app/agent_runtime/service.py#L1-L120)
-- [intent.py:1-120](file://server/app/agent_runtime/intent.py#L1-L120)
+- [main.py:14-55](server/app/agent_runtime/main.py#L14-L55)
+- [service.py:1-120](server/app/agent_runtime/service.py#L1-L120)
+- [intent.py:1-120](server/app/agent_runtime/intent.py#L1-L120)
 
 ## Core Components
 - IntentClassifier: Builds regex patterns, extracts entities, computes semantic similarity, and constructs IntentMatch results with confidence and metadata.
@@ -89,12 +89,12 @@ B --> H
 - Settings: Controls semantic matching enablement, model name, thresholds, and routing mode.
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [intent.py:59-88](file://server/app/agent_runtime/intent.py#L59-L88)
-- [intent.py:101-108](file://server/app/agent_runtime/intent.py#L101-L108)
-- [intent.py:347-356](file://server/app/agent_runtime/intent.py#L347-L356)
-- [agent_runtime.py:10-30](file://server/app/schemas/agent_runtime.py#L10-L30)
-- [config.py:79-90](file://server/app/config.py#L79-L90)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:59-88](server/app/agent_runtime/intent.py#L59-L88)
+- [intent.py:101-108](server/app/agent_runtime/intent.py#L101-L108)
+- [intent.py:347-356](server/app/agent_runtime/intent.py#L347-L356)
+- [agent_runtime.py:10-30](server/app/schemas/agent_runtime.py#L10-L30)
+- [config.py:79-90](server/app/config.py#L79-L90)
 
 ## Architecture Overview
 End-to-end flow from user message to action or grounded answer.
@@ -143,11 +143,11 @@ end
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [intent.py:880-915](file://server/app/agent_runtime/intent.py#L880-L915)
-- [language_bridge.py:38-124](file://server/app/agent_runtime/language_bridge.py#L38-L124)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [mcp_server.py:2734-2755](file://server/app/mcp/server.py#L2734-L2755)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [intent.py:880-915](server/app/agent_runtime/intent.py#L880-L915)
+- [language_bridge.py:38-124](server/app/agent_runtime/language_bridge.py#L38-L124)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [mcp_server.py:2734-2755](server/app/mcp/server.py#L2734-L2755)
 
 ## Detailed Component Analysis
 
@@ -177,12 +177,12 @@ SEMANTIC_READ_IMMEDIATE --> IntentMetadata : "selects"
 ```
 
 **Diagram sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [intent.py:48-56](file://server/app/agent_runtime/intent.py#L48-L56)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:48-56](server/app/agent_runtime/intent.py#L48-L56)
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [intent.py:48-56](file://server/app/agent_runtime/intent.py#L48-L56)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:48-56](server/app/agent_runtime/intent.py#L48-L56)
 
 ### Conversation Context Tracking
 - Stores recent messages, last entities, last patient cards, and last focused patient ID.
@@ -221,13 +221,13 @@ ConversationContext --> PatientCard : "stores"
 ```
 
 **Diagram sources**
-- [intent.py:77-98](file://server/app/agent_runtime/intent.py#L77-L98)
-- [service.py:148-159](file://server/app/agent_runtime/service.py#L148-L159)
+- [intent.py:77-98](server/app/agent_runtime/intent.py#L77-L98)
+- [service.py:148-159](server/app/agent_runtime/service.py#L148-L159)
 
 **Section sources**
-- [intent.py:77-98](file://server/app/agent_runtime/intent.py#L77-L98)
-- [service.py:69-120](file://server/app/agent_runtime/service.py#L69-L120)
-- [service.py:161-200](file://server/app/agent_runtime/service.py#L161-L200)
+- [intent.py:77-98](server/app/agent_runtime/intent.py#L77-L98)
+- [service.py:69-120](server/app/agent_runtime/service.py#L69-L120)
+- [service.py:161-200](server/app/agent_runtime/service.py#L161-L200)
 
 ### Regex Pattern Library (Thai and English)
 Patterns cover:
@@ -256,12 +256,12 @@ Threshold --> |No| Fallback["AI fallback"]
 ```
 
 **Diagram sources**
-- [intent.py:357-564](file://server/app/agent_runtime/intent.py#L357-L564)
-- [intent.py:591-625](file://server/app/agent_runtime/intent.py#L591-L625)
+- [intent.py:357-564](server/app/agent_runtime/intent.py#L357-L564)
+- [intent.py:591-625](server/app/agent_runtime/intent.py#L591-L625)
 
 **Section sources**
-- [intent.py:357-564](file://server/app/agent_runtime/intent.py#L357-L564)
-- [intent.py:591-625](file://server/app/agent_runtime/intent.py#L591-L625)
+- [intent.py:357-564](server/app/agent_runtime/intent.py#L357-L564)
+- [intent.py:591-625](server/app/agent_runtime/intent.py#L591-L625)
 
 ### Semantic Matching Algorithm
 - Model: paraphrase-multilingual-MiniLM-L12-v2 (configurable)
@@ -287,15 +287,15 @@ S9 --> |No| S11["Return IntentMatch (plan)"]
 ```
 
 **Diagram sources**
-- [intent.py:566-589](file://server/app/agent_runtime/intent.py#L566-L589)
-- [intent.py:600-625](file://server/app/agent_runtime/intent.py#L600-L625)
-- [intent.py:853-878](file://server/app/agent_runtime/intent.py#L853-L878)
+- [intent.py:566-589](server/app/agent_runtime/intent.py#L566-L589)
+- [intent.py:600-625](server/app/agent_runtime/intent.py#L600-L625)
+- [intent.py:853-878](server/app/agent_runtime/intent.py#L853-L878)
 
 **Section sources**
-- [intent.py:566-589](file://server/app/agent_runtime/intent.py#L566-L589)
-- [intent.py:600-625](file://server/app/agent_runtime/intent.py#L600-L625)
-- [intent.py:853-878](file://server/app/agent_runtime/intent.py#L853-L878)
-- [config.py:80-82](file://server/app/config.py#L80-L82)
+- [intent.py:566-589](server/app/agent_runtime/intent.py#L566-L589)
+- [intent.py:600-625](server/app/agent_runtime/intent.py#L600-L625)
+- [intent.py:853-878](server/app/agent_runtime/intent.py#L853-L878)
+- [config.py:80-82](server/app/config.py#L80-L82)
 
 ### Practical Examples
 - Regex-based:
@@ -311,10 +311,10 @@ S9 --> |No| S11["Return IntentMatch (plan)"]
   - After “list visible patients”, short Thai phrases like “ประวัติสุขภาพ” resolve to get_patient_vitals using last_focused_patient_id
 
 **Section sources**
-- [intent.py:111-188](file://server/app/agent_runtime/intent.py#L111-L188)
-- [intent.py:347-564](file://server/app/agent_runtime/intent.py#L347-L564)
-- [intent.py:719-878](file://server/app/agent_runtime/intent.py#L719-L878)
-- [service.py:202-321](file://server/app/agent_runtime/service.py#L202-L321)
+- [intent.py:111-188](server/app/agent_runtime/intent.py#L111-L188)
+- [intent.py:347-564](server/app/agent_runtime/intent.py#L347-L564)
+- [intent.py:719-878](server/app/agent_runtime/intent.py#L719-L878)
+- [service.py:202-321](server/app/agent_runtime/service.py#L202-L321)
 
 ### LLM Normalization Bridge
 - Optional English paraphrase for non-English messages to improve semantic matching
@@ -322,8 +322,8 @@ S9 --> |No| S11["Return IntentMatch (plan)"]
 - Only affects intent classification, not MCP execution
 
 **Section sources**
-- [language_bridge.py:38-124](file://server/app/agent_runtime/language_bridge.py#L38-L124)
-- [config.py:83-84](file://server/app/config.py#L83-L84)
+- [language_bridge.py:38-124](server/app/agent_runtime/language_bridge.py#L38-L124)
+- [config.py:83-84](server/app/config.py#L83-L84)
 
 ### LLM Tool Router (Alternative Routing Mode)
 - When enabled, an LLM selects MCP tools directly
@@ -331,15 +331,15 @@ S9 --> |No| S11["Return IntentMatch (plan)"]
 - Falls back to intent classifier if no tools selected or allowed
 
 **Section sources**
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [config.py:88-90](file://server/app/config.py#L88-L90)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [config.py:88-90](server/app/config.py#L88-L90)
 
 ### Conversation Fast Path
 - Heuristic to skip intent/classifier for obvious small talk
 - Prevents unnecessary processing for greetings/thanks
 
 **Section sources**
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 ## Dependency Analysis
 - IntentClassifier depends on:
@@ -368,14 +368,14 @@ LLMR["llm_tool_router.py"] --> SRV
 ```
 
 **Diagram sources**
-- [config.py:79-90](file://server/app/config.py#L79-L90)
-- [intent.py:347-356](file://server/app/agent_runtime/intent.py#L347-L356)
-- [service.py:28-36](file://server/app/agent_runtime/service.py#L28-L36)
-- [mcp_server.py:2734-2755](file://server/app/mcp/server.py#L2734-L2755)
+- [config.py:79-90](server/app/config.py#L79-L90)
+- [intent.py:347-356](server/app/agent_runtime/intent.py#L347-L356)
+- [service.py:28-36](server/app/agent_runtime/service.py#L28-L36)
+- [mcp_server.py:2734-2755](server/app/mcp/server.py#L2734-L2755)
 
 **Section sources**
-- [service.py:28-36](file://server/app/agent_runtime/service.py#L28-L36)
-- [mcp_server.py:2734-2755](file://server/app/mcp/server.py#L2734-L2755)
+- [service.py:28-36](server/app/agent_runtime/service.py#L28-L36)
+- [mcp_server.py:2734-2755](server/app/mcp/server.py#L2734-L2755)
 
 ## Performance Considerations
 - Lazy-loading of sentence-transformers model avoids cold-start overhead when semantic matching is disabled.
@@ -406,9 +406,9 @@ LLMR["llm_tool_router.py"] --> SRV
   - Action: Adjust timeouts or disable normalization.
 
 **Section sources**
-- [intent.py:581-588](file://server/app/agent_runtime/intent.py#L581-L588)
-- [language_bridge.py:56-61](file://server/app/agent_runtime/language_bridge.py#L56-L61)
-- [service.py:427-442](file://server/app/agent_runtime/service.py#L427-L442)
+- [intent.py:581-588](server/app/agent_runtime/intent.py#L581-L588)
+- [language_bridge.py:56-61](server/app/agent_runtime/language_bridge.py#L56-L61)
+- [service.py:427-442](server/app/agent_runtime/service.py#L427-L442)
 
 ## Conclusion
 The WheelSense intent classification system combines robust regex patterns with multilingual semantic similarity to deliver accurate, context-aware intent recognition. Its metadata-driven design ensures proper permission gating and risk-aware execution, while conversation context enables seamless multi-turn interactions. Optional LLM normalization and tool routing modes provide flexibility and resilience, and performance optimizations keep latency low in production deployments.
@@ -428,4 +428,4 @@ The WheelSense intent classification system combines robust regex patterns with 
 - agent_llm_router_model: Model for LLM tool router
 
 **Section sources**
-- [config.py:79-90](file://server/app/config.py#L79-L90)
+- [config.py:79-90](server/app/config.py#L79-L90)

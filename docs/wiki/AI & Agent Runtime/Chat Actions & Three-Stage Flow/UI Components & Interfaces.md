@@ -2,13 +2,13 @@
 
 <cite>
 **Referenced Files in This Document**
-- [AIChatPopup.tsx](file://frontend/components/ai/AIChatPopup.tsx)
-- [ActionPlanPreview.tsx](file://frontend/components/ai/ActionPlanPreview.tsx)
-- [ExecutionStepList.tsx](file://frontend/components/ai/ExecutionStepList.tsx)
-- [schema.ts](file://frontend/lib/api/generated/schema.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [constants.ts](file://frontend/lib/constants.ts)
-- [i18n.tsx](file://frontend/lib/i18n.tsx)
+- [AIChatPopup.tsx](frontend/components/ai/AIChatPopup.tsx)
+- [ActionPlanPreview.tsx](frontend/components/ai/ActionPlanPreview.tsx)
+- [ExecutionStepList.tsx](frontend/components/ai/ExecutionStepList.tsx)
+- [schema.ts](frontend/lib/api/generated/schema.ts)
+- [api.ts](frontend/lib/api.ts)
+- [constants.ts](frontend/lib/constants.ts)
+- [i18n.tsx](frontend/lib/i18n.tsx)
 </cite>
 
 ## Table of Contents
@@ -59,22 +59,22 @@ C --> D
 ```
 
 **Diagram sources**
-- [AIChatPopup.tsx:101-676](file://frontend/components/ai/AIChatPopup.tsx#L101-L676)
-- [ActionPlanPreview.tsx:117-360](file://frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
-- [schema.ts:4646-4705](file://frontend/lib/api/generated/schema.ts#L4646-L4705)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [AIChatPopup.tsx:101-676](frontend/components/ai/AIChatPopup.tsx#L101-L676)
+- [ActionPlanPreview.tsx:117-360](frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [schema.ts:4646-4705](frontend/lib/api/generated/schema.ts#L4646-L4705)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 **Section sources**
-- [AIChatPopup.tsx:101-676](file://frontend/components/ai/AIChatPopup.tsx#L101-L676)
-- [ActionPlanPreview.tsx:117-360](file://frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
-- [schema.ts:4646-4705](file://frontend/lib/api/generated/schema.ts#L4646-L4705)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [AIChatPopup.tsx:101-676](frontend/components/ai/AIChatPopup.tsx#L101-L676)
+- [ActionPlanPreview.tsx:117-360](frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [schema.ts:4646-4705](frontend/lib/api/generated/schema.ts#L4646-L4705)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 ## Core Components
 - AIChatPopup: Orchestrates chat input, message history, markdown rendering, quick prompts, conversation history, and action proposal/execution lifecycle. It conditionally renders ActionPlanPreview and ExecutionStepList based on proposal availability and execution state.
@@ -84,9 +84,9 @@ C --> D
 Key props and state are detailed in the next sections.
 
 **Section sources**
-- [AIChatPopup.tsx:101-676](file://frontend/components/ai/AIChatPopup.tsx#L101-L676)
-- [ActionPlanPreview.tsx:117-360](file://frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [AIChatPopup.tsx:101-676](frontend/components/ai/AIChatPopup.tsx#L101-L676)
+- [ActionPlanPreview.tsx:117-360](frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 ## Architecture Overview
 The AI chat UI composes three primary pieces:
@@ -115,9 +115,9 @@ U->>EL : "Observe progress and outcomes"
 ```
 
 **Diagram sources**
-- [AIChatPopup.tsx:306-431](file://frontend/components/ai/AIChatPopup.tsx#L306-L431)
-- [ActionPlanPreview.tsx:329-357](file://frontend/components/ai/ActionPlanPreview.tsx#L329-L357)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [AIChatPopup.tsx:306-431](frontend/components/ai/AIChatPopup.tsx#L306-L431)
+- [ActionPlanPreview.tsx:329-357](frontend/components/ai/ActionPlanPreview.tsx#L329-L357)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 ## Detailed Component Analysis
 
@@ -160,14 +160,14 @@ Done --> |No| Continue["Continue observing progress"]
 ```
 
 **Diagram sources**
-- [AIChatPopup.tsx:280-431](file://frontend/components/ai/AIChatPopup.tsx#L280-L431)
+- [AIChatPopup.tsx:280-431](frontend/components/ai/AIChatPopup.tsx#L280-L431)
 
 **Section sources**
-- [AIChatPopup.tsx:101-676](file://frontend/components/ai/AIChatPopup.tsx#L101-L676)
-- [schema.ts:4646-4705](file://frontend/lib/api/generated/schema.ts#L4646-L4705)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [AIChatPopup.tsx:101-676](frontend/components/ai/AIChatPopup.tsx#L101-L676)
+- [schema.ts:4646-4705](frontend/lib/api/generated/schema.ts#L4646-L4705)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 ### ActionPlanPreview
 - Purpose: Summarize and present an execution plan with risk, affected entities, permissions, and step count; allow user confirmation or rejection.
@@ -217,14 +217,14 @@ ActionPlanPreview --> ResolvedEntity : "renders"
 ```
 
 **Diagram sources**
-- [ActionPlanPreview.tsx:26-360](file://frontend/components/ai/ActionPlanPreview.tsx#L26-L360)
-- [schema.ts:4646-4705](file://frontend/lib/api/generated/schema.ts#L4646-L4705)
-- [api.ts:384-531](file://frontend/lib/api.ts#L384-L531)
+- [ActionPlanPreview.tsx:26-360](frontend/components/ai/ActionPlanPreview.tsx#L26-L360)
+- [schema.ts:4646-4705](frontend/lib/api/generated/schema.ts#L4646-L4705)
+- [api.ts:384-531](frontend/lib/api.ts#L384-L531)
 
 **Section sources**
-- [ActionPlanPreview.tsx:117-360](file://frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
-- [schema.ts:4646-4705](file://frontend/lib/api/generated/schema.ts#L4646-L4705)
-- [api.ts:384-531](file://frontend/lib/api.ts#L384-L531)
+- [ActionPlanPreview.tsx:117-360](frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
+- [schema.ts:4646-4705](frontend/lib/api/generated/schema.ts#L4646-L4705)
+- [api.ts:384-531](frontend/lib/api.ts#L384-L531)
 
 ### ExecutionStepList
 - Purpose: Visualize execution steps with status, risk, permissions, affected entities, and per-step results; show overall progress.
@@ -261,11 +261,11 @@ Next --> |No| Done["Display total counts and progress"]
 ```
 
 **Diagram sources**
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 **Section sources**
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
-- [schema.ts:4676-4705](file://frontend/lib/api/generated/schema.ts#L4676-L4705)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [schema.ts:4676-4705](frontend/lib/api/generated/schema.ts#L4676-L4705)
 
 ## Dependency Analysis
 - AIChatPopup depends on:
@@ -292,22 +292,22 @@ ESL["ExecutionStepList.tsx"] --> SCH
 ```
 
 **Diagram sources**
-- [AIChatPopup.tsx:1-676](file://frontend/components/ai/AIChatPopup.tsx#L1-L676)
-- [ActionPlanPreview.tsx:1-360](file://frontend/components/ai/ActionPlanPreview.tsx#L1-L360)
-- [ExecutionStepList.tsx:1-294](file://frontend/components/ai/ExecutionStepList.tsx#L1-L294)
-- [schema.ts:4646-4705](file://frontend/lib/api/generated/schema.ts#L4646-L4705)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [AIChatPopup.tsx:1-676](frontend/components/ai/AIChatPopup.tsx#L1-L676)
+- [ActionPlanPreview.tsx:1-360](frontend/components/ai/ActionPlanPreview.tsx#L1-L360)
+- [ExecutionStepList.tsx:1-294](frontend/components/ai/ExecutionStepList.tsx#L1-L294)
+- [schema.ts:4646-4705](frontend/lib/api/generated/schema.ts#L4646-L4705)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 **Section sources**
-- [AIChatPopup.tsx:1-676](file://frontend/components/ai/AIChatPopup.tsx#L1-L676)
-- [ActionPlanPreview.tsx:1-360](file://frontend/components/ai/ActionPlanPreview.tsx#L1-L360)
-- [ExecutionStepList.tsx:1-294](file://frontend/components/ai/ExecutionStepList.tsx#L1-L294)
-- [schema.ts:4646-4705](file://frontend/lib/api/generated/schema.ts#L4646-L4705)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [AIChatPopup.tsx:1-676](frontend/components/ai/AIChatPopup.tsx#L1-L676)
+- [ActionPlanPreview.tsx:1-360](frontend/components/ai/ActionPlanPreview.tsx#L1-L360)
+- [ExecutionStepList.tsx:1-294](frontend/components/ai/ExecutionStepList.tsx#L1-L294)
+- [schema.ts:4646-4705](frontend/lib/api/generated/schema.ts#L4646-L4705)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 ## Performance Considerations
 - Debounce or throttle chat submissions to avoid excessive network calls.
@@ -330,9 +330,9 @@ ESL["ExecutionStepList.tsx"] --> SCH
   - Ensure focus moves to new messages; verify aria-labels and roles for interactive elements.
 
 **Section sources**
-- [AIChatPopup.tsx:345-431](file://frontend/components/ai/AIChatPopup.tsx#L345-L431)
-- [ActionPlanPreview.tsx:128-201](file://frontend/components/ai/ActionPlanPreview.tsx#L128-L201)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [AIChatPopup.tsx:345-431](frontend/components/ai/AIChatPopup.tsx#L345-L431)
+- [ActionPlanPreview.tsx:128-201](frontend/components/ai/ActionPlanPreview.tsx#L128-L201)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 ## Conclusion
 The AI chat action UI components provide a cohesive, accessible, and responsive interface for proposing and executing actions. AIChatPopup orchestrates the end-to-end flow, ActionPlanPreview communicates risks and permissions, and ExecutionStepList delivers transparency during execution. Together they support efficient clinical workflows with strong internationalization and accessibility foundations.
@@ -350,9 +350,9 @@ The AI chat action UI components provide a cohesive, accessible, and responsive 
   - Props: steps, executing?, currentStepIndex?, completedSteps?, stepResults?, failedSteps?
 
 **Section sources**
-- [AIChatPopup.tsx:101-676](file://frontend/components/ai/AIChatPopup.tsx#L101-L676)
-- [ActionPlanPreview.tsx:117-360](file://frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [AIChatPopup.tsx:101-676](frontend/components/ai/AIChatPopup.tsx#L101-L676)
+- [ActionPlanPreview.tsx:117-360](frontend/components/ai/ActionPlanPreview.tsx#L117-L360)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 ### Styling Guidelines
 - Use Card, Badge, Button, Alert, Progress components consistently.

@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/head-nurse/staff/page.tsx)
-- [HeadNurseStaffMemberSheet.tsx](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
-- [page.tsx](file://frontend/app/head-nurse/specialists/page.tsx)
-- [caregivers.py](file://server/app/models/caregivers.py)
-- [care.py](file://server/app/models/care.py)
-- [caregivers.py](file://server/app/schemas/caregivers.py)
-- [care.py](file://server/app/services/care.py)
-- [calendar.py](file://server/app/services/calendar.py)
-- [StaffRoutineAndCalendarPanel.tsx](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
-- [CaregiverDetailPane.tsx](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
-- [ShiftChecklistWorkspaceClient.tsx](file://frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx)
-- [page.tsx](file://frontend/app/head-nurse/page.tsx)
+- [page.tsx](frontend/app/head-nurse/staff/page.tsx)
+- [HeadNurseStaffMemberSheet.tsx](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
+- [page.tsx](frontend/app/head-nurse/specialists/page.tsx)
+- [caregivers.py](server/app/models/caregivers.py)
+- [care.py](server/app/models/care.py)
+- [caregivers.py](server/app/schemas/caregivers.py)
+- [care.py](server/app/services/care.py)
+- [calendar.py](server/app/services/calendar.py)
+- [StaffRoutineAndCalendarPanel.tsx](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
+- [CaregiverDetailPane.tsx](frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
+- [ShiftChecklistWorkspaceClient.tsx](frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx)
+- [page.tsx](frontend/app/head-nurse/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -69,30 +69,30 @@ CDP --> SCH_CG
 ```
 
 **Diagram sources**
-- [page.tsx:122-800](file://frontend/app/head-nurse/staff/page.tsx#L122-L800)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [page.tsx:61-278](file://frontend/app/head-nurse/specialists/page.tsx#L61-L278)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
-- [caregivers.py:22-166](file://server/app/models/caregivers.py#L22-L166)
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [caregivers.py:11-122](file://server/app/schemas/caregivers.py#L11-L122)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [StaffRoutineAndCalendarPanel.tsx:34-68](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
-- [CaregiverDetailPane.tsx:1078-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
-- [ShiftChecklistWorkspaceClient.tsx:150-164](file://frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
+- [page.tsx:122-800](frontend/app/head-nurse/staff/page.tsx#L122-L800)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [page.tsx:61-278](frontend/app/head-nurse/specialists/page.tsx#L61-L278)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
+- [caregivers.py:22-166](server/app/models/caregivers.py#L22-L166)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [caregivers.py:11-122](server/app/schemas/caregivers.py#L11-L122)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [StaffRoutineAndCalendarPanel.tsx:34-68](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
+- [CaregiverDetailPane.tsx:1078-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
+- [ShiftChecklistWorkspaceClient.tsx:150-164](frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
 
 **Section sources**
-- [page.tsx:122-800](file://frontend/app/head-nurse/staff/page.tsx#L122-L800)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [page.tsx:61-278](file://frontend/app/head-nurse/specialists/page.tsx#L61-L278)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
-- [caregivers.py:22-166](file://server/app/models/caregivers.py#L22-L166)
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [caregivers.py:11-122](file://server/app/schemas/caregivers.py#L11-L122)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [StaffRoutineAndCalendarPanel.tsx:34-68](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
-- [CaregiverDetailPane.tsx:1078-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
-- [ShiftChecklistWorkspaceClient.tsx:150-164](file://frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
+- [page.tsx:122-800](frontend/app/head-nurse/staff/page.tsx#L122-L800)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [page.tsx:61-278](frontend/app/head-nurse/specialists/page.tsx#L61-L278)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
+- [caregivers.py:22-166](server/app/models/caregivers.py#L22-L166)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [caregivers.py:11-122](server/app/schemas/caregivers.py#L11-L122)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [StaffRoutineAndCalendarPanel.tsx:34-68](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
+- [CaregiverDetailPane.tsx:1078-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
+- [ShiftChecklistWorkspaceClient.tsx:150-164](frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
 
 ## Core Components
 - Head Nurse Staff Dashboard: Provides a searchable roster, quick-create task and schedule forms, and summary statistics for active staff, open schedules, and open tasks. It integrates with the staff member sheet for detailed views.
@@ -103,13 +103,13 @@ CDP --> SCH_CG
 - Integration Points: Calendar service converts shift records into calendar events; caregiver-to-specialist sync maintains aligned professional profiles.
 
 **Section sources**
-- [page.tsx:122-800](file://frontend/app/head-nurse/staff/page.tsx#L122-L800)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [page.tsx:61-278](file://frontend/app/head-nurse/specialists/page.tsx#L61-L278)
-- [StaffRoutineAndCalendarPanel.tsx:34-68](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
-- [CaregiverDetailPane.tsx:1078-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
+- [page.tsx:122-800](frontend/app/head-nurse/staff/page.tsx#L122-L800)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [page.tsx:61-278](frontend/app/head-nurse/specialists/page.tsx#L61-L278)
+- [StaffRoutineAndCalendarPanel.tsx:34-68](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
+- [CaregiverDetailPane.tsx:1078-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
 
 ## Architecture Overview
 The Staff Supervision interface is a client-driven dashboard backed by backend services and models. The frontend queries caregivers, schedules, tasks, and specialists, and renders them in unified views. The staff member sheet consolidates work items and checklist data for a selected caregiver. Backend services maintain data integrity and derive derived artifacts such as calendar events and synced specialist records.
@@ -131,10 +131,10 @@ API-->>HN : Specialist[]
 ```
 
 **Diagram sources**
-- [page.tsx:122-150](file://frontend/app/head-nurse/staff/page.tsx#L122-L150)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
-- [caregivers.py:22-44](file://server/app/models/caregivers.py#L22-L44)
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
+- [page.tsx:122-150](frontend/app/head-nurse/staff/page.tsx#L122-L150)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
+- [caregivers.py:22-44](server/app/models/caregivers.py#L22-L44)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
 
 ## Detailed Component Analysis
 
@@ -160,10 +160,10 @@ Invalidate --> End(["Ready"])
 ```
 
 **Diagram sources**
-- [page.tsx:122-800](file://frontend/app/head-nurse/staff/page.tsx#L122-L800)
+- [page.tsx:122-800](frontend/app/head-nurse/staff/page.tsx#L122-L800)
 
 **Section sources**
-- [page.tsx:122-800](file://frontend/app/head-nurse/staff/page.tsx#L122-L800)
+- [page.tsx:122-800](frontend/app/head-nurse/staff/page.tsx#L122-L800)
 
 ### Staff Member Sheet: Work Items, Schedules, Checklist
 - Purpose: Consolidated view for a selected caregiver’s assigned tasks, schedules, and shift checklist progress.
@@ -192,10 +192,10 @@ Sheet-->>HN : Render tasks, schedules, checklist + template editor
 ```
 
 **Diagram sources**
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
 
 **Section sources**
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
 
 ### Specialists Coordination
 - Purpose: Manage consultants and other healthcare professionals with specialties, licenses, and contact info.
@@ -227,13 +227,13 @@ SpecialistService --> Specialist : "manages"
 ```
 
 **Diagram sources**
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
 
 **Section sources**
-- [page.tsx:61-278](file://frontend/app/head-nurse/specialists/page.tsx#L61-L278)
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
+- [page.tsx:61-278](frontend/app/head-nurse/specialists/page.tsx#L61-L278)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
 
 ### Staff Scheduling Integration and Coverage Planning
 - Purpose: Create, edit, and delete shifts; integrate with calendar; plan coverage.
@@ -255,15 +255,15 @@ CAL-->>Admin : Calendar events with metadata
 ```
 
 **Diagram sources**
-- [CaregiverDetailPane.tsx:1078-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [caregivers.py:112-129](file://server/app/models/caregivers.py#L112-L129)
+- [CaregiverDetailPane.tsx:1078-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [caregivers.py:112-129](server/app/models/caregivers.py#L112-L129)
 
 **Section sources**
-- [StaffRoutineAndCalendarPanel.tsx:34-68](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
-- [CaregiverDetailPane.tsx:1078-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [caregivers.py:112-129](file://server/app/models/caregivers.py#L112-L129)
+- [StaffRoutineAndCalendarPanel.tsx:34-68](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
+- [CaregiverDetailPane.tsx:1078-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [caregivers.py:112-129](server/app/models/caregivers.py#L112-L129)
 
 ### Staff Performance Monitoring, Skill Tracking, and Competency Verification
 - Purpose: Track completion of shift checklist items, customize templates per user, and monitor progress.
@@ -283,12 +283,12 @@ Save --> Refresh["Refresh checklist view"]
 ```
 
 **Diagram sources**
-- [HeadNurseStaffMemberSheet.tsx:264-280](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L264-L280)
-- [ShiftChecklistWorkspaceClient.tsx:150-164](file://frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
+- [HeadNurseStaffMemberSheet.tsx:264-280](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L264-L280)
+- [ShiftChecklistWorkspaceClient.tsx:150-164](frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
 
 **Section sources**
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [ShiftChecklistWorkspaceClient.tsx:150-164](file://frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [ShiftChecklistWorkspaceClient.tsx:150-164](frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx#L150-L164)
 
 ### Staff Allocation Workflows and Emergency Staffing Procedures
 - Staff allocation:
@@ -309,14 +309,14 @@ Calendar --> Notify["Notify on-call staff"]
 ```
 
 **Diagram sources**
-- [caregivers.py:112-129](file://server/app/models/caregivers.py#L112-L129)
-- [caregivers.py:130-166](file://server/app/models/caregivers.py#L130-L166)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
+- [caregivers.py:112-129](server/app/models/caregivers.py#L112-L129)
+- [caregivers.py:130-166](server/app/models/caregivers.py#L130-L166)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
 
 **Section sources**
-- [caregivers.py:112-129](file://server/app/models/caregivers.py#L112-L129)
-- [caregivers.py:130-166](file://server/app/models/caregivers.py#L130-L166)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
+- [caregivers.py:112-129](server/app/models/caregivers.py#L112-L129)
+- [caregivers.py:130-166](server/app/models/caregivers.py#L130-L166)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
 
 ### Integration with Calendar System for Shift Planning
 - Shifts are converted into calendar events with metadata including caregiver ID and shift type.
@@ -334,11 +334,11 @@ UI-->>UI : Render events and allow edits
 ```
 
 **Diagram sources**
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
 
 **Section sources**
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [StaffRoutineAndCalendarPanel.tsx:34-68](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [StaffRoutineAndCalendarPanel.tsx:34-68](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -363,28 +363,28 @@ CDP --> SCH_CG["CareGiver Schemas"]
 ```
 
 **Diagram sources**
-- [page.tsx:122-800](file://frontend/app/head-nurse/staff/page.tsx#L122-L800)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [page.tsx:61-278](file://frontend/app/head-nurse/specialists/page.tsx#L61-L278)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [caregivers.py:22-166](file://server/app/models/caregivers.py#L22-L166)
-- [caregivers.py:11-122](file://server/app/schemas/caregivers.py#L11-L122)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [StaffRoutineAndCalendarPanel.tsx:34-68](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
-- [CaregiverDetailPane.tsx:1078-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
+- [page.tsx:122-800](frontend/app/head-nurse/staff/page.tsx#L122-L800)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [page.tsx:61-278](frontend/app/head-nurse/specialists/page.tsx#L61-L278)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [caregivers.py:22-166](server/app/models/caregivers.py#L22-L166)
+- [caregivers.py:11-122](server/app/schemas/caregivers.py#L11-L122)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [StaffRoutineAndCalendarPanel.tsx:34-68](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
+- [CaregiverDetailPane.tsx:1078-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
 
 **Section sources**
-- [page.tsx:122-800](file://frontend/app/head-nurse/staff/page.tsx#L122-L800)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [page.tsx:61-278](file://frontend/app/head-nurse/specialists/page.tsx#L61-L278)
-- [care.py:20-94](file://server/app/services/care.py#L20-L94)
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [caregivers.py:22-166](file://server/app/models/caregivers.py#L22-L166)
-- [caregivers.py:11-122](file://server/app/schemas/caregivers.py#L11-L122)
-- [calendar.py:261-285](file://server/app/services/calendar.py#L261-L285)
-- [StaffRoutineAndCalendarPanel.tsx:34-68](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
-- [CaregiverDetailPane.tsx:1078-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
+- [page.tsx:122-800](frontend/app/head-nurse/staff/page.tsx#L122-L800)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [page.tsx:61-278](frontend/app/head-nurse/specialists/page.tsx#L61-L278)
+- [care.py:20-94](server/app/services/care.py#L20-L94)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [caregivers.py:22-166](server/app/models/caregivers.py#L22-L166)
+- [caregivers.py:11-122](server/app/schemas/caregivers.py#L11-L122)
+- [calendar.py:261-285](server/app/services/calendar.py#L261-L285)
+- [StaffRoutineAndCalendarPanel.tsx:34-68](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L34-L68)
+- [CaregiverDetailPane.tsx:1078-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1078-L1154)
 
 ## Performance Considerations
 - Query keys and invalidation: Queries are invalidated after mutations to keep views fresh without unnecessary reloads.
@@ -405,9 +405,9 @@ CDP --> SCH_CG["CareGiver Schemas"]
   - Use React Query devtools to inspect query states and refetch triggers.
 
 **Section sources**
-- [page.tsx:94-98](file://frontend/app/head-nurse/staff/page.tsx#L94-L98)
-- [CaregiverDetailPane.tsx:1118-1154](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1118-L1154)
-- [HeadNurseStaffMemberSheet.tsx:71-101](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L71-L101)
+- [page.tsx:94-98](frontend/app/head-nurse/staff/page.tsx#L94-L98)
+- [CaregiverDetailPane.tsx:1118-1154](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1118-L1154)
+- [HeadNurseStaffMemberSheet.tsx:71-101](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L71-L101)
 
 ## Conclusion
 The Head Nurse Staff Supervision interface provides a comprehensive toolkit for managing healthcare teams: viewing and filtering staff, allocating tasks and schedules, coordinating specialists, and monitoring performance via shift checklists. The system integrates scheduling with the calendar, supports emergency staffing via on-call shifts and device assignments, and offers robust data flows between frontend dashboards and backend services. These capabilities enable efficient coverage planning, performance oversight, and streamlined workflows across wards.

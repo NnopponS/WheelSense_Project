@@ -2,21 +2,21 @@
 
 <cite>
 **Referenced Files in This Document**
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [RoleSwitcher.tsx](file://frontend/components/RoleSwitcher.tsx)
-- [sidebarConfig.ts](file://frontend/lib/sidebarConfig.ts)
-- [permissions.ts](file://frontend/lib/permissions.ts)
-- [routes.ts](file://frontend/lib/routes.ts)
-- [useAuth.tsx](file://frontend/hooks/useAuth.tsx)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [layout.tsx](file://frontend/app/layout.tsx)
-- [admin\layout.tsx](file://frontend/app/admin/layout.tsx)
-- [head-nurse\layout.tsx](file://frontend/app/head-nurse/layout.tsx)
-- [supervisor\layout.tsx](file://frontend/app/supervisor/layout.tsx)
-- [observer\layout.tsx](file://frontend/app/observer/layout.tsx)
-- [patient\layout.tsx](file://frontend/app/patient/layout.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [RoleSwitcher.tsx](frontend/components/RoleSwitcher.tsx)
+- [sidebarConfig.ts](frontend/lib/sidebarConfig.ts)
+- [permissions.ts](frontend/lib/permissions.ts)
+- [routes.ts](frontend/lib/routes.ts)
+- [useAuth.tsx](frontend/hooks/useAuth.tsx)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [layout.tsx](frontend/app/layout.tsx)
+- [admin\layout.tsx](frontend/app/admin/layout.tsx)
+- [head-nurse\layout.tsx](frontend/app/head-nurse/layout.tsx)
+- [supervisor\layout.tsx](frontend/app/supervisor/layout.tsx)
+- [observer\layout.tsx](frontend/app/observer/layout.tsx)
+- [patient\layout.tsx](frontend/app/patient/layout.tsx)
 </cite>
 
 ## Table of Contents
@@ -78,30 +78,30 @@ C_switcher --> P_useAuth
 ```
 
 **Diagram sources**
-- [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [useAuth.tsx:99-183](file://frontend/hooks/useAuth.tsx#L99-L183)
-- [admin\layout.tsx:3-11](file://frontend/app/admin/layout.tsx#L3-L11)
-- [head-nurse\layout.tsx:3-11](file://frontend/app/head-nurse/layout.tsx#L3-L11)
-- [supervisor\layout.tsx:3-11](file://frontend/app/supervisor/layout.tsx#L3-L11)
-- [observer\layout.tsx:3-11](file://frontend/app/observer/layout.tsx#L3-L11)
-- [patient\layout.tsx:3-23](file://frontend/app/patient/layout.tsx#L3-L23)
-- [RoleShell.tsx:29-101](file://frontend/components/RoleShell.tsx#L29-L101)
-- [RoleSidebar.tsx:60-227](file://frontend/components/RoleSidebar.tsx#L60-L227)
-- [TopBar.tsx:44-196](file://frontend/components/TopBar.tsx#L44-L196)
-- [RoleSwitcher.tsx:27-223](file://frontend/components/RoleSwitcher.tsx#L27-L223)
-- [permissions.ts:26-109](file://frontend/lib/permissions.ts#L26-L109)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
-- [sidebarConfig.ts:60-275](file://frontend/lib/sidebarConfig.ts#L60-L275)
+- [layout.tsx:11-23](frontend/app/layout.tsx#L11-L23)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [useAuth.tsx:99-183](frontend/hooks/useAuth.tsx#L99-L183)
+- [admin\layout.tsx:3-11](frontend/app/admin/layout.tsx#L3-L11)
+- [head-nurse\layout.tsx:3-11](frontend/app/head-nurse/layout.tsx#L3-L11)
+- [supervisor\layout.tsx:3-11](frontend/app/supervisor/layout.tsx#L3-L11)
+- [observer\layout.tsx:3-11](frontend/app/observer/layout.tsx#L3-L11)
+- [patient\layout.tsx:3-23](frontend/app/patient/layout.tsx#L3-L23)
+- [RoleShell.tsx:29-101](frontend/components/RoleShell.tsx#L29-L101)
+- [RoleSidebar.tsx:60-227](frontend/components/RoleSidebar.tsx#L60-L227)
+- [TopBar.tsx:44-196](frontend/components/TopBar.tsx#L44-L196)
+- [RoleSwitcher.tsx:27-223](frontend/components/RoleSwitcher.tsx#L27-L223)
+- [permissions.ts:26-109](frontend/lib/permissions.ts#L26-L109)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
+- [sidebarConfig.ts:60-275](frontend/lib/sidebarConfig.ts#L60-L275)
 
 **Section sources**
-- [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [admin\layout.tsx:3-11](file://frontend/app/admin/layout.tsx#L3-L11)
-- [head-nurse\layout.tsx:3-11](file://frontend/app/head-nurse/layout.tsx#L3-L11)
-- [supervisor\layout.tsx:3-11](file://frontend/app/supervisor/layout.tsx#L3-L11)
-- [observer\layout.tsx:3-11](file://frontend/app/observer/layout.tsx#L3-L11)
-- [patient\layout.tsx:3-23](file://frontend/app/patient/layout.tsx#L3-L23)
+- [layout.tsx:11-23](frontend/app/layout.tsx#L11-L23)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [admin\layout.tsx:3-11](frontend/app/admin/layout.tsx#L3-L11)
+- [head-nurse\layout.tsx:3-11](frontend/app/head-nurse/layout.tsx#L3-L11)
+- [supervisor\layout.tsx:3-11](frontend/app/supervisor/layout.tsx#L3-L11)
+- [observer\layout.tsx:3-11](frontend/app/observer/layout.tsx#L3-L11)
+- [patient\layout.tsx:3-23](frontend/app/patient/layout.tsx#L3-L23)
 
 ## Core Components
 - RoleShell: Central navigation shell that enforces authentication and role access, renders the sidebar and top bar, and applies responsive layout.
@@ -111,13 +111,13 @@ C_switcher --> P_useAuth
 - Libraries: permissions.ts defines capabilities and role-route access; sidebarConfig.ts defines role navigation; routes.ts resolves default role homes.
 
 **Section sources**
-- [RoleShell.tsx:29-101](file://frontend/components/RoleShell.tsx#L29-L101)
-- [RoleSidebar.tsx:60-227](file://frontend/components/RoleSidebar.tsx#L60-L227)
-- [TopBar.tsx:44-196](file://frontend/components/TopBar.tsx#L44-L196)
-- [RoleSwitcher.tsx:27-223](file://frontend/components/RoleSwitcher.tsx#L27-L223)
-- [permissions.ts:26-109](file://frontend/lib/permissions.ts#L26-L109)
-- [sidebarConfig.ts:60-275](file://frontend/lib/sidebarConfig.ts#L60-L275)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [RoleShell.tsx:29-101](frontend/components/RoleShell.tsx#L29-L101)
+- [RoleSidebar.tsx:60-227](frontend/components/RoleSidebar.tsx#L60-L227)
+- [TopBar.tsx:44-196](frontend/components/TopBar.tsx#L44-L196)
+- [RoleSwitcher.tsx:27-223](frontend/components/RoleSwitcher.tsx#L27-L223)
+- [permissions.ts:26-109](frontend/lib/permissions.ts#L26-L109)
+- [sidebarConfig.ts:60-275](frontend/lib/sidebarConfig.ts#L60-L275)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 ## Architecture Overview
 The navigation architecture is layered:
@@ -151,10 +151,10 @@ end
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:37-66](file://frontend/components/RoleShell.tsx#L37-L66)
-- [permissions.ts:107-109](file://frontend/lib/permissions.ts#L107-L109)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
-- [useAuth.tsx:99-183](file://frontend/hooks/useAuth.tsx#L99-L183)
+- [RoleShell.tsx:37-66](frontend/components/RoleShell.tsx#L37-L66)
+- [permissions.ts:107-109](frontend/lib/permissions.ts#L107-L109)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
+- [useAuth.tsx:99-183](frontend/hooks/useAuth.tsx#L99-L183)
 
 ## Detailed Component Analysis
 
@@ -182,12 +182,12 @@ Render --> End
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:37-66](file://frontend/components/RoleShell.tsx#L37-L66)
-- [permissions.ts:107-109](file://frontend/lib/permissions.ts#L107-L109)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [RoleShell.tsx:37-66](frontend/components/RoleShell.tsx#L37-L66)
+- [permissions.ts:107-109](frontend/lib/permissions.ts#L107-L109)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 **Section sources**
-- [RoleShell.tsx:29-101](file://frontend/components/RoleShell.tsx#L29-L101)
+- [RoleShell.tsx:29-101](frontend/components/RoleShell.tsx#L29-L101)
 
 ### RoleSidebar Component
 RoleSidebar renders role-aware navigation:
@@ -209,13 +209,13 @@ ApplyClasses --> End(["Done"])
 ```
 
 **Diagram sources**
-- [RoleSidebar.tsx:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig.ts:287-299](file://frontend/lib/sidebarConfig.ts#L287-L299)
-- [permissions.ts:103-105](file://frontend/lib/permissions.ts#L103-L105)
+- [RoleSidebar.tsx:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig.ts:287-299](frontend/lib/sidebarConfig.ts#L287-L299)
+- [permissions.ts:103-105](frontend/lib/permissions.ts#L103-L105)
 
 **Section sources**
-- [RoleSidebar.tsx:60-227](file://frontend/components/RoleSidebar.tsx#L60-L227)
-- [sidebarConfig.ts:22-54](file://frontend/lib/sidebarConfig.ts#L22-L54)
+- [RoleSidebar.tsx:60-227](frontend/components/RoleSidebar.tsx#L60-L227)
+- [sidebarConfig.ts:22-54](frontend/lib/sidebarConfig.ts#L22-L54)
 
 ### TopBar Component
 TopBar provides global controls:
@@ -245,14 +245,14 @@ Switcher->>Router : router.push(getRoleHome(targetRole))
 ```
 
 **Diagram sources**
-- [TopBar.tsx:117-118](file://frontend/components/TopBar.tsx#L117-L118)
-- [RoleSwitcher.tsx:90-110](file://frontend/components/RoleSwitcher.tsx#L90-L110)
-- [useAuth.tsx:143-157](file://frontend/hooks/useAuth.tsx#L143-L157)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [TopBar.tsx:117-118](frontend/components/TopBar.tsx#L117-L118)
+- [RoleSwitcher.tsx:90-110](frontend/components/RoleSwitcher.tsx#L90-L110)
+- [useAuth.tsx:143-157](frontend/hooks/useAuth.tsx#L143-L157)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 **Section sources**
-- [TopBar.tsx:44-196](file://frontend/components/TopBar.tsx#L44-L196)
-- [RoleSwitcher.tsx:27-223](file://frontend/components/RoleSwitcher.tsx#L27-L223)
+- [TopBar.tsx:44-196](frontend/components/TopBar.tsx#L44-L196)
+- [RoleSwitcher.tsx:27-223](frontend/components/RoleSwitcher.tsx#L27-L223)
 
 ### RoleSwitcher Component
 RoleSwitcher enables admin-driven role transitions:
@@ -274,13 +274,13 @@ Navigate --> Close["Close dropdown"]
 ```
 
 **Diagram sources**
-- [RoleSwitcher.tsx:88-110](file://frontend/components/RoleSwitcher.tsx#L88-L110)
-- [useAuth.tsx:143-157](file://frontend/hooks/useAuth.tsx#L143-L157)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [RoleSwitcher.tsx:88-110](frontend/components/RoleSwitcher.tsx#L88-L110)
+- [useAuth.tsx:143-157](frontend/hooks/useAuth.tsx#L143-L157)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 **Section sources**
-- [RoleSwitcher.tsx:27-223](file://frontend/components/RoleSwitcher.tsx#L27-L223)
-- [useAuth.tsx:143-157](file://frontend/hooks/useAuth.tsx#L143-L157)
+- [RoleSwitcher.tsx:27-223](frontend/components/RoleSwitcher.tsx#L27-L223)
+- [useAuth.tsx:143-157](frontend/hooks/useAuth.tsx#L143-L157)
 
 ### Sidebar Navigation System
 The sidebar system is role-driven and capability-filtered:
@@ -313,11 +313,11 @@ RoleNavConfig --> NavGroup : "contains"
 ```
 
 **Diagram sources**
-- [sidebarConfig.ts:22-54](file://frontend/lib/sidebarConfig.ts#L22-L54)
+- [sidebarConfig.ts:22-54](frontend/lib/sidebarConfig.ts#L22-L54)
 
 **Section sources**
-- [sidebarConfig.ts:60-275](file://frontend/lib/sidebarConfig.ts#L60-L275)
-- [RoleSidebar.tsx:67-72](file://frontend/components/RoleSidebar.tsx#L67-L72)
+- [sidebarConfig.ts:60-275](frontend/lib/sidebarConfig.ts#L60-L275)
+- [RoleSidebar.tsx:67-72](frontend/components/RoleSidebar.tsx#L67-L72)
 
 ### Role-Based Access Control and Workspace Scoping
 Access control is enforced at two layers:
@@ -335,14 +335,14 @@ Home --> Redirect["router.replace(home)"]
 ```
 
 **Diagram sources**
-- [permissions.ts:107-109](file://frontend/lib/permissions.ts#L107-L109)
-- [sidebarConfig.ts:287-299](file://frontend/lib/sidebarConfig.ts#L287-L299)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [permissions.ts:107-109](frontend/lib/permissions.ts#L107-L109)
+- [sidebarConfig.ts:287-299](frontend/lib/sidebarConfig.ts#L287-L299)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 **Section sources**
-- [permissions.ts:26-109](file://frontend/lib/permissions.ts#L26-L109)
-- [sidebarConfig.ts:287-299](file://frontend/lib/sidebarConfig.ts#L287-L299)
-- [routes.ts:2-16](file://frontend/lib/routes.ts#L2-L16)
+- [permissions.ts:26-109](frontend/lib/permissions.ts#L26-L109)
+- [sidebarConfig.ts:287-299](frontend/lib/sidebarConfig.ts#L287-L299)
+- [routes.ts:2-16](frontend/lib/routes.ts#L2-L16)
 
 ## Dependency Analysis
 The navigation system exhibits clean separation of concerns:
@@ -367,18 +367,18 @@ Providers["AppProviders.tsx"] --> Auth
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:30-33](file://frontend/components/RoleShell.tsx#L30-L33)
-- [RoleSidebar.tsx:60-65](file://frontend/components/RoleSidebar.tsx#L60-L65)
-- [TopBar.tsx:44-46](file://frontend/components/TopBar.tsx#L44-L46)
-- [RoleSwitcher.tsx:27-31](file://frontend/components/RoleSwitcher.tsx#L27-L31)
-- [AppProviders.tsx:32-38](file://frontend/components/providers/AppProviders.tsx#L32-L38)
+- [RoleShell.tsx:30-33](frontend/components/RoleShell.tsx#L30-L33)
+- [RoleSidebar.tsx:60-65](frontend/components/RoleSidebar.tsx#L60-L65)
+- [TopBar.tsx:44-46](frontend/components/TopBar.tsx#L44-L46)
+- [RoleSwitcher.tsx:27-31](frontend/components/RoleSwitcher.tsx#L27-L31)
+- [AppProviders.tsx:32-38](frontend/components/providers/AppProviders.tsx#L32-L38)
 
 **Section sources**
-- [RoleShell.tsx:30-33](file://frontend/components/RoleShell.tsx#L30-L33)
-- [RoleSidebar.tsx:60-65](file://frontend/components/RoleSidebar.tsx#L60-L65)
-- [TopBar.tsx:44-46](file://frontend/components/TopBar.tsx#L44-L46)
-- [RoleSwitcher.tsx:27-31](file://frontend/components/RoleSwitcher.tsx#L27-L31)
-- [AppProviders.tsx:32-38](file://frontend/components/providers/AppProviders.tsx#L32-L38)
+- [RoleShell.tsx:30-33](frontend/components/RoleShell.tsx#L30-L33)
+- [RoleSidebar.tsx:60-65](frontend/components/RoleSidebar.tsx#L60-L65)
+- [TopBar.tsx:44-46](frontend/components/TopBar.tsx#L44-L46)
+- [RoleSwitcher.tsx:27-31](frontend/components/RoleSwitcher.tsx#L27-L31)
+- [AppProviders.tsx:32-38](frontend/components/providers/AppProviders.tsx#L32-L38)
 
 ## Performance Considerations
 - Hydration and redirects: RoleShell delays redirect after role checks to avoid loops and reduce flicker.
@@ -398,10 +398,10 @@ Common issues and resolutions:
 - Impersonation failure: Check startImpersonation API response and error propagation; ensure target user is not self.
 
 **Section sources**
-- [RoleShell.tsx:44-66](file://frontend/components/RoleShell.tsx#L44-L66)
-- [RoleSidebar.tsx:67-72](file://frontend/components/RoleSidebar.tsx#L67-L72)
-- [RoleSwitcher.tsx:88-110](file://frontend/components/RoleSwitcher.tsx#L88-L110)
-- [useAuth.tsx:137-157](file://frontend/hooks/useAuth.tsx#L137-L157)
+- [RoleShell.tsx:44-66](frontend/components/RoleShell.tsx#L44-L66)
+- [RoleSidebar.tsx:67-72](frontend/components/RoleSidebar.tsx#L67-L72)
+- [RoleSwitcher.tsx:88-110](frontend/components/RoleSwitcher.tsx#L88-L110)
+- [useAuth.tsx:137-157](frontend/hooks/useAuth.tsx#L137-L157)
 
 ## Conclusion
 The Role Navigation System delivers a robust, role-aware, and responsive navigation experience. RoleShell enforces authentication and role access, RoleSidebar presents capability-filtered navigation, TopBar consolidates global controls and role switching, and RoleSwitcher enables admin-driven impersonation. The architecture leverages centralized configuration and capability checks to maintain consistency across devices and roles.

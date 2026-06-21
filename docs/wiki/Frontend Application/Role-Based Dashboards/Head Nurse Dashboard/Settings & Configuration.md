@@ -2,26 +2,26 @@
 
 <cite>
 **Referenced Files in This Document**
-- [AiSettingsPanel.tsx](file://frontend/components/admin/settings/AiSettingsPanel.tsx)
-- [ServerSettingsPanel.tsx](file://frontend/components/admin/settings/ServerSettingsPanel.tsx)
-- [AdminSettingsClient.tsx](file://frontend/app/admin/settings/SettingsClient.tsx)
-- [AdminSettingsPage.tsx](file://frontend/app/admin/settings/page.tsx)
-- [HeadNurseSettingsRedirectPage.tsx](file://frontend/app/head-nurse/settings/page.tsx)
-- [SupervisorSettingsRedirectPage.tsx](file://frontend/app/supervisor/settings/page.tsx)
-- [permissions.ts](file://frontend/lib/permissions.ts)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [ai_settings.py](file://server/app/api/endpoints/ai_settings.py)
-- [ai_settings.py (schema)](file://server/app/schemas/ai_settings.py)
-- [ai_chat.py](file://server/app/services/ai_chat.py)
-- [mcp_server.py](file://server/mcp_server.py)
-- [mcp_auth.py](file://server/app/mcp/auth.py)
-- [mcp_tokens.py](file://server/app/models/mcp_tokens.py)
-- [mcp_tokens.py (schema)](file://server/app/schemas/mcp_tokens.py)
-- [queryEndpointDefaults.ts](file://frontend/lib/queryEndpointDefaults.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [refetchOrThrow.ts](file://frontend/lib/refetchOrThrow.ts)
-- [workspaceQuery.ts](file://frontend/lib/workspaceQuery.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [AiSettingsPanel.tsx](frontend/components/admin/settings/AiSettingsPanel.tsx)
+- [ServerSettingsPanel.tsx](frontend/components/admin/settings/ServerSettingsPanel.tsx)
+- [AdminSettingsClient.tsx](frontend/app/admin/settings/SettingsClient.tsx)
+- [AdminSettingsPage.tsx](frontend/app/admin/settings/page.tsx)
+- [HeadNurseSettingsRedirectPage.tsx](frontend/app/head-nurse/settings/page.tsx)
+- [SupervisorSettingsRedirectPage.tsx](frontend/app/supervisor/settings/page.tsx)
+- [permissions.ts](frontend/lib/permissions.ts)
+- [dependencies.py](server/app/api/dependencies.py)
+- [ai_settings.py](server/app/api/endpoints/ai_settings.py)
+- [ai_settings.py (schema)](server/app/schemas/ai_settings.py)
+- [ai_chat.py](server/app/services/ai_chat.py)
+- [mcp_server.py](server/mcp_server.py)
+- [mcp_auth.py](server/app/mcp/auth.py)
+- [mcp_tokens.py](server/app/models/mcp_tokens.py)
+- [mcp_tokens.py (schema)](server/app/schemas/mcp_tokens.py)
+- [queryEndpointDefaults.ts](frontend/lib/queryEndpointDefaults.ts)
+- [api.ts](frontend/lib/api.ts)
+- [refetchOrThrow.ts](frontend/lib/refetchOrThrow.ts)
+- [workspaceQuery.ts](frontend/lib/workspaceQuery.ts)
+- [types.ts](frontend/lib/types.ts)
 </cite>
 
 ## Table of Contents
@@ -76,17 +76,17 @@ MCP --> Auth
 ```
 
 **Diagram sources**
-- [AdminSettingsPage.tsx:1-19](file://frontend/app/admin/settings/page.tsx#L1-L19)
-- [AdminSettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
-- [AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
-- [ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
-- [ai_settings.py](file://server/app/api/endpoints/ai_settings.py)
-- [mcp_server.py](file://server/mcp_server.py)
-- [mcp_auth.py](file://server/app/mcp/auth.py)
+- [AdminSettingsPage.tsx:1-19](frontend/app/admin/settings/page.tsx#L1-L19)
+- [AdminSettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [ai_settings.py](server/app/api/endpoints/ai_settings.py)
+- [mcp_server.py](server/mcp_server.py)
+- [mcp_auth.py](server/app/mcp/auth.py)
 
 **Section sources**
-- [AdminSettingsPage.tsx:1-19](file://frontend/app/admin/settings/page.tsx#L1-L19)
-- [AdminSettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [AdminSettingsPage.tsx:1-19](frontend/app/admin/settings/page.tsx#L1-L19)
+- [AdminSettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
 
 ## Core Components
 - AdminSettingsClient: Tab controller and navigation for settings sections; redirects Profile to the Account page; exposes links to API docs
@@ -94,9 +94,9 @@ MCP --> Auth
 - ServerSettingsPanel: Manages retention configuration and statistics, simulator controls, ML calibration access, and database clearing with confirmation
 
 **Section sources**
-- [AdminSettingsClient.tsx:15-114](file://frontend/app/admin/settings/SettingsClient.tsx#L15-L114)
-- [AiSettingsPanel.tsx:311-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L311-L1098)
-- [ServerSettingsPanel.tsx:64-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
+- [AdminSettingsClient.tsx:15-114](frontend/app/admin/settings/SettingsClient.tsx#L15-L114)
+- [AiSettingsPanel.tsx:311-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L311-L1098)
+- [ServerSettingsPanel.tsx:64-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
 
 ## Architecture Overview
 The Settings UI integrates with backend endpoints via typed queries and imperative actions. Real-time updates are achieved through React Query refetch helpers and polling defaults. Role-based access is enforced on both frontend and backend.
@@ -136,11 +136,11 @@ S->>Q : Refetch stats and simulator status
 ```
 
 **Diagram sources**
-- [AdminSettingsClient.tsx:25-114](file://frontend/app/admin/settings/SettingsClient.tsx#L25-L114)
-- [AiSettingsPanel.tsx:311-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L311-L1098)
-- [ServerSettingsPanel.tsx:64-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
-- [ai_settings.py](file://server/app/api/endpoints/ai_settings.py)
-- [queryEndpointDefaults.ts](file://frontend/lib/queryEndpointDefaults.ts)
+- [AdminSettingsClient.tsx:25-114](frontend/app/admin/settings/SettingsClient.tsx#L25-L114)
+- [AiSettingsPanel.tsx:311-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L311-L1098)
+- [ServerSettingsPanel.tsx:64-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
+- [ai_settings.py](server/app/api/endpoints/ai_settings.py)
+- [queryEndpointDefaults.ts](frontend/lib/queryEndpointDefaults.ts)
 
 ## Detailed Component Analysis
 
@@ -189,8 +189,8 @@ end
 ```
 
 **Diagram sources**
-- [AiSettingsPanel.tsx:595-639](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L595-L639)
-- [AiSettingsPanel.tsx:495-542](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L495-L542)
+- [AiSettingsPanel.tsx:595-639](frontend/components/admin/settings/AiSettingsPanel.tsx#L595-L639)
+- [AiSettingsPanel.tsx:495-542](frontend/components/admin/settings/AiSettingsPanel.tsx#L495-L542)
 
 Key behaviors and data flows:
 - Workspace defaults saving updates global AI settings and refetches current settings
@@ -198,7 +198,7 @@ Key behaviors and data flows:
 - Model deletion triggers immediate backend removal and UI refresh
 
 **Section sources**
-- [AiSettingsPanel.tsx:311-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L311-L1098)
+- [AiSettingsPanel.tsx:311-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L311-L1098)
 
 ### Server Settings Panel
 The server settings panel provides operational controls and diagnostics for administrators.
@@ -228,7 +228,7 @@ Report --> End
 ```
 
 **Diagram sources**
-- [ServerSettingsPanel.tsx:64-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
+- [ServerSettingsPanel.tsx:64-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
 
 Operational highlights:
 - Workspace-aware endpoints using workspace scope
@@ -236,7 +236,7 @@ Operational highlights:
 - Real-time status updates via React Query polling defaults
 
 **Section sources**
-- [ServerSettingsPanel.tsx:64-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
+- [ServerSettingsPanel.tsx:64-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L64-L405)
 
 ### Settings Client and Navigation
 The client component orchestrates tabbed navigation and delegates rendering to specialized panels. It also handles redirection for non-admin roles and provides quick access to API documentation.
@@ -247,7 +247,7 @@ The client component orchestrates tabbed navigation and delegates rendering to s
 - System tab opens ML calibration client
 
 **Section sources**
-- [AdminSettingsClient.tsx:15-114](file://frontend/app/admin/settings/SettingsClient.tsx#L15-L114)
+- [AdminSettingsClient.tsx:15-114](frontend/app/admin/settings/SettingsClient.tsx#L15-L114)
 
 ### Role Permissions and Access Controls
 Access to settings is governed by role capabilities and route-level guards:
@@ -265,12 +265,12 @@ Patient["Patient Role"] -- "self.read,<br/>alerts.read,<br/>messages.manage,<br/
 ```
 
 **Diagram sources**
-- [permissions.ts:26-109](file://frontend/lib/permissions.ts#L26-L109)
-- [dependencies.py:200-311](file://server/app/api/dependencies.py#L200-L311)
+- [permissions.ts:26-109](frontend/lib/permissions.ts#L26-L109)
+- [dependencies.py:200-311](server/app/api/dependencies.py#L200-L311)
 
 **Section sources**
-- [permissions.ts:26-109](file://frontend/lib/permissions.ts#L26-L109)
-- [dependencies.py:200-311](file://server/app/api/dependencies.py#L200-L311)
+- [permissions.ts:26-109](frontend/lib/permissions.ts#L26-L109)
+- [dependencies.py:200-311](server/app/api/dependencies.py#L200-L311)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -304,19 +304,19 @@ WS --> API
 ```
 
 **Diagram sources**
-- [queryEndpointDefaults.ts](file://frontend/lib/queryEndpointDefaults.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [workspaceQuery.ts](file://frontend/lib/workspaceQuery.ts)
-- [ai_settings.py](file://server/app/api/endpoints/ai_settings.py)
-- [mcp_server.py](file://server/mcp_server.py)
-- [mcp_auth.py](file://server/app/mcp/auth.py)
-- [dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
+- [queryEndpointDefaults.ts](frontend/lib/queryEndpointDefaults.ts)
+- [api.ts](frontend/lib/api.ts)
+- [workspaceQuery.ts](frontend/lib/workspaceQuery.ts)
+- [ai_settings.py](server/app/api/endpoints/ai_settings.py)
+- [mcp_server.py](server/mcp_server.py)
+- [mcp_auth.py](server/app/mcp/auth.py)
+- [dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
 
 **Section sources**
-- [queryEndpointDefaults.ts](file://frontend/lib/queryEndpointDefaults.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [workspaceQuery.ts](file://frontend/lib/workspaceQuery.ts)
-- [dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
+- [queryEndpointDefaults.ts](frontend/lib/queryEndpointDefaults.ts)
+- [api.ts](frontend/lib/api.ts)
+- [workspaceQuery.ts](frontend/lib/workspaceQuery.ts)
+- [dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
 
 ## Performance Considerations
 - Use appropriate staleTime and refetchInterval to balance freshness and network load
@@ -340,10 +340,10 @@ Common issues and resolutions:
   - After clearing, refresh user context to reflect changes
 
 **Section sources**
-- [AiSettingsPanel.tsx:527-538](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L527-L538)
-- [AiSettingsPanel.tsx:641-717](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L641-L717)
-- [ServerSettingsPanel.tsx:138-153](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L138-L153)
-- [ServerSettingsPanel.tsx:118-136](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L118-L136)
+- [AiSettingsPanel.tsx:527-538](frontend/components/admin/settings/AiSettingsPanel.tsx#L527-L538)
+- [AiSettingsPanel.tsx:641-717](frontend/components/admin/settings/AiSettingsPanel.tsx#L641-L717)
+- [ServerSettingsPanel.tsx:138-153](frontend/components/admin/settings/ServerSettingsPanel.tsx#L138-L153)
+- [ServerSettingsPanel.tsx:118-136](frontend/components/admin/settings/ServerSettingsPanel.tsx#L118-L136)
 
 ## Conclusion
 The Settings & Configuration interface provides a comprehensive, role-aware system for managing AI runtime, server operations, and administrative controls. It leverages real-time updates, robust error handling, and strict access controls to ensure safe and efficient configuration management.
@@ -369,10 +369,10 @@ The Settings & Configuration interface provides a comprehensive, role-aware syst
   - Provide password and confirm destructive action
 
 **Section sources**
-- [AiSettingsPanel.tsx:582-593](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L582-L593)
-- [AiSettingsPanel.tsx:595-639](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L595-L639)
-- [AiSettingsPanel.tsx:641-727](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L641-L727)
-- [ServerSettingsPanel.tsx:138-174](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L138-L174)
+- [AiSettingsPanel.tsx:582-593](frontend/components/admin/settings/AiSettingsPanel.tsx#L582-L593)
+- [AiSettingsPanel.tsx:595-639](frontend/components/admin/settings/AiSettingsPanel.tsx#L595-L639)
+- [AiSettingsPanel.tsx:641-727](frontend/components/admin/settings/AiSettingsPanel.tsx#L641-L727)
+- [ServerSettingsPanel.tsx:138-174](frontend/components/admin/settings/ServerSettingsPanel.tsx#L138-L174)
 
 ### Backup Procedures
 - Export OpenAPI specification for backend contract review
@@ -380,8 +380,8 @@ The Settings & Configuration interface provides a comprehensive, role-aware syst
 - Maintain secure backups of workspace-scoped configurations and tokens
 
 **Section sources**
-- [AdminSettingsClient.tsx:88-98](file://frontend/app/admin/settings/SettingsClient.tsx#L88-L98)
-- [ai_settings.py](file://server/app/api/endpoints/ai_settings.py)
+- [AdminSettingsClient.tsx:88-98](frontend/app/admin/settings/SettingsClient.tsx#L88-L98)
+- [ai_settings.py](server/app/api/endpoints/ai_settings.py)
 
 ### Integration with System Administration Tools
 - Use the embedded API documentation link for endpoint discovery
@@ -389,7 +389,7 @@ The Settings & Configuration interface provides a comprehensive, role-aware syst
 - Apply workspace scoping utilities for tenant isolation
 
 **Section sources**
-- [AdminSettingsClient.tsx:46-47](file://frontend/app/admin/settings/SettingsClient.tsx#L46-L47)
-- [mcp_server.py](file://server/mcp_server.py)
-- [mcp_auth.py](file://server/app/mcp/auth.py)
-- [workspaceQuery.ts](file://frontend/lib/workspaceQuery.ts)
+- [AdminSettingsClient.tsx:46-47](frontend/app/admin/settings/SettingsClient.tsx#L46-L47)
+- [mcp_server.py](server/mcp_server.py)
+- [mcp_auth.py](server/app/mcp/auth.py)
+- [workspaceQuery.ts](frontend/lib/workspaceQuery.ts)

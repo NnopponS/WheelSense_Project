@@ -2,24 +2,24 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ObserverAlertsQueue.tsx](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx)
-- [ObserverAlertsPage.tsx](file://frontend/app/observer/alerts/page.tsx)
-- [AdminAlertsTable.tsx](file://frontend/components/admin/alerts/AdminAlertsTable.tsx)
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
-- [activity.py](file://server/app/models/activity.py)
-- [analytics.py](file://server/app/services/analytics.py)
-- [analytics.py](file://server/app/schemas/analytics.py)
-- [useAlertRowHighlight.ts](file://frontend/hooks/useAlertRowHighlight.ts)
-- [alertSound.ts](file://frontend/lib/alertSound.ts)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [NotificationBell.tsx](file://frontend/components/NotificationBell.tsx)
-- [seed_demo.py](file://server/scripts/seed_demo.py)
-- [test_activity.py](file://server/tests/test_services/test_activity.py)
-- [test_agent_runtime_extended.py](file://server/tests/test_agent_runtime_extended.py)
-- [test_chat_actions_integration.py](file://server/tests/test_chat_actions_integration.py)
-- [server.py](file://server/app/mcp/server.py)
+- [ObserverAlertsQueue.tsx](frontend/app/observer/alerts/ObserverAlertsQueue.tsx)
+- [ObserverAlertsPage.tsx](frontend/app/observer/alerts/page.tsx)
+- [AdminAlertsTable.tsx](frontend/components/admin/alerts/AdminAlertsTable.tsx)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [alerts.py](server/app/api/endpoints/alerts.py)
+- [activity.py](server/app/models/activity.py)
+- [analytics.py](server/app/services/analytics.py)
+- [analytics.py](server/app/schemas/analytics.py)
+- [useAlertRowHighlight.ts](frontend/hooks/useAlertRowHighlight.ts)
+- [alertSound.ts](frontend/lib/alertSound.ts)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [NotificationBell.tsx](frontend/components/NotificationBell.tsx)
+- [seed_demo.py](server/scripts/seed_demo.py)
+- [test_activity.py](server/tests/test_services/test_activity.py)
+- [test_agent_runtime_extended.py](server/tests/test_agent_runtime_extended.py)
+- [test_chat_actions_integration.py](server/tests/test_chat_actions_integration.py)
+- [server.py](server/app/mcp/server.py)
 </cite>
 
 ## Table of Contents
@@ -78,25 +78,25 @@ NBELL --> OAQ
 ```
 
 **Diagram sources**
-- [ObserverAlertsPage.tsx:20-35](file://frontend/app/observer/alerts/page.tsx#L20-L35)
-- [ObserverAlertsQueue.tsx:31-187](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
-- [AdminAlertsTable.tsx:53-230](file://frontend/components/admin/alerts/AdminAlertsTable.tsx#L53-L230)
-- [AlertPanel.tsx:19-151](file://frontend/components/shared/AlertPanel.tsx#L19-L151)
-- [api.ts:491-576](file://frontend/lib/api.ts#L491-L576)
-- [useAlertRowHighlight.ts:9-34](file://frontend/hooks/useAlertRowHighlight.ts#L9-L34)
-- [alertSound.ts:1-49](file://frontend/lib/alertSound.ts#L1-L49)
-- [TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [NotificationBell.tsx:1-46](file://frontend/components/NotificationBell.tsx#L1-L46)
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
-- [activity.py:49-90](file://server/app/models/activity.py#L49-L90)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [ObserverAlertsPage.tsx:20-35](frontend/app/observer/alerts/page.tsx#L20-L35)
+- [ObserverAlertsQueue.tsx:31-187](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
+- [AdminAlertsTable.tsx:53-230](frontend/components/admin/alerts/AdminAlertsTable.tsx#L53-L230)
+- [AlertPanel.tsx:19-151](frontend/components/shared/AlertPanel.tsx#L19-L151)
+- [api.ts:491-576](frontend/lib/api.ts#L491-L576)
+- [useAlertRowHighlight.ts:9-34](frontend/hooks/useAlertRowHighlight.ts#L9-L34)
+- [alertSound.ts:1-49](frontend/lib/alertSound.ts#L1-L49)
+- [TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [NotificationBell.tsx:1-46](frontend/components/NotificationBell.tsx#L1-L46)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
+- [activity.py:49-90](server/app/models/activity.py#L49-L90)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 **Section sources**
-- [ObserverAlertsPage.tsx:20-35](file://frontend/app/observer/alerts/page.tsx#L20-L35)
-- [ObserverAlertsQueue.tsx:31-187](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
+- [ObserverAlertsPage.tsx:20-35](frontend/app/observer/alerts/page.tsx#L20-L35)
+- [ObserverAlertsQueue.tsx:31-187](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
 
 ## Core Components
 - ObserverAlertsQueue: Real-time alert queue for observers with severity-aware sorting, patient linkage, and action integration.
@@ -108,12 +108,12 @@ NBELL --> OAQ
 - Utilities: Row highlighting for targeted alerts, sound toggling, and notification bell.
 
 **Section sources**
-- [ObserverAlertsQueue.tsx:31-187](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
-- [AdminAlertsTable.tsx:53-230](file://frontend/components/admin/alerts/AdminAlertsTable.tsx#L53-L230)
-- [AlertPanel.tsx:19-151](file://frontend/components/shared/AlertPanel.tsx#L19-L151)
-- [api.ts:491-576](file://frontend/lib/api.ts#L491-L576)
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [ObserverAlertsQueue.tsx:31-187](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
+- [AdminAlertsTable.tsx:53-230](frontend/components/admin/alerts/AdminAlertsTable.tsx#L53-L230)
+- [AlertPanel.tsx:19-151](frontend/components/shared/AlertPanel.tsx#L19-L151)
+- [api.ts:491-576](frontend/lib/api.ts#L491-L576)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 ## Architecture Overview
 The Observer Alerts Management system follows a clear separation of concerns:
@@ -148,10 +148,10 @@ API-->>Obs : Update row status
 ```
 
 **Diagram sources**
-- [ObserverAlertsQueue.tsx:35-39](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L39)
-- [api.ts:571-576](file://frontend/lib/api.ts#L571-L576)
-- [alerts.py:91-132](file://server/app/api/endpoints/alerts.py#L91-L132)
-- [activity.py:74-88](file://server/app/models/activity.py#L74-L88)
+- [ObserverAlertsQueue.tsx:35-39](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L39)
+- [api.ts:571-576](frontend/lib/api.ts#L571-L576)
+- [alerts.py:91-132](server/app/api/endpoints/alerts.py#L91-L132)
+- [activity.py:74-88](server/app/models/activity.py#L74-L88)
 
 ## Detailed Component Analysis
 
@@ -174,14 +174,14 @@ Highlight --> Render["Render DataTableCard"]
 ```
 
 **Diagram sources**
-- [ObserverAlertsQueue.tsx:35-82](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L82)
-- [ObserverAlertsQueue.tsx:84-155](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L84-L155)
-- [ObserverAlertsQueue.tsx:157-187](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L157-L187)
-- [useAlertRowHighlight.ts:9-34](file://frontend/hooks/useAlertRowHighlight.ts#L9-L34)
+- [ObserverAlertsQueue.tsx:35-82](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L82)
+- [ObserverAlertsQueue.tsx:84-155](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L84-L155)
+- [ObserverAlertsQueue.tsx:157-187](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L157-L187)
+- [useAlertRowHighlight.ts:9-34](frontend/hooks/useAlertRowHighlight.ts#L9-L34)
 
 **Section sources**
-- [ObserverAlertsQueue.tsx:31-187](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
-- [useAlertRowHighlight.ts:9-34](file://frontend/hooks/useAlertRowHighlight.ts#L9-L34)
+- [ObserverAlertsQueue.tsx:31-187](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
+- [useAlertRowHighlight.ts:9-34](frontend/hooks/useAlertRowHighlight.ts#L9-L34)
 
 ### Alert Types, Severity Levels, and Status
 - Alert types include fall, abnormal_hr, low_battery, device_offline, zone_violation, missed_medication, no_movement.
@@ -210,10 +210,10 @@ class Alert {
 ```
 
 **Diagram sources**
-- [activity.py:49-90](file://server/app/models/activity.py#L49-L90)
+- [activity.py:49-90](server/app/models/activity.py#L49-L90)
 
 **Section sources**
-- [activity.py:70-88](file://server/app/models/activity.py#L70-L88)
+- [activity.py:70-88](server/app/models/activity.py#L70-L88)
 
 ### Alert Lifecycle and Response Workflows
 - Create: Allowed for admins, head nurses, supervisors, observers, and patients (subject to access checks).
@@ -254,12 +254,12 @@ API-->>Client : Resolved
 ```
 
 **Diagram sources**
-- [alerts.py:57-132](file://server/app/api/endpoints/alerts.py#L57-L132)
-- [activity.py:74-88](file://server/app/models/activity.py#L74-L88)
+- [alerts.py:57-132](server/app/api/endpoints/alerts.py#L57-L132)
+- [activity.py:74-88](server/app/models/activity.py#L74-L88)
 
 **Section sources**
-- [alerts.py:26-132](file://server/app/api/endpoints/alerts.py#L26-L132)
-- [test_activity.py:91-118](file://server/tests/test_services/test_activity.py#L91-L118)
+- [alerts.py:26-132](server/app/api/endpoints/alerts.py#L26-L132)
+- [test_activity.py:91-118](server/tests/test_services/test_activity.py#L91-L118)
 
 ### Critical Alert Handling and Escalation
 - Critical alerts are prioritized during sorting and rendered with prominent severity badges.
@@ -284,15 +284,15 @@ EP-->>AI : Alert acknowledged
 ```
 
 **Diagram sources**
-- [alerts.py:57-112](file://server/app/api/endpoints/alerts.py#L57-L112)
-- [test_chat_actions_integration.py:233-270](file://server/tests/test_chat_actions_integration.py#L233-L270)
-- [test_agent_runtime_extended.py:616-640](file://server/tests/test_agent_runtime_extended.py#L616-L640)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [alerts.py:57-112](server/app/api/endpoints/alerts.py#L57-L112)
+- [test_chat_actions_integration.py:233-270](server/tests/test_chat_actions_integration.py#L233-L270)
+- [test_agent_runtime_extended.py:616-640](server/tests/test_agent_runtime_extended.py#L616-L640)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 **Section sources**
-- [ObserverAlertsQueue.tsx:56-65](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L56-L65)
-- [test_chat_actions_integration.py:233-270](file://server/tests/test_chat_actions_integration.py#L233-L270)
-- [test_agent_runtime_extended.py:616-640](file://server/tests/test_agent_runtime_extended.py#L616-L640)
+- [ObserverAlertsQueue.tsx:56-65](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L56-L65)
+- [test_chat_actions_integration.py:233-270](server/tests/test_chat_actions_integration.py#L233-L270)
+- [test_agent_runtime_extended.py:616-640](server/tests/test_agent_runtime_extended.py#L616-L640)
 
 ### Alert Analytics and Quality Improvement
 - Analytics service computes alert summaries and ward metrics.
@@ -310,14 +310,14 @@ UI --> WARD
 ```
 
 **Diagram sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 **Section sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 ## Dependency Analysis
 - ObserverAlertsQueue depends on:
@@ -344,18 +344,18 @@ MCP["server.py (MCP)"] --> ANASVC
 ```
 
 **Diagram sources**
-- [ObserverAlertsQueue.tsx:31-187](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
-- [api.ts:491-576](file://frontend/lib/api.ts#L491-L576)
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
-- [activity.py:49-90](file://server/app/models/activity.py#L49-L90)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [ObserverAlertsQueue.tsx:31-187](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
+- [api.ts:491-576](frontend/lib/api.ts#L491-L576)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
+- [activity.py:49-90](server/app/models/activity.py#L49-L90)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 **Section sources**
-- [ObserverAlertsQueue.tsx:31-187](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
-- [api.ts:491-576](file://frontend/lib/api.ts#L491-L576)
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
+- [ObserverAlertsQueue.tsx:31-187](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L187)
+- [api.ts:491-576](frontend/lib/api.ts#L491-L576)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
 
 ## Performance Considerations
 - ObserverAlertsQueue uses periodic polling with a 20-second interval to balance freshness and load.
@@ -381,12 +381,12 @@ MCP["server.py (MCP)"] --> ANASVC
   - Verify unread count computation and pulse animation logic.
 
 **Section sources**
-- [ObserverAlertsQueue.tsx:35-39](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L39)
-- [alerts.py:38-49](file://server/app/api/endpoints/alerts.py#L38-L49)
-- [alerts.py:98-112](file://server/app/api/endpoints/alerts.py#L98-L112)
-- [alertSound.ts:15-24](file://frontend/lib/alertSound.ts#L15-L24)
-- [TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [NotificationBell.tsx:21-46](file://frontend/components/NotificationBell.tsx#L21-L46)
+- [ObserverAlertsQueue.tsx:35-39](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L39)
+- [alerts.py:38-49](server/app/api/endpoints/alerts.py#L38-L49)
+- [alerts.py:98-112](server/app/api/endpoints/alerts.py#L98-L112)
+- [alertSound.ts:15-24](frontend/lib/alertSound.ts#L15-L24)
+- [TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [NotificationBell.tsx:21-46](frontend/components/NotificationBell.tsx#L21-L46)
 
 ## Conclusion
 The Observer Alerts Management system integrates a responsive frontend queue with a robust backend lifecycle and analytics. Observers benefit from prioritized, severity-aware displays and direct actions, while administrators gain comprehensive oversight and reporting. The system’s modular design supports escalation, automation, and continuous quality improvement through analytics.
@@ -407,15 +407,15 @@ The Observer Alerts Management system integrates a responsive frontend queue wit
   - Procedure: Observer acknowledges; escalate to head nurse; resolve after stabilization.
 
 **Section sources**
-- [seed_demo.py:897-929](file://server/scripts/seed_demo.py#L897-L929)
-- [activity.py:70-73](file://server/app/models/activity.py#L70-L73)
-- [test_activity.py:91-118](file://server/tests/test_services/test_activity.py#L91-L118)
+- [seed_demo.py:897-929](server/scripts/seed_demo.py#L897-L929)
+- [activity.py:70-73](server/app/models/activity.py#L70-L73)
+- [test_activity.py:91-118](server/tests/test_services/test_activity.py#L91-L118)
 
 ### Integration with Monitoring Dashboard
 - Admin dashboards consume analytics summaries for total active/resolved alerts and type breakdowns.
 - MCP tooling provides workspace-level analytics for integrated workflows.
 
 **Section sources**
-- [AdminAlertsTable.tsx:209-230](file://frontend/components/admin/alerts/AdminAlertsTable.tsx#L209-L230)
-- [analytics.py:16-42](file://server/app/services/analytics.py#L16-L42)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [AdminAlertsTable.tsx:209-230](frontend/components/admin/alerts/AdminAlertsTable.tsx#L209-L230)
+- [analytics.py:16-42](server/app/services/analytics.py#L16-L42)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)

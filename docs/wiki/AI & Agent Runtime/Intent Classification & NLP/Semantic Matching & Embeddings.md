@@ -2,12 +2,12 @@
 
 <cite>
 **Referenced Files in This Document**
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [config.py](file://server/app/config.py)
-- [requirements.txt](file://server/requirements.txt)
-- [language_bridge.py](file://server/app/agent_runtime/language_bridge.py)
-- [test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [config.py](server/app/config.py)
+- [requirements.txt](server/requirements.txt)
+- [language_bridge.py](server/app/agent_runtime/language_bridge.py)
+- [test_agent_runtime.py](server/tests/test_agent_runtime.py)
 </cite>
 
 ## Table of Contents
@@ -54,14 +54,14 @@ SERVICE --> BRIDGE
 ```
 
 **Diagram sources**
-- [intent.py:347-878](file://server/app/agent_runtime/intent.py#L347-L878)
-- [service.py:380-519](file://server/app/agent_runtime/service.py#L380-L519)
-- [config.py:79-90](file://server/app/config.py#L79-L90)
+- [intent.py:347-878](server/app/agent_runtime/intent.py#L347-L878)
+- [service.py:380-519](server/app/agent_runtime/service.py#L380-L519)
+- [config.py:79-90](server/app/config.py#L79-L90)
 
 **Section sources**
-- [intent.py:1-1024](file://server/app/agent_runtime/intent.py#L1-L1024)
-- [service.py:380-519](file://server/app/agent_runtime/service.py#L380-L519)
-- [config.py:79-90](file://server/app/config.py#L79-L90)
+- [intent.py:1-1024](server/app/agent_runtime/intent.py#L1-L1024)
+- [service.py:380-519](server/app/agent_runtime/service.py#L380-L519)
+- [config.py:79-90](server/app/config.py#L79-L90)
 
 ## Core Components
 - IntentClassifier: Implements regex-based intent matching with semantic fallback, including lazy-loading of the sentence transformer model, precomputation of example embeddings, and cosine similarity scoring.
@@ -71,11 +71,11 @@ SERVICE --> BRIDGE
 - Fallback handling: When semantic processing is unavailable or confidence is below threshold, the system falls back to AI chat.
 
 **Section sources**
-- [intent.py:190-194](file://server/app/agent_runtime/intent.py#L190-L194)
-- [intent.py:110-188](file://server/app/agent_runtime/intent.py#L110-L188)
-- [intent.py:566-589](file://server/app/agent_runtime/intent.py#L566-L589)
-- [intent.py:603-624](file://server/app/agent_runtime/intent.py#L603-L624)
-- [service.py:400-408](file://server/app/agent_runtime/service.py#L400-L408)
+- [intent.py:190-194](server/app/agent_runtime/intent.py#L190-L194)
+- [intent.py:110-188](server/app/agent_runtime/intent.py#L110-L188)
+- [intent.py:566-589](server/app/agent_runtime/intent.py#L566-L589)
+- [intent.py:603-624](server/app/agent_runtime/intent.py#L603-L624)
+- [service.py:400-408](server/app/agent_runtime/service.py#L400-L408)
 
 ## Architecture Overview
 The semantic matching pipeline integrates regex-based intent recognition with multilingual sentence embeddings. The flow is:
@@ -123,8 +123,8 @@ end
 ```
 
 **Diagram sources**
-- [intent.py:719-878](file://server/app/agent_runtime/intent.py#L719-L878)
-- [service.py:380-519](file://server/app/agent_runtime/service.py#L380-L519)
+- [intent.py:719-878](server/app/agent_runtime/intent.py#L719-L878)
+- [service.py:380-519](server/app/agent_runtime/service.py#L380-L519)
 
 ## Detailed Component Analysis
 
@@ -179,11 +179,11 @@ IntentClassifier --> IntentExample : "uses"
 ```
 
 **Diagram sources**
-- [intent.py:347-1024](file://server/app/agent_runtime/intent.py#L347-L1024)
+- [intent.py:347-1024](server/app/agent_runtime/intent.py#L347-L1024)
 
 **Section sources**
-- [intent.py:347-878](file://server/app/agent_runtime/intent.py#L347-L878)
-- [intent.py:566-624](file://server/app/agent_runtime/intent.py#L566-L624)
+- [intent.py:347-878](server/app/agent_runtime/intent.py#L347-L878)
+- [intent.py:566-624](server/app/agent_runtime/intent.py#L566-L624)
 
 ### Confidence Thresholding System
 Confidence thresholds govern the behavior of semantic matches:
@@ -217,13 +217,13 @@ AIFallback --> End
 ```
 
 **Diagram sources**
-- [intent.py:853-878](file://server/app/agent_runtime/intent.py#L853-L878)
-- [service.py:400-408](file://server/app/agent_runtime/service.py#L400-L408)
+- [intent.py:853-878](server/app/agent_runtime/intent.py#L853-L878)
+- [service.py:400-408](server/app/agent_runtime/service.py#L400-L408)
 
 **Section sources**
-- [intent.py:190-194](file://server/app/agent_runtime/intent.py#L190-L194)
-- [intent.py:853-878](file://server/app/agent_runtime/intent.py#L853-L878)
-- [service.py:400-408](file://server/app/agent_runtime/service.py#L400-L408)
+- [intent.py:190-194](server/app/agent_runtime/intent.py#L190-L194)
+- [intent.py:853-878](server/app/agent_runtime/intent.py#L853-L878)
+- [service.py:400-408](server/app/agent_runtime/service.py#L400-L408)
 
 ### Intent Example Database (Multilingual Training Data)
 The intent example database includes curated English and Thai phrases covering:
@@ -237,7 +237,7 @@ The intent example database includes curated English and Thai phrases covering:
 These examples enable multilingual semantic matching using the paraphrase-multilingual-MiniLM-L12-v2 model.
 
 **Section sources**
-- [intent.py:110-188](file://server/app/agent_runtime/intent.py#L110-L188)
+- [intent.py:110-188](server/app/agent_runtime/intent.py#L110-L188)
 
 ### Lazy-Loading Mechanism and Memory Optimization
 - Lazy-loading: The sentence transformer model is initialized only when semantic processing is enabled and requested. The model is cached by name; if the configured model name changes, the cache is invalidated and reloaded.
@@ -245,8 +245,8 @@ These examples enable multilingual semantic matching using the paraphrase-multil
 - Import-time safety: Missing sentence-transformers dependency disables semantic processing gracefully.
 
 **Section sources**
-- [intent.py:566-589](file://server/app/agent_runtime/intent.py#L566-L589)
-- [intent.py:603-607](file://server/app/agent_runtime/intent.py#L603-L607)
+- [intent.py:566-589](server/app/agent_runtime/intent.py#L566-L589)
+- [intent.py:603-607](server/app/agent_runtime/intent.py#L603-L607)
 
 ### Fallback Handling When Semantic Processing Is Unavailable
 Fallback mechanisms:
@@ -257,8 +257,8 @@ Fallback mechanisms:
 - AI fallback failure: If AI fallback fails, a user-friendly message is returned.
 
 **Section sources**
-- [intent.py:568-588](file://server/app/agent_runtime/intent.py#L568-L588)
-- [service.py:504-519](file://server/app/agent_runtime/service.py#L504-L519)
+- [intent.py:568-588](server/app/agent_runtime/intent.py#L568-L588)
+- [service.py:504-519](server/app/agent_runtime/service.py#L504-L519)
 
 ### Integration With Regex Pattern Matching
 The classifier prioritizes regex-based matching for high-confidence, exact-language queries. Regex patterns cover:
@@ -273,7 +273,7 @@ The classifier prioritizes regex-based matching for high-confidence, exact-langu
 Regex matches yield high confidence and often immediate tool execution.
 
 **Section sources**
-- [intent.py:357-564](file://server/app/agent_runtime/intent.py#L357-L564)
+- [intent.py:357-564](server/app/agent_runtime/intent.py#L357-L564)
 
 ### Practical Examples
 
@@ -284,7 +284,7 @@ Regex matches yield high confidence and often immediate tool execution.
 - The highest-scoring example determines the intent and playbook, with the similarity score serving as confidence.
 
 **Section sources**
-- [intent.py:591-624](file://server/app/agent_runtime/intent.py#L591-L624)
+- [intent.py:591-624](server/app/agent_runtime/intent.py#L591-L624)
 
 #### Intent Classification Confidence Scores
 - Regex matches: confidence is set to a high value (e.g., 0.95).
@@ -292,16 +292,16 @@ Regex matches yield high confidence and often immediate tool execution.
 - Thresholding: Below LOW_CONFIDENCE_THRESHOLD triggers AI fallback.
 
 **Section sources**
-- [intent.py:753](file://server/app/agent_runtime/intent.py#L753)
-- [intent.py:858-878](file://server/app/agent_runtime/intent.py#L858-L878)
-- [service.py:400-408](file://server/app/agent_runtime/service.py#L400-L408)
+- [intent.py:753](server/app/agent_runtime/intent.py#L753)
+- [intent.py:858-878](server/app/agent_runtime/intent.py#L858-L878)
+- [service.py:400-408](server/app/agent_runtime/service.py#L400-L408)
 
 #### Integration With Regex Pattern Matching
 - The classifier first attempts regex-based matching; if successful, it returns an IntentMatch with immediate tool execution when applicable.
 - If no regex match, it falls back to semantic similarity.
 
 **Section sources**
-- [intent.py:719-878](file://server/app/agent_runtime/intent.py#L719-L878)
+- [intent.py:719-878](server/app/agent_runtime/intent.py#L719-L878)
 
 ## Dependency Analysis
 - External libraries:
@@ -321,14 +321,14 @@ SERVICE --> CFG
 ```
 
 **Diagram sources**
-- [requirements.txt:29](file://server/requirements.txt#L29)
-- [intent.py:566-624](file://server/app/agent_runtime/intent.py#L566-L624)
-- [config.py:79-90](file://server/app/config.py#L79-L90)
+- [requirements.txt:29](server/requirements.txt#L29)
+- [intent.py:566-624](server/app/agent_runtime/intent.py#L566-L624)
+- [config.py:79-90](server/app/config.py#L79-L90)
 
 **Section sources**
-- [requirements.txt:29](file://server/requirements.txt#L29)
-- [intent.py:566-624](file://server/app/agent_runtime/intent.py#L566-L624)
-- [config.py:79-90](file://server/app/config.py#L79-L90)
+- [requirements.txt:29](server/requirements.txt#L29)
+- [intent.py:566-624](server/app/agent_runtime/intent.py#L566-L624)
+- [config.py:79-90](server/app/config.py#L79-L90)
 
 ## Performance Considerations
 - Model initialization cost: Lazy-loading avoids initializing the model until needed; subsequent calls reuse the cached model and example embeddings.
@@ -352,10 +352,10 @@ Validation references:
 - Semantic fallback behavior and AI fallback
 
 **Section sources**
-- [requirements.txt:29](file://server/requirements.txt#L29)
-- [intent.py:568-588](file://server/app/agent_runtime/intent.py#L568-L588)
-- [test_agent_runtime.py:602-612](file://server/tests/test_agent_runtime.py#L602-L612)
-- [service.py:504-519](file://server/app/agent_runtime/service.py#L504-L519)
+- [requirements.txt:29](server/requirements.txt#L29)
+- [intent.py:568-588](server/app/agent_runtime/intent.py#L568-L588)
+- [test_agent_runtime.py:602-612](server/tests/test_agent_runtime.py#L602-L612)
+- [service.py:504-519](server/app/agent_runtime/service.py#L504-L519)
 
 ## Conclusion
 The semantic intent matching system combines regex-based high-confidence rules with multilingual sentence embeddings to deliver robust, context-aware intent classification. The paraphrase-multilingual-MiniLM-L12-v2 model, combined with cosine similarity and a carefully tuned thresholding pipeline, enables immediate execution for read-only queries and safe plan-based execution for write operations. Lazy-loading and embedding caching optimize performance, while fallback handling ensures resilience when semantic processing is unavailable. Configuration options allow operators to tune behavior for their deployment environment.

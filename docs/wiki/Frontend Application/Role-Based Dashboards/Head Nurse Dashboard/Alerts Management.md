@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/head-nurse/alerts/page.tsx)
-- [types.ts](file://frontend/lib/types.ts)
-- [constants.ts](file://frontend/lib/constants.ts)
-- [alertSound.ts](file://frontend/lib/alertSound.ts)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
-- [activity.py](file://server/app/models/activity.py)
-- [activity.py](file://server/app/services/activity.py)
-- [activity.py](file://server/app/schemas/activity.py)
-- [demo_control.py](file://server/app/services/demo_control.py)
-- [seed_demo.py](file://server/scripts/seed_demo.py)
-- [sim_controller.py](file://server/sim_controller.py)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
+- [page.tsx](frontend/app/head-nurse/alerts/page.tsx)
+- [types.ts](frontend/lib/types.ts)
+- [constants.ts](frontend/lib/constants.ts)
+- [alertSound.ts](frontend/lib/alertSound.ts)
+- [alerts.py](server/app/api/endpoints/alerts.py)
+- [activity.py](server/app/models/activity.py)
+- [activity.py](server/app/services/activity.py)
+- [activity.py](server/app/schemas/activity.py)
+- [demo_control.py](server/app/services/demo_control.py)
+- [seed_demo.py](server/scripts/seed_demo.py)
+- [sim_controller.py](server/sim_controller.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
 </cite>
 
 ## Table of Contents
@@ -67,22 +67,22 @@ API --> Schema
 ```
 
 **Diagram sources**
-- [page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
-- [types.ts:241-258](file://frontend/lib/types.ts#L241-L258)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [alertSound.ts:1-49](file://frontend/lib/alertSound.ts#L1-L49)
-- [alerts.py:1-134](file://server/app/api/endpoints/alerts.py#L1-L134)
-- [activity.py:35-75](file://server/app/services/activity.py#L35-L75)
-- [activity.py:49-90](file://server/app/models/activity.py#L49-L90)
-- [activity.py:36-70](file://server/app/schemas/activity.py#L36-L70)
-- [demo_control.py:450-488](file://server/app/services/demo_control.py#L450-L488)
-- [seed_demo.py:897-946](file://server/scripts/seed_demo.py#L897-L946)
-- [sim_controller.py:895-1195](file://server/sim_controller.py#L895-L1195)
-- [mqtt_handler.py:327-342](file://server/app/mqtt_handler.py#L327-L342)
+- [page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [types.ts:241-258](frontend/lib/types.ts#L241-L258)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [alertSound.ts:1-49](frontend/lib/alertSound.ts#L1-L49)
+- [alerts.py:1-134](server/app/api/endpoints/alerts.py#L1-L134)
+- [activity.py:35-75](server/app/services/activity.py#L35-L75)
+- [activity.py:49-90](server/app/models/activity.py#L49-L90)
+- [activity.py:36-70](server/app/schemas/activity.py#L36-L70)
+- [demo_control.py:450-488](server/app/services/demo_control.py#L450-L488)
+- [seed_demo.py:897-946](server/scripts/seed_demo.py#L897-L946)
+- [sim_controller.py:895-1195](server/sim_controller.py#L895-L1195)
+- [mqtt_handler.py:327-342](server/app/mqtt_handler.py#L327-L342)
 
 **Section sources**
-- [page.tsx:1-324](file://frontend/app/head-nurse/alerts/page.tsx#L1-L324)
-- [alerts.py:1-134](file://server/app/api/endpoints/alerts.py#L1-L134)
+- [page.tsx:1-324](frontend/app/head-nurse/alerts/page.tsx#L1-L324)
+- [alerts.py:1-134](server/app/api/endpoints/alerts.py#L1-L134)
 
 ## Core Components
 - Frontend Alerts Page
@@ -103,15 +103,15 @@ API --> Schema
   - Demo control service and seed script create demo alerts for testing and training.
 
 **Section sources**
-- [page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
-- [activity.py:49-90](file://server/app/models/activity.py#L49-L90)
-- [activity.py:36-70](file://server/app/schemas/activity.py#L36-L70)
-- [activity.py:35-75](file://server/app/services/activity.py#L35-L75)
-- [demo_control.py:450-488](file://server/app/services/demo_control.py#L450-L488)
-- [seed_demo.py:897-946](file://server/scripts/seed_demo.py#L897-L946)
-- [sim_controller.py:895-1195](file://server/sim_controller.py#L895-L1195)
-- [mqtt_handler.py:327-342](file://server/app/mqtt_handler.py#L327-L342)
+- [page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
+- [activity.py:49-90](server/app/models/activity.py#L49-L90)
+- [activity.py:36-70](server/app/schemas/activity.py#L36-L70)
+- [activity.py:35-75](server/app/services/activity.py#L35-L75)
+- [demo_control.py:450-488](server/app/services/demo_control.py#L450-L488)
+- [seed_demo.py:897-946](server/scripts/seed_demo.py#L897-L946)
+- [sim_controller.py:895-1195](server/sim_controller.py#L895-L1195)
+- [mqtt_handler.py:327-342](server/app/mqtt_handler.py#L327-L342)
 
 ## Architecture Overview
 The system follows a clean separation of concerns:
@@ -152,9 +152,9 @@ API-->>Client : 200 OK
 ```
 
 **Diagram sources**
-- [page.tsx:58-104](file://frontend/app/head-nurse/alerts/page.tsx#L58-L104)
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
-- [activity.py:35-75](file://server/app/services/activity.py#L35-L75)
+- [page.tsx:58-104](frontend/app/head-nurse/alerts/page.tsx#L58-L104)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
+- [activity.py:35-75](server/app/services/activity.py#L35-L75)
 
 ## Detailed Component Analysis
 
@@ -188,10 +188,10 @@ Refetch --> BuildRows
 ```
 
 **Diagram sources**
-- [page.tsx:58-136](file://frontend/app/head-nurse/alerts/page.tsx#L58-L136)
+- [page.tsx:58-136](frontend/app/head-nurse/alerts/page.tsx#L58-L136)
 
 **Section sources**
-- [page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
 
 ### Backend: Alerts API Endpoints
 - Endpoint coverage
@@ -227,11 +227,11 @@ API-->>HN : 200 OK
 ```
 
 **Diagram sources**
-- [alerts.py:91-132](file://server/app/api/endpoints/alerts.py#L91-L132)
-- [activity.py:47-71](file://server/app/services/activity.py#L47-L71)
+- [alerts.py:91-132](server/app/api/endpoints/alerts.py#L91-L132)
+- [activity.py:47-71](server/app/services/activity.py#L47-L71)
 
 **Section sources**
-- [alerts.py:29-134](file://server/app/api/endpoints/alerts.py#L29-L134)
+- [alerts.py:29-134](server/app/api/endpoints/alerts.py#L29-L134)
 
 ### Alert Lifecycle and Data Model
 - Lifecycle
@@ -250,13 +250,13 @@ Active --> Resolved : "resolve()"
 ```
 
 **Diagram sources**
-- [activity.py:74-88](file://server/app/models/activity.py#L74-L88)
-- [activity.py:47-71](file://server/app/services/activity.py#L47-L71)
+- [activity.py:74-88](server/app/models/activity.py#L74-L88)
+- [activity.py:47-71](server/app/services/activity.py#L47-L71)
 
 **Section sources**
-- [activity.py:49-90](file://server/app/models/activity.py#L49-L90)
-- [activity.py:36-70](file://server/app/schemas/activity.py#L36-L70)
-- [activity.py:35-75](file://server/app/services/activity.py#L35-L75)
+- [activity.py:49-90](server/app/models/activity.py#L49-L90)
+- [activity.py:36-70](server/app/schemas/activity.py#L36-L70)
+- [activity.py:35-75](server/app/services/activity.py#L35-L75)
 
 ### Alert Types, Severity, and Status
 - Example alert types
@@ -268,9 +268,9 @@ Active --> Resolved : "resolve()"
   - Active, acknowledged, resolved.
 
 **Section sources**
-- [activity.py:70-72](file://server/app/models/activity.py#L70-L72)
-- [sim_controller.py:353-383](file://server/sim_controller.py#L353-L383)
-- [demo_control.py:452-474](file://server/app/services/demo_control.py#L452-L474)
+- [activity.py:70-72](server/app/models/activity.py#L70-L72)
+- [sim_controller.py:353-383](server/sim_controller.py#L353-L383)
+- [demo_control.py:452-474](server/app/services/demo_control.py#L452-L474)
 
 ### Integration with Device Telemetry
 - Simulation controller
@@ -292,14 +292,14 @@ API-->>HN : Alerts list (includes persisted)
 ```
 
 **Diagram sources**
-- [sim_controller.py:895-1195](file://server/sim_controller.py#L895-L1195)
-- [mqtt_handler.py:327-342](file://server/app/mqtt_handler.py#L327-L342)
-- [alerts.py:29-55](file://server/app/api/endpoints/alerts.py#L29-L55)
-- [page.tsx:58-62](file://frontend/app/head-nurse/alerts/page.tsx#L58-L62)
+- [sim_controller.py:895-1195](server/sim_controller.py#L895-L1195)
+- [mqtt_handler.py:327-342](server/app/mqtt_handler.py#L327-L342)
+- [alerts.py:29-55](server/app/api/endpoints/alerts.py#L29-L55)
+- [page.tsx:58-62](frontend/app/head-nurse/alerts/page.tsx#L58-L62)
 
 **Section sources**
-- [sim_controller.py:895-1195](file://server/sim_controller.py#L895-L1195)
-- [mqtt_handler.py:327-342](file://server/app/mqtt_handler.py#L327-L342)
+- [sim_controller.py:895-1195](server/sim_controller.py#L895-L1195)
+- [mqtt_handler.py:327-342](server/app/mqtt_handler.py#L327-L342)
 
 ### Manual Alert Creation Workflows
 - Demo control service
@@ -324,12 +324,12 @@ API-->>Demo : AlertOut
 ```
 
 **Diagram sources**
-- [demo_control.py:452-488](file://server/app/services/demo_control.py#L452-L488)
-- [seed_demo.py:897-946](file://server/scripts/seed_demo.py#L897-L946)
+- [demo_control.py:452-488](server/app/services/demo_control.py#L452-L488)
+- [seed_demo.py:897-946](server/scripts/seed_demo.py#L897-L946)
 
 **Section sources**
-- [demo_control.py:452-488](file://server/app/services/demo_control.py#L452-L488)
-- [seed_demo.py:897-946](file://server/scripts/seed_demo.py#L897-L946)
+- [demo_control.py:452-488](server/app/services/demo_control.py#L452-L488)
+- [seed_demo.py:897-946](server/scripts/seed_demo.py#L897-L946)
 
 ### Alert Resolution Process and Escalation
 - Resolution
@@ -348,18 +348,18 @@ D -- No --> F["Remain Active"]
 ```
 
 **Diagram sources**
-- [activity.py:47-71](file://server/app/services/activity.py#L47-L71)
-- [alerts.py:91-132](file://server/app/api/endpoints/alerts.py#L91-L132)
+- [activity.py:47-71](server/app/services/activity.py#L47-L71)
+- [alerts.py:91-132](server/app/api/endpoints/alerts.py#L91-L132)
 
 **Section sources**
-- [activity.py:47-71](file://server/app/services/activity.py#L47-L71)
-- [alerts.py:91-132](file://server/app/api/endpoints/alerts.py#L91-L132)
+- [activity.py:47-71](server/app/services/activity.py#L47-L71)
+- [alerts.py:91-132](server/app/api/endpoints/alerts.py#L91-L132)
 
 ### Audit Trail Logging
 - Demo control logs an audit trail event when triggering alerts, capturing actor, action, entity, and details.
 
 **Section sources**
-- [demo_control.py:476-486](file://server/app/services/demo_control.py#L476-L486)
+- [demo_control.py:476-486](server/app/services/demo_control.py#L476-L486)
 
 ### Integration with Messaging System
 - Messaging integration is not present in the referenced code for alert notifications; the system focuses on alert persistence and triage UI.
@@ -392,25 +392,25 @@ MQTT["mqtt_handler.py"] --> AlertSvc
 ```
 
 **Diagram sources**
-- [types.ts:241-258](file://frontend/lib/types.ts#L241-L258)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [alertSound.ts:1-49](file://frontend/lib/alertSound.ts#L1-L49)
-- [page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
-- [alerts.py:1-134](file://server/app/api/endpoints/alerts.py#L1-L134)
-- [activity.py:35-75](file://server/app/services/activity.py#L35-L75)
-- [activity.py:49-90](file://server/app/models/activity.py#L49-L90)
-- [activity.py:36-70](file://server/app/schemas/activity.py#L36-L70)
-- [demo_control.py:450-488](file://server/app/services/demo_control.py#L450-L488)
-- [seed_demo.py:897-946](file://server/scripts/seed_demo.py#L897-L946)
-- [sim_controller.py:895-1195](file://server/sim_controller.py#L895-L1195)
-- [mqtt_handler.py:327-342](file://server/app/mqtt_handler.py#L327-L342)
+- [types.ts:241-258](frontend/lib/types.ts#L241-L258)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [alertSound.ts:1-49](frontend/lib/alertSound.ts#L1-L49)
+- [page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [alerts.py:1-134](server/app/api/endpoints/alerts.py#L1-L134)
+- [activity.py:35-75](server/app/services/activity.py#L35-L75)
+- [activity.py:49-90](server/app/models/activity.py#L49-L90)
+- [activity.py:36-70](server/app/schemas/activity.py#L36-L70)
+- [demo_control.py:450-488](server/app/services/demo_control.py#L450-L488)
+- [seed_demo.py:897-946](server/scripts/seed_demo.py#L897-L946)
+- [sim_controller.py:895-1195](server/sim_controller.py#L895-L1195)
+- [mqtt_handler.py:327-342](server/app/mqtt_handler.py#L327-L342)
 
 **Section sources**
-- [types.ts:241-258](file://frontend/lib/types.ts#L241-L258)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [alertSound.ts:1-49](file://frontend/lib/alertSound.ts#L1-L49)
-- [page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
-- [alerts.py:1-134](file://server/app/api/endpoints/alerts.py#L1-L134)
+- [types.ts:241-258](frontend/lib/types.ts#L241-L258)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [alertSound.ts:1-49](frontend/lib/alertSound.ts#L1-L49)
+- [page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [alerts.py:1-134](server/app/api/endpoints/alerts.py#L1-L134)
 
 ## Performance Considerations
 - Frontend
@@ -435,9 +435,9 @@ MQTT["mqtt_handler.py"] --> AlertSvc
   - Validate alert creation parameters and severity mapping.
 
 **Section sources**
-- [page.tsx:98-104](file://frontend/app/head-nurse/alerts/page.tsx#L98-L104)
-- [alerts.py:38-40](file://server/app/api/endpoints/alerts.py#L38-L40)
-- [activity.py:47-71](file://server/app/services/activity.py#L47-L71)
+- [page.tsx:98-104](frontend/app/head-nurse/alerts/page.tsx#L98-L104)
+- [alerts.py:38-40](server/app/api/endpoints/alerts.py#L38-L40)
+- [activity.py:47-71](server/app/services/activity.py#L47-L71)
 
 ## Conclusion
 The Head Nurse Alerts Management system provides a robust, role-aware interface for triaging actionable alerts derived from telemetry and manual inputs. It supports comprehensive filtering, search, and inline actions, integrates with device telemetry for automatic alert generation, and offers pathways for manual creation and demo seeding. The backend enforces access control, maintains lifecycle state, and persists audit events for traceability.

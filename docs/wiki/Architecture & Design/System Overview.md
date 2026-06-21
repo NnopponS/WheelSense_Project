@@ -2,23 +2,23 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [README.md](file://README.md)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
-- [main.py](file://server/app/main.py)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [telemetry.py](file://server/app/api/endpoints/telemetry.py)
-- [telemetry.py](file://server/app/models/telemetry.py)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
-- [SensorManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp)
-- [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [layout.tsx](file://frontend/app/layout.tsx)
-- [login/page.tsx](file://frontend/app/login/page.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [routes.ts](file://frontend/lib/routes.ts)
-- [proxy.ts](file://frontend/proxy.ts)
-- [constants.ts](file://frontend/lib/constants.ts)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [README.md](README.md)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
+- [main.py](server/app/main.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [telemetry.py](server/app/api/endpoints/telemetry.py)
+- [telemetry.py](server/app/models/telemetry.py)
+- [NetworkManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [SensorManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp)
+- [main.cpp](firmware/Node_Tsimcam/src/main.cpp)
+- [layout.tsx](frontend/app/layout.tsx)
+- [login/page.tsx](frontend/app/login/page.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [routes.ts](frontend/lib/routes.ts)
+- [proxy.ts](frontend/proxy.ts)
+- [constants.ts](frontend/lib/constants.ts)
 </cite>
 
 ## Table of Contents
@@ -66,16 +66,16 @@ S_MCP --> |"MCP tools"| S_API
 ```
 
 **Diagram sources**
-- [main.py:68-87](file://server/app/main.py#L68-L87)
-- [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [main.cpp:532-552](file://firmware/Node_Tsimcam/src/main.cpp#L532-L552)
-- [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
+- [main.py:68-87](server/app/main.py#L68-L87)
+- [mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [main.cpp:532-552](firmware/Node_Tsimcam/src/main.cpp#L532-L552)
+- [layout.tsx:11-23](frontend/app/layout.tsx#L11-L23)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
 
 **Section sources**
-- [README.md:5-13](file://README.md#L5-L13)
-- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
+- [README.md:5-13](README.md#L5-L13)
+- [ARCHITECTURE.md:3-21](ARCHITECTURE.md#L3-L21)
 
 ## Core Components
 - Firmware telemetry contract and topics define what devices publish and subscribe, including wheelchair IMU/motion/battery and camera registration/status/photo payloads.
@@ -83,9 +83,9 @@ S_MCP --> |"MCP tools"| S_API
 - Frontend role-based dashboards render role-appropriate surfaces, enforce auth and role guards, and proxy API calls to the backend.
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md:5-68](file://firmware/TELEMETRY_CONTRACT.md#L5-L68)
-- [mqtt_handler.py:108-136](file://server/app/mqtt_handler.py#L108-L136)
-- [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
+- [TELEMETRY_CONTRACT.md:5-68](firmware/TELEMETRY_CONTRACT.md#L5-L68)
+- [mqtt_handler.py:108-136](server/app/mqtt_handler.py#L108-L136)
+- [layout.tsx:11-23](frontend/app/layout.tsx#L11-L23)
 
 ## Architecture Overview
 The three-layer runtime architecture enforces clear separation of responsibilities:
@@ -126,10 +126,10 @@ S_MCP --> |"Tool Access"| S_API
 ```
 
 **Diagram sources**
-- [TELEMETRY_CONTRACT.md:7-34](file://firmware/TELEMETRY_CONTRACT.md#L7-L34)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [main.py:68-87](file://server/app/main.py#L68-L87)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
+- [TELEMETRY_CONTRACT.md:7-34](firmware/TELEMETRY_CONTRACT.md#L7-L34)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [main.py:68-87](server/app/main.py#L68-L87)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
 
 ## Detailed Component Analysis
 
@@ -153,16 +153,16 @@ Srv-->>MQTT : Publish downstream topics (vitals/alerts/room)
 ```
 
 **Diagram sources**
-- [TELEMETRY_CONTRACT.md:7-68](file://firmware/TELEMETRY_CONTRACT.md#L7-L68)
-- [NetworkManager.cpp:117-127](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L117-L127)
-- [main.cpp:532-552](file://firmware/Node_Tsimcam/src/main.cpp#L532-L552)
-- [mqtt_handler.py:108-136](file://server/app/mqtt_handler.py#L108-L136)
+- [TELEMETRY_CONTRACT.md:7-68](firmware/TELEMETRY_CONTRACT.md#L7-L68)
+- [NetworkManager.cpp:117-127](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L117-L127)
+- [main.cpp:532-552](firmware/Node_Tsimcam/src/main.cpp#L532-L552)
+- [mqtt_handler.py:108-136](server/app/mqtt_handler.py#L108-L136)
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md:5-68](file://firmware/TELEMETRY_CONTRACT.md#L5-L68)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
-- [main.cpp:532-552](file://firmware/Node_Tsimcam/src/main.cpp#L532-L552)
+- [TELEMETRY_CONTRACT.md:5-68](firmware/TELEMETRY_CONTRACT.md#L5-L68)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [SensorManager.cpp:50-132](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
+- [main.cpp:532-552](firmware/Node_Tsimcam/src/main.cpp#L532-L552)
 
 ### Server: MQTT Ingestion, Enrichment, and Distribution
 - The server starts an MQTT listener that subscribes to device and camera topics. It parses incoming payloads, persists IMU, RSSI, and vitals, and triggers room prediction and fall detection logic.
@@ -188,13 +188,13 @@ Done --> End
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 **Section sources**
-- [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [telemetry.py:20-41](file://server/app/models/telemetry.py#L20-L41)
-- [telemetry.py:42-51](file://server/app/models/telemetry.py#L42-L51)
+- [mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [telemetry.py:20-41](server/app/models/telemetry.py#L20-L41)
+- [telemetry.py:42-51](server/app/models/telemetry.py#L42-L51)
 
 ### Frontend: Role-Based Dashboards and Authentication
 - The Next.js app is protected by cookie-based authentication. Role shells enforce access control and route users to role-specific dashboards.
@@ -219,21 +219,21 @@ FE-->>Browser : Render role dashboard
 ```
 
 **Diagram sources**
-- [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
-- [login/page.tsx:26-38](file://frontend/app/login/page.tsx#L26-L38)
-- [RoleSidebar.tsx:60-77](file://frontend/components/RoleSidebar.tsx#L60-L77)
-- [RoleShell.tsx:29-42](file://frontend/components/RoleShell.tsx#L29-L42)
-- [routes.ts:1-17](file://frontend/lib/routes.ts#L1-L17)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
-- [constants.ts:1-2](file://frontend/lib/constants.ts#L1-L2)
+- [layout.tsx:11-23](frontend/app/layout.tsx#L11-L23)
+- [login/page.tsx:26-38](frontend/app/login/page.tsx#L26-L38)
+- [RoleSidebar.tsx:60-77](frontend/components/RoleSidebar.tsx#L60-L77)
+- [RoleShell.tsx:29-42](frontend/components/RoleShell.tsx#L29-L42)
+- [routes.ts:1-17](frontend/lib/routes.ts#L1-L17)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
+- [constants.ts:1-2](frontend/lib/constants.ts#L1-L2)
 
 **Section sources**
-- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [login/page.tsx:26-38](file://frontend/app/login/page.tsx#L26-L38)
-- [RoleSidebar.tsx:60-77](file://frontend/components/RoleSidebar.tsx#L60-L77)
-- [RoleShell.tsx:29-42](file://frontend/components/RoleShell.tsx#L29-L42)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
-- [constants.ts:1-26](file://frontend/lib/constants.ts#L1-L26)
+- [ARCHITECTURE.md:140-183](ARCHITECTURE.md#L140-L183)
+- [login/page.tsx:26-38](frontend/app/login/page.tsx#L26-L38)
+- [RoleSidebar.tsx:60-77](frontend/components/RoleSidebar.tsx#L60-L77)
+- [RoleShell.tsx:29-42](frontend/components/RoleShell.tsx#L29-L42)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
+- [constants.ts:1-26](frontend/lib/constants.ts#L1-L26)
 
 ### Device Telemetry Collection Details
 - IMU and motion: The wheelchair firmware integrates gyroscope and accelerometer to compute distance, velocity, acceleration, and direction over sliding windows, then publishes a compact telemetry payload.
@@ -258,13 +258,13 @@ SensorManager --> NetworkManager : "uses for telemetry loop"
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [SensorManager.cpp:50-132](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 
 **Section sources**
-- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [TELEMETRY_CONTRACT.md:7-34](file://firmware/TELEMETRY_CONTRACT.md#L7-L34)
+- [SensorManager.cpp:50-132](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [TELEMETRY_CONTRACT.md:7-34](firmware/TELEMETRY_CONTRACT.md#L7-L34)
 
 ### MQTT Communication Patterns
 - Topics:
@@ -287,14 +287,14 @@ B --> I["WheelSense/room/{device}"]
 ```
 
 **Diagram sources**
-- [TELEMETRY_CONTRACT.md:7-68](file://firmware/TELEMETRY_CONTRACT.md#L7-L68)
-- [mqtt_handler.py:108-136](file://server/app/mqtt_handler.py#L108-L136)
-- [mqtt_handler.py:280-324](file://server/app/mqtt_handler.py#L280-L324)
+- [TELEMETRY_CONTRACT.md:7-68](firmware/TELEMETRY_CONTRACT.md#L7-L68)
+- [mqtt_handler.py:108-136](server/app/mqtt_handler.py#L108-L136)
+- [mqtt_handler.py:280-324](server/app/mqtt_handler.py#L280-L324)
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md:7-68](file://firmware/TELEMETRY_CONTRACT.md#L7-L68)
-- [mqtt_handler.py:108-136](file://server/app/mqtt_handler.py#L108-L136)
-- [mqtt_handler.py:280-324](file://server/app/mqtt_handler.py#L280-L324)
+- [TELEMETRY_CONTRACT.md:7-68](firmware/TELEMETRY_CONTRACT.md#L7-L68)
+- [mqtt_handler.py:108-136](server/app/mqtt_handler.py#L108-L136)
+- [mqtt_handler.py:280-324](server/app/mqtt_handler.py#L280-L324)
 
 ### Role-Based Dashboards
 - Role shells and sidebars enforce access control and route users to appropriate dashboards.
@@ -318,16 +318,16 @@ Patient --> Proxy
 ```
 
 **Diagram sources**
-- [login/page.tsx:26-38](file://frontend/app/login/page.tsx#L26-L38)
-- [RoleShell.tsx:29-42](file://frontend/components/RoleShell.tsx#L29-L42)
-- [RoleSidebar.tsx:60-77](file://frontend/components/RoleSidebar.tsx#L60-L77)
-- [routes.ts:1-17](file://frontend/lib/routes.ts#L1-L17)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
+- [login/page.tsx:26-38](frontend/app/login/page.tsx#L26-L38)
+- [RoleShell.tsx:29-42](frontend/components/RoleShell.tsx#L29-L42)
+- [RoleSidebar.tsx:60-77](frontend/components/RoleSidebar.tsx#L60-L77)
+- [routes.ts:1-17](frontend/lib/routes.ts#L1-L17)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
 
 **Section sources**
-- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
-- [routes.ts:1-17](file://frontend/lib/routes.ts#L1-L17)
+- [ARCHITECTURE.md:140-183](ARCHITECTURE.md#L140-L183)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
+- [routes.ts:1-17](frontend/lib/routes.ts#L1-L17)
 
 ## Dependency Analysis
 - Firmware depends on Wi-Fi and MQTT libraries to publish telemetry and subscribe to control/config topics.
@@ -345,14 +345,14 @@ FE --> |"Proxy"| SRV
 ```
 
 **Diagram sources**
-- [main.py:68-87](file://server/app/main.py#L68-L87)
-- [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
+- [main.py:68-87](server/app/main.py#L68-L87)
+- [mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
 
 **Section sources**
-- [main.py:68-87](file://server/app/main.py#L68-L87)
-- [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
+- [main.py:68-87](server/app/main.py#L68-L87)
+- [mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
 
 ## Performance Considerations
 - MQTT batching and chunked photo transport reduce bandwidth and improve reliability.
@@ -371,9 +371,9 @@ FE --> |"Proxy"| SRV
   - Validate proxy configuration and Authorization header injection.
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [mqtt_handler.py:126-136](file://server/app/mqtt_handler.py#L126-L136)
-- [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [mqtt_handler.py:126-136](server/app/mqtt_handler.py#L126-L136)
+- [proxy.ts:1-40](frontend/proxy.ts#L1-L40)
 
 ## Conclusion
 WheelSense’s three-layer architecture cleanly separates concerns: devices collect and publish telemetry, the server ingests, enriches, and distributes insights, and the frontend delivers role-aware dashboards. The MQTT contract, robust ingestion pipeline, and cookie-based role enforcement enable a scalable, secure, and maintainable platform for wheelchair monitoring and clinical workflows.

@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [config.py](file://server/app/config.py)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
-- [NetworkManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
-- [mosquitto.conf](file://server/mosquitto.conf)
-- [device_management.py](file://server/app/services/device_management.py)
-- [telemetry.py](file://server/app/models/telemetry.py)
-- [docker-compose.yml](file://server/docker-compose.yml)
-- [test_system_flows.py](file://server/tests/e2e/test_system_flows.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [config.py](server/app/config.py)
+- [NetworkManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [NetworkManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
+- [mosquitto.conf](server/mosquitto.conf)
+- [device_management.py](server/app/services/device_management.py)
+- [telemetry.py](server/app/models/telemetry.py)
+- [docker-compose.yml](server/docker-compose.yml)
+- [test_system_flows.py](server/tests/e2e/test_system_flows.py)
 </cite>
 
 ## Table of Contents
@@ -58,15 +58,15 @@ SRV --> MH
 ```
 
 **Diagram sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
-- [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mosquitto.conf:1-7](server/mosquitto.conf#L1-L7)
+- [device_management.py:127-200](server/app/services/device_management.py#L127-L200)
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mosquitto.conf:1-7](server/mosquitto.conf#L1-L7)
 
 ## Core Components
 - Firmware MQTT client (NetworkManager)
@@ -83,11 +83,11 @@ SRV --> MH
   - IMU telemetry, RSSI readings, room predictions, motion training data, photo records, and node status telemetry.
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
-- [telemetry.py:20-130](file://server/app/models/telemetry.py#L20-L130)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.h:8-63](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [device_management.py:127-200](server/app/services/device_management.py#L127-L200)
+- [telemetry.py:20-130](server/app/models/telemetry.py#L20-L130)
 
 ## Architecture Overview
 The integration follows an event-driven architecture:
@@ -122,11 +122,11 @@ Srv->>DB : Persist frame as photo record
 ```
 
 **Diagram sources**
-- [TELEMETRY_CONTRACT.md:5-68](file://firmware/TELEMETRY_CONTRACT.md#L5-L68)
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
+- [TELEMETRY_CONTRACT.md:5-68](firmware/TELEMETRY_CONTRACT.md#L5-L68)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
 
 ## Detailed Component Analysis
 
@@ -167,12 +167,12 @@ class NetworkManager {
 ```
 
 **Diagram sources**
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.h:8-63](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.h:8-63](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
 
 ### Server MQTT Listener and Message Pipeline
 Responsibilities:
@@ -218,16 +218,16 @@ PersistPhoto --> Done
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
 
 **Section sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
 
 ### Telemetry Data Processing and Real-Time Alert Generation
 - Telemetry ingestion:
@@ -255,10 +255,10 @@ Srv->>Pub : Publish "WheelSense/vitals/{patient_id}"
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 **Section sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 ### Device Status Updates and Camera Integration
 - Camera registration:
@@ -287,14 +287,14 @@ Wait --> Done
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
-- [mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
+- [mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
 
 **Section sources**
-- [mqtt_handler.py:590-667](file://server/app/mqtt_handler.py#L590-L667)
-- [mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
+- [mqtt_handler.py:590-667](server/app/mqtt_handler.py#L590-L667)
+- [mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
 
 ### Topic Routing and Payload Parsing Strategies
 - Topics subscribed by server:
@@ -318,9 +318,9 @@ Wait --> Done
   - Photo payloads include chunk indices and base64-encoded data for chunked transport.
 
 **Section sources**
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
-- [TELEMETRY_CONTRACT.md:5-68](file://firmware/TELEMETRY_CONTRACT.md#L5-L68)
-- [NetworkManager.cpp:115-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L115-L133)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
+- [TELEMETRY_CONTRACT.md:5-68](firmware/TELEMETRY_CONTRACT.md#L5-L68)
+- [NetworkManager.cpp:115-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L115-L133)
 
 ### MQTT Broker Configuration, Security, and Authentication
 - Broker configuration:
@@ -333,9 +333,9 @@ Wait --> Done
   - Consider restricting anonymous access and enabling persistence for reliability.
 
 **Section sources**
-- [mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
-- [config.py:23-37](file://server/app/config.py#L23-L37)
-- [NetworkManager.cpp:108-113](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L108-L113)
+- [mosquitto.conf:1-7](server/mosquitto.conf#L1-L7)
+- [config.py:23-37](server/app/config.py#L23-L37)
+- [NetworkManager.cpp:108-113](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L108-L113)
 
 ### Message Persistence, Retry Logic, and Error Recovery
 - Server:
@@ -348,9 +348,9 @@ Wait --> Done
   - On receiving control commands, acknowledges immediately and acts accordingly.
 
 **Section sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-- [NetworkManager.cpp:276-282](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [NetworkManager.cpp:276-282](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
 
 ### Integration with Device Firmware, Message Queuing, and Event-Driven Patterns
 - Firmware integrates Wi-Fi and MQTT clients, exposing a simple publish/subscribe interface.
@@ -358,8 +358,8 @@ Wait --> Done
 - Device management services encapsulate workspace-aware device operations, ensuring isolation and auditability.
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
-- [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
+- [NetworkManager.cpp:12-133](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [device_management.py:127-200](server/app/services/device_management.py#L127-L200)
 
 ### Practical Examples
 - Telemetry payload fields:
@@ -375,9 +375,9 @@ Wait --> Done
   - Device auto-registration and status snapshotting leverage service methods for workspace-scoped operations.
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md:5-68](file://firmware/TELEMETRY_CONTRACT.md#L5-L68)
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
-- [device_management.py:162-200](file://server/app/services/device_management.py#L162-L200)
+- [TELEMETRY_CONTRACT.md:5-68](firmware/TELEMETRY_CONTRACT.md#L5-L68)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
+- [device_management.py:162-200](server/app/services/device_management.py#L162-L200)
 
 ## Dependency Analysis
 - Firmware depends on:
@@ -405,14 +405,14 @@ BRK --> MH
 ```
 
 **Diagram sources**
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
-- [mqtt_handler.py:12-40](file://server/app/mqtt_handler.py#L12-L40)
-- [device_management.py:1-60](file://server/app/services/device_management.py#L1-L60)
+- [NetworkManager.h:8-63](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
+- [mqtt_handler.py:12-40](server/app/mqtt_handler.py#L12-L40)
+- [device_management.py:1-60](server/app/services/device_management.py#L1-L60)
 
 **Section sources**
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
-- [mqtt_handler.py:12-40](file://server/app/mqtt_handler.py#L12-L40)
-- [device_management.py:1-60](file://server/app/services/device_management.py#L1-L60)
+- [NetworkManager.h:8-63](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
+- [mqtt_handler.py:12-40](server/app/mqtt_handler.py#L12-L40)
+- [device_management.py:1-60](server/app/services/device_management.py#L1-L60)
 
 ## Performance Considerations
 - Use TLS and credentials to secure the broker in production.
@@ -439,10 +439,10 @@ Common issues and remedies:
   - Confirm room prediction inputs (RSSI vector) and model configuration.
 
 **Section sources**
-- [config.py:23-37](file://server/app/config.py#L23-L37)
-- [device_management.py:138-159](file://server/app/services/device_management.py#L138-L159)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [test_system_flows.py:48-86](file://server/tests/e2e/test_system_flows.py#L48-L86)
+- [config.py:23-37](server/app/config.py#L23-L37)
+- [device_management.py:138-159](server/app/services/device_management.py#L138-L159)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [test_system_flows.py:48-86](server/tests/e2e/test_system_flows.py#L48-L86)
 
 ## Conclusion
 The WheelSense MQTT integration provides a robust, event-driven foundation for device telemetry, camera operations, and real-time insights. By combining resilient firmware connectivity, asynchronous server processing, and workspace-aware device management, the system supports reliable operation across diverse deployments. Adopt TLS, strict credentials, and persistence to harden production setups, and leverage the documented topics and payloads for seamless integration.
@@ -458,10 +458,10 @@ The WheelSense MQTT integration provides a robust, event-driven foundation for d
   - mqtt_auto_register_ble_nodes, mqtt_merge_ble_camera_by_mac
 
 **Section sources**
-- [config.py:23-37](file://server/app/config.py#L23-L37)
+- [config.py:23-37](server/app/config.py#L23-L37)
 
 ### Appendix B: Docker Compose Context
 - The platform uses a composed setup that includes core and data stacks; ensure the broker and server are started together for end-to-end testing.
 
 **Section sources**
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)

@@ -2,13 +2,13 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/patient/services/page.tsx)
-- [service_requests.py](file://server/app/services/service_requests.py)
-- [WardTimelineEmbed.tsx](file://frontend/components/timeline/WardTimelineEmbed.tsx)
-- [timeline.py](file://server/app/api/endpoints/timeline.py)
-- [activity.py](file://server/app/services/activity.py)
-- [service_requests.py](file://server/app/models/service_requests.py)
-- [service_requests.py](file://server/app/schemas/service_requests.py)
+- [page.tsx](frontend/app/patient/services/page.tsx)
+- [service_requests.py](server/app/services/service_requests.py)
+- [WardTimelineEmbed.tsx](frontend/components/timeline/WardTimelineEmbed.tsx)
+- [timeline.py](server/app/api/endpoints/timeline.py)
+- [activity.py](server/app/services/activity.py)
+- [service_requests.py](server/app/models/service_requests.py)
+- [service_requests.py](server/app/schemas/service_requests.py)
 </cite>
 
 ## Table of Contents
@@ -52,20 +52,20 @@ SRV --> SCHEMAS
 ```
 
 **Diagram sources**
-- [page.tsx:1-271](file://frontend/app/patient/services/page.tsx#L1-L271)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [timeline.py:40-70](file://server/app/api/endpoints/timeline.py#L40-L70)
-- [service_requests.py:1-139](file://server/app/services/service_requests.py#L1-L139)
-- [activity.py:1-40](file://server/app/services/activity.py#L1-L40)
-- [service_requests.py](file://server/app/models/service_requests.py)
-- [service_requests.py](file://server/app/schemas/service_requests.py)
+- [page.tsx:1-271](frontend/app/patient/services/page.tsx#L1-L271)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [timeline.py:40-70](server/app/api/endpoints/timeline.py#L40-L70)
+- [service_requests.py:1-139](server/app/services/service_requests.py#L1-L139)
+- [activity.py:1-40](server/app/services/activity.py#L1-L40)
+- [service_requests.py](server/app/models/service_requests.py)
+- [service_requests.py](server/app/schemas/service_requests.py)
 
 **Section sources**
-- [page.tsx:1-271](file://frontend/app/patient/services/page.tsx#L1-L271)
-- [service_requests.py:1-139](file://server/app/services/service_requests.py#L1-L139)
-- [WardTimelineEmbed.tsx:1-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
-- [timeline.py:40-70](file://server/app/api/endpoints/timeline.py#L40-L70)
-- [activity.py:1-40](file://server/app/services/activity.py#L1-L40)
+- [page.tsx:1-271](frontend/app/patient/services/page.tsx#L1-L271)
+- [service_requests.py:1-139](server/app/services/service_requests.py#L1-L139)
+- [WardTimelineEmbed.tsx:1-225](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L225)
+- [timeline.py:40-70](server/app/api/endpoints/timeline.py#L40-L70)
+- [activity.py:1-40](server/app/services/activity.py#L1-L40)
 
 ## Core Components
 - Patient Services Page (frontend)
@@ -82,12 +82,12 @@ SRV --> SCHEMAS
   - Timeline endpoint lists timeline events for a patient or all patients in a workspace, respecting role-based access.
 
 **Section sources**
-- [page.tsx:17-53](file://frontend/app/patient/services/page.tsx#L17-L53)
-- [page.tsx:70-271](file://frontend/app/patient/services/page.tsx#L70-L271)
-- [service_requests.py:24-139](file://server/app/services/service_requests.py#L24-L139)
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
-- [timeline.py:46-70](file://server/app/api/endpoints/timeline.py#L46-L70)
-- [activity.py:19-40](file://server/app/services/activity.py#L19-L40)
+- [page.tsx:17-53](frontend/app/patient/services/page.tsx#L17-L53)
+- [page.tsx:70-271](frontend/app/patient/services/page.tsx#L70-L271)
+- [service_requests.py:24-139](server/app/services/service_requests.py#L24-L139)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [timeline.py:46-70](server/app/api/endpoints/timeline.py#L46-L70)
+- [activity.py:19-40](server/app/services/activity.py#L19-L40)
 
 ## Architecture Overview
 The system follows a clean separation of concerns:
@@ -111,13 +111,13 @@ P->>P : "Invalidate queries and refresh history"
 ```
 
 **Diagram sources**
-- [page.tsx:87-101](file://frontend/app/patient/services/page.tsx#L87-L101)
-- [service_requests.py:56-88](file://server/app/services/service_requests.py#L56-L88)
-- [service_requests.py](file://server/app/models/service_requests.py)
+- [page.tsx:87-101](frontend/app/patient/services/page.tsx#L87-L101)
+- [service_requests.py:56-88](server/app/services/service_requests.py#L56-L88)
+- [service_requests.py](server/app/models/service_requests.py)
 
 **Section sources**
-- [page.tsx:80-106](file://frontend/app/patient/services/page.tsx#L80-L106)
-- [service_requests.py:56-88](file://server/app/services/service_requests.py#L56-L88)
+- [page.tsx:80-106](frontend/app/patient/services/page.tsx#L80-L106)
+- [service_requests.py:56-88](server/app/services/service_requests.py#L56-L88)
 
 ## Detailed Component Analysis
 
@@ -149,13 +149,13 @@ ShowError --> End
 ```
 
 **Diagram sources**
-- [page.tsx:17-53](file://frontend/app/patient/services/page.tsx#L17-L53)
-- [page.tsx:87-101](file://frontend/app/patient/services/page.tsx#L87-L101)
-- [page.tsx:103-106](file://frontend/app/patient/services/page.tsx#L103-L106)
+- [page.tsx:17-53](frontend/app/patient/services/page.tsx#L17-L53)
+- [page.tsx:87-101](frontend/app/patient/services/page.tsx#L87-L101)
+- [page.tsx:103-106](frontend/app/patient/services/page.tsx#L103-L106)
 
 **Section sources**
-- [page.tsx:17-53](file://frontend/app/patient/services/page.tsx#L17-L53)
-- [page.tsx:70-271](file://frontend/app/patient/services/page.tsx#L70-L271)
+- [page.tsx:17-53](frontend/app/patient/services/page.tsx#L17-L53)
+- [page.tsx:70-271](frontend/app/patient/services/page.tsx#L70-L271)
 
 ### Service Request Domain
 Responsibilities:
@@ -187,11 +187,11 @@ ServiceRequestService --> ServiceRequest : "creates/updates"
 ```
 
 **Diagram sources**
-- [service_requests.py:24-139](file://server/app/services/service_requests.py#L24-L139)
-- [service_requests.py](file://server/app/models/service_requests.py)
+- [service_requests.py:24-139](server/app/services/service_requests.py#L24-L139)
+- [service_requests.py](server/app/models/service_requests.py)
 
 **Section sources**
-- [service_requests.py:24-139](file://server/app/services/service_requests.py#L24-L139)
+- [service_requests.py:24-139](server/app/services/service_requests.py#L24-L139)
 
 ### Timeline Integration
 Responsibilities:
@@ -212,14 +212,14 @@ W->>W : "Build Calendar/Agenda Views"
 ```
 
 **Diagram sources**
-- [WardTimelineEmbed.tsx:37-41](file://frontend/components/timeline/WardTimelineEmbed.tsx#L37-L41)
-- [timeline.py:46-63](file://server/app/api/endpoints/timeline.py#L46-L63)
-- [activity.py:19-33](file://server/app/services/activity.py#L19-L33)
+- [WardTimelineEmbed.tsx:37-41](frontend/components/timeline/WardTimelineEmbed.tsx#L37-L41)
+- [timeline.py:46-63](server/app/api/endpoints/timeline.py#L46-L63)
+- [activity.py:19-33](server/app/services/activity.py#L19-L33)
 
 **Section sources**
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
-- [timeline.py:46-70](file://server/app/api/endpoints/timeline.py#L46-L70)
-- [activity.py:19-40](file://server/app/services/activity.py#L19-L40)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [timeline.py:46-70](server/app/api/endpoints/timeline.py#L46-L70)
+- [activity.py:19-40](server/app/services/activity.py#L19-L40)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -242,19 +242,19 @@ TAPI --> ACTS["Activity Timeline Service<br/>activity.py"]
 ```
 
 **Diagram sources**
-- [page.tsx:1-16](file://frontend/app/patient/services/page.tsx#L1-L16)
-- [service_requests.py:1-13](file://server/app/services/service_requests.py#L1-L13)
-- [service_requests.py](file://server/app/models/service_requests.py)
-- [service_requests.py](file://server/app/schemas/service_requests.py)
-- [WardTimelineEmbed.tsx:1-24](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L24)
-- [timeline.py:46-70](file://server/app/api/endpoints/timeline.py#L46-L70)
-- [activity.py:1-14](file://server/app/services/activity.py#L1-L14)
+- [page.tsx:1-16](frontend/app/patient/services/page.tsx#L1-L16)
+- [service_requests.py:1-13](server/app/services/service_requests.py#L1-L13)
+- [service_requests.py](server/app/models/service_requests.py)
+- [service_requests.py](server/app/schemas/service_requests.py)
+- [WardTimelineEmbed.tsx:1-24](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L24)
+- [timeline.py:46-70](server/app/api/endpoints/timeline.py#L46-L70)
+- [activity.py:1-14](server/app/services/activity.py#L1-L14)
 
 **Section sources**
-- [page.tsx:1-16](file://frontend/app/patient/services/page.tsx#L1-L16)
-- [service_requests.py:1-13](file://server/app/services/service_requests.py#L1-L13)
-- [WardTimelineEmbed.tsx:1-24](file://frontend/components/timeline/WardTimelineEmbed.tsx#L1-L24)
-- [timeline.py:46-70](file://server/app/api/endpoints/timeline.py#L46-L70)
+- [page.tsx:1-16](frontend/app/patient/services/page.tsx#L1-L16)
+- [service_requests.py:1-13](server/app/services/service_requests.py#L1-L13)
+- [WardTimelineEmbed.tsx:1-24](frontend/components/timeline/WardTimelineEmbed.tsx#L1-L24)
+- [timeline.py:46-70](server/app/api/endpoints/timeline.py#L46-L70)
 
 ## Performance Considerations
 - Frontend polling intervals:
@@ -270,8 +270,8 @@ Recommendations:
 - Optimize timeline queries with indexed fields for patient_id and timestamp.
 
 **Section sources**
-- [page.tsx:80-85](file://frontend/app/patient/services/page.tsx#L80-L85)
-- [timeline.py:48-59](file://server/app/api/endpoints/timeline.py#L48-L59)
+- [page.tsx:80-85](frontend/app/patient/services/page.tsx#L80-L85)
+- [timeline.py:48-59](server/app/api/endpoints/timeline.py#L48-L59)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -293,11 +293,11 @@ Common issues and resolutions:
   - Resolution: Verify role permissions and ensure activity events are being generated.
 
 **Section sources**
-- [page.tsx:89-91](file://frontend/app/patient/services/page.tsx#L89-L91)
-- [page.tsx:108-113](file://frontend/app/patient/services/page.tsx#L108-L113)
-- [service_requests.py:63-72](file://server/app/services/service_requests.py#L63-L72)
-- [service_requests.py:98-99](file://server/app/services/service_requests.py#L98-L99)
-- [timeline.py:40-41](file://server/app/api/endpoints/timeline.py#L40-L41)
+- [page.tsx:89-91](frontend/app/patient/services/page.tsx#L89-L91)
+- [page.tsx:108-113](frontend/app/patient/services/page.tsx#L108-L113)
+- [service_requests.py:63-72](server/app/services/service_requests.py#L63-L72)
+- [service_requests.py:98-99](server/app/services/service_requests.py#L98-L99)
+- [timeline.py:40-41](server/app/api/endpoints/timeline.py#L40-L41)
 
 ## Conclusion
 The Patient Care Services interface provides a streamlined way for patients to request essential services and track outcomes. The backend enforces role-based access, validates inputs, and persists requests with clear status transitions. The ward timeline embedding offers real-time visibility into activity, supporting oversight and coordination. Extending the system to include additional service categories (linen service, special equipment requests) and integrating staff scheduling and resource allocation would further enhance timeliness and transparency.

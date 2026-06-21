@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ObserverTaskListPanel.tsx](file://frontend/components/workflow/ObserverTaskListPanel.tsx)
-- [WorkflowTasksHubContent.tsx](file://frontend/components/workflow/WorkflowTasksHubContent.tsx)
-- [WorkflowJobsPanel.tsx](file://frontend/components/workflow/WorkflowJobsPanel.tsx)
-- [tasks.py](file://server/app/services/tasks.py)
-- [task_management.py](file://server/app/models/task_management.py)
-- [task_management.py](file://server/app/schemas/task_management.py)
-- [tasks.py](file://server/app/api/endpoints/tasks.py)
-- [tasks.py](file://server/app/models/tasks.py)
-- [tasks.py](file://server/app/schemas/tasks.py)
-- [test_workflow_domains.py](file://server/tests/test_workflow_domains.py)
-- [test_role_workflow_chat.py](file://server/tests/e2e/test_role_workflow_chat.py)
+- [ObserverTaskListPanel.tsx](frontend/components/workflow/ObserverTaskListPanel.tsx)
+- [WorkflowTasksHubContent.tsx](frontend/components/workflow/WorkflowTasksHubContent.tsx)
+- [WorkflowJobsPanel.tsx](frontend/components/workflow/WorkflowJobsPanel.tsx)
+- [tasks.py](server/app/services/tasks.py)
+- [task_management.py](server/app/models/task_management.py)
+- [task_management.py](server/app/schemas/task_management.py)
+- [tasks.py](server/app/api/endpoints/tasks.py)
+- [tasks.py](server/app/models/tasks.py)
+- [tasks.py](server/app/schemas/tasks.py)
+- [test_workflow_domains.py](server/tests/test_workflow_domains.py)
+- [test_role_workflow_chat.py](server/tests/e2e/test_role_workflow_chat.py)
 </cite>
 
 ## Table of Contents
@@ -65,22 +65,22 @@ SVC --> SCHEMAS
 ```
 
 **Diagram sources**
-- [ObserverTaskListPanel.tsx:1-296](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L1-L296)
-- [WorkflowTasksHubContent.tsx:1-569](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
-- [WorkflowJobsPanel.tsx:1-487](file://frontend/components/workflow/WorkflowJobsPanel.tsx#L1-L487)
-- [tasks.py:1-266](file://server/app/api/endpoints/tasks.py#L1-L266)
-- [tasks.py:1-690](file://server/app/services/tasks.py#L1-L690)
-- [tasks.py:1-123](file://server/app/models/tasks.py#L1-L123)
-- [task_management.py:1-129](file://server/app/models/task_management.py#L1-L129)
+- [ObserverTaskListPanel.tsx:1-296](frontend/components/workflow/ObserverTaskListPanel.tsx#L1-L296)
+- [WorkflowTasksHubContent.tsx:1-569](frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
+- [WorkflowJobsPanel.tsx:1-487](frontend/components/workflow/WorkflowJobsPanel.tsx#L1-L487)
+- [tasks.py:1-266](server/app/api/endpoints/tasks.py#L1-L266)
+- [tasks.py:1-690](server/app/services/tasks.py#L1-L690)
+- [tasks.py:1-123](server/app/models/tasks.py#L1-L123)
+- [task_management.py:1-129](server/app/models/task_management.py#L1-L129)
 
 **Section sources**
-- [ObserverTaskListPanel.tsx:1-296](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L1-L296)
-- [WorkflowTasksHubContent.tsx:1-569](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
-- [WorkflowJobsPanel.tsx:1-487](file://frontend/components/workflow/WorkflowJobsPanel.tsx#L1-L487)
-- [tasks.py:1-266](file://server/app/api/endpoints/tasks.py#L1-L266)
-- [tasks.py:1-690](file://server/app/services/tasks.py#L1-L690)
-- [tasks.py:1-123](file://server/app/models/tasks.py#L1-L123)
-- [task_management.py:1-129](file://server/app/models/task_management.py#L1-L129)
+- [ObserverTaskListPanel.tsx:1-296](frontend/components/workflow/ObserverTaskListPanel.tsx#L1-L296)
+- [WorkflowTasksHubContent.tsx:1-569](frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
+- [WorkflowJobsPanel.tsx:1-487](frontend/components/workflow/WorkflowJobsPanel.tsx#L1-L487)
+- [tasks.py:1-266](server/app/api/endpoints/tasks.py#L1-L266)
+- [tasks.py:1-690](server/app/services/tasks.py#L1-L690)
+- [tasks.py:1-123](server/app/models/tasks.py#L1-L123)
+- [task_management.py:1-129](server/app/models/task_management.py#L1-L129)
 
 ## Core Components
 - ObserverTaskListPanel
@@ -103,11 +103,11 @@ SVC --> SCHEMAS
   - Emits audit trail events and activity timeline entries upon task/report updates.
 
 **Section sources**
-- [ObserverTaskListPanel.tsx:19-148](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L19-L148)
-- [WorkflowTasksHubContent.tsx:115-569](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L115-L569)
-- [WorkflowJobsPanel.tsx:67-487](file://frontend/components/workflow/WorkflowJobsPanel.tsx#L67-L487)
-- [tasks.py:44-690](file://server/app/services/tasks.py#L44-L690)
-- [tasks.py:45-266](file://server/app/api/endpoints/tasks.py#L45-L266)
+- [ObserverTaskListPanel.tsx:19-148](frontend/components/workflow/ObserverTaskListPanel.tsx#L19-L148)
+- [WorkflowTasksHubContent.tsx:115-569](frontend/components/workflow/WorkflowTasksHubContent.tsx#L115-L569)
+- [WorkflowJobsPanel.tsx:67-487](frontend/components/workflow/WorkflowJobsPanel.tsx#L67-L487)
+- [tasks.py:44-690](server/app/services/tasks.py#L44-L690)
+- [tasks.py:45-266](server/app/api/endpoints/tasks.py#L45-L266)
 
 ## Architecture Overview
 The observer workflow follows a clear separation of concerns:
@@ -152,11 +152,11 @@ Hub-->>Obs : "UI refresh"
 ```
 
 **Diagram sources**
-- [WorkflowTasksHubContent.tsx:132-317](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L132-L317)
-- [ObserverTaskListPanel.tsx:33-148](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L33-L148)
-- [tasks.py:147-171](file://server/app/api/endpoints/tasks.py#L147-L171)
-- [tasks.py:209-259](file://server/app/services/tasks.py#L209-L259)
-- [tasks.py:22-81](file://server/app/models/tasks.py#L22-L81)
+- [WorkflowTasksHubContent.tsx:132-317](frontend/components/workflow/WorkflowTasksHubContent.tsx#L132-L317)
+- [ObserverTaskListPanel.tsx:33-148](frontend/components/workflow/ObserverTaskListPanel.tsx#L33-L148)
+- [tasks.py:147-171](server/app/api/endpoints/tasks.py#L147-L171)
+- [tasks.py:209-259](server/app/services/tasks.py#L209-L259)
+- [tasks.py:22-81](server/app/models/tasks.py#L22-L81)
 
 ## Detailed Component Analysis
 
@@ -191,10 +191,10 @@ Compact --> End(["Done"])
 ```
 
 **Diagram sources**
-- [ObserverTaskListPanel.tsx:19-148](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L19-L148)
+- [ObserverTaskListPanel.tsx:19-148](frontend/components/workflow/ObserverTaskListPanel.tsx#L19-L148)
 
 **Section sources**
-- [ObserverTaskListPanel.tsx:19-148](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L19-L148)
+- [ObserverTaskListPanel.tsx:19-148](frontend/components/workflow/ObserverTaskListPanel.tsx#L19-L148)
 
 ### Task Workflows and Delegation Procedures
 - Creation and assignment
@@ -221,15 +221,15 @@ Completed --> [*]
 ```
 
 **Diagram sources**
-- [tasks.py:22-81](file://server/app/models/tasks.py#L22-L81)
-- [tasks.py:59-91](file://server/app/schemas/tasks.py#L59-L91)
-- [tasks.py:209-259](file://server/app/services/tasks.py#L209-L259)
+- [tasks.py:22-81](server/app/models/tasks.py#L22-L81)
+- [tasks.py:59-91](server/app/schemas/tasks.py#L59-L91)
+- [tasks.py:209-259](server/app/services/tasks.py#L209-L259)
 
 **Section sources**
-- [tasks.py:128-216](file://server/app/api/endpoints/tasks.py#L128-L216)
-- [tasks.py:123-208](file://server/app/services/tasks.py#L123-L208)
-- [tasks.py:22-81](file://server/app/models/tasks.py#L22-L81)
-- [tasks.py:44-91](file://server/app/schemas/tasks.py#L44-L91)
+- [tasks.py:128-216](server/app/api/endpoints/tasks.py#L128-L216)
+- [tasks.py:123-208](server/app/services/tasks.py#L123-L208)
+- [tasks.py:22-81](server/app/models/tasks.py#L22-L81)
+- [tasks.py:44-91](server/app/schemas/tasks.py#L44-L91)
 
 ### Progress Monitoring and Kanban Integration
 - Kanban board
@@ -260,13 +260,13 @@ Hub->>Hub : "Invalidate queries"
 ```
 
 **Diagram sources**
-- [WorkflowTasksHubContent.tsx:468-480](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L468-L480)
-- [tasks.py:147-171](file://server/app/api/endpoints/tasks.py#L147-L171)
-- [tasks.py:209-259](file://server/app/services/tasks.py#L209-L259)
+- [WorkflowTasksHubContent.tsx:468-480](frontend/components/workflow/WorkflowTasksHubContent.tsx#L468-L480)
+- [tasks.py:147-171](server/app/api/endpoints/tasks.py#L147-L171)
+- [tasks.py:209-259](server/app/services/tasks.py#L209-L259)
 
 **Section sources**
-- [WorkflowTasksHubContent.tsx:468-556](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L468-L556)
-- [tasks.py:81-99](file://server/app/api/endpoints/tasks.py#L81-L99)
+- [WorkflowTasksHubContent.tsx:468-556](frontend/components/workflow/WorkflowTasksHubContent.tsx#L468-L556)
+- [tasks.py:81-99](server/app/api/endpoints/tasks.py#L81-L99)
 
 ### Integration with Care Delivery Systems
 - Workflow jobs
@@ -285,12 +285,12 @@ Reports --> Timeline["Activity Timeline"]
 ```
 
 **Diagram sources**
-- [WorkflowJobsPanel.tsx:118-172](file://frontend/components/workflow/WorkflowJobsPanel.tsx#L118-L172)
-- [tasks.py:357-396](file://server/app/services/tasks.py#L357-L396)
+- [WorkflowJobsPanel.tsx:118-172](frontend/components/workflow/WorkflowJobsPanel.tsx#L118-L172)
+- [tasks.py:357-396](server/app/services/tasks.py#L357-L396)
 
 **Section sources**
-- [WorkflowJobsPanel.tsx:118-172](file://frontend/components/workflow/WorkflowJobsPanel.tsx#L118-L172)
-- [tasks.py:357-396](file://server/app/services/tasks.py#L357-L396)
+- [WorkflowJobsPanel.tsx:118-172](frontend/components/workflow/WorkflowJobsPanel.tsx#L118-L172)
+- [tasks.py:357-396](server/app/services/tasks.py#L357-L396)
 
 ## Dependency Analysis
 - Frontend-to-backend dependencies
@@ -313,19 +313,19 @@ SVC --> SCHEMAS["Schemas (tasks.py, task_management.py)"]
 ```
 
 **Diagram sources**
-- [ObserverTaskListPanel.tsx:1-296](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L1-L296)
-- [WorkflowTasksHubContent.tsx:1-569](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
-- [WorkflowJobsPanel.tsx:1-487](file://frontend/components/workflow/WorkflowJobsPanel.tsx#L1-L487)
-- [tasks.py:1-266](file://server/app/api/endpoints/tasks.py#L1-L266)
-- [tasks.py:1-690](file://server/app/services/tasks.py#L1-L690)
-- [tasks.py:1-123](file://server/app/models/tasks.py#L1-L123)
-- [task_management.py:1-129](file://server/app/models/task_management.py#L1-L129)
+- [ObserverTaskListPanel.tsx:1-296](frontend/components/workflow/ObserverTaskListPanel.tsx#L1-L296)
+- [WorkflowTasksHubContent.tsx:1-569](frontend/components/workflow/WorkflowTasksHubContent.tsx#L1-L569)
+- [WorkflowJobsPanel.tsx:1-487](frontend/components/workflow/WorkflowJobsPanel.tsx#L1-L487)
+- [tasks.py:1-266](server/app/api/endpoints/tasks.py#L1-L266)
+- [tasks.py:1-690](server/app/services/tasks.py#L1-L690)
+- [tasks.py:1-123](server/app/models/tasks.py#L1-L123)
+- [task_management.py:1-129](server/app/models/task_management.py#L1-L129)
 
 **Section sources**
-- [tasks.py:1-266](file://server/app/api/endpoints/tasks.py#L1-L266)
-- [tasks.py:1-690](file://server/app/services/tasks.py#L1-L690)
-- [tasks.py:1-123](file://server/app/models/tasks.py#L1-L123)
-- [task_management.py:1-129](file://server/app/models/task_management.py#L1-L129)
+- [tasks.py:1-266](server/app/api/endpoints/tasks.py#L1-L266)
+- [tasks.py:1-690](server/app/services/tasks.py#L1-L690)
+- [tasks.py:1-123](server/app/models/tasks.py#L1-L123)
+- [task_management.py:1-129](server/app/models/task_management.py#L1-L129)
 
 ## Performance Considerations
 - Query limits and pagination
@@ -349,9 +349,9 @@ SVC --> SCHEMAS["Schemas (tasks.py, task_management.py)"]
   - Submitting a report validates required fields against the task’s report template; extra fields are rejected.
 
 **Section sources**
-- [test_workflow_domains.py:395-449](file://server/tests/test_workflow_domains.py#L395-L449)
-- [tasks.py:128-171](file://server/app/api/endpoints/tasks.py#L128-L171)
-- [tasks.py:296-396](file://server/app/services/tasks.py#L296-L396)
+- [test_workflow_domains.py:395-449](server/tests/test_workflow_domains.py#L395-L449)
+- [tasks.py:128-171](server/app/api/endpoints/tasks.py#L128-L171)
+- [tasks.py:296-396](server/app/services/tasks.py#L296-L396)
 
 ## Conclusion
 The Observer Task Management & Workflow system provides a cohesive, role-scoped solution for task assignment, execution, and completion. The ObserverTaskListPanel offers a streamlined view tailored to observer needs, while WorkflowTasksHubContent and WorkflowJobsPanel integrate with broader workflow domains. Backend services enforce visibility and access controls, maintain audit trails, and support structured reporting and routine resets.
@@ -369,14 +369,14 @@ The Observer Task Management & Workflow system provides a cohesive, role-scoped 
   - Procedure: Supervisor accesses the reset endpoint with the target shift date; the system resets eligible tasks to pending.
 
 **Section sources**
-- [WorkflowTasksHubContent.tsx:295-317](file://frontend/components/workflow/WorkflowTasksHubContent.tsx#L295-L317)
-- [WorkflowJobsPanel.tsx:118-172](file://frontend/components/workflow/WorkflowJobsPanel.tsx#L118-L172)
-- [tasks.py:246-265](file://server/app/api/endpoints/tasks.py#L246-L265)
+- [WorkflowTasksHubContent.tsx:295-317](frontend/components/workflow/WorkflowTasksHubContent.tsx#L295-L317)
+- [WorkflowJobsPanel.tsx:118-172](frontend/components/workflow/WorkflowJobsPanel.tsx#L118-L172)
+- [tasks.py:246-265](server/app/api/endpoints/tasks.py#L246-L265)
 
 ### Quality Assurance and Testing
 - End-to-end tests validate observer visibility and task access constraints.
 - Tests cover directive acknowledgment and message routing for workflow roles.
 
 **Section sources**
-- [test_role_workflow_chat.py:46-89](file://server/tests/e2e/test_role_workflow_chat.py#L46-L89)
-- [test_workflow_domains.py:395-449](file://server/tests/test_workflow_domains.py#L395-L449)
+- [test_role_workflow_chat.py:46-89](server/tests/e2e/test_role_workflow_chat.py#L46-L89)
+- [test_workflow_domains.py:395-449](server/tests/test_workflow_domains.py#L395-L449)

@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [analytics.py](file://server/app/services/analytics.py)
-- [analytics.py](file://server/app/api/endpoints/analytics.py)
-- [analytics.py](file://server/app/schemas/analytics.py)
-- [activity.py](file://server/app/models/activity.py)
-- [vitals.py](file://server/app/models/vitals.py)
-- [patients.py](file://server/app/models/patients.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [test_analytics.py](file://server/tests/test_analytics.py)
-- [server.py](file://server/app/mcp/server.py)
-- [openapi.generated.json](file://server/openapi.generated.json)
+- [analytics.py](server/app/services/analytics.py)
+- [analytics.py](server/app/api/endpoints/analytics.py)
+- [analytics.py](server/app/schemas/analytics.py)
+- [activity.py](server/app/models/activity.py)
+- [vitals.py](server/app/models/vitals.py)
+- [patients.py](server/app/models/patients.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [test_analytics.py](server/tests/test_analytics.py)
+- [server.py](server/app/mcp/server.py)
+- [openapi.generated.json](server/openapi.generated.json)
 </cite>
 
 ## Table of Contents
@@ -60,16 +60,16 @@ S --> P
 ```
 
 **Diagram sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:16-87](file://server/app/services/analytics.py#L16-L87)
-- [activity.py:49-89](file://server/app/models/activity.py#L49-L89)
-- [vitals.py:24-56](file://server/app/models/vitals.py#L24-L56)
-- [patients.py:24-77](file://server/app/models/patients.py#L24-L77)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:16-87](server/app/services/analytics.py#L16-L87)
+- [activity.py:49-89](server/app/models/activity.py#L49-L89)
+- [vitals.py:24-56](server/app/models/vitals.py#L24-L56)
+- [patients.py:24-77](server/app/models/patients.py#L24-L77)
 
 **Section sources**
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [analytics.py:1-25](file://server/app/schemas/analytics.py#L1-L25)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [analytics.py:1-25](server/app/schemas/analytics.py#L1-L25)
 
 ## Core Components
 - AnalyticsService: Static methods compute alert summaries, vitals averages, and ward summaries using SQLAlchemy async ORM.
@@ -83,9 +83,9 @@ Key responsibilities:
 - Ward summary: total patients and active alerts for a workspace.
 
 **Section sources**
-- [analytics.py:16-87](file://server/app/services/analytics.py#L16-L87)
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:16-87](server/app/services/analytics.py#L16-L87)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
 
 ## Architecture Overview
 The analytics pipeline follows a clean service-layer architecture:
@@ -113,14 +113,14 @@ API-->>Client : 200 OK JSON
 ```
 
 **Diagram sources**
-- [analytics.py:40-47](file://server/app/api/endpoints/analytics.py#L40-L47)
-- [dependencies.py:139-150](file://server/app/api/dependencies.py#L139-L150)
-- [analytics.py:69-87](file://server/app/services/analytics.py#L69-L87)
+- [analytics.py:40-47](server/app/api/endpoints/analytics.py#L40-L47)
+- [dependencies.py:139-150](server/app/api/dependencies.py#L139-L150)
+- [analytics.py:69-87](server/app/services/analytics.py#L69-L87)
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [dependencies.py:139-150](file://server/app/api/dependencies.py#L139-L150)
-- [analytics.py:69-87](file://server/app/services/analytics.py#L69-L87)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [dependencies.py:139-150](server/app/api/dependencies.py#L139-L150)
+- [analytics.py:69-87](server/app/services/analytics.py#L69-L87)
 
 ## Detailed Component Analysis
 
@@ -145,12 +145,12 @@ Build --> End(["Exit"])
 ```
 
 **Diagram sources**
-- [analytics.py:18-42](file://server/app/services/analytics.py#L18-L42)
-- [activity.py:54-89](file://server/app/models/activity.py#L54-L89)
+- [analytics.py:18-42](server/app/services/analytics.py#L18-L42)
+- [activity.py:54-89](server/app/models/activity.py#L54-L89)
 
 **Section sources**
-- [analytics.py:18-42](file://server/app/services/analytics.py#L18-L42)
-- [activity.py:54-89](file://server/app/models/activity.py#L54-L89)
+- [analytics.py:18-42](server/app/services/analytics.py#L18-L42)
+- [activity.py:54-89](server/app/models/activity.py#L54-L89)
 
 #### Vitals Averages Computation
 Purpose:
@@ -172,12 +172,12 @@ Map --> EndAvg(["Exit"])
 ```
 
 **Diagram sources**
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
-- [vitals.py:29-56](file://server/app/models/vitals.py#L29-L56)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
+- [vitals.py:29-56](server/app/models/vitals.py#L29-L56)
 
 **Section sources**
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
-- [vitals.py:29-56](file://server/app/models/vitals.py#L29-L56)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
+- [vitals.py:29-56](server/app/models/vitals.py#L29-L56)
 
 #### Ward Summaries Generation
 Purpose:
@@ -197,13 +197,13 @@ BuildWS --> EndWard(["Exit"])
 ```
 
 **Diagram sources**
-- [analytics.py:69-87](file://server/app/services/analytics.py#L69-L87)
-- [patients.py:29-77](file://server/app/models/patients.py#L29-L77)
-- [activity.py:54-89](file://server/app/models/activity.py#L54-L89)
+- [analytics.py:69-87](server/app/services/analytics.py#L69-L87)
+- [patients.py:29-77](server/app/models/patients.py#L29-L77)
+- [activity.py:54-89](server/app/models/activity.py#L54-L89)
 
 **Section sources**
-- [analytics.py:69-87](file://server/app/services/analytics.py#L69-L87)
-- [patients.py:29-77](file://server/app/models/patients.py#L29-L77)
+- [analytics.py:69-87](server/app/services/analytics.py#L69-L87)
+- [patients.py:29-77](server/app/models/patients.py#L29-L77)
 
 ### Schema Models
 
@@ -221,8 +221,8 @@ Usage context:
 - Returned by get_alert_summary.
 
 **Section sources**
-- [analytics.py:8-13](file://server/app/schemas/analytics.py#L8-L13)
-- [analytics.py:38-42](file://server/app/services/analytics.py#L38-L42)
+- [analytics.py:8-13](server/app/schemas/analytics.py#L8-L13)
+- [analytics.py:38-42](server/app/services/analytics.py#L38-L42)
 
 #### VitalsAverageOut
 - heart_rate_bpm_avg: float or null
@@ -236,8 +236,8 @@ Usage context:
 - Returned by get_vitals_averages.
 
 **Section sources**
-- [analytics.py:14-19](file://server/app/schemas/analytics.py#L14-L19)
-- [analytics.py:63-67](file://server/app/services/analytics.py#L63-L67)
+- [analytics.py:14-19](server/app/schemas/analytics.py#L14-L19)
+- [analytics.py:63-67](server/app/services/analytics.py#L63-L67)
 
 #### WardSummaryOut
 - total_patients: integer
@@ -251,8 +251,8 @@ Usage context:
 - Returned by get_ward_summary.
 
 **Section sources**
-- [analytics.py:20-25](file://server/app/schemas/analytics.py#L20-L25)
-- [analytics.py:83-87](file://server/app/services/analytics.py#L83-L87)
+- [analytics.py:20-25](server/app/schemas/analytics.py#L20-L25)
+- [analytics.py:83-87](server/app/services/analytics.py#L83-L87)
 
 ### API Endpoints and Access Control
 Endpoints:
@@ -266,9 +266,9 @@ Access control:
 - Workspace scoping via get_current_user_workspace.
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [dependencies.py:159-169](file://server/app/api/dependencies.py#L159-L169)
-- [dependencies.py:139-150](file://server/app/api/dependencies.py#L139-L150)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [dependencies.py:159-169](server/app/api/dependencies.py#L159-L169)
+- [dependencies.py:139-150](server/app/api/dependencies.py#L139-L150)
 
 ### Real-Time Data Processing Patterns
 - Time-windowed vitals: the service computes a sliding window from UTC now minus hours.
@@ -276,8 +276,8 @@ Access control:
 - Distinct alert counts: the ward summary uses COUNT(DISTINCT alert_id) to avoid duplicates.
 
 **Section sources**
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
-- [analytics.py:76-81](file://server/app/services/analytics.py#L76-L81)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
+- [analytics.py:76-81](server/app/services/analytics.py#L76-L81)
 
 ### Multi-Tenant Analytics and Workspace Scoping
 - Endpoints depend on get_current_user_workspace to derive ws_id.
@@ -285,11 +285,11 @@ Access control:
 - MCP tool get_workspace_analytics reuses AnalyticsService with actor workspace context.
 
 **Section sources**
-- [dependencies.py:139-150](file://server/app/api/dependencies.py#L139-L150)
-- [activity.py:55-60](file://server/app/models/activity.py#L55-L60)
-- [vitals.py:30-35](file://server/app/models/vitals.py#L30-L35)
-- [patients.py:30-35](file://server/app/models/patients.py#L30-L35)
-- [server.py:1171-1179](file://server/app/mcp/server.py#L1171-L1179)
+- [dependencies.py:139-150](server/app/api/dependencies.py#L139-L150)
+- [activity.py:55-60](server/app/models/activity.py#L55-L60)
+- [vitals.py:30-35](server/app/models/vitals.py#L30-L35)
+- [patients.py:30-35](server/app/models/patients.py#L30-L35)
+- [server.py:1171-1179](server/app/mcp/server.py#L1171-L1179)
 
 ## Dependency Analysis
 The analytics service depends on:
@@ -325,14 +325,14 @@ AnalyticsService --> Patient : "queries"
 ```
 
 **Diagram sources**
-- [analytics.py:16-87](file://server/app/services/analytics.py#L16-L87)
-- [activity.py:54-89](file://server/app/models/activity.py#L54-L89)
-- [vitals.py:29-56](file://server/app/models/vitals.py#L29-L56)
-- [patients.py:29-77](file://server/app/models/patients.py#L29-L77)
+- [analytics.py:16-87](server/app/services/analytics.py#L16-L87)
+- [activity.py:54-89](server/app/models/activity.py#L54-L89)
+- [vitals.py:29-56](server/app/models/vitals.py#L29-L56)
+- [patients.py:29-77](server/app/models/patients.py#L29-L77)
 
 **Section sources**
-- [analytics.py:11-14](file://server/app/services/analytics.py#L11-L14)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:11-14](server/app/services/analytics.py#L11-L14)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
 
 ## Performance Considerations
 - Indexes: workspace_id and timestamp are indexed on alerts and vitals tables, enabling efficient filtering and range scans.
@@ -346,11 +346,11 @@ Recommendations:
 - Cache short-lived analytics results (e.g., last 1–5 minutes) at the application layer if real-time updates are frequent and data volumes are high.
 
 **Section sources**
-- [vitals.py:42-43](file://server/app/models/vitals.py#L42-L43)
-- [activity.py:20-25](file://server/app/models/activity.py#L20-L25)
-- [activity.py](file://server/app/models/activity.py#L32)
-- [analytics.py](file://server/app/services/analytics.py#L47)
-- [analytics.py:76-81](file://server/app/services/analytics.py#L76-L81)
+- [vitals.py:42-43](server/app/models/vitals.py#L42-L43)
+- [activity.py:20-25](server/app/models/activity.py#L20-L25)
+- [activity.py](server/app/models/activity.py#L32)
+- [analytics.py](server/app/services/analytics.py#L47)
+- [analytics.py:76-81](server/app/services/analytics.py#L76-L81)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -365,12 +365,12 @@ Verification via tests:
 - API endpoints return expected JSON shapes.
 
 **Section sources**
-- [dependencies.py:139-150](file://server/app/api/dependencies.py#L139-L150)
-- [analytics.py:40-47](file://server/app/api/endpoints/analytics.py#L40-L47)
-- [test_analytics.py:15-57](file://server/tests/test_analytics.py#L15-L57)
-- [test_analytics.py:59-89](file://server/tests/test_analytics.py#L59-L89)
-- [test_analytics.py:92-106](file://server/tests/test_analytics.py#L92-L106)
-- [test_analytics.py:109-149](file://server/tests/test_analytics.py#L109-L149)
+- [dependencies.py:139-150](server/app/api/dependencies.py#L139-L150)
+- [analytics.py:40-47](server/app/api/endpoints/analytics.py#L40-L47)
+- [test_analytics.py:15-57](server/tests/test_analytics.py#L15-L57)
+- [test_analytics.py:59-89](server/tests/test_analytics.py#L59-L89)
+- [test_analytics.py:92-106](server/tests/test_analytics.py#L92-L106)
+- [test_analytics.py:109-149](server/tests/test_analytics.py#L109-L149)
 
 ## Conclusion
 The analytics service layer provides robust, workspace-scoped computations for alerts, vitals, and ward summaries. Its clean separation of concerns, strong typing via Pydantic models, and role-based access control enable secure, maintainable analytics. The current implementation leverages efficient SQL aggregations and indexes to support real-time dashboards and integrations.
@@ -390,8 +390,8 @@ The analytics service layer provides robust, workspace-scoped computations for a
   - Roles: admin, supervisor, head_nurse
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [openapi.generated.json:4825-4858](file://server/openapi.generated.json#L4825-L4858)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [openapi.generated.json:4825-4858](server/openapi.generated.json#L4825-L4858)
 
 ### Example Queries and Patterns
 - Alert summary:
@@ -402,6 +402,6 @@ The analytics service layer provides robust, workspace-scoped computations for a
   - COUNT patients by workspace_id; COUNT(DISTINCT alerts) where status != resolved.
 
 **Section sources**
-- [analytics.py:18-42](file://server/app/services/analytics.py#L18-L42)
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
-- [analytics.py:69-87](file://server/app/services/analytics.py#L69-L87)
+- [analytics.py:18-42](server/app/services/analytics.py#L18-L42)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
+- [analytics.py:69-87](server/app/services/analytics.py#L69-L87)

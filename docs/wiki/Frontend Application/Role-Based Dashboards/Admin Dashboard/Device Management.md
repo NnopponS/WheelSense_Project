@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/admin/devices/page.tsx)
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [PatientLinkSection.tsx](file://frontend/components/admin/devices/PatientLinkSection.tsx)
-- [deviceHardwareTabs.ts](file://frontend/lib/deviceHardwareTabs.ts)
-- [deviceOnline.ts](file://frontend/lib/deviceOnline.ts)
-- [smartDeviceOnline.ts](file://frontend/lib/smartDeviceOnline.ts)
-- [deviceFleetCardIcon.ts](file://frontend/lib/deviceFleetCardIcon.ts)
-- [types.ts](file://frontend/lib/types.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [device_management.py](file://server/app/services/device_management.py)
+- [page.tsx](frontend/app/admin/devices/page.tsx)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [PatientLinkSection.tsx](frontend/components/admin/devices/PatientLinkSection.tsx)
+- [deviceHardwareTabs.ts](frontend/lib/deviceHardwareTabs.ts)
+- [deviceOnline.ts](frontend/lib/deviceOnline.ts)
+- [smartDeviceOnline.ts](frontend/lib/smartDeviceOnline.ts)
+- [deviceFleetCardIcon.ts](frontend/lib/deviceFleetCardIcon.ts)
+- [types.ts](frontend/lib/types.ts)
+- [api.ts](frontend/lib/api.ts)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [device_management.py](server/app/services/device_management.py)
 </cite>
 
 ## Table of Contents
@@ -62,30 +62,30 @@ E --> F
 ```
 
 **Diagram sources**
-- [page.tsx:54-344](file://frontend/app/admin/devices/page.tsx#L54-L344)
-- [DeviceDetailDrawer.tsx:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [PatientLinkSection.tsx:24-204](file://frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
-- [types.ts:92-195](file://frontend/lib/types.ts#L92-L195)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
-- [devices.py:63-240](file://server/app/api/endpoints/devices.py#L63-L240)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
+- [page.tsx:54-344](frontend/app/admin/devices/page.tsx#L54-L344)
+- [DeviceDetailDrawer.tsx:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [PatientLinkSection.tsx:24-204](frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [types.ts:92-195](frontend/lib/types.ts#L92-L195)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
+- [devices.py:63-240](server/app/api/endpoints/devices.py#L63-L240)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
 
 **Section sources**
-- [page.tsx:1-383](file://frontend/app/admin/devices/page.tsx#L1-L383)
-- [DeviceDetailDrawer.tsx:1-800](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L800)
-- [PatientLinkSection.tsx:1-204](file://frontend/components/admin/devices/PatientLinkSection.tsx#L1-L204)
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
-- [types.ts:92-200](file://frontend/lib/types.ts#L92-L200)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
-- [devices.py:63-240](file://server/app/api/endpoints/devices.py#L63-L240)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
+- [page.tsx:1-383](frontend/app/admin/devices/page.tsx#L1-L383)
+- [DeviceDetailDrawer.tsx:1-800](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L800)
+- [PatientLinkSection.tsx:1-204](frontend/components/admin/devices/PatientLinkSection.tsx#L1-L204)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [types.ts:92-200](frontend/lib/types.ts#L92-L200)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
+- [devices.py:63-240](server/app/api/endpoints/devices.py#L63-L240)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
 
 ## Core Components
 - Admin Devices Page
@@ -104,15 +104,15 @@ E --> F
   - API client wrappers for device endpoints
 
 **Section sources**
-- [page.tsx:54-344](file://frontend/app/admin/devices/page.tsx#L54-L344)
-- [DeviceDetailDrawer.tsx:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [PatientLinkSection.tsx:24-204](file://frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
-- [types.ts:92-195](file://frontend/lib/types.ts#L92-L195)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [page.tsx:54-344](frontend/app/admin/devices/page.tsx#L54-L344)
+- [DeviceDetailDrawer.tsx:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [PatientLinkSection.tsx:24-204](frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [types.ts:92-195](frontend/lib/types.ts#L92-L195)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 ## Architecture Overview
 The Admin Devices feature is a client-server system:
@@ -141,10 +141,10 @@ API-->>Admin : open DeviceDetailDrawer
 ```
 
 **Diagram sources**
-- [page.tsx:76-100](file://frontend/app/admin/devices/page.tsx#L76-L100)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
-- [devices.py:63-134](file://server/app/api/endpoints/devices.py#L63-L134)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
+- [page.tsx:76-100](frontend/app/admin/devices/page.tsx#L76-L100)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
+- [devices.py:63-134](server/app/api/endpoints/devices.py#L63-L134)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
 
 ## Detailed Component Analysis
 
@@ -178,18 +178,18 @@ OpenDrawer --> |No| End(["Idle"])
 ```
 
 **Diagram sources**
-- [page.tsx:54-344](file://frontend/app/admin/devices/page.tsx#L54-L344)
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [page.tsx:54-344](frontend/app/admin/devices/page.tsx#L54-L344)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
 
 **Section sources**
-- [page.tsx:54-344](file://frontend/app/admin/devices/page.tsx#L54-L344)
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [page.tsx:54-344](frontend/app/admin/devices/page.tsx#L54-L344)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
 
 ### Device Detail Drawer
 - Identity and health
@@ -233,16 +233,16 @@ API-->>Drawer : success/error
 ```
 
 **Diagram sources**
-- [DeviceDetailDrawer.tsx:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [devices.py:125-184](file://server/app/api/endpoints/devices.py#L125-L184)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [DeviceDetailDrawer.tsx:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [devices.py:125-184](server/app/api/endpoints/devices.py#L125-L184)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 **Section sources**
-- [DeviceDetailDrawer.tsx:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [devices.py:125-184](file://server/app/api/endpoints/devices.py#L125-L184)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [DeviceDetailDrawer.tsx:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [devices.py:125-184](server/app/api/endpoints/devices.py#L125-L184)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 ### Patient Link Section
 - Purpose
@@ -268,14 +268,14 @@ Panel->>Panel : onMutate() and reset selection
 ```
 
 **Diagram sources**
-- [PatientLinkSection.tsx:24-204](file://frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
-- [devices.py:146-184](file://server/app/api/endpoints/devices.py#L146-L184)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [PatientLinkSection.tsx:24-204](frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
+- [devices.py:146-184](server/app/api/endpoints/devices.py#L146-L184)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 **Section sources**
-- [PatientLinkSection.tsx:24-204](file://frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
-- [devices.py:146-184](file://server/app/api/endpoints/devices.py#L146-L184)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [PatientLinkSection.tsx:24-204](frontend/components/admin/devices/PatientLinkSection.tsx#L24-L204)
+- [devices.py:146-184](server/app/api/endpoints/devices.py#L146-L184)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 ### Device Categories and Status Detection
 - Categories
@@ -300,16 +300,16 @@ G --> |No| I["Offline Badge"]
 ```
 
 **Diagram sources**
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
 
 **Section sources**
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
 
 ### Device Lifecycle Management
 - Registration
@@ -349,12 +349,12 @@ API-->>Admin : success
 ```
 
 **Diagram sources**
-- [devices.py:186-240](file://server/app/api/endpoints/devices.py#L186-L240)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
+- [devices.py:186-240](server/app/api/endpoints/devices.py#L186-L240)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
 
 **Section sources**
-- [devices.py:186-240](file://server/app/api/endpoints/devices.py#L186-L240)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
+- [devices.py:186-240](server/app/api/endpoints/devices.py#L186-L240)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
 
 ### Device Health Monitoring
 - Real-time status
@@ -381,14 +381,14 @@ Low --> |No| Healthy
 ```
 
 **Diagram sources**
-- [DeviceDetailDrawer.tsx:624-637](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L624-L637)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [types.ts:164-187](file://frontend/lib/types.ts#L164-L187)
+- [DeviceDetailDrawer.tsx:624-637](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L624-L637)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [types.ts:164-187](frontend/lib/types.ts#L164-L187)
 
 **Section sources**
-- [DeviceDetailDrawer.tsx:624-637](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L624-L637)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [types.ts:164-187](file://frontend/lib/types.ts#L164-L187)
+- [DeviceDetailDrawer.tsx:624-637](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L624-L637)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [types.ts:164-187](frontend/lib/types.ts#L164-L187)
 
 ### Device Activity Tracking
 - Endpoint
@@ -411,12 +411,12 @@ Drawer-->>Drawer : render events
 ```
 
 **Diagram sources**
-- [DeviceDetailDrawer.tsx:321-331](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L321-L331)
-- [devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
+- [DeviceDetailDrawer.tsx:321-331](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L321-L331)
+- [devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
 
 **Section sources**
-- [DeviceDetailDrawer.tsx:321-331](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L321-L331)
-- [devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
+- [DeviceDetailDrawer.tsx:321-331](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L321-L331)
+- [devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
 
 ### Troubleshooting Workflows
 - Investigating connectivity issues
@@ -457,24 +457,24 @@ Endpoints["devices.py"] --> Service["device_management.py"]
 ```
 
 **Diagram sources**
-- [page.tsx:1-383](file://frontend/app/admin/devices/page.tsx#L1-L383)
-- [DeviceDetailDrawer.tsx:1-800](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L800)
-- [PatientLinkSection.tsx:1-204](file://frontend/components/admin/devices/PatientLinkSection.tsx#L1-L204)
-- [deviceHardwareTabs.ts:1-73](file://frontend/lib/deviceHardwareTabs.ts#L1-L73)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [deviceFleetCardIcon.ts:1-72](file://frontend/lib/deviceFleetCardIcon.ts#L1-L72)
-- [types.ts:92-195](file://frontend/lib/types.ts#L92-L195)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
-- [devices.py:63-240](file://server/app/api/endpoints/devices.py#L63-L240)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
+- [page.tsx:1-383](frontend/app/admin/devices/page.tsx#L1-L383)
+- [DeviceDetailDrawer.tsx:1-800](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L800)
+- [PatientLinkSection.tsx:1-204](frontend/components/admin/devices/PatientLinkSection.tsx#L1-L204)
+- [deviceHardwareTabs.ts:1-73](frontend/lib/deviceHardwareTabs.ts#L1-L73)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [deviceFleetCardIcon.ts:1-72](frontend/lib/deviceFleetCardIcon.ts#L1-L72)
+- [types.ts:92-195](frontend/lib/types.ts#L92-L195)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
+- [devices.py:63-240](server/app/api/endpoints/devices.py#L63-L240)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
 
 **Section sources**
-- [page.tsx:1-383](file://frontend/app/admin/devices/page.tsx#L1-L383)
-- [DeviceDetailDrawer.tsx:1-800](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L800)
-- [PatientLinkSection.tsx:1-204](file://frontend/components/admin/devices/PatientLinkSection.tsx#L1-L204)
-- [devices.py:63-240](file://server/app/api/endpoints/devices.py#L63-L240)
-- [device_management.py:1-200](file://server/app/services/device_management.py#L1-L200)
+- [page.tsx:1-383](frontend/app/admin/devices/page.tsx#L1-L383)
+- [DeviceDetailDrawer.tsx:1-800](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L800)
+- [PatientLinkSection.tsx:1-204](frontend/components/admin/devices/PatientLinkSection.tsx#L1-L204)
+- [devices.py:63-240](server/app/api/endpoints/devices.py#L63-L240)
+- [device_management.py:1-200](server/app/services/device_management.py#L1-L200)
 
 ## Performance Considerations
 - Polling and caching
@@ -502,9 +502,9 @@ Endpoints["devices.py"] --> Service["device_management.py"]
   - Use the drawer’s delete action; ensure no active assignments remain
 
 **Section sources**
-- [DeviceDetailDrawer.tsx:565-594](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L565-L594)
-- [deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [devices.py:146-184](file://server/app/api/endpoints/devices.py#L146-L184)
+- [DeviceDetailDrawer.tsx:565-594](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L565-L594)
+- [deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [devices.py:146-184](server/app/api/endpoints/devices.py#L146-L184)
 
 ## Conclusion
 The Admin Dashboard’s Device Management provides a comprehensive fleet overview, actionable device detail, and robust assignment controls. Administrators can monitor device health, investigate connectivity issues, manage patient-device links, and oversee lifecycle operations through a unified interface backed by well-defined backend APIs and services.

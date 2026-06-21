@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [medication.py](file://server/app/models/medication.py)
-- [medication.py](file://server/app/schemas/medication.py)
-- [medication.py](file://server/app/services/medication.py)
-- [medication.py](file://server/app/api/endpoints/medication.py)
-- [page.tsx](file://frontend/app/observer/prescriptions/page.tsx)
-- [page.tsx](file://frontend/app/supervisor/prescriptions/page.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [0009-future-domains-floorplan-prescription-pharmacy.md](file://docs/adr/0009-future-domains-floorplan-prescription-pharmacy.md)
-- [server.py](file://server/app/mcp/server.py)
-- [care.py](file://server/app/models/care.py)
-- [care.py](file://server/app/schemas/care.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/schemas/workflow.py)
-- [seed_demo.py](file://server/scripts/seed_demo.py)
+- [medication.py](server/app/models/medication.py)
+- [medication.py](server/app/schemas/medication.py)
+- [medication.py](server/app/services/medication.py)
+- [medication.py](server/app/api/endpoints/medication.py)
+- [page.tsx](frontend/app/observer/prescriptions/page.tsx)
+- [page.tsx](frontend/app/supervisor/prescriptions/page.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [0009-future-domains-floorplan-prescription-pharmacy.md](docs/adr/0009-future-domains-floorplan-prescription-pharmacy.md)
+- [server.py](server/app/mcp/server.py)
+- [care.py](server/app/models/care.py)
+- [care.py](server/app/schemas/care.py)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/schemas/workflow.py)
+- [seed_demo.py](server/scripts/seed_demo.py)
 </cite>
 
 ## Table of Contents
@@ -67,33 +67,33 @@ ENDPTS --> MCP
 ```
 
 **Diagram sources**
-- [page.tsx:1-130](file://frontend/app/observer/prescriptions/page.tsx#L1-L130)
-- [page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
-- [medication.py:1-169](file://server/app/api/endpoints/medication.py#L1-L169)
-- [medication.py:1-108](file://server/app/services/medication.py#L1-L108)
-- [medication.py:1-54](file://server/app/models/medication.py#L1-L54)
-- [medication.py:1-89](file://server/app/schemas/medication.py#L1-L89)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [workflow.py:1-396](file://server/app/schemas/workflow.py#L1-L396)
-- [care.py:1-56](file://server/app/models/care.py#L1-L56)
-- [care.py:1-44](file://server/app/schemas/care.py#L1-L44)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
+- [page.tsx:1-130](frontend/app/observer/prescriptions/page.tsx#L1-L130)
+- [page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
+- [medication.py:1-169](server/app/api/endpoints/medication.py#L1-L169)
+- [medication.py:1-108](server/app/services/medication.py#L1-L108)
+- [medication.py:1-54](server/app/models/medication.py#L1-L54)
+- [medication.py:1-89](server/app/schemas/medication.py#L1-L89)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [workflow.py:1-396](server/app/schemas/workflow.py#L1-L396)
+- [care.py:1-56](server/app/models/care.py#L1-L56)
+- [care.py:1-44](server/app/schemas/care.py#L1-L44)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)
 
 **Section sources**
-- [medication.py:1-54](file://server/app/models/medication.py#L1-L54)
-- [medication.py:1-89](file://server/app/schemas/medication.py#L1-L89)
-- [medication.py:1-108](file://server/app/services/medication.py#L1-L108)
-- [medication.py:1-169](file://server/app/api/endpoints/medication.py#L1-L169)
-- [page.tsx:1-130](file://frontend/app/observer/prescriptions/page.tsx#L1-L130)
-- [page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
-- [0009-future-domains-floorplan-prescription-pharmacy.md:1-42](file://docs/adr/0009-future-domains-floorplan-prescription-pharmacy.md#L1-L42)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
-- [care.py:1-56](file://server/app/models/care.py#L1-L56)
-- [care.py:1-44](file://server/app/schemas/care.py#L1-L44)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [workflow.py:1-396](file://server/app/schemas/workflow.py#L1-L396)
+- [medication.py:1-54](server/app/models/medication.py#L1-L54)
+- [medication.py:1-89](server/app/schemas/medication.py#L1-L89)
+- [medication.py:1-108](server/app/services/medication.py#L1-L108)
+- [medication.py:1-169](server/app/api/endpoints/medication.py#L1-L169)
+- [page.tsx:1-130](frontend/app/observer/prescriptions/page.tsx#L1-L130)
+- [page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
+- [0009-future-domains-floorplan-prescription-pharmacy.md:1-42](docs/adr/0009-future-domains-floorplan-prescription-pharmacy.md#L1-L42)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)
+- [care.py:1-56](server/app/models/care.py#L1-L56)
+- [care.py:1-44](server/app/schemas/care.py#L1-L44)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [workflow.py:1-396](server/app/schemas/workflow.py#L1-L396)
 
 ## Core Components
 - Prescription lifecycle: creation, updates, status tracking, and visibility scoping
@@ -105,17 +105,17 @@ ENDPTS --> MCP
 - Specialist directory: linking prescribing specialists to prescriptions
 
 **Section sources**
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [page.tsx:29-129](file://frontend/app/observer/prescriptions/page.tsx#L29-L129)
-- [page.tsx:66-326](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L326)
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [care.py:11-44](file://server/app/schemas/care.py#L11-L44)
-- [workflow.py:104-122](file://server/app/models/workflow.py#L104-L122)
-- [workflow.py:219-261](file://server/app/schemas/workflow.py#L219-L261)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [page.tsx:29-129](frontend/app/observer/prescriptions/page.tsx#L29-L129)
+- [page.tsx:66-326](frontend/app/supervisor/prescriptions/page.tsx#L66-L326)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [care.py:11-44](server/app/schemas/care.py#L11-L44)
+- [workflow.py:104-122](server/app/models/workflow.py#L104-L122)
+- [workflow.py:219-261](server/app/schemas/workflow.py#L219-L261)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)
 
 ## Architecture Overview
 The system follows a layered architecture:
@@ -143,18 +143,18 @@ API-->>OBS : data
 ```
 
 **Diagram sources**
-- [page.tsx:31-34](file://frontend/app/observer/prescriptions/page.tsx#L31-L34)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
-- [medication.py:35-55](file://server/app/api/endpoints/medication.py#L35-L55)
-- [medication.py:22-44](file://server/app/services/medication.py#L22-L44)
-- [medication.py:10-28](file://server/app/models/medication.py#L10-L28)
+- [page.tsx:31-34](frontend/app/observer/prescriptions/page.tsx#L31-L34)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
+- [medication.py:35-55](server/app/api/endpoints/medication.py#L35-L55)
+- [medication.py:22-44](server/app/services/medication.py#L22-L44)
+- [medication.py:10-28](server/app/models/medication.py#L10-L28)
 
 **Section sources**
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
-- [page.tsx:29-129](file://frontend/app/observer/prescriptions/page.tsx#L29-L129)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
+- [page.tsx:29-129](frontend/app/observer/prescriptions/page.tsx#L29-L129)
 
 ## Detailed Component Analysis
 
@@ -203,13 +203,13 @@ Prescription <.. PharmacyOrder : "optional foreign key"
 ```
 
 **Diagram sources**
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
 
 **Section sources**
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
 
 ### API Endpoints: Roles, Filtering, and Access Control
 - Endpoint roles: create/update for admin, head_nurse, supervisor; authenticated read for observers; patient requests for patients
@@ -229,10 +229,10 @@ Persist --> Respond["200/201 with serialized model"]
 ```
 
 **Diagram sources**
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
 
 **Section sources**
-- [medication.py:32-169](file://server/app/api/endpoints/medication.py#L32-L169)
+- [medication.py:32-169](server/app/api/endpoints/medication.py#L32-L169)
 
 ### Frontend: Observer Dashboard
 - Fetches all prescriptions for the current workspace and links to patient names
@@ -253,13 +253,13 @@ UI-->>UI : render DataTable
 ```
 
 **Diagram sources**
-- [page.tsx:31-74](file://frontend/app/observer/prescriptions/page.tsx#L31-L74)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
-- [medication.py:35-55](file://server/app/api/endpoints/medication.py#L35-L55)
+- [page.tsx:31-74](frontend/app/observer/prescriptions/page.tsx#L31-L74)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
+- [medication.py:35-55](server/app/api/endpoints/medication.py#L35-L55)
 
 **Section sources**
-- [page.tsx:29-129](file://frontend/app/observer/prescriptions/page.tsx#L29-L129)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
+- [page.tsx:29-129](frontend/app/observer/prescriptions/page.tsx#L29-L129)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
 
 ### Frontend: Supervisor Dashboard
 - Provides a form to create new prescriptions with validations for required fields
@@ -282,13 +282,13 @@ UI->>UI : reset form + invalidate queries
 ```
 
 **Diagram sources**
-- [page.tsx:85-123](file://frontend/app/supervisor/prescriptions/page.tsx#L85-L123)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
-- [medication.py:58-73](file://server/app/api/endpoints/medication.py#L58-L73)
+- [page.tsx:85-123](frontend/app/supervisor/prescriptions/page.tsx#L85-L123)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
+- [medication.py:58-73](server/app/api/endpoints/medication.py#L58-L73)
 
 **Section sources**
-- [page.tsx:66-326](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L326)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
+- [page.tsx:66-326](frontend/app/supervisor/prescriptions/page.tsx#L66-L326)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
 
 ### Workflow Integration and Care Coordination
 - Care directives can instruct observers to monitor specific aspects around medication administration
@@ -308,14 +308,14 @@ MCP-->>AUDIT : log medication update
 ```
 
 **Diagram sources**
-- [workflow.py:104-122](file://server/app/models/workflow.py#L104-L122)
-- [workflow.py:219-261](file://server/app/schemas/workflow.py#L219-L261)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
+- [workflow.py:104-122](server/app/models/workflow.py#L104-L122)
+- [workflow.py:219-261](server/app/schemas/workflow.py#L219-L261)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)
 
 **Section sources**
-- [workflow.py:104-122](file://server/app/models/workflow.py#L104-L122)
-- [workflow.py:219-261](file://server/app/schemas/workflow.py#L219-L261)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
+- [workflow.py:104-122](server/app/models/workflow.py#L104-L122)
+- [workflow.py:219-261](server/app/schemas/workflow.py#L219-L261)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)
 
 ### Specialist Directory and Prescribing Authority
 - Specialists are stored with identifying attributes and active status
@@ -344,13 +344,13 @@ Specialist <.. Prescription : "foreign key"
 ```
 
 **Diagram sources**
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [medication.py:16-17](file://server/app/models/medication.py#L16-L17)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [medication.py:16-17](server/app/models/medication.py#L16-L17)
 
 **Section sources**
-- [care.py:10-25](file://server/app/models/care.py#L10-L25)
-- [care.py:11-44](file://server/app/schemas/care.py#L11-L44)
-- [medication.py:16-17](file://server/app/models/medication.py#L16-L17)
+- [care.py:10-25](server/app/models/care.py#L10-L25)
+- [care.py:11-44](server/app/schemas/care.py#L11-L44)
+- [medication.py:16-17](server/app/models/medication.py#L16-L17)
 
 ## Dependency Analysis
 - UI depends on API client for medication endpoints
@@ -373,29 +373,29 @@ EP --> MCP["MCP Tools"]
 ```
 
 **Diagram sources**
-- [page.tsx:1-130](file://frontend/app/observer/prescriptions/page.tsx#L1-L130)
-- [page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [api.ts:810-818](file://frontend/lib/api.ts#L810-L818)
-- [medication.py:1-169](file://server/app/api/endpoints/medication.py#L1-L169)
-- [medication.py:1-108](file://server/app/services/medication.py#L1-L108)
-- [medication.py:1-54](file://server/app/models/medication.py#L1-L54)
-- [medication.py:1-89](file://server/app/schemas/medication.py#L1-L89)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [workflow.py:1-396](file://server/app/schemas/workflow.py#L1-L396)
-- [care.py:1-56](file://server/app/models/care.py#L1-L56)
-- [care.py:1-44](file://server/app/schemas/care.py#L1-L44)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
+- [page.tsx:1-130](frontend/app/observer/prescriptions/page.tsx#L1-L130)
+- [page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [api.ts:810-818](frontend/lib/api.ts#L810-L818)
+- [medication.py:1-169](server/app/api/endpoints/medication.py#L1-L169)
+- [medication.py:1-108](server/app/services/medication.py#L1-L108)
+- [medication.py:1-54](server/app/models/medication.py#L1-L54)
+- [medication.py:1-89](server/app/schemas/medication.py#L1-L89)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [workflow.py:1-396](server/app/schemas/workflow.py#L1-L396)
+- [care.py:1-56](server/app/models/care.py#L1-L56)
+- [care.py:1-44](server/app/schemas/care.py#L1-L44)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)
 
 **Section sources**
-- [medication.py:1-169](file://server/app/api/endpoints/medication.py#L1-L169)
-- [medication.py:1-108](file://server/app/services/medication.py#L1-L108)
-- [medication.py:1-54](file://server/app/models/medication.py#L1-L54)
-- [medication.py:1-89](file://server/app/schemas/medication.py#L1-L89)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [workflow.py:1-396](file://server/app/schemas/workflow.py#L1-L396)
-- [care.py:1-56](file://server/app/models/care.py#L1-L56)
-- [care.py:1-44](file://server/app/schemas/care.py#L1-L44)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
+- [medication.py:1-169](server/app/api/endpoints/medication.py#L1-L169)
+- [medication.py:1-108](server/app/services/medication.py#L1-L108)
+- [medication.py:1-54](server/app/models/medication.py#L1-L54)
+- [medication.py:1-89](server/app/schemas/medication.py#L1-L89)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [workflow.py:1-396](server/app/schemas/workflow.py#L1-L396)
+- [care.py:1-56](server/app/models/care.py#L1-L56)
+- [care.py:1-44](server/app/schemas/care.py#L1-L44)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)
 
 ## Performance Considerations
 - Queries are limited and filtered by workspace, optional patient, and status to reduce result sets
@@ -412,9 +412,9 @@ Common issues and resolutions:
 - Duplicate order numbers: Order number generation uses timestamp and random token; rechecks occur at service level
 
 **Section sources**
-- [medication.py:43-47](file://server/app/api/endpoints/medication.py#L43-L47)
-- [medication.py:11-38](file://server/app/schemas/medication.py#L11-L38)
-- [medication.py:84-103](file://server/app/services/medication.py#L84-L103)
+- [medication.py:43-47](server/app/api/endpoints/medication.py#L43-L47)
+- [medication.py:11-38](server/app/schemas/medication.py#L11-L38)
+- [medication.py:84-103](server/app/services/medication.py#L84-L103)
 
 ## Conclusion
 The Prescription Management system integrates robust backend models and services with role-aware UIs for observers and supervisors. It supports safe, auditable workflows for medication oversight, reconciliation, and administration, while connecting to workflow directives, audit trails, and MCP tools for broader care coordination.
@@ -434,11 +434,11 @@ The Prescription Management system integrates robust backend models and services
   - Workflow directive instructs observer to reconcile meds vs. chart; audit trail captures discrepancies
 
 **Section sources**
-- [page.tsx:29-129](file://frontend/app/observer/prescriptions/page.tsx#L29-L129)
-- [page.tsx:66-326](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L326)
-- [medication.py:131-152](file://server/app/api/endpoints/medication.py#L131-L152)
-- [workflow.py:104-122](file://server/app/models/workflow.py#L104-L122)
-- [seed_demo.py:1155-1185](file://server/scripts/seed_demo.py#L1155-L1185)
+- [page.tsx:29-129](frontend/app/observer/prescriptions/page.tsx#L29-L129)
+- [page.tsx:66-326](frontend/app/supervisor/prescriptions/page.tsx#L66-L326)
+- [medication.py:131-152](server/app/api/endpoints/medication.py#L131-L152)
+- [workflow.py:104-122](server/app/models/workflow.py#L104-L122)
+- [seed_demo.py:1155-1185](server/scripts/seed_demo.py#L1155-L1185)
 
 ### Appendix B: Quality Assurance Processes
 - Role-based access control ensures only authorized users can create/update
@@ -447,7 +447,7 @@ The Prescription Management system integrates robust backend models and services
 - MCP tools provide controlled AI-assisted operations with scopes
 
 **Section sources**
-- [medication.py:32-32](file://server/app/api/endpoints/medication.py#L32-L32)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [server.py:2073-2110](file://server/app/mcp/server.py#L2073-L2110)
+- [medication.py:32-32](server/app/api/endpoints/medication.py#L32-L32)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [server.py:2073-2110](server/app/mcp/server.py#L2073-L2110)

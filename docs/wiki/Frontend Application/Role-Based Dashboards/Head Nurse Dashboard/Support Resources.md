@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [o9p0q1r2s3t4_add_support_ticket_domain.py](file://server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py)
-- [support.py](file://server/app/models/support.py)
-- [support.py](file://server/app/schemas/support.py)
-- [support.py](file://server/app/api/endpoints/support.py)
-- [support.py](file://server/app/services/support.py)
-- [server.py](file://server/app/mcp/server.py)
-- [page.tsx](file://frontend/app/head-nurse/support/page.tsx)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [SupportTicketList.tsx](file://frontend/components/admin/SupportTicketList.tsx)
+- [o9p0q1r2s3t4_add_support_ticket_domain.py](server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py)
+- [support.py](server/app/models/support.py)
+- [support.py](server/app/schemas/support.py)
+- [support.py](server/app/api/endpoints/support.py)
+- [support.py](server/app/services/support.py)
+- [server.py](server/app/mcp/server.py)
+- [page.tsx](frontend/app/head-nurse/support/page.tsx)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [SupportTicketList.tsx](frontend/components/admin/SupportTicketList.tsx)
 </cite>
 
 ## Table of Contents
@@ -63,22 +63,22 @@ SVC --> DBA
 ```
 
 **Diagram sources**
-- [page.tsx:1-5](file://frontend/app/head-nurse/support/page.tsx#L1-L5)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [SupportTicketList.tsx](file://frontend/components/admin/SupportTicketList.tsx)
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [support.py:1-292](file://server/app/services/support.py#L1-L292)
-- [support.py:1-98](file://server/app/models/support.py#L1-L98)
-- [support.py:1-76](file://server/app/schemas/support.py#L1-L76)
-- [server.py:2187-2199](file://server/app/mcp/server.py#L2187-L2199)
+- [page.tsx:1-5](frontend/app/head-nurse/support/page.tsx#L1-L5)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [SupportTicketList.tsx](frontend/components/admin/SupportTicketList.tsx)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [support.py:1-292](server/app/services/support.py#L1-L292)
+- [support.py:1-98](server/app/models/support.py#L1-L98)
+- [support.py:1-76](server/app/schemas/support.py#L1-L76)
+- [server.py:2187-2199](server/app/mcp/server.py#L2187-L2199)
 
 **Section sources**
-- [page.tsx:1-5](file://frontend/app/head-nurse/support/page.tsx#L1-L5)
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [support.py:1-292](file://server/app/services/support.py#L1-L292)
-- [support.py:1-98](file://server/app/models/support.py#L1-L98)
-- [support.py:1-76](file://server/app/schemas/support.py#L1-L76)
-- [server.py:2187-2199](file://server/app/mcp/server.py#L2187-L2199)
+- [page.tsx:1-5](frontend/app/head-nurse/support/page.tsx#L1-L5)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [support.py:1-292](server/app/services/support.py#L1-L292)
+- [support.py:1-98](server/app/models/support.py#L1-L98)
+- [support.py:1-76](server/app/schemas/support.py#L1-L76)
+- [server.py:2187-2199](server/app/mcp/server.py#L2187-L2199)
 
 ## Core Components
 - Support ticket domain: tickets, comments, and attachments with workspace scoping and role-based visibility.
@@ -95,14 +95,14 @@ Key capabilities:
 - Administrative ticket list for oversight.
 
 **Section sources**
-- [support.py:10-98](file://server/app/models/support.py#L10-L98)
-- [support.py:10-76](file://server/app/schemas/support.py#L10-L76)
-- [support.py:62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [support.py:124-292](file://server/app/services/support.py#L124-L292)
-- [page.tsx:1-5](file://frontend/app/head-nurse/support/page.tsx#L1-L5)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [SupportTicketList.tsx](file://frontend/components/admin/SupportTicketList.tsx)
-- [server.py:2187-2199](file://server/app/mcp/server.py#L2187-L2199)
+- [support.py:10-98](server/app/models/support.py#L10-L98)
+- [support.py:10-76](server/app/schemas/support.py#L10-L76)
+- [support.py:62-170](server/app/api/endpoints/support.py#L62-L170)
+- [support.py:124-292](server/app/services/support.py#L124-L292)
+- [page.tsx:1-5](frontend/app/head-nurse/support/page.tsx#L1-L5)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [SupportTicketList.tsx](frontend/components/admin/SupportTicketList.tsx)
+- [server.py:2187-2199](server/app/mcp/server.py#L2187-L2199)
 
 ## Architecture Overview
 The system follows a layered architecture:
@@ -130,14 +130,14 @@ UI-->>RN : Show ticket ID and status "open"
 ```
 
 **Diagram sources**
-- [support.py:89-98](file://server/app/api/endpoints/support.py#L89-L98)
-- [support.py:154-177](file://server/app/services/support.py#L154-L177)
-- [support.py:10-42](file://server/app/models/support.py#L10-L42)
+- [support.py:89-98](server/app/api/endpoints/support.py#L89-L98)
+- [support.py:154-177](server/app/services/support.py#L154-L177)
+- [support.py:10-42](server/app/models/support.py#L10-L42)
 
 **Section sources**
-- [support.py:89-98](file://server/app/api/endpoints/support.py#L89-L98)
-- [support.py:154-177](file://server/app/services/support.py#L154-L177)
-- [support.py:10-42](file://server/app/models/support.py#L10-L42)
+- [support.py:89-98](server/app/api/endpoints/support.py#L89-L98)
+- [support.py:154-177](server/app/services/support.py#L154-L177)
+- [support.py:10-42](server/app/models/support.py#L10-L42)
 
 ## Detailed Component Analysis
 
@@ -190,12 +190,12 @@ SUPPORT_TICKETS ||--o{ SUPPORT_TICKET_ATTACHMENTS : "has"
 ```
 
 **Diagram sources**
-- [o9p0q1r2s3t4_add_support_ticket_domain.py:20-145](file://server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py#L20-L145)
-- [support.py:10-98](file://server/app/models/support.py#L10-L98)
+- [o9p0q1r2s3t4_add_support_ticket_domain.py:20-145](server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py#L20-L145)
+- [support.py:10-98](server/app/models/support.py#L10-L98)
 
 **Section sources**
-- [o9p0q1r2s3t4_add_support_ticket_domain.py:20-145](file://server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py#L20-L145)
-- [support.py:10-98](file://server/app/models/support.py#L10-L98)
+- [o9p0q1r2s3t4_add_support_ticket_domain.py:20-145](server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py#L20-L145)
+- [support.py:10-98](server/app/models/support.py#L10-L98)
 
 ### API Endpoints and Request/Response Contracts
 Endpoints expose:
@@ -228,13 +228,13 @@ API-->>Client : 200 OK + Ticket
 ```
 
 **Diagram sources**
-- [support.py:111-122](file://server/app/api/endpoints/support.py#L111-L122)
-- [support.py:179-206](file://server/app/services/support.py#L179-L206)
+- [support.py:111-122](server/app/api/endpoints/support.py#L111-L122)
+- [support.py:179-206](server/app/services/support.py#L179-L206)
 
 **Section sources**
-- [support.py:62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [support.py:10-76](file://server/app/schemas/support.py#L10-L76)
-- [support.py:179-206](file://server/app/services/support.py#L179-L206)
+- [support.py:62-170](server/app/api/endpoints/support.py#L62-L170)
+- [support.py:10-76](server/app/schemas/support.py#L10-L76)
+- [support.py:179-206](server/app/services/support.py#L179-L206)
 
 ### Service Layer and Access Control
 The service enforces:
@@ -262,10 +262,10 @@ Persist --> End(["Return ticket"])
 ```
 
 **Diagram sources**
-- [support.py:179-206](file://server/app/services/support.py#L179-L206)
+- [support.py:179-206](server/app/services/support.py#L179-L206)
 
 **Section sources**
-- [support.py:124-292](file://server/app/services/support.py#L124-L292)
+- [support.py:124-292](server/app/services/support.py#L124-L292)
 
 ### Frontend: Head Nurse Support Reporting
 The Head Nurse support page renders the shared ReportIssueForm component, enabling users to submit tickets with title, description, category, and priority. The form posts to the backend via the tickets endpoint.
@@ -285,14 +285,14 @@ Form-->>HN : Show ticket ID and open status
 ```
 
 **Diagram sources**
-- [page.tsx:1-5](file://frontend/app/head-nurse/support/page.tsx#L1-L5)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [support.py:89-98](file://server/app/api/endpoints/support.py#L89-L98)
+- [page.tsx:1-5](frontend/app/head-nurse/support/page.tsx#L1-L5)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [support.py:89-98](server/app/api/endpoints/support.py#L89-L98)
 
 **Section sources**
-- [page.tsx:1-5](file://frontend/app/head-nurse/support/page.tsx#L1-L5)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [support.py:89-98](file://server/app/api/endpoints/support.py#L89-L98)
+- [page.tsx:1-5](frontend/app/head-nurse/support/page.tsx#L1-L5)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [support.py:89-98](server/app/api/endpoints/support.py#L89-L98)
 
 ### Administrative Oversight and Ticket Management
 Administrators and Head Nurses can manage tickets through:
@@ -321,14 +321,14 @@ API-->>Admin : Updated ticket
 ```
 
 **Diagram sources**
-- [support.py:62-86](file://server/app/api/endpoints/support.py#L62-L86)
-- [support.py:111-122](file://server/app/api/endpoints/support.py#L111-L122)
-- [support.py:126-140](file://server/app/services/support.py#L126-L140)
-- [support.py:179-206](file://server/app/services/support.py#L179-L206)
+- [support.py:62-86](server/app/api/endpoints/support.py#L62-L86)
+- [support.py:111-122](server/app/api/endpoints/support.py#L111-L122)
+- [support.py:126-140](server/app/services/support.py#L126-L140)
+- [support.py:179-206](server/app/services/support.py#L179-L206)
 
 **Section sources**
-- [support.py:62-122](file://server/app/api/endpoints/support.py#L62-L122)
-- [support.py:126-206](file://server/app/services/support.py#L126-L206)
+- [support.py:62-122](server/app/api/endpoints/support.py#L62-L122)
+- [support.py:126-206](server/app/services/support.py#L126-L206)
 
 ### Integration with Agent Workflows (MCP)
 The MCP tool allows authorized agents to update tickets programmatically:
@@ -353,12 +353,12 @@ MCP-->>Agent : {id, status, assignee_user_id}
 ```
 
 **Diagram sources**
-- [server.py:2187-2199](file://server/app/mcp/server.py#L2187-L2199)
-- [support.py:179-206](file://server/app/services/support.py#L179-L206)
+- [server.py:2187-2199](server/app/mcp/server.py#L2187-L2199)
+- [support.py:179-206](server/app/services/support.py#L179-L206)
 
 **Section sources**
-- [server.py:2187-2199](file://server/app/mcp/server.py#L2187-L2199)
-- [support.py:179-206](file://server/app/services/support.py#L179-L206)
+- [server.py:2187-2199](server/app/mcp/server.py#L2187-L2199)
+- [support.py:179-206](server/app/services/support.py#L179-L206)
 
 ## Dependency Analysis
 The support system exhibits clear separation of concerns:
@@ -379,18 +379,18 @@ MCP["MCP Tool"] --> SV
 ```
 
 **Diagram sources**
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [support.py:1-292](file://server/app/services/support.py#L1-L292)
-- [support.py:1-98](file://server/app/models/support.py#L1-L98)
-- [support.py:1-76](file://server/app/schemas/support.py#L1-L76)
-- [server.py:2187-2199](file://server/app/mcp/server.py#L2187-L2199)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [support.py:1-292](server/app/services/support.py#L1-L292)
+- [support.py:1-98](server/app/models/support.py#L1-L98)
+- [support.py:1-76](server/app/schemas/support.py#L1-L76)
+- [server.py:2187-2199](server/app/mcp/server.py#L2187-L2199)
 
 **Section sources**
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [support.py:1-292](file://server/app/services/support.py#L1-L292)
-- [support.py:1-98](file://server/app/models/support.py#L1-L98)
-- [support.py:1-76](file://server/app/schemas/support.py#L1-L76)
-- [server.py:2187-2199](file://server/app/mcp/server.py#L2187-L2199)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [support.py:1-292](server/app/services/support.py#L1-L292)
+- [support.py:1-98](server/app/models/support.py#L1-L98)
+- [support.py:1-76](server/app/schemas/support.py#L1-L76)
+- [server.py:2187-2199](server/app/mcp/server.py#L2187-L2199)
 
 ## Performance Considerations
 - Pagination and filtering: The list endpoint supports status filtering and a configurable limit to control payload sizes.
@@ -408,9 +408,9 @@ Common issues and resolutions:
 - Download failure: Confirm the attachment exists and the file path is valid.
 
 **Section sources**
-- [support.py:53-80](file://server/app/services/support.py#L53-L80)
-- [support.py:245-246](file://server/app/services/support.py#L245-L246)
-- [support.py:157-169](file://server/app/api/endpoints/support.py#L157-L169)
+- [support.py:53-80](server/app/services/support.py#L53-L80)
+- [support.py:245-246](server/app/services/support.py#L245-L246)
+- [support.py:157-169](server/app/api/endpoints/support.py#L157-L169)
 
 ## Conclusion
 The Head Nurse Support Resources interface provides a robust, role-aware support ticketing system with clear workflows for reporting, managing, and tracking support requests. The backend enforces access control and workflow restrictions, while the frontend offers a streamlined reporting experience. Integrations via MCP enable automated updates within agent workflows. The system’s design supports scalability, maintainability, and compliance with role-based governance.
@@ -427,7 +427,7 @@ The Head Nurse Support Resources interface provides a robust, role-aware support
 - Reporter role and workspace: Automatically derived from the authenticated user and current workspace.
 
 **Section sources**
-- [support.py:10-16](file://server/app/schemas/support.py#L10-L16)
+- [support.py:10-16](server/app/schemas/support.py#L10-L16)
 
 ### Escalation Procedures
 Escalation pathways:
@@ -436,8 +436,8 @@ Escalation pathways:
 - Manager visibility: Admin/head_nurse can view and act on any ticket within the workspace.
 
 **Section sources**
-- [support.py:18-25](file://server/app/schemas/support.py#L18-L25)
-- [support.py:199-202](file://server/app/services/support.py#L199-L202)
+- [support.py:18-25](server/app/schemas/support.py#L18-L25)
+- [support.py:199-202](server/app/services/support.py#L199-L202)
 
 ### Self-Service Resources, Knowledge Base, and FAQ
 - Self-service: Users can view their tickets, add comments, and upload attachments.

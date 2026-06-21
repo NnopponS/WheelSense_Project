@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [router.py](file://server/app/api/router.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [errors.py](file://server/app/api/errors.py)
-- [auth.py](file://server/app/api/endpoints/auth.py)
-- [patients.py](file://server/app/api/endpoints/patients.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [analytics.py](file://server/app/api/endpoints/analytics.py)
-- [admin_database.py](file://server/app/api/endpoints/admin_database.py)
-- [users.py](file://server/app/api/endpoints/users.py)
-- [workspaces.py](file://server/app/api/endpoints/workspaces.py)
-- [floorplans.py](file://server/app/api/endpoints/floorplans.py)
-- [users.py](file://server/app/schemas/users.py)
+- [router.py](server/app/api/router.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [errors.py](server/app/api/errors.py)
+- [auth.py](server/app/api/endpoints/auth.py)
+- [patients.py](server/app/api/endpoints/patients.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [analytics.py](server/app/api/endpoints/analytics.py)
+- [admin_database.py](server/app/api/endpoints/admin_database.py)
+- [users.py](server/app/api/endpoints/users.py)
+- [workspaces.py](server/app/api/endpoints/workspaces.py)
+- [floorplans.py](server/app/api/endpoints/floorplans.py)
+- [users.py](server/app/schemas/users.py)
 </cite>
 
 ## Table of Contents
@@ -76,10 +76,10 @@ API --> Health["/health (Health)"]
 ```
 
 **Diagram sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
 
 **Section sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
 
 ## Core Components
 - Router and Mounting
@@ -98,10 +98,10 @@ API --> Health["/health (Health)"]
   - Validation errors and HTTP exceptions are normalized to consistent JSON responses.
 
 **Section sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [dependencies.py:25-156](file://server/app/api/dependencies.py#L25-L156)
-- [dependencies.py:159-311](file://server/app/api/dependencies.py#L159-L311)
-- [errors.py:14-77](file://server/app/api/errors.py#L14-L77)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
+- [dependencies.py:25-156](server/app/api/dependencies.py#L25-L156)
+- [dependencies.py:159-311](server/app/api/dependencies.py#L159-L311)
+- [errors.py:14-77](server/app/api/errors.py#L14-L77)
 
 ## Architecture Overview
 The API follows a layered architecture:
@@ -160,8 +160,8 @@ SAnalytics --> DB
 ```
 
 **Diagram sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [dependencies.py:25-156](file://server/app/api/dependencies.py#L25-L156)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
+- [dependencies.py:25-156](server/app/api/dependencies.py#L25-L156)
 
 ## Detailed Component Analysis
 
@@ -215,8 +215,8 @@ Authorization and Scopes
 - Requires active user for most endpoints; impersonation requires admin role.
 
 **Section sources**
-- [auth.py:57-269](file://server/app/api/endpoints/auth.py#L57-L269)
-- [users.py:33-150](file://server/app/schemas/users.py#L33-L150)
+- [auth.py:57-269](server/app/api/endpoints/auth.py#L57-L269)
+- [users.py:33-150](server/app/schemas/users.py#L33-L150)
 
 ### Users Endpoints
 - Base path: /api/users
@@ -239,7 +239,7 @@ Endpoints
   - Status: 204 No Content; soft-deletes user by deactivating and unlinking.
 
 **Section sources**
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
 
 ### Workspaces Endpoints
 - Base path: /api/workspaces
@@ -254,7 +254,7 @@ Endpoints
   - Request: Activate current user’s workspace; Response: WorkspaceOut.
 
 **Section sources**
-- [workspaces.py:15-58](file://server/app/api/endpoints/workspaces.py#L15-L58)
+- [workspaces.py:15-58](server/app/api/endpoints/workspaces.py#L15-L58)
 
 ### Patients Endpoints
 - Base path: /api/patients
@@ -301,7 +301,7 @@ Endpoints
   - Status: 204 No Content.
 
 **Section sources**
-- [patients.py:90-384](file://server/app/api/endpoints/patients.py#L90-L384)
+- [patients.py:90-384](server/app/api/endpoints/patients.py#L90-L384)
 
 ### Devices Endpoints
 - Base path: /api/devices
@@ -340,7 +340,7 @@ Endpoints
   - Request: CameraCommand; Response: {"message","topic","command_id"}.
 
 **Section sources**
-- [devices.py:53-311](file://server/app/api/endpoints/devices.py#L53-L311)
+- [devices.py:53-311](server/app/api/endpoints/devices.py#L53-L311)
 
 ### Workflow Endpoints
 - Base path: /api/workflow
@@ -400,7 +400,7 @@ Endpoints
   - Request: WorkflowHandoffRequest; Response: Workflow item model.
 
 **Section sources**
-- [workflow.py:110-800](file://server/app/api/endpoints/workflow.py#L110-L800)
+- [workflow.py:110-800](server/app/api/endpoints/workflow.py#L110-L800)
 
 ### Analytics Endpoints
 - Base path: /api/analytics
@@ -415,7 +415,7 @@ Endpoints
   - Response: WardSummaryOut.
 
 **Section sources**
-- [analytics.py:17-49](file://server/app/api/endpoints/analytics.py#L17-L49)
+- [analytics.py:17-49](server/app/api/endpoints/analytics.py#L17-L49)
 
 ### Administrative Functions
 - Base path: /api/admin/database
@@ -427,15 +427,15 @@ Endpoints
   - Constraints: Cannot be performed during impersonation; password must match.
 
 **Section sources**
-- [admin_database.py:15-60](file://server/app/api/endpoints/admin_database.py#L15-L60)
+- [admin_database.py:15-60](server/app/api/endpoints/admin_database.py#L15-L60)
 
 ### Additional Domain Modules
 - Floorplans: Upload, list, retrieve floorplan assets; manage layout; compute presence; capture room snapshots.
 - Calendar, Support, Service Requests, Medication, Care, Shift Checklist, HomeAssistant, Retention, Cameras, Chat, AI Settings, Demo Control, MCP Auth, Task Management, Tasks: Mounted under /api with appropriate dependencies and role gating.
 
 **Section sources**
-- [router.py:26-154](file://server/app/api/router.py#L26-L154)
-- [floorplans.py:74-242](file://server/app/api/endpoints/floorplans.py#L74-L242)
+- [router.py:26-154](server/app/api/router.py#L26-L154)
+- [floorplans.py:74-242](server/app/api/endpoints/floorplans.py#L74-L242)
 
 ## Dependency Analysis
 - Router-to-Endpoint Dependencies
@@ -461,13 +461,13 @@ GA --> PAD["assert_patient_may_access_assigned_device_db"]
 ```
 
 **Diagram sources**
-- [router.py:26-154](file://server/app/api/router.py#L26-L154)
-- [dependencies.py:131-156](file://server/app/api/dependencies.py#L131-L156)
-- [dependencies.py:354-402](file://server/app/api/dependencies.py#L354-L402)
+- [router.py:26-154](server/app/api/router.py#L26-L154)
+- [dependencies.py:131-156](server/app/api/dependencies.py#L131-L156)
+- [dependencies.py:354-402](server/app/api/dependencies.py#L354-L402)
 
 **Section sources**
-- [dependencies.py:159-311](file://server/app/api/dependencies.py#L159-L311)
-- [dependencies.py:313-402](file://server/app/api/dependencies.py#L313-L402)
+- [dependencies.py:159-311](server/app/api/dependencies.py#L159-L311)
+- [dependencies.py:313-402](server/app/api/dependencies.py#L313-L402)
 
 ## Performance Considerations
 - Pagination and limits: Many endpoints accept limit parameters with upper bounds to prevent excessive loads.
@@ -498,8 +498,8 @@ Error Handling Details
 - Validation errors return code "validation_error"; HTTP exceptions are normalized.
 
 **Section sources**
-- [errors.py:24-77](file://server/app/api/errors.py#L24-L77)
-- [dependencies.py:84-120](file://server/app/api/dependencies.py#L84-L120)
+- [errors.py:24-77](server/app/api/errors.py#L24-L77)
+- [dependencies.py:84-120](server/app/api/dependencies.py#L84-L120)
 
 ## Conclusion
 WheelSense Platform exposes a comprehensive, role-scoped, workspace-aware API with strong authentication, consistent error handling, and modular domain endpoints. The documented endpoints, schemas, and policies enable secure integration across clinical workflows, device management, analytics, and administrative functions.
@@ -519,8 +519,8 @@ WheelSense Platform exposes a comprehensive, role-scoped, workspace-aware API wi
   - Role-specific allowed scopes intersect with requested scopes for effective permissions.
 
 **Section sources**
-- [dependencies.py:48-129](file://server/app/api/dependencies.py#L48-L129)
-- [dependencies.py:200-311](file://server/app/api/dependencies.py#L200-L311)
+- [dependencies.py:48-129](server/app/api/dependencies.py#L48-L129)
+- [dependencies.py:200-311](server/app/api/dependencies.py#L200-L311)
 
 ### Request/Response Schemas Overview
 - Users
@@ -529,7 +529,7 @@ WheelSense Platform exposes a comprehensive, role-scoped, workspace-aware API wi
   - Token, AuthMeOut, AuthMeProfileOut, AuthHydrateOut, ChangePasswordIn, AuthSessionOut, MePatch, ImpersonationStart.
 
 **Section sources**
-- [users.py:33-257](file://server/app/schemas/users.py#L33-L257)
+- [users.py:33-257](server/app/schemas/users.py#L33-L257)
 
 ### Endpoint Testing Patterns
 - Unit tests should mock database sessions and dependencies (get_db, get_current_active_user).

@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [devices.py](file://server/app/schemas/devices.py)
-- [devices.py](file://server/tests/test_devices_mvp.py)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
-- [seed_device_extras.py](file://server/seed_device_extras.py)
-- [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
-- [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [phase2-device-management.md](file://.agents/changes/phase2-device-management.md)
-- [0010-phase2-device-fleet-control-plane.md](file://docs/adr/0010-phase2-device-fleet-control-plane.md)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [devices.py](server/app/schemas/devices.py)
+- [devices.py](server/tests/test_devices_mvp.py)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
+- [seed_device_extras.py](server/seed_device_extras.py)
+- [main.cpp](firmware/Node_Tsimcam/src/main.cpp)
+- [NetworkManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [nodeDeviceRoomKey.ts](frontend/lib/nodeDeviceRoomKey.ts)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [phase2-device-management.md](.agents/changes/phase2-device-management.md)
+- [0010-phase2-device-fleet-control-plane.md](docs/adr/0010-phase2-device-fleet-control-plane.md)
 </cite>
 
 ## Table of Contents
@@ -63,22 +63,22 @@ ROOM --> DM
 ```
 
 **Diagram sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [devices.py](file://server/app/schemas/devices.py)
-- [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [devices.py](server/app/schemas/devices.py)
+- [main.cpp](firmware/Node_Tsimcam/src/main.cpp)
+- [NetworkManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [nodeDeviceRoomKey.ts](frontend/lib/nodeDeviceRoomKey.ts)
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [devices.py](file://server/app/schemas/devices.py)
-- [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [devices.py](server/app/schemas/devices.py)
+- [main.cpp](firmware/Node_Tsimcam/src/main.cpp)
+- [NetworkManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [nodeDeviceRoomKey.ts](frontend/lib/nodeDeviceRoomKey.ts)
 
 ## Core Components
 - Device registry service: central logic for device creation, updates, deletion, auto-registration, merging, and command dispatch.
@@ -98,9 +98,9 @@ Key capabilities:
 - Practical CRUD and integration patterns.
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [devices.py](file://server/app/schemas/devices.py)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [devices.py](server/app/schemas/devices.py)
 
 ## Architecture Overview
 The device registry integrates with MQTT telemetry and firmware payloads to automatically register devices when enabled. Workspace scoping ensures isolation and prevents ambiguity. The service enforces validation, normalization, and security policies while supporting device lifecycle operations.
@@ -125,14 +125,14 @@ DM-->>Handler : Device ready for ingestion
 ```
 
 **Diagram sources**
-- [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [device_management.py](file://server/app/services/device_management.py)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
+- [main.cpp](firmware/Node_Tsimcam/src/main.cpp)
+- [device_management.py](server/app/services/device_management.py)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
+- [device_management.py](server/app/services/device_management.py)
+- [main.cpp](firmware/Node_Tsimcam/src/main.cpp)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
 
 ## Detailed Component Analysis
 
@@ -146,9 +146,9 @@ Practical implications:
 - device_type remains "camera" for node devices to preserve MQTT paths.
 
 **Section sources**
-- [devices.py](file://server/app/schemas/devices.py)
-- [device_management.py](file://server/app/services/device_management.py)
-- [seed_device_extras.py](file://server/seed_device_extras.py)
+- [devices.py](server/app/schemas/devices.py)
+- [device_management.py](server/app/services/device_management.py)
+- [seed_device_extras.py](server/seed_device_extras.py)
 
 ### Device ID Normalization and Validation
 - Device IDs are normalized and validated for MQTT safety:
@@ -161,7 +161,7 @@ Validation rules:
 - Disallow "unknown".
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
+- [device_management.py](server/app/services/device_management.py)
 
 ### Configuration Security (Non-Public Keys)
 - Non-public configuration keys are excluded from frontend exposure and activity logs:
@@ -173,8 +173,8 @@ Security guidance:
 - Treat non-public keys as secrets.
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
 
 ### Automatic Device Registration from Telemetry and MQTT
 - Auto-registration is controlled by settings:
@@ -206,12 +206,12 @@ Create --> Done(["Ready for Use"])
 ```
 
 **Diagram sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
+- [device_management.py](server/app/services/device_management.py)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
+- [device_management.py](server/app/services/device_management.py)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
 
 ### Workspace Scoping
 - Device registry is scoped to the current workspace.
@@ -222,7 +222,7 @@ Operational note:
 - Set MQTT_AUTO_REGISTER_WORKSPACE_ID to avoid ambiguity when multiple workspaces exist.
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
+- [device_management.py](server/app/services/device_management.py)
 
 ### Device Lifecycle Management
 - Create: Enforce uniqueness by device_id per workspace; normalize hardware type; set display_name.
@@ -241,10 +241,10 @@ G --> H["Commit"]
 ```
 
 **Diagram sources**
-- [device_management.py](file://server/app/services/device_management.py)
+- [device_management.py](server/app/services/device_management.py)
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
+- [device_management.py](server/app/services/device_management.py)
 
 ### Device Merging Strategies
 - BLE stub to camera merge:
@@ -268,12 +268,12 @@ DM-->>Cam : Canonical Camera Device
 ```
 
 **Diagram sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
+- [device_management.py](server/app/services/device_management.py)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
+- [device_management.py](server/app/services/device_management.py)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
 
 ### Device Assignments
 - Patient-device assignment:
@@ -297,12 +297,12 @@ API-->>UI : Response
 ```
 
 **Diagram sources**
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [device_management.py](file://server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [device_management.py](server/app/services/device_management.py)
 
 **Section sources**
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [device_management.py](file://server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [device_management.py](server/app/services/device_management.py)
 
 ### Device Commands and MQTT Integration
 - Command dispatch:
@@ -315,9 +315,9 @@ API-->>UI : Response
   - On registration/status, creates/updates camera node device with node_id and BLE MAC.
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [main.cpp](firmware/Node_Tsimcam/src/main.cpp)
 
 ### Frontend Integration Patterns
 - Device detail editing:
@@ -326,8 +326,8 @@ API-->>UI : Response
   - Matches room node IDs against device_id, preferred key, config ble_node_id, and WSN_* extracted from display_name.
 
 **Section sources**
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [nodeDeviceRoomKey.ts](frontend/lib/nodeDeviceRoomKey.ts)
 
 ### Practical Examples
 - Create a device:
@@ -348,8 +348,8 @@ API-->>UI : Response
   - Body: command, interval_ms, resolution
 
 **Section sources**
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [device_management.py](file://server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [device_management.py](server/app/services/device_management.py)
 
 ## Dependency Analysis
 The device registry service depends on:
@@ -370,14 +370,14 @@ ROOM["nodeDeviceRoomKey.ts"] --> DM
 ```
 
 **Diagram sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [nodeDeviceRoomKey.ts](frontend/lib/nodeDeviceRoomKey.ts)
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [devices.py](file://server/app/api/endpoints/devices.py)
+- [device_management.py](server/app/services/device_management.py)
+- [devices.py](server/app/api/endpoints/devices.py)
 
 ## Performance Considerations
 - Auto-registration uses nested transactions and flush to minimize contention; races are handled by reload.
@@ -410,9 +410,9 @@ Common issues and resolutions:
   - Resolution: Use roomNodeDeviceMatchesDevice helpers to reconcile.
 
 **Section sources**
-- [device_management.py](file://server/app/services/device_management.py)
-- [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
-- [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
+- [device_management.py](server/app/services/device_management.py)
+- [test_mqtt_handler.py](server/tests/test_mqtt_handler.py)
+- [nodeDeviceRoomKey.ts](frontend/lib/nodeDeviceRoomKey.ts)
 
 ## Conclusion
 The WheelSense device registry provides a robust, workspace-scoped system for device lifecycle management. It supports automatic registration from telemetry and MQTT, secure configuration handling, flexible assignment models, and comprehensive deletion with cascade cleanup. The documented patterns and troubleshooting guidance enable reliable integration and operation across firmware, backend, and frontend components.
@@ -426,8 +426,8 @@ The WheelSense device registry provides a robust, workspace-scoped system for de
 - mobile_phone: staff/patient mobile device for telemetry and vitals.
 
 **Section sources**
-- [devices.py](file://server/app/schemas/devices.py)
-- [seed_device_extras.py](file://server/seed_device_extras.py)
+- [devices.py](server/app/schemas/devices.py)
+- [seed_device_extras.py](server/seed_device_extras.py)
 
 ### Future Work (Phase 2)
 - Fleet control plane for aggregated device metrics and batched commands.
@@ -435,5 +435,5 @@ The WheelSense device registry provides a robust, workspace-scoped system for de
 - Enhanced RBAC and audit controls.
 
 **Section sources**
-- [phase2-device-management.md](file://.agents/changes/phase2-device-management.md)
-- [0010-phase2-device-fleet-control-plane.md](file://docs/adr/0010-phase2-device-fleet-control-plane.md)
+- [phase2-device-management.md](.agents/changes/phase2-device-management.md)
+- [0010-phase2-device-fleet-control-plane.md](docs/adr/0010-phase2-device-fleet-control-plane.md)

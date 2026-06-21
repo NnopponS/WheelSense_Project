@@ -2,14 +2,14 @@
 
 <cite>
 **Referenced Files in This Document**
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [FacilityFloorToolbar.tsx](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [monitoringWorkspace.ts](file://frontend/lib/monitoringWorkspace.ts)
-- [deviceOnline.ts](file://frontend/lib/deviceOnline.ts)
-- [floorplans.py](file://server/app/services/floorplans.py)
-- [page.tsx](file://frontend/app/admin/monitoring/page.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [FacilityFloorToolbar.tsx](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [monitoringWorkspace.ts](frontend/lib/monitoringWorkspace.ts)
+- [deviceOnline.ts](frontend/lib/deviceOnline.ts)
+- [floorplans.py](server/app/services/floorplans.py)
+- [page.tsx](frontend/app/admin/monitoring/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -76,22 +76,22 @@ E --> C
 ```
 
 **Diagram sources**
-- [DashboardFloorplanPanel.tsx:1-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L29)
-- [FloorplanRoleViewer.tsx:567-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
-- [FloorMapWorkspace.tsx:87-160](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L87-L160)
-- [FacilityFloorToolbar.tsx:21-117](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
-- [monitoringWorkspace.ts:32-138](file://frontend/lib/monitoringWorkspace.ts#L32-L138)
-- [deviceOnline.ts:1-7](file://frontend/lib/deviceOnline.ts#L1-L7)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
+- [DashboardFloorplanPanel.tsx:1-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L29)
+- [FloorplanRoleViewer.tsx:567-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
+- [FloorMapWorkspace.tsx:87-160](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L87-L160)
+- [FacilityFloorToolbar.tsx:21-117](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
+- [monitoringWorkspace.ts:32-138](frontend/lib/monitoringWorkspace.ts#L32-L138)
+- [deviceOnline.ts:1-7](frontend/lib/deviceOnline.ts#L1-L7)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L29)
-- [FloorplanRoleViewer.tsx:567-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
-- [FloorMapWorkspace.tsx:87-160](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L87-L160)
-- [FacilityFloorToolbar.tsx:21-117](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
-- [monitoringWorkspace.ts:32-138](file://frontend/lib/monitoringWorkspace.ts#L32-L138)
-- [deviceOnline.ts:1-7](file://frontend/lib/deviceOnline.ts#L1-L7)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
+- [DashboardFloorplanPanel.tsx:1-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L29)
+- [FloorplanRoleViewer.tsx:567-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
+- [FloorMapWorkspace.tsx:87-160](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L87-L160)
+- [FacilityFloorToolbar.tsx:21-117](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
+- [monitoringWorkspace.ts:32-138](frontend/lib/monitoringWorkspace.ts#L32-L138)
+- [deviceOnline.ts:1-7](frontend/lib/deviceOnline.ts#L1-L7)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
 
 ## Core Components
 - DashboardFloorplanPanel: Thin wrapper around FloorplanRoleViewer, enabling presence rendering and optional initial selections.
@@ -102,12 +102,12 @@ E --> C
 - deviceOnline: Defines the online window for device status.
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorMapWorkspace.tsx:77-160](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L160)
-- [FacilityFloorToolbar.tsx:21-117](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
-- [monitoringWorkspace.ts:32-145](file://frontend/lib/monitoringWorkspace.ts#L32-L145)
-- [deviceOnline.ts:1-7](file://frontend/lib/deviceOnline.ts#L1-L7)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorMapWorkspace.tsx:77-160](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L160)
+- [FacilityFloorToolbar.tsx:21-117](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
+- [monitoringWorkspace.ts:32-145](frontend/lib/monitoringWorkspace.ts#L32-L145)
+- [deviceOnline.ts:1-7](frontend/lib/deviceOnline.ts#L1-L7)
 
 ## Architecture Overview
 The monitoring dashboard integrates three primary data streams:
@@ -140,8 +140,8 @@ Viewer-->>Admin : Render floorplan with occupancy and alerts
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:616-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
+- [FloorplanRoleViewer.tsx:616-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
 
 ## Detailed Component Analysis
 
@@ -150,7 +150,7 @@ Viewer-->>Admin : Render floorplan with occupancy and alerts
 - Behavior: Accepts initial facility, floor, and room parameters; passes them through to the role viewer.
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
 
 ### FloorplanRoleViewer
 - Responsibilities:
@@ -189,12 +189,12 @@ Render --> End(["Interactive monitoring"])
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:616-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
-- [FloorplanRoleViewer.tsx:722-780](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L722-L780)
+- [FloorplanRoleViewer.tsx:616-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
+- [FloorplanRoleViewer.tsx:722-780](frontend/components/floorplan/FloorplanRoleViewer.tsx#L722-L780)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorplanRoleViewer.tsx:722-780](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L722-L780)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorplanRoleViewer.tsx:722-780](frontend/components/floorplan/FloorplanRoleViewer.tsx#L722-L780)
 
 ### FloorMapWorkspace (Admin)
 - Purpose: Admin-only floor map editor for creating, editing, and saving room shapes; linking node devices; assigning patients; and provisioning unmapped rooms.
@@ -226,19 +226,19 @@ Workspace-->>Admin : Success message and refreshed data
 ```
 
 **Diagram sources**
-- [FloorMapWorkspace.tsx:118-160](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L160)
-- [FloorMapWorkspace.tsx:355-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
+- [FloorMapWorkspace.tsx:118-160](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L160)
+- [FloorMapWorkspace.tsx:355-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
 
 **Section sources**
-- [FloorMapWorkspace.tsx:77-160](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L160)
-- [FloorMapWorkspace.tsx:355-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
+- [FloorMapWorkspace.tsx:77-160](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L160)
+- [FloorMapWorkspace.tsx:355-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
 
 ### FacilityFloorToolbar
 - Purpose: Unified toolbar for facility and floor selection and view mode toggle (list/map).
 - Behavior: Disables floor selector until facility is chosen; disables itself while loading; toggles view mode and persists in URL.
 
 **Section sources**
-- [FacilityFloorToolbar.tsx:21-117](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
+- [FacilityFloorToolbar.tsx:21-117](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx#L21-L117)
 
 ### Monitoring Workspace Utilities
 - URL contract and helpers:
@@ -248,13 +248,13 @@ Workspace-->>Admin : Success message and refreshed data
   - Room ID parsing helper for layout IDs
 
 **Section sources**
-- [monitoringWorkspace.ts:32-145](file://frontend/lib/monitoringWorkspace.ts#L32-L145)
+- [monitoringWorkspace.ts:32-145](frontend/lib/monitoringWorkspace.ts#L32-L145)
 
 ### Device Online Window
 - Defines the time window for considering a device “online” based on last-seen timestamps.
 
 **Section sources**
-- [deviceOnline.ts:1-7](file://frontend/lib/deviceOnline.ts#L1-L7)
+- [deviceOnline.ts:1-7](frontend/lib/deviceOnline.ts#L1-L7)
 
 ## Dependency Analysis
 - Frontend-to-backend dependencies:
@@ -281,14 +281,14 @@ BE["server/app/services/floorplans.py"] --> PR["presence builder"]
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:616-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
-- [FloorMapWorkspace.tsx:118-160](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L160)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
+- [FloorplanRoleViewer.tsx:616-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
+- [FloorMapWorkspace.tsx:118-160](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L160)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:616-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
-- [FloorMapWorkspace.tsx:118-160](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L160)
-- [floorplans.py:42-61](file://server/app/services/floorplans.py#L42-L61)
+- [FloorplanRoleViewer.tsx:616-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L616-L702)
+- [FloorMapWorkspace.tsx:118-160](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L118-L160)
+- [floorplans.py:42-61](server/app/services/floorplans.py#L42-L61)
 
 ## Performance Considerations
 - Polling intervals:
@@ -313,8 +313,8 @@ BE["server/app/services/floorplans.py"] --> PR["presence builder"]
   - Narrow by hardware category or device type; ensure devices are registered and linked to rooms.
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:123-140](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L123-L140)
-- [FloorMapWorkspace.tsx:355-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
+- [FloorplanRoleViewer.tsx:123-140](frontend/components/floorplan/FloorplanRoleViewer.tsx#L123-L140)
+- [FloorMapWorkspace.tsx:355-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
 
 ## Conclusion
 The Operations Monitoring dashboard combines a role-aware floorplan viewer with admin capabilities to deliver live floorplan monitoring. It visualizes real-time device presence, room occupancy, and system-wide operational status, while enabling administrators to manage floor layouts, assign devices, and coordinate responses. The modular design separates concerns between read-only monitoring and write-enabled workspace editing, ensuring clarity and maintainability.

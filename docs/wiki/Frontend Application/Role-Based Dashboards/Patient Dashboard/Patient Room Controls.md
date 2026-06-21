@@ -2,13 +2,13 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/patient/room-controls/page.tsx)
-- [types.ts](file://frontend/lib/types.ts)
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [devices.py](file://server/app/schemas/devices.py)
-- [seed_demo.py](file://server/scripts/seed_demo.py)
-- [seed_production.py](file://server/scripts/seed_production.py)
-- [i18n.tsx](file://frontend/lib/i18n.tsx)
+- [page.tsx](frontend/app/patient/room-controls/page.tsx)
+- [types.ts](frontend/lib/types.ts)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [devices.py](server/app/schemas/devices.py)
+- [seed_demo.py](server/scripts/seed_demo.py)
+- [seed_production.py](server/scripts/seed_production.py)
+- [i18n.tsx](frontend/lib/i18n.tsx)
 </cite>
 
 ## Table of Contents
@@ -53,16 +53,16 @@ SeedProd --> API
 ```
 
 **Diagram sources**
-- [page.tsx:156-445](file://frontend/app/patient/room-controls/page.tsx#L156-L445)
-- [types.ts:113-125](file://frontend/lib/types.ts#L113-L125)
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:12-31](file://server/app/schemas/devices.py#L12-L31)
-- [seed_demo.py:430-479](file://server/scripts/seed_demo.py#L430-L479)
-- [seed_production.py:1026-1052](file://server/scripts/seed_production.py#L1026-L1052)
+- [page.tsx:156-445](frontend/app/patient/room-controls/page.tsx#L156-L445)
+- [types.ts:113-125](frontend/lib/types.ts#L113-L125)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:12-31](server/app/schemas/devices.py#L12-L31)
+- [seed_demo.py:430-479](server/scripts/seed_demo.py#L430-L479)
+- [seed_production.py:1026-1052](server/scripts/seed_production.py#L1026-L1052)
 
 **Section sources**
-- [page.tsx:156-445](file://frontend/app/patient/room-controls/page.tsx#L156-L445)
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
+- [page.tsx:156-445](frontend/app/patient/room-controls/page.tsx#L156-L445)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
 
 ## Core Components
 - Device listing and filtering: The frontend lists active smart devices assigned to the patient’s room/workspace and filters out inactive devices.
@@ -73,10 +73,10 @@ SeedProd --> API
 - Permissions: The backend enforces role-based access so only authenticated patients can list and control devices assigned to them.
 
 **Section sources**
-- [page.tsx:99-141](file://frontend/app/patient/room-controls/page.tsx#L99-L141)
-- [page.tsx:181-265](file://frontend/app/patient/room-controls/page.tsx#L181-L265)
-- [page.tsx:447-607](file://frontend/app/patient/room-controls/page.tsx#L447-L607)
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
+- [page.tsx:99-141](frontend/app/patient/room-controls/page.tsx#L99-L141)
+- [page.tsx:181-265](frontend/app/patient/room-controls/page.tsx#L181-L265)
+- [page.tsx:447-607](frontend/app/patient/room-controls/page.tsx#L447-L607)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
 
 ## Architecture Overview
 The room controls feature integrates the frontend UI with backend APIs and Home Assistant entities via the device registry.
@@ -103,10 +103,10 @@ P->>BE : "GET /api/ha/devices/{id}/state" (refresh)
 ```
 
 **Diagram sources**
-- [page.tsx:221-265](file://frontend/app/patient/room-controls/page.tsx#L221-L265)
-- [page.tsx:290-356](file://frontend/app/patient/room-controls/page.tsx#L290-L356)
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
+- [page.tsx:221-265](frontend/app/patient/room-controls/page.tsx#L221-L265)
+- [page.tsx:290-356](frontend/app/patient/room-controls/page.tsx#L290-L356)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:241-263](server/app/api/endpoints/devices.py#L241-L263)
 
 ## Detailed Component Analysis
 
@@ -136,14 +136,14 @@ Action --> |No| Wait["Idle"]
 ```
 
 **Diagram sources**
-- [page.tsx:181-265](file://frontend/app/patient/room-controls/page.tsx#L181-L265)
-- [page.tsx:330-356](file://frontend/app/patient/room-controls/page.tsx#L330-L356)
+- [page.tsx:181-265](frontend/app/patient/room-controls/page.tsx#L181-L265)
+- [page.tsx:330-356](frontend/app/patient/room-controls/page.tsx#L330-L356)
 
 **Section sources**
-- [page.tsx:99-141](file://frontend/app/patient/room-controls/page.tsx#L99-L141)
-- [page.tsx:181-265](file://frontend/app/patient/room-controls/page.tsx#L181-L265)
-- [page.tsx:290-356](file://frontend/app/patient/room-controls/page.tsx#L290-L356)
-- [page.tsx:447-607](file://frontend/app/patient/room-controls/page.tsx#L447-L607)
+- [page.tsx:99-141](frontend/app/patient/room-controls/page.tsx#L99-L141)
+- [page.tsx:181-265](frontend/app/patient/room-controls/page.tsx#L181-L265)
+- [page.tsx:290-356](frontend/app/patient/room-controls/page.tsx#L290-L356)
+- [page.tsx:447-607](frontend/app/patient/room-controls/page.tsx#L447-L607)
 
 ### Backend: Device Endpoints and Permissions
 - Device listing:
@@ -168,33 +168,33 @@ DeviceEndpoints --> DeviceSchemas : "uses"
 ```
 
 **Diagram sources**
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
-- [devices.py:26-42](file://server/app/schemas/devices.py#L26-L42)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:241-263](server/app/api/endpoints/devices.py#L241-L263)
+- [devices.py:26-42](server/app/schemas/devices.py#L26-L42)
 
 **Section sources**
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
-- [devices.py:26-42](file://server/app/schemas/devices.py#L26-L42)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:241-263](server/app/api/endpoints/devices.py#L241-L263)
+- [devices.py:26-42](server/app/schemas/devices.py#L26-L42)
 
 ### Shared Types: Smart Device Model
 - The frontend uses a SmartDevice type representing a room-bound, Home Assistant–mapped device with name, HA entity ID, device type, room association, activation flag, state, and config.
 
 **Section sources**
-- [types.ts:113-125](file://frontend/lib/types.ts#L113-L125)
+- [types.ts:113-125](frontend/lib/types.ts#L113-L125)
 
 ### Translations: UI Labels and Messages
 - The UI uses translation keys for room controls, including badges, titles, placeholders, action labels, and help text.
 
 **Section sources**
-- [i18n.tsx:2856-2874](file://frontend/lib/i18n.tsx#L2856-L2874)
+- [i18n.tsx:2856-2874](frontend/lib/i18n.tsx#L2856-L2874)
 
 ### Seed Scripts: Device Population
 - Demo and production seed scripts create smart devices per room and map them to Home Assistant entities, ensuring the UI has devices to display and control.
 
 **Section sources**
-- [seed_demo.py:430-479](file://server/scripts/seed_demo.py#L430-L479)
-- [seed_production.py:1026-1052](file://server/scripts/seed_production.py#L1026-L1052)
+- [seed_demo.py:430-479](server/scripts/seed_demo.py#L430-L479)
+- [seed_production.py:1026-1052](server/scripts/seed_production.py#L1026-L1052)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -216,14 +216,14 @@ BE_Endpoints --> HA["Home Assistant"]
 ```
 
 **Diagram sources**
-- [page.tsx:221-265](file://frontend/app/patient/room-controls/page.tsx#L221-L265)
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:26-42](file://server/app/schemas/devices.py#L26-L42)
+- [page.tsx:221-265](frontend/app/patient/room-controls/page.tsx#L221-L265)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:26-42](server/app/schemas/devices.py#L26-L42)
 
 **Section sources**
-- [page.tsx:221-265](file://frontend/app/patient/room-controls/page.tsx#L221-L265)
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:26-42](file://server/app/schemas/devices.py#L26-L42)
+- [page.tsx:221-265](frontend/app/patient/room-controls/page.tsx#L221-L265)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:26-42](server/app/schemas/devices.py#L26-L42)
 
 ## Performance Considerations
 - Parallel snapshot hydration: The UI fetches states for all visible devices concurrently to reduce perceived latency.
@@ -246,8 +246,8 @@ Common issues and resolutions:
   - Ensure the value is within the allowed range and step; verify the device is a climate device with a target temperature attribute.
 
 **Section sources**
-- [page.tsx:516-522](file://frontend/app/patient/room-controls/page.tsx#L516-L522)
-- [page.tsx:571-601](file://frontend/app/patient/room-controls/page.tsx#L571-L601)
+- [page.tsx:516-522](frontend/app/patient/room-controls/page.tsx#L516-L522)
+- [page.tsx:571-601](frontend/app/patient/room-controls/page.tsx#L571-L601)
 
 ## Conclusion
 The Patient Room Controls interface provides a streamlined way for patients to manage their room environment through supported smart devices. It integrates with Home Assistant entities, enforces role-based permissions, and offers robust status monitoring and error reporting. The design supports common scenarios like sleep preparation, visitor setups, and medical procedure adjustments through intuitive controls and clear feedback.

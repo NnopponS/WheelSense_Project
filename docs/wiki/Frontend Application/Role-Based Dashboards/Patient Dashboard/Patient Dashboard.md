@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/app/patient/layout.tsx](file://frontend/app/patient/layout.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/app/patient/schedule/page.tsx](file://frontend/app/patient/schedule/page.tsx)
-- [frontend/app/patient/room-controls/page.tsx](file://frontend/app/patient/room-controls/page.tsx)
-- [frontend/app/patient/services/page.tsx](file://frontend/app/patient/services/page.tsx)
-- [frontend/app/patient/pharmacy/page.tsx](file://frontend/app/patient/pharmacy/page.tsx)
-- [frontend/app/patient/messages/page.tsx](file://frontend/app/patient/messages/page.tsx)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx](file://frontend/components/messaging/PatientWorkflowMailbox.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
-- [frontend/lib/patientMetrics.ts](file://frontend/lib/patientMetrics.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/app/patient/layout.tsx](frontend/app/patient/layout.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/app/patient/schedule/page.tsx](frontend/app/patient/schedule/page.tsx)
+- [frontend/app/patient/room-controls/page.tsx](frontend/app/patient/room-controls/page.tsx)
+- [frontend/app/patient/services/page.tsx](frontend/app/patient/services/page.tsx)
+- [frontend/app/patient/pharmacy/page.tsx](frontend/app/patient/pharmacy/page.tsx)
+- [frontend/app/patient/messages/page.tsx](frontend/app/patient/messages/page.tsx)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx](frontend/components/messaging/PatientWorkflowMailbox.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/lib/patientMetrics.ts](frontend/lib/patientMetrics.ts)
 </cite>
 
 ## Table of Contents
@@ -71,22 +71,22 @@ D --> BMICALC
 ```
 
 **Diagram sources**
-- [frontend/app/patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
-- [frontend/app/patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
-- [frontend/app/patient/schedule/page.tsx:1-254](file://frontend/app/patient/schedule/page.tsx#L1-L254)
-- [frontend/app/patient/room-controls/page.tsx:1-639](file://frontend/app/patient/room-controls/page.tsx#L1-L639)
-- [frontend/app/patient/services/page.tsx:1-271](file://frontend/app/patient/services/page.tsx#L1-L271)
-- [frontend/app/patient/pharmacy/page.tsx:1-413](file://frontend/app/patient/pharmacy/page.tsx#L1-L413)
-- [frontend/app/patient/messages/page.tsx:1-8](file://frontend/app/patient/messages/page.tsx#L1-L8)
-- [frontend/components/patient/PatientCareRoadmap.tsx:1-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L1-L293)
-- [frontend/components/patient/PatientMySensors.tsx:1-328](file://frontend/components/patient/PatientMySensors.tsx#L1-L328)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx:1-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L1-L517)
-- [frontend/lib/patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
-- [frontend/lib/patientMetrics.ts:1-21](file://frontend/lib/patientMetrics.ts#L1-L21)
+- [frontend/app/patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
+- [frontend/app/patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
+- [frontend/app/patient/schedule/page.tsx:1-254](frontend/app/patient/schedule/page.tsx#L1-L254)
+- [frontend/app/patient/room-controls/page.tsx:1-639](frontend/app/patient/room-controls/page.tsx#L1-L639)
+- [frontend/app/patient/services/page.tsx:1-271](frontend/app/patient/services/page.tsx#L1-L271)
+- [frontend/app/patient/pharmacy/page.tsx:1-413](frontend/app/patient/pharmacy/page.tsx#L1-L413)
+- [frontend/app/patient/messages/page.tsx:1-8](frontend/app/patient/messages/page.tsx#L1-L8)
+- [frontend/components/patient/PatientCareRoadmap.tsx:1-293](frontend/components/patient/PatientCareRoadmap.tsx#L1-L293)
+- [frontend/components/patient/PatientMySensors.tsx:1-328](frontend/components/patient/PatientMySensors.tsx#L1-L328)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx:1-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L1-L517)
+- [frontend/lib/patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [frontend/lib/patientMetrics.ts:1-21](frontend/lib/patientMetrics.ts#L1-L21)
 
 **Section sources**
-- [frontend/app/patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
-- [frontend/app/patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
+- [frontend/app/patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
+- [frontend/app/patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
 
 ## Core Components
 - Patient Dashboard overview: Tabbed interface with “Overview,” “Profile,” and “Support.” Includes care roadmap, sensor monitoring, quick links, and emergency assistance buttons.
@@ -100,15 +100,15 @@ D --> BMICALC
 - Support: Embedded issue reporting form accessed via the Support tab.
 
 **Section sources**
-- [frontend/app/patient/page.tsx:67-247](file://frontend/app/patient/page.tsx#L67-L247)
-- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [frontend/components/patient/PatientMySensors.tsx:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
-- [frontend/app/patient/schedule/page.tsx:40-254](file://frontend/app/patient/schedule/page.tsx#L40-L254)
-- [frontend/app/patient/room-controls/page.tsx:156-639](file://frontend/app/patient/room-controls/page.tsx#L156-L639)
-- [frontend/app/patient/services/page.tsx:70-271](file://frontend/app/patient/services/page.tsx#L70-L271)
-- [frontend/app/patient/pharmacy/page.tsx:71-413](file://frontend/app/patient/pharmacy/page.tsx#L71-L413)
-- [frontend/app/patient/messages/page.tsx:1-8](file://frontend/app/patient/messages/page.tsx#L1-L8)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [frontend/app/patient/page.tsx:67-247](frontend/app/patient/page.tsx#L67-L247)
+- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [frontend/components/patient/PatientMySensors.tsx:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [frontend/app/patient/schedule/page.tsx:40-254](frontend/app/patient/schedule/page.tsx#L40-L254)
+- [frontend/app/patient/room-controls/page.tsx:156-639](frontend/app/patient/room-controls/page.tsx#L156-L639)
+- [frontend/app/patient/services/page.tsx:70-271](frontend/app/patient/services/page.tsx#L70-L271)
+- [frontend/app/patient/pharmacy/page.tsx:71-413](frontend/app/patient/pharmacy/page.tsx#L71-L413)
+- [frontend/app/patient/messages/page.tsx:1-8](frontend/app/patient/messages/page.tsx#L1-L8)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
 
 ## Architecture Overview
 The Patient Dashboard follows a modular pattern:
@@ -149,13 +149,13 @@ DP --> BMICALC
 ```
 
 **Diagram sources**
-- [frontend/app/patient/page.tsx:67-247](file://frontend/app/patient/page.tsx#L67-L247)
-- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [frontend/components/patient/PatientMySensors.tsx:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
-- [frontend/app/patient/messages/page.tsx:1-8](file://frontend/app/patient/messages/page.tsx#L1-L8)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [frontend/lib/patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
-- [frontend/lib/patientMetrics.ts:1-21](file://frontend/lib/patientMetrics.ts#L1-L21)
+- [frontend/app/patient/page.tsx:67-247](frontend/app/patient/page.tsx#L67-L247)
+- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [frontend/components/patient/PatientMySensors.tsx:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [frontend/app/patient/messages/page.tsx:1-8](frontend/app/patient/messages/page.tsx#L1-L8)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [frontend/lib/patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [frontend/lib/patientMetrics.ts:1-21](frontend/lib/patientMetrics.ts#L1-L21)
 
 ## Detailed Component Analysis
 
@@ -185,13 +185,13 @@ Q-->>P : Success/Failure
 ```
 
 **Diagram sources**
-- [frontend/app/patient/page.tsx:67-247](file://frontend/app/patient/page.tsx#L67-L247)
-- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [frontend/components/patient/PatientMySensors.tsx:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [frontend/app/patient/page.tsx:67-247](frontend/app/patient/page.tsx#L67-L247)
+- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [frontend/components/patient/PatientMySensors.tsx:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
 
 **Section sources**
-- [frontend/app/patient/page.tsx:67-247](file://frontend/app/patient/page.tsx#L67-L247)
-- [frontend/lib/patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [frontend/app/patient/page.tsx:67-247](frontend/app/patient/page.tsx#L67-L247)
+- [frontend/lib/patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
 
 ### Care Roadmap Visualization
 The roadmap aggregates schedules and tasks for the patient and classifies them into past, now, and next columns. It resolves room labels and displays statuses and due times.
@@ -206,10 +206,10 @@ Render --> End(["Done"])
 ```
 
 **Diagram sources**
-- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
 
 **Section sources**
-- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [frontend/components/patient/PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
 
 ### Personal Health Monitoring (My Sensors)
 The sensors panel lists active device assignments and fetches device details. It formats metrics per device type (wheelchair, mobile, Polar HR) and shows battery levels.
@@ -231,10 +231,10 @@ end
 ```
 
 **Diagram sources**
-- [frontend/components/patient/PatientMySensors.tsx:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [frontend/components/patient/PatientMySensors.tsx:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
 
 **Section sources**
-- [frontend/components/patient/PatientMySensors.tsx:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [frontend/components/patient/PatientMySensors.tsx:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
 
 ### Room Environment Control Panel
 The room controls page lists active smart devices, resolves device kinds, and exposes supported actions. It supports refresh, on/off/toggle, and temperature setting for climate devices.
@@ -257,10 +257,10 @@ RC->>RC : Refresh snapshot
 ```
 
 **Diagram sources**
-- [frontend/app/patient/room-controls/page.tsx:156-639](file://frontend/app/patient/room-controls/page.tsx#L156-L639)
+- [frontend/app/patient/room-controls/page.tsx:156-639](frontend/app/patient/room-controls/page.tsx#L156-L639)
 
 **Section sources**
-- [frontend/app/patient/room-controls/page.tsx:156-639](file://frontend/app/patient/room-controls/page.tsx#L156-L639)
+- [frontend/app/patient/room-controls/page.tsx:156-639](frontend/app/patient/room-controls/page.tsx#L156-L639)
 
 ### Appointment Scheduling and Services
 The schedule page provides calendar and agenda views for workflow schedules, with admin preview support. Services allow requesting food, transport, and housekeeping with history and status.
@@ -284,12 +284,12 @@ Q-->>SCH : Success
 ```
 
 **Diagram sources**
-- [frontend/app/patient/schedule/page.tsx:40-254](file://frontend/app/patient/schedule/page.tsx#L40-L254)
-- [frontend/app/patient/services/page.tsx:70-271](file://frontend/app/patient/services/page.tsx#L70-L271)
+- [frontend/app/patient/schedule/page.tsx:40-254](frontend/app/patient/schedule/page.tsx#L40-L254)
+- [frontend/app/patient/services/page.tsx:70-271](frontend/app/patient/services/page.tsx#L70-L271)
 
 **Section sources**
-- [frontend/app/patient/schedule/page.tsx:40-254](file://frontend/app/patient/schedule/page.tsx#L40-L254)
-- [frontend/app/patient/services/page.tsx:70-271](file://frontend/app/patient/services/page.tsx#L70-L271)
+- [frontend/app/patient/schedule/page.tsx:40-254](frontend/app/patient/schedule/page.tsx#L40-L254)
+- [frontend/app/patient/services/page.tsx:70-271](frontend/app/patient/services/page.tsx#L70-L271)
 
 ### Pharmacy Services
 The pharmacy page lists active prescriptions and orders, and enables refill requests with validation and submission.
@@ -310,10 +310,10 @@ PH->>Q : Invalidate cache
 ```
 
 **Diagram sources**
-- [frontend/app/patient/pharmacy/page.tsx:71-413](file://frontend/app/patient/pharmacy/page.tsx#L71-L413)
+- [frontend/app/patient/pharmacy/page.tsx:71-413](frontend/app/patient/pharmacy/page.tsx#L71-L413)
 
 **Section sources**
-- [frontend/app/patient/pharmacy/page.tsx:71-413](file://frontend/app/patient/pharmacy/page.tsx#L71-L413)
+- [frontend/app/patient/pharmacy/page.tsx:71-413](frontend/app/patient/pharmacy/page.tsx#L71-L413)
 
 ### Communication Tools (Messages)
 The messages page uses a shared workflow mailbox component to list inbox and sent messages, enable compose, search, read/unread, and manage attachments.
@@ -336,18 +336,18 @@ MB->>Q : Invalidate cache
 ```
 
 **Diagram sources**
-- [frontend/app/patient/messages/page.tsx:1-8](file://frontend/app/patient/messages/page.tsx#L1-L8)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [frontend/app/patient/messages/page.tsx:1-8](frontend/app/patient/messages/page.tsx#L1-L8)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
 
 **Section sources**
-- [frontend/app/patient/messages/page.tsx:1-8](file://frontend/app/patient/messages/page.tsx#L1-L8)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [frontend/app/patient/messages/page.tsx:1-8](frontend/app/patient/messages/page.tsx#L1-L8)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
 
 ### Support and Issue Reporting
 The Support tab embeds an issue reporting form for submitting support tickets.
 
 **Section sources**
-- [frontend/app/patient/page.tsx:249-261](file://frontend/app/patient/page.tsx#L249-L261)
+- [frontend/app/patient/page.tsx:249-261](frontend/app/patient/page.tsx#L249-L261)
 
 ## Dependency Analysis
 - Dashboard depends on:
@@ -378,14 +378,14 @@ MSG --> API4["Workflow Messaging API"]
 ```
 
 **Diagram sources**
-- [frontend/app/patient/page.tsx:67-247](file://frontend/app/patient/page.tsx#L67-L247)
-- [frontend/app/patient/room-controls/page.tsx:156-639](file://frontend/app/patient/room-controls/page.tsx#L156-L639)
-- [frontend/app/patient/services/page.tsx:70-271](file://frontend/app/patient/services/page.tsx#L70-L271)
-- [frontend/app/patient/pharmacy/page.tsx:71-413](file://frontend/app/patient/pharmacy/page.tsx#L71-L413)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [frontend/app/patient/page.tsx:67-247](frontend/app/patient/page.tsx#L67-L247)
+- [frontend/app/patient/room-controls/page.tsx:156-639](frontend/app/patient/room-controls/page.tsx#L156-L639)
+- [frontend/app/patient/services/page.tsx:70-271](frontend/app/patient/services/page.tsx#L70-L271)
+- [frontend/app/patient/pharmacy/page.tsx:71-413](frontend/app/patient/pharmacy/page.tsx#L71-L413)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
 
 **Section sources**
-- [frontend/app/patient/page.tsx:67-247](file://frontend/app/patient/page.tsx#L67-L247)
+- [frontend/app/patient/page.tsx:67-247](frontend/app/patient/page.tsx#L67-L247)
 
 ## Performance Considerations
 - Efficient data fetching:
@@ -414,12 +414,12 @@ Common issues and resolutions:
   - Validation errors guide users to correct inputs; ensure a patient profile exists and required fields are filled.
 
 **Section sources**
-- [frontend/app/patient/page.tsx:148-175](file://frontend/app/patient/page.tsx#L148-L175)
-- [frontend/lib/patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
-- [frontend/app/patient/room-controls/page.tsx:156-639](file://frontend/app/patient/room-controls/page.tsx#L156-L639)
-- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [frontend/app/patient/services/page.tsx:70-271](file://frontend/app/patient/services/page.tsx#L70-L271)
-- [frontend/app/patient/pharmacy/page.tsx:71-413](file://frontend/app/patient/pharmacy/page.tsx#L71-L413)
+- [frontend/app/patient/page.tsx:148-175](frontend/app/patient/page.tsx#L148-L175)
+- [frontend/lib/patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [frontend/app/patient/room-controls/page.tsx:156-639](frontend/app/patient/room-controls/page.tsx#L156-L639)
+- [frontend/components/messaging/PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [frontend/app/patient/services/page.tsx:70-271](frontend/app/patient/services/page.tsx#L70-L271)
+- [frontend/app/patient/pharmacy/page.tsx:71-413](frontend/app/patient/pharmacy/page.tsx#L71-L413)
 
 ## Conclusion
 The Patient Dashboard provides a cohesive, role-specific self-service experience centered on care coordination, personal monitoring, and communication. Its modular design leverages shared components and robust data flows to deliver a responsive and accessible interface for patients.

@@ -2,21 +2,21 @@
 
 <cite>
 **Referenced Files in This Document**
-- [main.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [Config.h](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [ConfigManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
-- [ConfigManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp)
-- [InputManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h)
-- [InputManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp)
-- [BuzzerManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h)
-- [BuzzerManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp)
-- [NetworkManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
-- [SensorManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
-- [SensorManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp)
-- [BLEManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
-- [BLEManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
+- [main.cpp](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [Config.h](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [platformio.ini](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [ConfigManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
+- [ConfigManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp)
+- [InputManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h)
+- [InputManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp)
+- [BuzzerManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h)
+- [BuzzerManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp)
+- [NetworkManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [NetworkManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [SensorManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [SensorManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp)
+- [BLEManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
+- [BLEManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
 </cite>
 
 ## Table of Contents
@@ -65,14 +65,14 @@ Main -.constants.-> Config
 ```
 
 **Diagram sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [Config.h:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L1-L78)
-- [platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [Config.h:1-78](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L1-L78)
+- [platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 **Section sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [Config.h:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L1-L78)
-- [platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [Config.h:1-78](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L1-L78)
+- [platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Core Components
 - Firmware entry point initializes hardware, managers, and sets up power-saving defaults.
@@ -88,9 +88,9 @@ Key responsibilities:
 - BLE: background scanning, RSSI aggregation, and node normalization.
 
 **Section sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [main.cpp:153-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
-- [Config.h:43-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [main.cpp:153-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
+- [Config.h:43-76](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L76)
 
 ## Architecture Overview
 The system follows a modular manager pattern with a central main loop coordinating periodic tasks and state transitions.
@@ -120,12 +120,12 @@ end
 ```
 
 **Diagram sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [main.cpp:153-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
-- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L53)
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-- [BLEManager.cpp:96-108](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [main.cpp:153-340](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [SensorManager.cpp:50-53](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L53)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [BLEManager.cpp:96-108](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
 
 ## Detailed Component Analysis
 
@@ -139,8 +139,8 @@ Operational notes:
 - Wi-Fi sleep reduces idle current; network updates are skipped during AP portal or WiFi scans.
 
 **Section sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
-- [Config.h:61-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L71)
+- [main.cpp:123-151](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [Config.h:61-71](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L71)
 
 ### Component Manager Architecture
 Managers expose begin/update/get APIs and maintain internal state. They are coordinated by the main loop with periodic scheduling and power-aware throttling.
@@ -233,20 +233,20 @@ NetworkManager ..> BLEManager : "telemetry includes RSSI"
 ```
 
 **Diagram sources**
-- [ConfigManager.h:19-31](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L19-L31)
-- [InputManager.h:13-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L13-L32)
-- [BuzzerManager.h:6-25](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h#L6-L25)
-- [SensorManager.h:28-71](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L28-L71)
-- [BLEManager.h:19-50](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L19-L50)
-- [NetworkManager.h:8-58](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L58)
+- [ConfigManager.h:19-31](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L19-L31)
+- [InputManager.h:13-32](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L13-L32)
+- [BuzzerManager.h:6-25](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.h#L6-L25)
+- [SensorManager.h:28-71](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L28-L71)
+- [BLEManager.h:19-50](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L19-L50)
+- [NetworkManager.h:8-58](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L58)
 
 **Section sources**
-- [ConfigManager.cpp:7-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L7-L29)
-- [InputManager.cpp:8-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L8-L55)
-- [BuzzerManager.cpp:7-10](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L7-L10)
-- [SensorManager.cpp:12-53](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L12-L53)
-- [BLEManager.cpp:66-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
-- [NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [ConfigManager.cpp:7-29](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L7-L29)
+- [InputManager.cpp:8-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L8-L55)
+- [BuzzerManager.cpp:7-10](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L7-L10)
+- [SensorManager.cpp:12-53](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L12-L53)
+- [BLEManager.cpp:66-94](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
+- [NetworkManager.cpp:12-32](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
 
 ### Sensor Data Collection Pipeline (IMU, Motion, Battery)
 - IMU update reads accelerometer/gyroscope, computes orientation (roll/pitch), applies gyro zero-rate offset, low-pass filters, deadbands, integrates angular velocity to wheel tangential distance, and computes sliding-window velocity and acceleration.
@@ -279,13 +279,13 @@ StoreB --> End(["Done"])
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:55-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L55-L132)
-- [SensorManager.cpp:185-229](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L185-L229)
+- [SensorManager.cpp:55-132](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L55-L132)
+- [SensorManager.cpp:185-229](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L185-L229)
 
 **Section sources**
-- [SensorManager.h:7-26](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L7-L26)
-- [SensorManager.cpp:55-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L55-L132)
-- [SensorManager.cpp:134-229](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L134-L229)
+- [SensorManager.h:7-26](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L7-L26)
+- [SensorManager.cpp:55-132](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L55-L132)
+- [SensorManager.cpp:134-229](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L134-L229)
 
 ### Power Management System (LCD Brightness, Sleep Modes, Adaptive Intervals)
 - Activity registration resets LCD brightness and clears sleep suppression flags.
@@ -313,12 +313,12 @@ Dim --> |No| Keep["No change"]
 ```
 
 **Diagram sources**
-- [main.cpp:82-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L82-L121)
-- [Config.h:61-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L71)
+- [main.cpp:82-121](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L82-L121)
+- [Config.h:61-71](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L71)
 
 **Section sources**
-- [main.cpp:71-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L71-L121)
-- [Config.h:61-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L71)
+- [main.cpp:71-121](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L71-L121)
+- [Config.h:61-71](firmware/M5StickCPlus2_BLEGateway/src/Config.h#L61-L71)
 
 ### Motion Recording State Machine (Start/Stop, Zero Velocity Detection)
 - Requests originate from UI or MQTT control topic.
@@ -336,13 +336,13 @@ Recording --> Idle : "auto-stop (zero velocity 3s)"
 ```
 
 **Diagram sources**
-- [main.cpp:221-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L221-L263)
-- [NetworkManager.cpp:198-214](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L198-L214)
-- [BuzzerManager.cpp:30-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L30-L44)
+- [main.cpp:221-263](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L221-L263)
+- [NetworkManager.cpp:198-214](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L198-L214)
+- [BuzzerManager.cpp:30-44](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L30-L44)
 
 **Section sources**
-- [main.cpp:221-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L221-L263)
-- [NetworkManager.cpp:198-214](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L198-L214)
+- [main.cpp:221-263](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L221-L263)
+- [NetworkManager.cpp:198-214](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L198-L214)
 
 ### MQTT Telemetry Publishing (JSON Payload, Timestamps, Sequence Numbering)
 - Payload fields:
@@ -379,13 +379,13 @@ end
 ```
 
 **Diagram sources**
-- [main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
-- [SensorManager.cpp:261-263](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L261-L263)
-- [BLEManager.cpp:140-147](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L140-L147)
-- [NetworkManager.cpp:276-282](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
+- [main.cpp:265-336](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
+- [SensorManager.cpp:261-263](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L261-L263)
+- [BLEManager.cpp:140-147](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L140-L147)
+- [NetworkManager.cpp:276-282](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
 
 **Section sources**
-- [main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
+- [main.cpp:265-336](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
 
 ### BLE Scanning and RSSI Data Collection for Localization
 - Background scanning task runs on core 0 with controlled intervals and windows.
@@ -410,14 +410,14 @@ end
 ```
 
 **Diagram sources**
-- [BLEManager.cpp:110-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
-- [BLEManager.cpp:96-108](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
+- [BLEManager.cpp:110-121](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
+- [BLEManager.cpp:33-62](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
+- [BLEManager.cpp:96-108](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
 
 **Section sources**
-- [BLEManager.h:12-17](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L12-L17)
-- [BLEManager.cpp:66-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
-- [BLEManager.cpp:110-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
+- [BLEManager.h:12-17](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L12-L17)
+- [BLEManager.cpp:66-94](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
+- [BLEManager.cpp:110-121](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
 
 ### Input Handling System (Buttons, Buzzer Feedback, UI Navigation)
 - Debounce and long press detection with latch to prevent repeated triggers.
@@ -442,15 +442,15 @@ LatchC --> BeepC["Buzzer beepButton()"]
 ```
 
 **Diagram sources**
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
-- [BuzzerManager.cpp:16-18](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L18)
-- [main.cpp:164-175](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [BuzzerManager.cpp:16-18](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L18)
+- [main.cpp:164-175](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
 
 **Section sources**
-- [InputManager.h:6-11](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L6-L11)
-- [InputManager.cpp:12-55](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
-- [BuzzerManager.cpp:16-18](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L18)
-- [main.cpp:164-175](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
+- [InputManager.h:6-11](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L6-L11)
+- [InputManager.cpp:12-55](firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L12-L55)
+- [BuzzerManager.cpp:16-18](firmware/M5StickCPlus2_BLEGateway/src/managers/BuzzerManager.cpp#L16-L18)
+- [main.cpp:164-175](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
 
 ### Configuration Management, Network Connectivity, and AP Portal Functionality
 - Configuration stored in NVS with Preferences; includes device name, WiFi credentials, MQTT endpoint, wheel radius, and display mode.
@@ -471,17 +471,17 @@ NM->>CM : reconfigureFromConfig() on config updates
 ```
 
 **Diagram sources**
-- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L29)
-- [NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-- [NetworkManager.cpp:135-239](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L135-L239)
+- [ConfigManager.cpp:11-29](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L29)
+- [NetworkManager.cpp:12-32](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [NetworkManager.cpp:135-239](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L135-L239)
 
 **Section sources**
-- [ConfigManager.h:7-17](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L17)
-- [ConfigManager.cpp:11-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L44)
-- [NetworkManager.h:8-58](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L58)
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
-- [NetworkManager.cpp:135-239](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L135-L239)
+- [ConfigManager.h:7-17](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L17)
+- [ConfigManager.cpp:11-44](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L44)
+- [NetworkManager.h:8-58](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L58)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [NetworkManager.cpp:135-239](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L135-L239)
 
 ## Dependency Analysis
 - main.cpp depends on managers for orchestration and data.
@@ -506,14 +506,14 @@ ble --> nimble["NimBLE"]
 ```
 
 **Diagram sources**
-- [main.cpp:1-15](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L1-L15)
-- [SensorManager.cpp:1-3](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L1-L3)
-- [NetworkManager.cpp:1-4](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L1-L4)
-- [BLEManager.cpp:1-4](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L4)
+- [main.cpp:1-15](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L1-L15)
+- [SensorManager.cpp:1-3](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L1-L3)
+- [NetworkManager.cpp:1-4](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L1-L4)
+- [BLEManager.cpp:1-4](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L4)
 
 **Section sources**
-- [main.cpp:1-15](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L1-L15)
-- [platformio.ini:15-18](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
+- [main.cpp:1-15](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L1-L15)
+- [platformio.ini:15-18](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
 
 ## Performance Considerations
 - Power-aware scheduling: longer delays and reduced intervals when LCD is off or device is idle.
@@ -543,10 +543,10 @@ Common issues and resolutions:
   - Allow filtering to settle; charging state debounce prevents flicker.
 
 **Section sources**
-- [main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
-- [SensorManager.cpp:231-259](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L231-L259)
-- [BLEManager.cpp:110-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [main.cpp:265-336](firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
+- [SensorManager.cpp:231-259](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L231-L259)
+- [BLEManager.cpp:110-121](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L110-L121)
+- [NetworkManager.cpp:58-94](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
 
 ## Conclusion
 The M5StickCPlus2 implementation provides a robust, power-efficient foundation for wheelchair telemetry. Its modular manager architecture cleanly separates concerns, while adaptive intervals and power-aware logic extend battery life. The sensor fusion pipeline delivers reliable motion metrics, and the telemetry system publishes structured JSON payloads enriched with BLE fingerprints. The state machine and input handling enable intuitive user control, and configuration management supports remote updates.

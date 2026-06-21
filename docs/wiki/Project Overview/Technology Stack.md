@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [server/requirements.txt](file://server/requirements.txt)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [server/app/main.py](file://server/app/main.py)
-- [server/app/mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [server/app/db/session.py](file://server/app/db/session.py)
-- [server/app/config.py](file://server/app/config.py)
-- [server/alembic.ini](file://server/alembic.ini)
-- [frontend/package.json](file://frontend/package.json)
-- [frontend/next.config.ts](file://frontend/next.config.ts)
-- [frontend/components/providers/AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [frontend/lib/api.ts](file://frontend/lib/api.ts)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [README.md](README.md)
+- [server/pyproject.toml](server/pyproject.toml)
+- [server/requirements.txt](server/requirements.txt)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [server/app/main.py](server/app/main.py)
+- [server/app/mqtt_handler.py](server/app/mqtt_handler.py)
+- [server/app/db/session.py](server/app/db/session.py)
+- [server/app/config.py](server/app/config.py)
+- [server/alembic.ini](server/alembic.ini)
+- [frontend/package.json](frontend/package.json)
+- [frontend/next.config.ts](frontend/next.config.ts)
+- [frontend/components/providers/AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [frontend/lib/api.ts](frontend/lib/api.ts)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
 </cite>
 
 ## Table of Contents
@@ -65,18 +65,18 @@ FW_PIO --> A_MQTT
 ```
 
 **Diagram sources**
-- [server/app/main.py:68-76](file://server/app/main.py#L68-L76)
-- [server/app/db/session.py:47-55](file://server/app/db/session.py#L47-L55)
-- [server/app/mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [server/app/config.py:19-36](file://server/app/config.py#L19-L36)
-- [server/alembic.ini:1-117](file://server/alembic.ini#L1-L117)
-- [frontend/next.config.ts:1-30](file://frontend/next.config.ts#L1-L30)
-- [frontend/components/providers/AppProviders.tsx:10-23](file://frontend/components/providers/AppProviders.tsx#L10-L23)
-- [frontend/lib/api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/app/main.py:68-76](server/app/main.py#L68-L76)
+- [server/app/db/session.py:47-55](server/app/db/session.py#L47-L55)
+- [server/app/mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [server/app/config.py:19-36](server/app/config.py#L19-L36)
+- [server/alembic.ini:1-117](server/alembic.ini#L1-L117)
+- [frontend/next.config.ts:1-30](frontend/next.config.ts#L1-L30)
+- [frontend/components/providers/AppProviders.tsx:10-23](frontend/components/providers/AppProviders.tsx#L10-L23)
+- [frontend/lib/api.ts:209-297](frontend/lib/api.ts#L209-L297)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 **Section sources**
-- [README.md:5-23](file://README.md#L5-L23)
+- [README.md:5-23](README.md#L5-L23)
 
 ## Core Components
 - Backend (FastAPI)
@@ -119,10 +119,10 @@ FW_PIO --> A_MQTT
   - Build flags: Debug level, USB mode
 
 **Section sources**
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [server/app/config.py:19-94](file://server/app/config.py#L19-L94)
-- [frontend/package.json:13-56](file://frontend/package.json#L13-L56)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-21](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L21)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [server/app/config.py:19-94](server/app/config.py#L19-L94)
+- [frontend/package.json:13-56](frontend/package.json#L13-L56)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-21](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L21)
 
 ## Architecture Overview
 The backend exposes REST APIs consumed by the Next.js frontend. Devices publish telemetry and camera frames over MQTT; the backend subscribes, validates, persists, and publishes derived events. PostgreSQL stores structured data with Alembic-managed migrations. The frontend integrates TanStack Query for caching and optimistic updates, and proxies API calls through Next.js routes.
@@ -143,11 +143,11 @@ FE --> Srv
 ```
 
 **Diagram sources**
-- [server/app/mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [server/app/db/session.py:18-44](file://server/app/db/session.py#L18-L44)
-- [server/alembic.ini:1-117](file://server/alembic.ini#L1-L117)
-- [server/app/main.py:68-76](file://server/app/main.py#L68-L76)
-- [frontend/next.config.ts:25-27](file://frontend/next.config.ts#L25-L27)
+- [server/app/mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [server/app/db/session.py:18-44](server/app/db/session.py#L18-L44)
+- [server/alembic.ini:1-117](server/alembic.ini#L1-L117)
+- [server/app/main.py:68-76](server/app/main.py#L68-L76)
+- [frontend/next.config.ts:25-27](frontend/next.config.ts#L25-L27)
 
 ## Detailed Component Analysis
 
@@ -176,10 +176,10 @@ App->>MQ : cancel task
 ```
 
 **Diagram sources**
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
 
 **Section sources**
-- [server/app/main.py:26-76](file://server/app/main.py#L26-L76)
+- [server/app/main.py:26-76](server/app/main.py#L26-L76)
 
 ### Backend: MQTT Telemetry Ingestion and Publishing
 - Subscriptions: telemetry, camera registration/status/photo/frame, device acknowledgments.
@@ -207,16 +207,16 @@ Frame --> PersistFrame["Persist frame and update status"]
 ```
 
 **Diagram sources**
-- [server/app/mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [server/app/mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
-- [server/app/mqtt_handler.py:566-573](file://server/app/mqtt_handler.py#L566-L573)
+- [server/app/mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [server/app/mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [server/app/mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
+- [server/app/mqtt_handler.py:566-573](server/app/mqtt_handler.py#L566-L573)
 
 **Section sources**
-- [server/app/mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [server/app/mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
-- [server/app/mqtt_handler.py:566-573](file://server/app/mqtt_handler.py#L566-L573)
+- [server/app/mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [server/app/mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [server/app/mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
+- [server/app/mqtt_handler.py:566-573](server/app/mqtt_handler.py#L566-L573)
 
 ### Backend: Database Session Management and Configuration
 - Async SQLAlchemy engine configured with pool settings for PostgreSQL.
@@ -245,20 +245,20 @@ AsyncSessionLocal --> get_session : "dependency provider"
 ```
 
 **Diagram sources**
-- [server/app/config.py:19-36](file://server/app/config.py#L19-L36)
-- [server/app/db/session.py:18-55](file://server/app/db/session.py#L18-L55)
+- [server/app/config.py:19-36](server/app/config.py#L19-L36)
+- [server/app/db/session.py:18-55](server/app/db/session.py#L18-L55)
 
 **Section sources**
-- [server/app/db/session.py:18-55](file://server/app/db/session.py#L18-L55)
-- [server/app/config.py:19-36](file://server/app/config.py#L19-L36)
+- [server/app/db/session.py:18-55](server/app/db/session.py#L18-L55)
+- [server/app/config.py:19-36](server/app/config.py#L19-L36)
 
 ### Backend: Environment and Container Orchestration
 - Docker Compose includes core and data stacks; production mode merges shared stack with PostgreSQL data.
 - Backend quick-start commands demonstrate database and MQTT bootstrapping, Alembic migrations, and Uvicorn startup.
 
 **Section sources**
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [README.md:25-44](file://README.md#L25-L44)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [README.md:25-44](README.md#L25-L44)
 
 ### Frontend: Next.js 16, React 19, TanStack Query, Tailwind CSS
 - Next.js configuration enables standalone output, React Compiler, and API proxying to FastAPI.
@@ -280,14 +280,14 @@ Q-->>UI : render with cache
 ```
 
 **Diagram sources**
-- [frontend/components/providers/AppProviders.tsx:10-23](file://frontend/components/providers/AppProviders.tsx#L10-L23)
-- [frontend/lib/api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
-- [frontend/next.config.ts:25-27](file://frontend/next.config.ts#L25-L27)
+- [frontend/components/providers/AppProviders.tsx:10-23](frontend/components/providers/AppProviders.tsx#L10-L23)
+- [frontend/lib/api.ts:209-297](frontend/lib/api.ts#L209-L297)
+- [frontend/next.config.ts:25-27](frontend/next.config.ts#L25-L27)
 
 **Section sources**
-- [frontend/next.config.ts:1-30](file://frontend/next.config.ts#L1-L30)
-- [frontend/components/providers/AppProviders.tsx:10-23](file://frontend/components/providers/AppProviders.tsx#L10-L23)
-- [frontend/lib/api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
+- [frontend/next.config.ts:1-30](frontend/next.config.ts#L1-L30)
+- [frontend/components/providers/AppProviders.tsx:10-23](frontend/components/providers/AppProviders.tsx#L10-L23)
+- [frontend/lib/api.ts:209-297](frontend/lib/api.ts#L209-L297)
 
 ### Firmware: PlatformIO, Arduino, M5StickCPlus2, MQTT
 - PlatformIO project targets m5stick-c board with Arduino framework.
@@ -295,7 +295,7 @@ Q-->>UI : render with cache
 - Build flags configure debug level and USB mode.
 
 **Section sources**
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-21](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L21)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-21](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L21)
 
 ## Dependency Analysis
 - Backend dependencies are declared in requirements.txt with pinned versions for stability and reproducibility.
@@ -314,14 +314,14 @@ FW --> |"PubSubClient, ArduinoJson"| MQ
 ```
 
 **Diagram sources**
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [frontend/package.json:13-56](file://frontend/package.json#L13-L56)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-18](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [frontend/package.json:13-56](frontend/package.json#L13-L56)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-18](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
 
 **Section sources**
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [frontend/package.json:13-56](file://frontend/package.json#L13-L56)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-18](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [frontend/package.json:13-56](frontend/package.json#L13-L56)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-18](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
 
 ## Performance Considerations
 - Backend
@@ -350,11 +350,11 @@ FW --> |"PubSubClient, ArduinoJson"| MQ
   - Memory: Monitor heap usage during photo assembly; consider chunk sizes and buffer management.
 
 **Section sources**
-- [server/app/db/session.py:58-64](file://server/app/db/session.py#L58-L64)
-- [server/app/mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [server/alembic.ini:1-117](file://server/alembic.ini#L1-L117)
-- [frontend/lib/api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
-- [frontend/components/providers/AppProviders.tsx:10-23](file://frontend/components/providers/AppProviders.tsx#L10-L23)
+- [server/app/db/session.py:58-64](server/app/db/session.py#L58-L64)
+- [server/app/mqtt_handler.py:73-136](server/app/mqtt_handler.py#L73-L136)
+- [server/alembic.ini:1-117](server/alembic.ini#L1-L117)
+- [frontend/lib/api.ts:209-297](frontend/lib/api.ts#L209-L297)
+- [frontend/components/providers/AppProviders.tsx:10-23](frontend/components/providers/AppProviders.tsx#L10-L23)
 
 ## Conclusion
 The WheelSense Platform leverages modern, robust technologies across backend, frontend, and firmware to deliver a scalable healthcare IoT solution. FastAPI and SQLAlchemy provide a reactive backend foundation, MQTT enables low-latency device telemetry, and PostgreSQL/Alembic ensure reliable persistence and evolution. The Next.js frontend integrates TanStack Query for responsive UX, while PlatformIO and Arduino streamline firmware development for resource-constrained devices. These choices collectively support real-time monitoring, localization, and workflow orchestration in clinical environments.

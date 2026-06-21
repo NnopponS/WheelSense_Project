@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [frontend/app/supervisor/settings/page.tsx](file://frontend/app/supervisor/settings/page.tsx)
-- [frontend/app/admin/settings/page.tsx](file://frontend/app/admin/settings/page.tsx)
-- [frontend/app/admin/settings/SettingsClient.tsx](file://frontend/app/admin/settings/SettingsClient.tsx)
-- [frontend/components/admin/settings/AiSettingsPanel.tsx](file://frontend/components/admin/settings/AiSettingsPanel.tsx)
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx](file://frontend/components/admin/settings/ServerSettingsPanel.tsx)
-- [frontend/app/account/page.tsx](file://frontend/app/account/page.tsx)
-- [frontend/lib/sidebarConfig.ts](file://frontend/lib/sidebarConfig.ts)
-- [frontend/components/TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [frontend/components/NotificationDrawer.tsx](file://frontend/components/NotificationDrawer.tsx)
+- [frontend/app/supervisor/settings/page.tsx](frontend/app/supervisor/settings/page.tsx)
+- [frontend/app/admin/settings/page.tsx](frontend/app/admin/settings/page.tsx)
+- [frontend/app/admin/settings/SettingsClient.tsx](frontend/app/admin/settings/SettingsClient.tsx)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx](frontend/components/admin/settings/AiSettingsPanel.tsx)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx](frontend/components/admin/settings/ServerSettingsPanel.tsx)
+- [frontend/app/account/page.tsx](frontend/app/account/page.tsx)
+- [frontend/lib/sidebarConfig.ts](frontend/lib/sidebarConfig.ts)
+- [frontend/components/TopBar.tsx](frontend/components/TopBar.tsx)
+- [frontend/components/NotificationDrawer.tsx](frontend/components/NotificationDrawer.tsx)
 </cite>
 
 ## Table of Contents
@@ -56,24 +56,24 @@ TopBar --> NotifDrawer
 ```
 
 **Diagram sources**
-- [frontend/app/supervisor/settings/page.tsx:1-6](file://frontend/app/supervisor/settings/page.tsx#L1-L6)
-- [frontend/app/admin/settings/page.tsx:1-19](file://frontend/app/admin/settings/page.tsx#L1-L19)
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/components/NotificationDrawer.tsx:85-280](file://frontend/components/NotificationDrawer.tsx#L85-L280)
+- [frontend/app/supervisor/settings/page.tsx:1-6](frontend/app/supervisor/settings/page.tsx#L1-L6)
+- [frontend/app/admin/settings/page.tsx:1-19](frontend/app/admin/settings/page.tsx#L1-L19)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/components/NotificationDrawer.tsx:85-280](frontend/components/NotificationDrawer.tsx#L85-L280)
 
 **Section sources**
-- [frontend/app/supervisor/settings/page.tsx:1-6](file://frontend/app/supervisor/settings/page.tsx#L1-L6)
-- [frontend/app/admin/settings/page.tsx:1-19](file://frontend/app/admin/settings/page.tsx#L1-L19)
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/components/NotificationDrawer.tsx:85-280](file://frontend/components/NotificationDrawer.tsx#L85-L280)
+- [frontend/app/supervisor/settings/page.tsx:1-6](frontend/app/supervisor/settings/page.tsx#L1-L6)
+- [frontend/app/admin/settings/page.tsx:1-19](frontend/app/admin/settings/page.tsx#L1-L19)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/components/NotificationDrawer.tsx:85-280](frontend/components/NotificationDrawer.tsx#L85-L280)
 
 ## Core Components
 - Supervisor Settings Redirect: The supervisor settings route redirects to the account page for personal profile and security settings.
@@ -84,13 +84,13 @@ TopBar --> NotifDrawer
 - Notification Integration: Top bar toggles notification drawer and sound preferences; drawer filters and displays notifications.
 
 **Section sources**
-- [frontend/app/supervisor/settings/page.tsx:1-6](file://frontend/app/supervisor/settings/page.tsx#L1-L6)
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/components/NotificationDrawer.tsx:85-280](file://frontend/components/NotificationDrawer.tsx#L85-L280)
+- [frontend/app/supervisor/settings/page.tsx:1-6](frontend/app/supervisor/settings/page.tsx#L1-L6)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/components/NotificationDrawer.tsx:85-280](frontend/components/NotificationDrawer.tsx#L85-L280)
 
 ## Architecture Overview
 The Settings & Preferences feature is structured around role-specific entry points and shared UI components:
@@ -118,12 +118,12 @@ AC-->>SP : Show Server tab
 ```
 
 **Diagram sources**
-- [frontend/lib/sidebarConfig.ts:160-196](file://frontend/lib/sidebarConfig.ts#L160-L196)
-- [frontend/app/supervisor/settings/page.tsx:1-6](file://frontend/app/supervisor/settings/page.tsx#L1-L6)
-- [frontend/app/admin/settings/page.tsx:1-19](file://frontend/app/admin/settings/page.tsx#L1-L19)
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/lib/sidebarConfig.ts:160-196](frontend/lib/sidebarConfig.ts#L160-L196)
+- [frontend/app/supervisor/settings/page.tsx:1-6](frontend/app/supervisor/settings/page.tsx#L1-L6)
+- [frontend/app/admin/settings/page.tsx:1-19](frontend/app/admin/settings/page.tsx#L1-L19)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
 
 ## Detailed Component Analysis
 
@@ -139,10 +139,10 @@ Redirect --> End(["Render Account Page"])
 ```
 
 **Diagram sources**
-- [frontend/app/supervisor/settings/page.tsx:1-6](file://frontend/app/supervisor/settings/page.tsx#L1-L6)
+- [frontend/app/supervisor/settings/page.tsx:1-6](frontend/app/supervisor/settings/page.tsx#L1-L6)
 
 **Section sources**
-- [frontend/app/supervisor/settings/page.tsx:1-6](file://frontend/app/supervisor/settings/page.tsx#L1-L6)
+- [frontend/app/supervisor/settings/page.tsx:1-6](frontend/app/supervisor/settings/page.tsx#L1-L6)
 
 ### Admin Settings Client
 - Purpose: Hosts a tabbed settings UI for administrators.
@@ -179,10 +179,10 @@ C-->>P : Render Profile panel (redirect to /account)
 ```
 
 **Diagram sources**
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
 
 **Section sources**
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
 
 ### AI Settings Panel
 - Purpose: Manage AI runtime provider and model defaults, and operate Ollama/Copilot integrations.
@@ -227,10 +227,10 @@ P-->>U : Success dialog and auto-close
 ```
 
 **Diagram sources**
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
 
 **Section sources**
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
 
 ### Server Settings Panel
 - Purpose: Manage server-side retention policies, simulator controls, and database maintenance.
@@ -264,10 +264,10 @@ S-->>U : Done and refresh user
 ```
 
 **Diagram sources**
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
 
 **Section sources**
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
 
 ### Account Page (User Preference Management)
 - Purpose: Central place for user profile editing, avatar/photo management, and password changes.
@@ -295,10 +295,10 @@ Update --> Confirm["Show success/error"]
 ```
 
 **Diagram sources**
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
 
 **Section sources**
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
 
 ### Notification Preferences and Integration
 - Top Bar:
@@ -328,12 +328,12 @@ ND-->>U : Render filtered list
 ```
 
 **Diagram sources**
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/components/NotificationDrawer.tsx:85-280](file://frontend/components/NotificationDrawer.tsx#L85-L280)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/components/NotificationDrawer.tsx:85-280](frontend/components/NotificationDrawer.tsx#L85-L280)
 
 **Section sources**
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/components/NotificationDrawer.tsx:85-280](file://frontend/components/NotificationDrawer.tsx#L85-L280)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/components/NotificationDrawer.tsx:85-280](frontend/components/NotificationDrawer.tsx#L85-L280)
 
 ## Dependency Analysis
 - Role navigation:
@@ -358,18 +358,18 @@ TB["TopBar"] --> ND["NotificationDrawer"]
 ```
 
 **Diagram sources**
-- [frontend/lib/sidebarConfig.ts:160-196](file://frontend/lib/sidebarConfig.ts#L160-L196)
-- [frontend/app/supervisor/settings/page.tsx:1-6](file://frontend/app/supervisor/settings/page.tsx#L1-L6)
-- [frontend/app/admin/settings/page.tsx:1-19](file://frontend/app/admin/settings/page.tsx#L1-L19)
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/components/NotificationDrawer.tsx:85-280](file://frontend/components/NotificationDrawer.tsx#L85-L280)
+- [frontend/lib/sidebarConfig.ts:160-196](frontend/lib/sidebarConfig.ts#L160-L196)
+- [frontend/app/supervisor/settings/page.tsx:1-6](frontend/app/supervisor/settings/page.tsx#L1-L6)
+- [frontend/app/admin/settings/page.tsx:1-19](frontend/app/admin/settings/page.tsx#L1-L19)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/components/NotificationDrawer.tsx:85-280](frontend/components/NotificationDrawer.tsx#L85-L280)
 
 **Section sources**
-- [frontend/lib/sidebarConfig.ts:160-196](file://frontend/lib/sidebarConfig.ts#L160-L196)
-- [frontend/app/admin/settings/SettingsClient.tsx:1-114](file://frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
+- [frontend/lib/sidebarConfig.ts:160-196](frontend/lib/sidebarConfig.ts#L160-L196)
+- [frontend/app/admin/settings/SettingsClient.tsx:1-114](frontend/app/admin/settings/SettingsClient.tsx#L1-L114)
 
 ## Performance Considerations
 - Query caching and polling:
@@ -397,11 +397,11 @@ TB["TopBar"] --> ND["NotificationDrawer"]
   - Sound toggle not working: ensure audio priming on user gesture and browser policy compliance.
 
 **Section sources**
-- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](file://frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
-- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](file://frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/components/NotificationDrawer.tsx:85-280](file://frontend/components/NotificationDrawer.tsx#L85-L280)
+- [frontend/components/admin/settings/AiSettingsPanel.tsx:1-1098](frontend/components/admin/settings/AiSettingsPanel.tsx#L1-L1098)
+- [frontend/components/admin/settings/ServerSettingsPanel.tsx:1-405](frontend/components/admin/settings/ServerSettingsPanel.tsx#L1-L405)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/components/NotificationDrawer.tsx:85-280](frontend/components/NotificationDrawer.tsx#L85-L280)
 
 ## Conclusion
 The Settings & Preferences feature in the Supervisor Dashboard is designed around role-specific entry points and shared components. Supervisor settings redirect to the account page for personal profile and security settings, while administrative settings are consolidated under a tabbed interface with dedicated panels for AI and server configuration. User preference management is centralized in the account page, and notification preferences integrate seamlessly with the top bar and notification drawer. The implementation leverages React Query for data fetching, streaming APIs for long-running operations, and robust error handling to provide a reliable and responsive experience.

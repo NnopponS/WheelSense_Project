@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [router.py](file://server/app/api/router.py)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/schemas/workflow.py)
-- [chat.py](file://server/app/api/endpoints/chat.py)
-- [chat.py](file://server/app/schemas/chat.py)
-- [task_management.py](file://server/app/api/endpoints/task_management.py)
-- [task_management.py](file://server/app/schemas/task_management.py)
-- [tasks.py](file://server/app/api/endpoints/tasks.py)
-- [tasks.py](file://server/app/schemas/tasks.py)
+- [router.py](server/app/api/router.py)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/schemas/workflow.py)
+- [chat.py](server/app/api/endpoints/chat.py)
+- [chat.py](server/app/schemas/chat.py)
+- [task_management.py](server/app/api/endpoints/task_management.py)
+- [task_management.py](server/app/schemas/task_management.py)
+- [tasks.py](server/app/api/endpoints/tasks.py)
+- [tasks.py](server/app/schemas/tasks.py)
 </cite>
 
 ## Table of Contents
@@ -77,19 +77,19 @@ C_EP --> C_SC
 ```
 
 **Diagram sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/schemas/workflow.py)
-- [task_management.py](file://server/app/api/endpoints/task_management.py)
-- [task_management.py](file://server/app/schemas/task_management.py)
-- [tasks.py](file://server/app/api/endpoints/tasks.py)
-- [tasks.py](file://server/app/schemas/tasks.py)
-- [chat.py](file://server/app/api/endpoints/chat.py)
-- [chat.py](file://server/app/schemas/chat.py)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/schemas/workflow.py)
+- [task_management.py](server/app/api/endpoints/task_management.py)
+- [task_management.py](server/app/schemas/task_management.py)
+- [tasks.py](server/app/api/endpoints/tasks.py)
+- [tasks.py](server/app/schemas/tasks.py)
+- [chat.py](server/app/api/endpoints/chat.py)
+- [chat.py](server/app/schemas/chat.py)
 
 **Section sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
 
 ## Core Components
 - Workflow domain: schedules, tasks, directives, handover notes, workflow jobs, and audit trail
@@ -105,10 +105,10 @@ Key responsibilities:
 - Stream AI responses and persist conversation history
 
 **Section sources**
-- [workflow.py:110-800](file://server/app/api/endpoints/workflow.py#L110-L800)
-- [task_management.py:168-645](file://server/app/api/endpoints/task_management.py#L168-L645)
-- [tasks.py:44-265](file://server/app/api/endpoints/tasks.py#L44-L265)
-- [chat.py:25-150](file://server/app/api/endpoints/chat.py#L25-L150)
+- [workflow.py:110-800](server/app/api/endpoints/workflow.py#L110-L800)
+- [task_management.py:168-645](server/app/api/endpoints/task_management.py#L168-L645)
+- [tasks.py:44-265](server/app/api/endpoints/tasks.py#L44-L265)
+- [chat.py:25-150](server/app/api/endpoints/chat.py#L25-L150)
 
 ## Architecture Overview
 The system exposes REST endpoints organized by domain. Each domain endpoint validates access, enforces roles, and delegates to service layers. Workflow and task operations integrate with audit logging and optional AI agent runtime for automated actions.
@@ -137,8 +137,8 @@ WF-->>Client : 201 Created + JSON
 ```
 
 **Diagram sources**
-- [router.py:68-72](file://server/app/api/router.py#L68-L72)
-- [workflow.py:261-325](file://server/app/api/endpoints/workflow.py#L261-L325)
+- [router.py:68-72](server/app/api/router.py#L68-L72)
+- [workflow.py:261-325](server/app/api/endpoints/workflow.py#L261-L325)
 
 ## Detailed Component Analysis
 
@@ -201,9 +201,9 @@ Operational Notes
 - Attachments: Pending uploads and retrieval for workflow messages
 
 **Section sources**
-- [workflow.py:110-800](file://server/app/api/endpoints/workflow.py#L110-L800)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/schemas/workflow.py)
+- [workflow.py:110-800](server/app/api/endpoints/workflow.py#L110-L800)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/schemas/workflow.py)
 
 #### Workflow Job Creation and Checklist Execution
 - Create job: POST /api/workflow/jobs
@@ -234,11 +234,11 @@ WF-->>Client : 200 CareWorkflowJobStepOut
 ```
 
 **Diagram sources**
-- [workflow.py:110-800](file://server/app/api/endpoints/workflow.py#L110-L800)
+- [workflow.py:110-800](server/app/api/endpoints/workflow.py#L110-L800)
 
 **Section sources**
-- [workflow.py:110-800](file://server/app/api/endpoints/workflow.py#L110-L800)
-- [workflow.py](file://server/app/schemas/workflow.py)
+- [workflow.py:110-800](server/app/api/endpoints/workflow.py#L110-L800)
+- [workflow.py](server/app/schemas/workflow.py)
 
 #### Task Assignment, Claims, and Handoffs
 - Claim item: POST /api/workflow/items/{item_type}/{item_id}/claim
@@ -261,11 +261,11 @@ TargetOK --> |No| Error["422 Validation Error"]
 ```
 
 **Diagram sources**
-- [workflow.py:24-38](file://server/app/schemas/workflow.py#L24-L38)
+- [workflow.py:24-38](server/app/schemas/workflow.py#L24-L38)
 
 **Section sources**
-- [workflow.py:666-737](file://server/app/api/endpoints/workflow.py#L666-L737)
-- [workflow.py:24-38](file://server/app/schemas/workflow.py#L24-L38)
+- [workflow.py:666-737](server/app/api/endpoints/workflow.py#L666-L737)
+- [workflow.py:24-38](server/app/schemas/workflow.py#L24-L38)
 
 #### Workflow Message Attachments
 - Upload attachment: POST /api/workflow/messages/attachments
@@ -277,8 +277,8 @@ Attachment handling:
 - Attachment resolution and file serving
 
 **Section sources**
-- [workflow.py:345-385](file://server/app/api/endpoints/workflow.py#L345-L385)
-- [workflow.py:138-197](file://server/app/schemas/workflow.py#L138-L197)
+- [workflow.py:345-385](server/app/api/endpoints/workflow.py#L345-L385)
+- [workflow.py:138-197](server/app/schemas/workflow.py#L138-L197)
 
 #### Audit Trail Endpoints
 - Query audit events: GET /api/workflow/audit
@@ -286,8 +286,8 @@ Attachment handling:
 Audit events capture domain, action, entity type, and details for compliance and tracing.
 
 **Section sources**
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [workflow.py:262-274](file://server/app/schemas/workflow.py#L262-L274)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [workflow.py:262-274](server/app/schemas/workflow.py#L262-L274)
 
 ### Task Management APIs (Routine Tasks)
 Endpoints for managing routine tasks, daily logs, and patient fix routines.
@@ -319,8 +319,8 @@ Request/Response Schemas
 - PatientFixRoutineCreate, PatientFixRoutineUpdate, PatientFixRoutineOut
 
 **Section sources**
-- [task_management.py:168-645](file://server/app/api/endpoints/task_management.py#L168-L645)
-- [task_management.py](file://server/app/schemas/task_management.py)
+- [task_management.py:168-645](server/app/api/endpoints/task_management.py#L168-L645)
+- [task_management.py](server/app/schemas/task_management.py)
 
 ### Unified Task Management APIs
 Endpoints for task CRUD, reporting, and board views.
@@ -349,8 +349,8 @@ Access control:
 - Executing reports requires authorized executor roles
 
 **Section sources**
-- [tasks.py:44-265](file://server/app/api/endpoints/tasks.py#L44-L265)
-- [tasks.py](file://server/app/schemas/tasks.py)
+- [tasks.py:44-265](server/app/api/endpoints/tasks.py#L44-L265)
+- [tasks.py](server/app/schemas/tasks.py)
 
 ### AI Chat Messaging Endpoints
 - Stream assistant response: POST /api/chat/stream
@@ -364,8 +364,8 @@ Behavior
 - Optional conversation persistence and message append
 
 **Section sources**
-- [chat.py:25-150](file://server/app/api/endpoints/chat.py#L25-L150)
-- [chat.py](file://server/app/schemas/chat.py)
+- [chat.py:25-150](server/app/api/endpoints/chat.py#L25-L150)
+- [chat.py](server/app/schemas/chat.py)
 
 ## Dependency Analysis
 - Router registration maps endpoints to routers with consistent prefixes and tags
@@ -388,15 +388,15 @@ CH --> CSC["schemas/chat.py"]
 ```
 
 **Diagram sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/schemas/workflow.py)
-- [task_management.py](file://server/app/schemas/task_management.py)
-- [tasks.py](file://server/app/schemas/tasks.py)
-- [chat.py](file://server/app/schemas/chat.py)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/schemas/workflow.py)
+- [task_management.py](server/app/schemas/task_management.py)
+- [tasks.py](server/app/schemas/tasks.py)
+- [chat.py](server/app/schemas/chat.py)
 
 **Section sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
 
 ## Performance Considerations
 - Pagination: All list endpoints accept a limit parameter with a maximum value
@@ -417,9 +417,9 @@ Common issues and resolutions:
   - Confirm user can read message attachments and attachment IDs are valid
 
 **Section sources**
-- [workflow.py:155-182](file://server/app/api/endpoints/workflow.py#L155-L182)
-- [workflow.py:376-403](file://server/app/api/endpoints/workflow.py#L376-L403)
-- [workflow.py:244-259](file://server/app/api/endpoints/workflow.py#L244-L259)
+- [workflow.py:155-182](server/app/api/endpoints/workflow.py#L155-L182)
+- [workflow.py:376-403](server/app/api/endpoints/workflow.py#L376-L403)
+- [workflow.py:244-259](server/app/api/endpoints/workflow.py#L244-L259)
 
 ## Conclusion
 The workflow and task management APIs provide a cohesive set of endpoints for orchestrating care workflows, managing tasks, and enabling secure messaging with attachments. They enforce robust access controls, maintain audit trails, and integrate with AI chat capabilities. The unified task and routine task systems support both operational and administrative workflows, while the chat streaming endpoints enable real-time AI-assisted interactions.

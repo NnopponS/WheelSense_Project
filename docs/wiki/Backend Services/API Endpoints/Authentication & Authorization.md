@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [auth.py](file://server/app/api/endpoints/auth.py)
-- [mcp_auth.py](file://server/app/api/endpoints/mcp_auth.py)
-- [security.py](file://server/app/core/security.py)
-- [users.py](file://server/app/models/users.py)
-- [mcp_tokens.py](file://server/app/models/mcp_tokens.py)
-- [auth.py](file://server/app/services/auth.py)
-- [users.py](file://server/app/schemas/users.py)
-- [mcp_auth.py](file://server/app/schemas/mcp_auth.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [config.py](file://server/app/config.py)
-- [api.ts](file://frontend/lib/api.ts)
-- [useAuth.tsx](file://frontend/hooks/useAuth.tsx)
-- [.openapi.json](file://frontend/.openapi.json)
-- [page.tsx](file://frontend/app/login/page.tsx)
+- [auth.py](server/app/api/endpoints/auth.py)
+- [mcp_auth.py](server/app/api/endpoints/mcp_auth.py)
+- [security.py](server/app/core/security.py)
+- [users.py](server/app/models/users.py)
+- [mcp_tokens.py](server/app/models/mcp_tokens.py)
+- [auth.py](server/app/services/auth.py)
+- [users.py](server/app/schemas/users.py)
+- [mcp_auth.py](server/app/schemas/mcp_auth.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [config.py](server/app/config.py)
+- [api.ts](frontend/lib/api.ts)
+- [useAuth.tsx](frontend/hooks/useAuth.tsx)
+- [.openapi.json](frontend/.openapi.json)
+- [page.tsx](frontend/app/login/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -85,34 +85,34 @@ BE_SEC --> BE_CONFIG
 ```
 
 **Diagram sources**
-- [auth.py:1-269](file://server/app/api/endpoints/auth.py#L1-L269)
-- [mcp_auth.py:1-339](file://server/app/api/endpoints/mcp_auth.py#L1-L339)
-- [dependencies.py:1-402](file://server/app/api/dependencies.py#L1-L402)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [auth.py:1-688](file://server/app/services/auth.py#L1-L688)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [mcp_tokens.py:1-84](file://server/app/models/mcp_tokens.py#L1-L84)
-- [users.py:1-257](file://server/app/schemas/users.py#L1-L257)
-- [mcp_auth.py:1-212](file://server/app/schemas/mcp_auth.py#L1-L212)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [api.ts:1-1092](file://frontend/lib/api.ts#L1-L1092)
-- [useAuth.tsx:1-184](file://frontend/hooks/useAuth.tsx#L1-L184)
-- [page.tsx:1-251](file://frontend/app/login/page.tsx#L1-L251)
+- [auth.py:1-269](server/app/api/endpoints/auth.py#L1-L269)
+- [mcp_auth.py:1-339](server/app/api/endpoints/mcp_auth.py#L1-L339)
+- [dependencies.py:1-402](server/app/api/dependencies.py#L1-L402)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [auth.py:1-688](server/app/services/auth.py#L1-L688)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [mcp_tokens.py:1-84](server/app/models/mcp_tokens.py#L1-L84)
+- [users.py:1-257](server/app/schemas/users.py#L1-L257)
+- [mcp_auth.py:1-212](server/app/schemas/mcp_auth.py#L1-L212)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [api.ts:1-1092](frontend/lib/api.ts#L1-L1092)
+- [useAuth.tsx:1-184](frontend/hooks/useAuth.tsx#L1-L184)
+- [page.tsx:1-251](frontend/app/login/page.tsx#L1-L251)
 
 **Section sources**
-- [auth.py:1-269](file://server/app/api/endpoints/auth.py#L1-L269)
-- [mcp_auth.py:1-339](file://server/app/api/endpoints/mcp_auth.py#L1-L339)
-- [dependencies.py:1-402](file://server/app/api/dependencies.py#L1-L402)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [auth.py:1-688](file://server/app/services/auth.py#L1-L688)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [mcp_tokens.py:1-84](file://server/app/models/mcp_tokens.py#L1-L84)
-- [users.py:1-257](file://server/app/schemas/users.py#L1-L257)
-- [mcp_auth.py:1-212](file://server/app/schemas/mcp_auth.py#L1-L212)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [api.ts:1-1092](file://frontend/lib/api.ts#L1-L1092)
-- [useAuth.tsx:1-184](file://frontend/hooks/useAuth.tsx#L1-L184)
-- [page.tsx:1-251](file://frontend/app/login/page.tsx#L1-L251)
+- [auth.py:1-269](server/app/api/endpoints/auth.py#L1-L269)
+- [mcp_auth.py:1-339](server/app/api/endpoints/mcp_auth.py#L1-L339)
+- [dependencies.py:1-402](server/app/api/dependencies.py#L1-L402)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [auth.py:1-688](server/app/services/auth.py#L1-L688)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [mcp_tokens.py:1-84](server/app/models/mcp_tokens.py#L1-L84)
+- [users.py:1-257](server/app/schemas/users.py#L1-L257)
+- [mcp_auth.py:1-212](server/app/schemas/mcp_auth.py#L1-L212)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [api.ts:1-1092](frontend/lib/api.ts#L1-L1092)
+- [useAuth.tsx:1-184](frontend/hooks/useAuth.tsx#L1-L184)
+- [page.tsx:1-251](frontend/app/login/page.tsx#L1-L251)
 
 ## Core Components
 - Authentication endpoints
@@ -143,15 +143,15 @@ BE_SEC --> BE_CONFIG
   - Auth provider and hooks for login, logout, impersonation
 
 **Section sources**
-- [auth.py:57-269](file://server/app/api/endpoints/auth.py#L57-L269)
-- [mcp_auth.py:93-339](file://server/app/api/endpoints/mcp_auth.py#L93-L339)
-- [security.py:21-56](file://server/app/core/security.py#L21-L56)
-- [users.py:9-92](file://server/app/models/users.py#L9-L92)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [auth.py:458-688](file://server/app/services/auth.py#L458-L688)
-- [dependencies.py:30-150](file://server/app/api/dependencies.py#L30-L150)
-- [api.ts:209-383](file://frontend/lib/api.ts#L209-L383)
-- [useAuth.tsx:48-184](file://frontend/hooks/useAuth.tsx#L48-L184)
+- [auth.py:57-269](server/app/api/endpoints/auth.py#L57-L269)
+- [mcp_auth.py:93-339](server/app/api/endpoints/mcp_auth.py#L93-L339)
+- [security.py:21-56](server/app/core/security.py#L21-L56)
+- [users.py:9-92](server/app/models/users.py#L9-L92)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [auth.py:458-688](server/app/services/auth.py#L458-L688)
+- [dependencies.py:30-150](server/app/api/dependencies.py#L30-L150)
+- [api.ts:209-383](frontend/lib/api.ts#L209-L383)
+- [useAuth.tsx:48-184](frontend/hooks/useAuth.tsx#L48-L184)
 
 ## Architecture Overview
 The authentication architecture combines OAuth2 password flow with JWT-based session tokens and server-tracked sessions. MCP tokens are short-lived, scope-narrowed tokens for external MCP clients, linked to parent sessions for cascading revocation.
@@ -193,13 +193,13 @@ AuthEP-->>FE : "AuthMeOut"
 ```
 
 **Diagram sources**
-- [auth.py:57-106](file://server/app/api/endpoints/auth.py#L57-L106)
-- [dependencies.py:58-121](file://server/app/api/dependencies.py#L58-L121)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
-- [auth.py:588-627](file://server/app/services/auth.py#L588-L627)
-- [users.py:59-92](file://server/app/models/users.py#L59-L92)
-- [api.ts:299-338](file://frontend/lib/api.ts#L299-L338)
-- [useAuth.tsx:48-86](file://frontend/hooks/useAuth.tsx#L48-L86)
+- [auth.py:57-106](server/app/api/endpoints/auth.py#L57-L106)
+- [dependencies.py:58-121](server/app/api/dependencies.py#L58-L121)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
+- [auth.py:588-627](server/app/services/auth.py#L588-L627)
+- [users.py:59-92](server/app/models/users.py#L59-L92)
+- [api.ts:299-338](frontend/lib/api.ts#L299-L338)
+- [useAuth.tsx:48-86](frontend/hooks/useAuth.tsx#L48-L86)
 
 ## Detailed Component Analysis
 
@@ -240,13 +240,13 @@ IssueJWT --> Success["200 Token(access_token, session_id)"]
 ```
 
 **Diagram sources**
-- [auth.py:57-72](file://server/app/api/endpoints/auth.py#L57-L72)
-- [auth.py:588-627](file://server/app/services/auth.py#L588-L627)
+- [auth.py:57-72](server/app/api/endpoints/auth.py#L57-L72)
+- [auth.py:588-627](server/app/services/auth.py#L588-L627)
 
 **Section sources**
-- [auth.py:57-204](file://server/app/api/endpoints/auth.py#L57-L204)
-- [auth.py:588-688](file://server/app/services/auth.py#L588-L688)
-- [users.py:59-92](file://server/app/models/users.py#L59-L92)
+- [auth.py:57-204](server/app/api/endpoints/auth.py#L57-L204)
+- [auth.py:588-688](server/app/services/auth.py#L588-L688)
+- [users.py:59-92](server/app/models/users.py#L59-L92)
 
 ### MCP Authentication Endpoints
 - POST /api/auth/mcp/token
@@ -283,15 +283,15 @@ MCP-->>FE : "MCPTokenWithSecret(access_token, expires_in, ...)"
 ```
 
 **Diagram sources**
-- [mcp_auth.py:93-178](file://server/app/api/endpoints/mcp_auth.py#L93-L178)
-- [dependencies.py:131-150](file://server/app/api/dependencies.py#L131-L150)
-- [auth.py:518-524](file://server/app/services/auth.py#L518-L524)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth.py:93-178](server/app/api/endpoints/mcp_auth.py#L93-L178)
+- [dependencies.py:131-150](server/app/api/dependencies.py#L131-L150)
+- [auth.py:518-524](server/app/services/auth.py#L518-L524)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
 
 **Section sources**
-- [mcp_auth.py:93-339](file://server/app/api/endpoints/mcp_auth.py#L93-L339)
-- [mcp_auth.py:119-134](file://server/app/schemas/mcp_auth.py#L119-L134)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth.py:93-339](server/app/api/endpoints/mcp_auth.py#L93-L339)
+- [mcp_auth.py:119-134](server/app/schemas/mcp_auth.py#L119-L134)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
 
 ### Role-Based Access Control and Workspace Scoping
 - Roles and capabilities
@@ -315,12 +315,12 @@ E --> F
 ```
 
 **Diagram sources**
-- [dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
-- [mcp_auth.py:119-134](file://server/app/schemas/mcp_auth.py#L119-L134)
+- [dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
+- [mcp_auth.py:119-134](server/app/schemas/mcp_auth.py#L119-L134)
 
 **Section sources**
-- [dependencies.py:159-311](file://server/app/api/dependencies.py#L159-L311)
-- [mcp_auth.py:15-116](file://server/app/schemas/mcp_auth.py#L15-L116)
+- [dependencies.py:159-311](server/app/api/dependencies.py#L159-L311)
+- [mcp_auth.py:15-116](server/app/schemas/mcp_auth.py#L15-L116)
 
 ### Authentication Middleware and Dependency Injection
 - OAuth2PasswordBearer
@@ -352,11 +352,11 @@ RequireRole <.. Dependencies : "used by"
 ```
 
 **Diagram sources**
-- [dependencies.py:30-170](file://server/app/api/dependencies.py#L30-L170)
-- [dependencies.py:159-170](file://server/app/api/dependencies.py#L159-L170)
+- [dependencies.py:30-170](server/app/api/dependencies.py#L30-L170)
+- [dependencies.py:159-170](server/app/api/dependencies.py#L159-L170)
 
 **Section sources**
-- [dependencies.py:30-170](file://server/app/api/dependencies.py#L30-L170)
+- [dependencies.py:30-170](server/app/api/dependencies.py#L30-L170)
 
 ### Token-Based Security Implementation
 - JWT claims
@@ -385,12 +385,12 @@ Security --> Config : "uses"
 ```
 
 **Diagram sources**
-- [security.py:21-56](file://server/app/core/security.py#L21-L56)
-- [config.py:47-51](file://server/app/config.py#L47-L51)
+- [security.py:21-56](server/app/core/security.py#L21-L56)
+- [config.py:47-51](server/app/config.py#L47-L51)
 
 **Section sources**
-- [security.py:21-56](file://server/app/core/security.py#L21-L56)
-- [config.py:47-51](file://server/app/config.py#L47-L51)
+- [security.py:21-56](server/app/core/security.py#L21-L56)
+- [config.py:47-51](server/app/config.py#L47-L51)
 
 ### Frontend Authentication Integration
 - API client
@@ -421,15 +421,15 @@ Hooks-->>UI : "User state updated"
 ```
 
 **Diagram sources**
-- [page.tsx:69-90](file://frontend/app/login/page.tsx#L69-L90)
-- [useAuth.tsx:115-135](file://frontend/hooks/useAuth.tsx#L115-L135)
-- [api.ts:299-338](file://frontend/lib/api.ts#L299-L338)
-- [auth.py:75-96](file://server/app/api/endpoints/auth.py#L75-L96)
+- [page.tsx:69-90](frontend/app/login/page.tsx#L69-L90)
+- [useAuth.tsx:115-135](frontend/hooks/useAuth.tsx#L115-L135)
+- [api.ts:299-338](frontend/lib/api.ts#L299-L338)
+- [auth.py:75-96](server/app/api/endpoints/auth.py#L75-L96)
 
 **Section sources**
-- [api.ts:209-383](file://frontend/lib/api.ts#L209-L383)
-- [useAuth.tsx:48-184](file://frontend/hooks/useAuth.tsx#L48-L184)
-- [page.tsx:40-90](file://frontend/app/login/page.tsx#L40-L90)
+- [api.ts:209-383](frontend/lib/api.ts#L209-L383)
+- [useAuth.tsx:48-184](frontend/hooks/useAuth.tsx#L48-L184)
+- [page.tsx:40-90](frontend/app/login/page.tsx#L40-L90)
 
 ## Dependency Analysis
 - Backend dependencies
@@ -458,32 +458,32 @@ BE_SECURITY --> BE_CONFIG["server/app/config.py"]
 ```
 
 **Diagram sources**
-- [api.ts:1-1092](file://frontend/lib/api.ts#L1-L1092)
-- [useAuth.tsx:1-184](file://frontend/hooks/useAuth.tsx#L1-L184)
-- [page.tsx:1-251](file://frontend/app/login/page.tsx#L1-L251)
-- [auth.py:1-269](file://server/app/api/endpoints/auth.py#L1-L269)
-- [mcp_auth.py:1-339](file://server/app/api/endpoints/mcp_auth.py#L1-L339)
-- [dependencies.py:1-402](file://server/app/api/dependencies.py#L1-L402)
-- [auth.py:1-688](file://server/app/services/auth.py#L1-L688)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [mcp_tokens.py:1-84](file://server/app/models/mcp_tokens.py#L1-L84)
-- [users.py:1-257](file://server/app/schemas/users.py#L1-L257)
-- [mcp_auth.py:1-212](file://server/app/schemas/mcp_auth.py#L1-L212)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
+- [api.ts:1-1092](frontend/lib/api.ts#L1-L1092)
+- [useAuth.tsx:1-184](frontend/hooks/useAuth.tsx#L1-L184)
+- [page.tsx:1-251](frontend/app/login/page.tsx#L1-L251)
+- [auth.py:1-269](server/app/api/endpoints/auth.py#L1-L269)
+- [mcp_auth.py:1-339](server/app/api/endpoints/mcp_auth.py#L1-L339)
+- [dependencies.py:1-402](server/app/api/dependencies.py#L1-L402)
+- [auth.py:1-688](server/app/services/auth.py#L1-L688)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [mcp_tokens.py:1-84](server/app/models/mcp_tokens.py#L1-L84)
+- [users.py:1-257](server/app/schemas/users.py#L1-L257)
+- [mcp_auth.py:1-212](server/app/schemas/mcp_auth.py#L1-L212)
+- [config.py:1-152](server/app/config.py#L1-L152)
 
 **Section sources**
-- [dependencies.py:1-402](file://server/app/api/dependencies.py#L1-L402)
-- [auth.py:1-688](file://server/app/services/auth.py#L1-L688)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [mcp_tokens.py:1-84](file://server/app/models/mcp_tokens.py#L1-L84)
-- [users.py:1-257](file://server/app/schemas/users.py#L1-L257)
-- [mcp_auth.py:1-212](file://server/app/schemas/mcp_auth.py#L1-L212)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [api.ts:1-1092](file://frontend/lib/api.ts#L1-L1092)
-- [useAuth.tsx:1-184](file://frontend/hooks/useAuth.tsx#L1-L184)
-- [page.tsx:1-251](file://frontend/app/login/page.tsx#L1-L251)
+- [dependencies.py:1-402](server/app/api/dependencies.py#L1-L402)
+- [auth.py:1-688](server/app/services/auth.py#L1-L688)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [mcp_tokens.py:1-84](server/app/models/mcp_tokens.py#L1-L84)
+- [users.py:1-257](server/app/schemas/users.py#L1-L257)
+- [mcp_auth.py:1-212](server/app/schemas/mcp_auth.py#L1-L212)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [api.ts:1-1092](frontend/lib/api.ts#L1-L1092)
+- [useAuth.tsx:1-184](frontend/hooks/useAuth.tsx#L1-L184)
+- [page.tsx:1-251](frontend/app/login/page.tsx#L1-L251)
 
 ## Performance Considerations
 - Token TTL and session expiry
@@ -513,12 +513,12 @@ BE_SECURITY --> BE_CONFIG["server/app/config.py"]
   - 401 triggers automatic redirect to /login in the API client
 
 **Section sources**
-- [auth.py:599-607](file://server/app/services/auth.py#L599-L607)
-- [auth.py:84-95](file://server/app/api/endpoints/auth.py#L84-L95)
-- [dependencies.py:98-114](file://server/app/api/dependencies.py#L98-L114)
-- [mcp_auth.py:112-124](file://server/app/api/endpoints/mcp_auth.py#L112-L124)
-- [mcp_auth.py:85-88](file://server/app/api/endpoints/mcp_auth.py#L85-L88)
-- [api.ts:251-256](file://frontend/lib/api.ts#L251-L256)
+- [auth.py:599-607](server/app/services/auth.py#L599-L607)
+- [auth.py:84-95](server/app/api/endpoints/auth.py#L84-L95)
+- [dependencies.py:98-114](server/app/api/dependencies.py#L98-L114)
+- [mcp_auth.py:112-124](server/app/api/endpoints/mcp_auth.py#L112-L124)
+- [mcp_auth.py:85-88](server/app/api/endpoints/mcp_auth.py#L85-L88)
+- [api.ts:251-256](frontend/lib/api.ts#L251-L256)
 
 ## Conclusion
 The platform implements a robust, layered authentication and authorization system:
@@ -575,9 +575,9 @@ The platform implements a robust, layered authentication and authorization syste
   - Security: OAuth2PasswordBearer (admin required)
 
 **Section sources**
-- [.openapi.json:5129-5162](file://frontend/.openapi.json#L5129-L5162)
-- [.openapi.json:5163-5171](file://frontend/.openapi.json#L5163-L5171)
-- [.openapi.json:5163-5427](file://frontend/.openapi.json#L5163-L5427)
+- [.openapi.json:5129-5162](frontend/.openapi.json#L5129-L5162)
+- [.openapi.json:5163-5171](frontend/.openapi.json#L5163-L5171)
+- [.openapi.json:5163-5427](frontend/.openapi.json#L5163-L5427)
 
 ### API Reference: MCP Authentication Endpoints
 - POST /api/auth/mcp/token
@@ -602,8 +602,8 @@ The platform implements a robust, layered authentication and authorization syste
   - Security: OAuth2PasswordBearer
 
 **Section sources**
-- [.openapi.json:5163-5427](file://frontend/.openapi.json#L5163-L5427)
-- [mcp_auth.py:93-339](file://server/app/api/endpoints/mcp_auth.py#L93-L339)
+- [.openapi.json:5163-5427](frontend/.openapi.json#L5163-L5427)
+- [mcp_auth.py:93-339](server/app/api/endpoints/mcp_auth.py#L93-L339)
 
 ### Request/Response Schemas
 - Token
@@ -637,9 +637,9 @@ The platform implements a robust, layered authentication and authorization syste
   - total: int
 
 **Section sources**
-- [users.py:33-174](file://server/app/schemas/users.py#L33-L174)
-- [users.py:229-244](file://server/app/schemas/users.py#L229-L244)
-- [mcp_auth.py:159-196](file://server/app/schemas/mcp_auth.py#L159-L196)
+- [users.py:33-174](server/app/schemas/users.py#L33-L174)
+- [users.py:229-244](server/app/schemas/users.py#L229-L244)
+- [mcp_auth.py:159-196](server/app/schemas/mcp_auth.py#L159-L196)
 
 ### Security Considerations
 - Secret key management
@@ -654,9 +654,9 @@ The platform implements a robust, layered authentication and authorization syste
   - Configure MCP allowed origins and consider requiring origin validation
 
 **Section sources**
-- [config.py:133-134](file://server/app/config.py#L133-L134)
-- [security.py:13-19](file://server/app/core/security.py#L13-L19)
-- [mcp_auth.py:44-55](file://server/app/api/endpoints/mcp_auth.py#L44-L55)
+- [config.py:133-134](server/app/config.py#L133-L134)
+- [security.py:13-19](server/app/core/security.py#L13-L19)
+- [mcp_auth.py:44-55](server/app/api/endpoints/mcp_auth.py#L44-L55)
 
 ### Example Usage Patterns
 - Logging in and accessing protected resources
@@ -673,7 +673,7 @@ The platform implements a robust, layered authentication and authorization syste
   - Revoke tokens via DELETE /api/auth/mcp/token/{token_id} or POST /api/auth/mcp/tokens/revoke-all
 
 **Section sources**
-- [auth.py:57-204](file://server/app/api/endpoints/auth.py#L57-L204)
-- [mcp_auth.py:93-339](file://server/app/api/endpoints/mcp_auth.py#L93-L339)
-- [api.ts:299-338](file://frontend/lib/api.ts#L299-L338)
-- [useAuth.tsx:115-181](file://frontend/hooks/useAuth.tsx#L115-L181)
+- [auth.py:57-204](server/app/api/endpoints/auth.py#L57-L204)
+- [mcp_auth.py:93-339](server/app/api/endpoints/mcp_auth.py#L93-L339)
+- [api.ts:299-338](frontend/lib/api.ts#L299-L338)
+- [useAuth.tsx:115-181](frontend/hooks/useAuth.tsx#L115-L181)

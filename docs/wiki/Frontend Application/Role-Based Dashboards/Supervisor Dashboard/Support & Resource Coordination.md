@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/supervisor/support/page.tsx)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [SupportTicketList.tsx](file://frontend/components/admin/SupportTicketList.tsx)
-- [support.py](file://server/app/api/endpoints/support.py)
-- [service_requests.py](file://server/app/api/endpoints/service_requests.py)
-- [support.py (models)](file://server/app/models/support.py)
-- [support.py (schemas)](file://server/app/schemas/support.py)
-- [support.py (service)](file://server/app/services/support.py)
-- [service_requests.py (models)](file://server/app/models/service_requests.py)
-- [service_requests.py (schemas)](file://server/app/schemas/service_requests.py)
-- [service_requests.py (service)](file://server/app/services/service_requests.py)
-- [layout.tsx](file://frontend/app/supervisor/layout.tsx)
-- [routes.ts](file://frontend/lib/routes.ts)
+- [page.tsx](frontend/app/supervisor/support/page.tsx)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [SupportTicketList.tsx](frontend/components/admin/SupportTicketList.tsx)
+- [support.py](server/app/api/endpoints/support.py)
+- [service_requests.py](server/app/api/endpoints/service_requests.py)
+- [support.py (models)](server/app/models/support.py)
+- [support.py (schemas)](server/app/schemas/support.py)
+- [support.py (service)](server/app/services/support.py)
+- [service_requests.py (models)](server/app/models/service_requests.py)
+- [service_requests.py (schemas)](server/app/schemas/service_requests.py)
+- [service_requests.py (service)](server/app/services/service_requests.py)
+- [layout.tsx](frontend/app/supervisor/layout.tsx)
+- [routes.ts](frontend/lib/routes.ts)
 </cite>
 
 ## Table of Contents
@@ -66,22 +66,22 @@ Svc_Service --> Sch_Service
 ```
 
 **Diagram sources**
-- [page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [SupportTicketList.tsx:1-331](file://frontend/components/admin/SupportTicketList.tsx#L1-L331)
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [service_requests.py:1-55](file://server/app/api/endpoints/service_requests.py#L1-L55)
-- [support.py (service):1-292](file://server/app/services/support.py#L1-L292)
-- [service_requests.py (service):1-200](file://server/app/services/service_requests.py#L1-L200)
-- [support.py (models):1-98](file://server/app/models/support.py#L1-L98)
-- [service_requests.py (models):1-45](file://server/app/models/service_requests.py#L1-L45)
-- [support.py (schemas):1-76](file://server/app/schemas/support.py#L1-L76)
-- [service_requests.py (schemas):1-39](file://server/app/schemas/service_requests.py#L1-L39)
+- [page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [SupportTicketList.tsx:1-331](frontend/components/admin/SupportTicketList.tsx#L1-L331)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [service_requests.py:1-55](server/app/api/endpoints/service_requests.py#L1-L55)
+- [support.py (service):1-292](server/app/services/support.py#L1-L292)
+- [service_requests.py (service):1-200](server/app/services/service_requests.py#L1-L200)
+- [support.py (models):1-98](server/app/models/support.py#L1-L98)
+- [service_requests.py (models):1-45](server/app/models/service_requests.py#L1-L45)
+- [support.py (schemas):1-76](server/app/schemas/support.py#L1-L76)
+- [service_requests.py (schemas):1-39](server/app/schemas/service_requests.py#L1-L39)
 
 **Section sources**
-- [page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [routes.ts:1-17](file://frontend/lib/routes.ts#L1-L17)
+- [page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [routes.ts:1-17](frontend/lib/routes.ts#L1-L17)
 
 ## Core Components
 - Supervisor Issue Reporting Form
@@ -100,9 +100,9 @@ Svc_Service --> Sch_Service
   - Integration: Backend endpoints expose list/create/update operations for service requests.
 
 **Section sources**
-- [ReportIssueForm.tsx:37-201](file://frontend/components/support/ReportIssueForm.tsx#L37-L201)
-- [SupportTicketList.tsx:59-331](file://frontend/components/admin/SupportTicketList.tsx#L59-L331)
-- [service_requests.py:17-55](file://server/app/api/endpoints/service_requests.py#L17-L55)
+- [ReportIssueForm.tsx:37-201](frontend/components/support/ReportIssueForm.tsx#L37-L201)
+- [SupportTicketList.tsx:59-331](frontend/components/admin/SupportTicketList.tsx#L59-L331)
+- [service_requests.py:17-55](server/app/api/endpoints/service_requests.py#L17-L55)
 
 ## Architecture Overview
 The supervisor support workflow integrates frontend forms and tables with backend APIs, services, and persistence. The supervisor submits issues via a form that posts to the support tickets endpoint. Administrators and head nurses can manage tickets and comments/attachments. Service requests are coordinated alongside support tickets for resource allocation.
@@ -125,10 +125,10 @@ UI-->>Sup : Show success message
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
-- [support.py:89-97](file://server/app/api/endpoints/support.py#L89-L97)
-- [support.py (service):154-177](file://server/app/services/support.py#L154-L177)
-- [support.py (models):10-42](file://server/app/models/support.py#L10-L42)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [support.py:89-97](server/app/api/endpoints/support.py#L89-L97)
+- [support.py (service):154-177](server/app/services/support.py#L154-L177)
+- [support.py (models):10-42](server/app/models/support.py#L10-L42)
 
 ## Detailed Component Analysis
 
@@ -162,14 +162,14 @@ ResetForm --> End
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:45-87](file://frontend/components/support/ReportIssueForm.tsx#L45-L87)
-- [support.py (schemas):10-16](file://server/app/schemas/support.py#L10-L16)
-- [support.py:89-97](file://server/app/api/endpoints/support.py#L89-L97)
+- [ReportIssueForm.tsx:45-87](frontend/components/support/ReportIssueForm.tsx#L45-L87)
+- [support.py (schemas):10-16](server/app/schemas/support.py#L10-L16)
+- [support.py:89-97](server/app/api/endpoints/support.py#L89-L97)
 
 **Section sources**
-- [ReportIssueForm.tsx:37-201](file://frontend/components/support/ReportIssueForm.tsx#L37-L201)
-- [support.py (schemas):10-16](file://server/app/schemas/support.py#L10-L16)
-- [support.py:89-97](file://server/app/api/endpoints/support.py#L89-L97)
+- [ReportIssueForm.tsx:37-201](frontend/components/support/ReportIssueForm.tsx#L37-L201)
+- [support.py (schemas):10-16](server/app/schemas/support.py#L10-L16)
+- [support.py:89-97](server/app/api/endpoints/support.py#L89-L97)
 
 ### Administrative Support Ticket Oversight
 - Implementation highlights
@@ -200,15 +200,15 @@ Table-->>Admin : Render table with filters and pagination
 ```
 
 **Diagram sources**
-- [SupportTicketList.tsx:59-331](file://frontend/components/admin/SupportTicketList.tsx#L59-L331)
-- [support.py:62-86](file://server/app/api/endpoints/support.py#L62-L86)
-- [support.py (service):124-141](file://server/app/services/support.py#L124-L141)
-- [support.py (models):10-42](file://server/app/models/support.py#L10-L42)
+- [SupportTicketList.tsx:59-331](frontend/components/admin/SupportTicketList.tsx#L59-L331)
+- [support.py:62-86](server/app/api/endpoints/support.py#L62-L86)
+- [support.py (service):124-141](server/app/services/support.py#L124-L141)
+- [support.py (models):10-42](server/app/models/support.py#L10-L42)
 
 **Section sources**
-- [SupportTicketList.tsx:59-331](file://frontend/components/admin/SupportTicketList.tsx#L59-L331)
-- [support.py:62-86](file://server/app/api/endpoints/support.py#L62-L86)
-- [support.py (service):124-152](file://server/app/services/support.py#L124-L152)
+- [SupportTicketList.tsx:59-331](frontend/components/admin/SupportTicketList.tsx#L59-L331)
+- [support.py:62-86](server/app/api/endpoints/support.py#L62-L86)
+- [support.py (service):124-152](server/app/services/support.py#L124-L152)
 
 ### Service Request Management Integration
 - Implementation highlights
@@ -234,15 +234,15 @@ API-->>Sup : Updated request
 ```
 
 **Diagram sources**
-- [service_requests.py:46-54](file://server/app/api/endpoints/service_requests.py#L46-L54)
-- [service_requests.py (service):90-120](file://server/app/services/service_requests.py#L90-L120)
-- [service_requests.py (models):10-45](file://server/app/models/service_requests.py#L10-L45)
+- [service_requests.py:46-54](server/app/api/endpoints/service_requests.py#L46-L54)
+- [service_requests.py (service):90-120](server/app/services/service_requests.py#L90-L120)
+- [service_requests.py (models):10-45](server/app/models/service_requests.py#L10-L45)
 
 **Section sources**
-- [service_requests.py:17-55](file://server/app/api/endpoints/service_requests.py#L17-L55)
-- [service_requests.py (service):56-120](file://server/app/services/service_requests.py#L56-L120)
-- [service_requests.py (models):10-45](file://server/app/models/service_requests.py#L10-L45)
-- [service_requests.py (schemas):14-39](file://server/app/schemas/service_requests.py#L14-L39)
+- [service_requests.py:17-55](server/app/api/endpoints/service_requests.py#L17-L55)
+- [service_requests.py (service):56-120](server/app/services/service_requests.py#L56-L120)
+- [service_requests.py (models):10-45](server/app/models/service_requests.py#L10-L45)
+- [service_requests.py (schemas):14-39](server/app/schemas/service_requests.py#L14-L39)
 
 ## Dependency Analysis
 - Frontend dependencies
@@ -268,22 +268,22 @@ SVC_SR --> SCH_SR["service_requests.py (schemas)"]
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [SupportTicketList.tsx:1-331](file://frontend/components/admin/SupportTicketList.tsx#L1-L331)
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [service_requests.py:1-55](file://server/app/api/endpoints/service_requests.py#L1-L55)
-- [support.py (service):1-292](file://server/app/services/support.py#L1-L292)
-- [service_requests.py (service):1-200](file://server/app/services/service_requests.py#L1-L200)
-- [support.py (models):1-98](file://server/app/models/support.py#L1-L98)
-- [service_requests.py (models):1-45](file://server/app/models/service_requests.py#L1-L45)
-- [support.py (schemas):1-76](file://server/app/schemas/support.py#L1-L76)
-- [service_requests.py (schemas):1-39](file://server/app/schemas/service_requests.py#L1-L39)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [SupportTicketList.tsx:1-331](frontend/components/admin/SupportTicketList.tsx#L1-L331)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [service_requests.py:1-55](server/app/api/endpoints/service_requests.py#L1-L55)
+- [support.py (service):1-292](server/app/services/support.py#L1-L292)
+- [service_requests.py (service):1-200](server/app/services/service_requests.py#L1-L200)
+- [support.py (models):1-98](server/app/models/support.py#L1-L98)
+- [service_requests.py (models):1-45](server/app/models/service_requests.py#L1-L45)
+- [support.py (schemas):1-76](server/app/schemas/support.py#L1-L76)
+- [service_requests.py (schemas):1-39](server/app/schemas/service_requests.py#L1-L39)
 
 **Section sources**
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [service_requests.py:1-55](file://server/app/api/endpoints/service_requests.py#L1-L55)
-- [support.py (service):1-292](file://server/app/services/support.py#L1-L292)
-- [service_requests.py (service):1-200](file://server/app/services/service_requests.py#L1-L200)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [service_requests.py:1-55](server/app/api/endpoints/service_requests.py#L1-L55)
+- [support.py (service):1-292](server/app/services/support.py#L1-L292)
+- [service_requests.py (service):1-200](server/app/services/service_requests.py#L1-L200)
 
 ## Performance Considerations
 - Pagination and limits
@@ -311,10 +311,10 @@ SVC_SR --> SCH_SR["service_requests.py (schemas)"]
   - Confirm file size does not exceed the 8 MB limit and that the file exists on disk.
 
 **Section sources**
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
-- [support.py (service):180-206](file://server/app/services/support.py#L180-L206)
-- [support.py:111-121](file://server/app/api/endpoints/support.py#L111-L121)
-- [service_requests.py:46-54](file://server/app/api/endpoints/service_requests.py#L46-L54)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [support.py (service):180-206](server/app/services/support.py#L180-L206)
+- [support.py:111-121](server/app/api/endpoints/support.py#L111-L121)
+- [service_requests.py:46-54](server/app/api/endpoints/service_requests.py#L46-L54)
 
 ## Conclusion
 The Support & Resource Coordination feature provides supervisors with a streamlined way to report issues and oversee support tickets, while integrating with service request management for resource coordination. The frontend components are robustly validated and scoped to the current workspace, and the backend enforces role-based access and data integrity. Together, these components enable effective issue coordination, maintenance oversight, and service request management within the Supervisor Dashboard.

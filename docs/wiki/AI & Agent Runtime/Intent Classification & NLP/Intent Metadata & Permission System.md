@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [schemas/agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [mcp/server.py](file://server/app/mcp/server.py)
-- [mcp/auth.py](file://server/app/mcp/auth.py)
-- [api/dependencies.py](file://server/app/api/dependencies.py)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [ActionPlanPreview.tsx](file://frontend/components/ai/ActionPlanPreview.tsx)
-- [test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
-- [test_chat_actions_integration.py](file://server/tests/test_chat_actions_integration.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [schemas/agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [mcp/server.py](server/app/mcp/server.py)
+- [mcp/auth.py](server/app/mcp/auth.py)
+- [api/dependencies.py](server/app/api/dependencies.py)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [ActionPlanPreview.tsx](frontend/components/ai/ActionPlanPreview.tsx)
+- [test_agent_runtime.py](server/tests/test_agent_runtime.py)
+- [test_chat_actions_integration.py](server/tests/test_chat_actions_integration.py)
 </cite>
 
 ## Table of Contents
@@ -62,22 +62,22 @@ C --> G
 ```
 
 **Diagram sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [llm_tool_router.py:36-52](file://server/app/agent_runtime/llm_tool_router.py#L36-L52)
-- [schemas/agent_runtime.py:10-29](file://server/app/schemas/agent_runtime.py#L10-L29)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [mcp/auth.py:16-142](file://server/app/mcp/auth.py#L16-L142)
-- [api/dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
-- [ActionPlanPreview.tsx:43-66](file://frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [llm_tool_router.py:36-52](server/app/agent_runtime/llm_tool_router.py#L36-L52)
+- [schemas/agent_runtime.py:10-29](server/app/schemas/agent_runtime.py#L10-L29)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [mcp/auth.py:16-142](server/app/mcp/auth.py#L16-L142)
+- [api/dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
+- [ActionPlanPreview.tsx:43-66](frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [llm_tool_router.py:36-52](file://server/app/agent_runtime/llm_tool_router.py#L36-L52)
-- [schemas/agent_runtime.py:10-29](file://server/app/schemas/agent_runtime.py#L10-L29)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [mcp/auth.py:16-142](file://server/app/mcp/auth.py#L16-L142)
-- [api/dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
-- [ActionPlanPreview.tsx:43-66](file://frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [llm_tool_router.py:36-52](server/app/agent_runtime/llm_tool_router.py#L36-L52)
+- [schemas/agent_runtime.py:10-29](server/app/schemas/agent_runtime.py#L10-L29)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [mcp/auth.py:16-142](server/app/mcp/auth.py#L16-L142)
+- [api/dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
+- [ActionPlanPreview.tsx:43-66](frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
 
 ## Core Components
 - TOOL_INTENT_METADATA: Central registry mapping MCP tool names to playbook, permission basis, risk level, and read-only flag. Used by intent classifiers to build ExecutionPlan objects and to enable semantic read auto-execution.
@@ -87,11 +87,11 @@ C --> G
 - Role-based scopes: ROLE_TOKEN_SCOPES define allowable permissions per role; MCP tokens may narrow scopes further.
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [intent.py:47-56](file://server/app/agent_runtime/intent.py#L47-L56)
-- [schemas/agent_runtime.py:10-29](file://server/app/schemas/agent_runtime.py#L10-L29)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [api/dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:47-56](server/app/agent_runtime/intent.py#L47-L56)
+- [schemas/agent_runtime.py:10-29](server/app/schemas/agent_runtime.py#L10-L29)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [api/dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
 
 ## Architecture Overview
 The system orchestrates intent classification, plan generation, and MCP execution with strict permission and risk controls.
@@ -116,16 +116,16 @@ Plan-->>User : "Execution summary"
 ```
 
 **Diagram sources**
-- [intent.py:719-747](file://server/app/agent_runtime/intent.py#L719-L747)
-- [schemas/agent_runtime.py:21-29](file://server/app/schemas/agent_runtime.py#L21-L29)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [mcp/auth.py:16-142](file://server/app/mcp/auth.py#L16-L142)
+- [intent.py:719-747](server/app/agent_runtime/intent.py#L719-L747)
+- [schemas/agent_runtime.py:21-29](server/app/schemas/agent_runtime.py#L21-L29)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [mcp/auth.py:16-142](server/app/mcp/auth.py#L16-L142)
 
 **Section sources**
-- [intent.py:719-747](file://server/app/agent_runtime/intent.py#L719-L747)
-- [schemas/agent_runtime.py:21-29](file://server/app/schemas/agent_runtime.py#L21-L29)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [mcp/auth.py:16-142](file://server/app/mcp/auth.py#L16-L142)
+- [intent.py:719-747](server/app/agent_runtime/intent.py#L719-L747)
+- [schemas/agent_runtime.py:21-29](server/app/schemas/agent_runtime.py#L21-L29)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [mcp/auth.py:16-142](server/app/mcp/auth.py#L16-L142)
 
 ## Detailed Component Analysis
 
@@ -153,7 +153,7 @@ Examples of entries:
 These metadata drive plan construction, confirmation requirements, and semantic read auto-execution.
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
 
 ### SEMANTIC_READ_IMMEDIATE System
 High-confidence semantic similarity matches for read-only permissions can auto-execute MCP tools without confirmation. The mapping pairs permission basis to MCP tool names and arguments. Examples:
@@ -168,7 +168,7 @@ High-confidence semantic similarity matches for read-only permissions can auto-e
 This enables immediate reads for common queries while preserving confirmation for writes.
 
 **Section sources**
-- [intent.py:47-56](file://server/app/agent_runtime/intent.py#L47-L56)
+- [intent.py:47-56](server/app/agent_runtime/intent.py#L47-L56)
 
 ### Risk Level Classification and Confirmation Requirements
 Risk levels are classified as low, medium, and high. Confirmation requirements are derived from read-only flags and risk levels:
@@ -193,12 +193,12 @@ MaxRiskLow --> Plan
 ```
 
 **Diagram sources**
-- [intent.py:70-74](file://server/app/agent_runtime/intent.py#L70-L74)
-- [intent.py:956-984](file://server/app/agent_runtime/intent.py#L956-L984)
+- [intent.py:70-74](server/app/agent_runtime/intent.py#L70-L74)
+- [intent.py:956-984](server/app/agent_runtime/intent.py#L956-L984)
 
 **Section sources**
-- [intent.py:70-74](file://server/app/agent_runtime/intent.py#L70-L74)
-- [intent.py:956-984](file://server/app/agent_runtime/intent.py#L956-L984)
+- [intent.py:70-74](server/app/agent_runtime/intent.py#L70-L74)
+- [intent.py:956-984](server/app/agent_runtime/intent.py#L956-L984)
 
 ### Permission Basis System and Role Scopes
 The system uses granular permission scopes aligned with roles:
@@ -224,12 +224,12 @@ RoleScopes --> MCPTool : "enforces via _require_scope"
 ```
 
 **Diagram sources**
-- [api/dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
+- [api/dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
 
 **Section sources**
-- [api/dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
+- [api/dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
 
 ### LLM Tool Router Read-Only Auto-Execution
 When AGENT_ROUTING_MODE is "llm_tools", the LLM router selects tools and can auto-execute read-only tools during propose. Write tools become part of an ExecutionPlan requiring confirmation.
@@ -241,9 +241,9 @@ Key points:
 - Otherwise, a plan is generated and requires user confirmation
 
 **Section sources**
-- [llm_tool_router.py:36-52](file://server/app/agent_runtime/llm_tool_router.py#L36-L52)
-- [llm_tool_router.py:136-170](file://server/app/agent_runtime/llm_tool_router.py#L136-L170)
-- [llm_tool_router.py:279-315](file://server/app/agent_runtime/llm_tool_router.py#L279-L315)
+- [llm_tool_router.py:36-52](server/app/agent_runtime/llm_tool_router.py#L36-L52)
+- [llm_tool_router.py:136-170](server/app/agent_runtime/llm_tool_router.py#L136-L170)
+- [llm_tool_router.py:279-315](server/app/agent_runtime/llm_tool_router.py#L279-L315)
 
 ### Frontend Risk Visualization
 The frontend maps risk levels to UI affordances:
@@ -254,7 +254,7 @@ The frontend maps risk levels to UI affordances:
 This provides immediate visual feedback for plan risk levels.
 
 **Section sources**
-- [ActionPlanPreview.tsx:43-66](file://frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
+- [ActionPlanPreview.tsx:43-66](frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
 
 ### Practical Examples
 
@@ -266,9 +266,9 @@ This provides immediate visual feedback for plan risk levels.
 - If semantic read auto-execution applies, immediate read tool is used instead
 
 **Section sources**
-- [intent.py:426-432](file://server/app/agent_runtime/intent.py#L426-L432)
-- [intent.py:25-26](file://server/app/agent_runtime/intent.py#L25-L26)
-- [test_agent_runtime.py:378-398](file://server/tests/test_agent_runtime.py#L378-L398)
+- [intent.py:426-432](server/app/agent_runtime/intent.py#L426-L432)
+- [intent.py:25-26](server/app/agent_runtime/intent.py#L25-L26)
+- [test_agent_runtime.py:378-398](server/tests/test_agent_runtime.py#L378-L398)
 
 #### Example 2: Permission Checking and Scope Enforcement
 - Tool: send_device_command
@@ -278,9 +278,9 @@ This provides immediate visual feedback for plan risk levels.
 - Unauthorized access raises PermissionError
 
 **Section sources**
-- [intent.py:42-42](file://server/app/agent_runtime/intent.py#L42-L42)
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [mcp/auth.py:16-142](file://server/app/mcp/auth.py#L16-L142)
+- [intent.py:42-42](server/app/agent_runtime/intent.py#L42-L42)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [mcp/auth.py:16-142](server/app/mcp/auth.py#L16-L142)
 
 #### Example 3: Risk Assessment Workflow
 - Message: "move patient 123 to room 5 and acknowledge alert 456"
@@ -292,8 +292,8 @@ This provides immediate visual feedback for plan risk levels.
 - Affected entities: [patient 123, room 5, alert 456]
 
 **Section sources**
-- [intent.py:952-1011](file://server/app/agent_runtime/intent.py#L952-L1011)
-- [test_agent_runtime.py:398-429](file://server/tests/test_agent_runtime.py#L398-L429)
+- [intent.py:952-1011](server/app/agent_runtime/intent.py#L952-L1011)
+- [test_agent_runtime.py:398-429](server/tests/test_agent_runtime.py#L398-L429)
 
 #### Example 4: Tool Execution Authorization
 - ExecutionPlan prepared with permission_basis and risk_level
@@ -303,9 +303,9 @@ This provides immediate visual feedback for plan risk levels.
 - MCP tools enforce required scopes
 
 **Section sources**
-- [schemas/agent_runtime.py:21-29](file://server/app/schemas/agent_runtime.py#L21-L29)
-- [ActionPlanPreview.tsx:43-66](file://frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
-- [mcp/server.py:2734-2754](file://server/app/mcp/server.py#L2734-L2754)
+- [schemas/agent_runtime.py:21-29](server/app/schemas/agent_runtime.py#L21-L29)
+- [ActionPlanPreview.tsx:43-66](frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
+- [mcp/server.py:2734-2754](server/app/mcp/server.py#L2734-L2754)
 
 ## Dependency Analysis
 The system exhibits clear separation of concerns:
@@ -327,22 +327,22 @@ Schema --> UI[ActionPlanPreview.tsx]
 ```
 
 **Diagram sources**
-- [intent.py:11-12](file://server/app/agent_runtime/intent.py#L11-L12)
-- [llm_tool_router.py:16-24](file://server/app/agent_runtime/llm_tool_router.py#L16-L24)
-- [schemas/agent_runtime.py:7-8](file://server/app/schemas/agent_runtime.py#L7-L8)
-- [mcp/server.py:19-27](file://server/app/mcp/server.py#L19-L27)
-- [mcp/auth.py:10-13](file://server/app/mcp/auth.py#L10-L13)
-- [api/dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
-- [ActionPlanPreview.tsx:68-85](file://frontend/components/ai/ActionPlanPreview.tsx#L68-L85)
+- [intent.py:11-12](server/app/agent_runtime/intent.py#L11-L12)
+- [llm_tool_router.py:16-24](server/app/agent_runtime/llm_tool_router.py#L16-L24)
+- [schemas/agent_runtime.py:7-8](server/app/schemas/agent_runtime.py#L7-L8)
+- [mcp/server.py:19-27](server/app/mcp/server.py#L19-L27)
+- [mcp/auth.py:10-13](server/app/mcp/auth.py#L10-L13)
+- [api/dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
+- [ActionPlanPreview.tsx:68-85](frontend/components/ai/ActionPlanPreview.tsx#L68-L85)
 
 **Section sources**
-- [intent.py:11-12](file://server/app/agent_runtime/intent.py#L11-L12)
-- [llm_tool_router.py:16-24](file://server/app/agent_runtime/llm_tool_router.py#L16-L24)
-- [schemas/agent_runtime.py:7-8](file://server/app/schemas/agent_runtime.py#L7-L8)
-- [mcp/server.py:19-27](file://server/app/mcp/server.py#L19-L27)
-- [mcp/auth.py:10-13](file://server/app/mcp/auth.py#L10-L13)
-- [api/dependencies.py:250-311](file://server/app/api/dependencies.py#L250-L311)
-- [ActionPlanPreview.tsx:68-85](file://frontend/components/ai/ActionPlanPreview.tsx#L68-L85)
+- [intent.py:11-12](server/app/agent_runtime/intent.py#L11-L12)
+- [llm_tool_router.py:16-24](server/app/agent_runtime/llm_tool_router.py#L16-L24)
+- [schemas/agent_runtime.py:7-8](server/app/schemas/agent_runtime.py#L7-L8)
+- [mcp/server.py:19-27](server/app/mcp/server.py#L19-L27)
+- [mcp/auth.py:10-13](server/app/mcp/auth.py#L10-L13)
+- [api/dependencies.py:250-311](server/app/api/dependencies.py#L250-L311)
+- [ActionPlanPreview.tsx:68-85](frontend/components/ai/ActionPlanPreview.tsx#L68-L85)
 
 ## Performance Considerations
 - Regex-first intent classification minimizes embedding model usage and reduces latency for common patterns.
@@ -359,11 +359,11 @@ Common issues and resolutions:
 - Frontend risk indicators incorrect: Verify risk_level values in ExecutionPlan and UI mapping logic.
 
 **Section sources**
-- [mcp/server.py:113-117](file://server/app/mcp/server.py#L113-L117)
-- [mcp/auth.py:35-50](file://server/app/mcp/auth.py#L35-L50)
-- [mcp/auth.py:85-111](file://server/app/mcp/auth.py#L85-L111)
-- [schemas/agent_runtime.py:15-18](file://server/app/schemas/agent_runtime.py#L15-L18)
-- [ActionPlanPreview.tsx:43-66](file://frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
+- [mcp/server.py:113-117](server/app/mcp/server.py#L113-L117)
+- [mcp/auth.py:35-50](server/app/mcp/auth.py#L35-L50)
+- [mcp/auth.py:85-111](server/app/mcp/auth.py#L85-L111)
+- [schemas/agent_runtime.py:15-18](server/app/schemas/agent_runtime.py#L15-L18)
+- [ActionPlanPreview.tsx:43-66](frontend/components/ai/ActionPlanPreview.tsx#L43-L66)
 
 ## Conclusion
 The intent metadata and permission system provides a robust, layered approach to secure and transparent AI-driven operations. TOOL_INTENT_METADATA defines playbook, permissions, risk, and read-only characteristics for each tool. SEMANTIC_READ_IMMEDIATE accelerates common reads, while MCP scope enforcement and role-based permissions ensure least-privilege execution. ExecutionPlan models unify risk assessment and confirmation workflows, and the frontend surfaces risk visually. Together, these components deliver a secure, auditable, and user-friendly runtime for WheelSense AI.

@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [README.md](file://README.md)
-- [server/app/main.py](file://server/app/main.py)
-- [server/app/mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [server/app/mcp/server.py](file://server/app/mcp/server.py)
-- [server/app/api/router.py](file://server/app/api/router.py)
-- [server/app/config.py](file://server/app/config.py)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [server/homeassistant/configuration.yaml](file://server/homeassistant/configuration.yaml)
-- [docs/adr/README.md](file://docs/adr/README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [README.md](README.md)
+- [server/app/main.py](server/app/main.py)
+- [server/app/mqtt_handler.py](server/app/mqtt_handler.py)
+- [server/app/mcp/server.py](server/app/mcp/server.py)
+- [server/app/api/router.py](server/app/api/router.py)
+- [server/app/config.py](server/app/config.py)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [server/homeassistant/configuration.yaml](server/homeassistant/configuration.yaml)
+- [docs/adr/README.md](docs/adr/README.md)
 </cite>
 
 ## Table of Contents
@@ -63,14 +63,14 @@ WEB --> API
 ```
 
 **Diagram sources**
-- [server/app/main.py:68-86](file://server/app/main.py#L68-L86)
-- [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [server/app/mcp/server.py:110-120](file://server/app/mcp/server.py#L110-L120)
-- [server/homeassistant/configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
+- [server/app/main.py:68-86](server/app/main.py#L68-L86)
+- [server/app/mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [server/app/mcp/server.py:110-120](server/app/mcp/server.py#L110-L120)
+- [server/homeassistant/configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
 
 **Section sources**
-- [README.md:5-13](file://README.md#L5-L13)
-- [ARCHITECTURE.md:3-22](file://ARCHITECTURE.md#L3-L22)
+- [README.md:5-13](README.md#L5-L13)
+- [ARCHITECTURE.md:3-22](ARCHITECTURE.md#L3-L22)
 
 ## Core Components
 - Presentation layer: Next.js role-based dashboards and a proxy to FastAPI (/api/*).
@@ -85,10 +85,10 @@ Key runtime characteristics:
 - Optional simulator profile for development and E2E testing.
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
-- [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [server/app/mcp/server.py:110-120](file://server/app/mcp/server.py#L110-L120)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
+- [server/app/mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [server/app/mcp/server.py:110-120](server/app/mcp/server.py#L110-L120)
 
 ## Architecture Overview
 The system employs a layered architecture with clear separation of concerns:
@@ -132,13 +132,13 @@ MAIN --> RET
 ```
 
 **Diagram sources**
-- [server/app/main.py:68-86](file://server/app/main.py#L68-L86)
-- [server/app/api/router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [server/app/mcp/server.py:110-120](file://server/app/mcp/server.py#L110-L120)
+- [server/app/main.py:68-86](server/app/main.py#L68-L86)
+- [server/app/api/router.py:16-159](server/app/api/router.py#L16-L159)
+- [server/app/mcp/server.py:110-120](server/app/mcp/server.py#L110-L120)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
 
 ## Detailed Component Analysis
 
@@ -160,12 +160,12 @@ D --> I
 ```
 
 **Diagram sources**
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
-- [server/app/api/router.py:16-159](file://server/app/api/router.py#L16-L159)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
+- [server/app/api/router.py:16-159](server/app/api/router.py#L16-L159)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
 
 ### Event-Driven Architecture with MQTT
 The platform uses MQTT for real-time device communication:
@@ -202,14 +202,14 @@ API->>DB : Apply command acknowledgment
 ```
 
 **Diagram sources**
-- [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [server/app/mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
-- [server/app/mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
+- [server/app/mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [server/app/mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [server/app/mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
+- [server/app/mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
 
 **Section sources**
-- [ARCHITECTURE.md:7-19](file://ARCHITECTURE.md#L7-L19)
-- [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
+- [ARCHITECTURE.md:7-19](ARCHITECTURE.md#L7-L19)
+- [server/app/mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
 
 ### Microservices Pattern and Domain-Driven Design
 Backend services are organized by domain capabilities:
@@ -248,11 +248,11 @@ RET --> SYS
 ```
 
 **Diagram sources**
-- [server/app/mcp/server.py:283-800](file://server/app/mcp/server.py#L283-L800)
+- [server/app/mcp/server.py:283-800](server/app/mcp/server.py#L283-L800)
 
 **Section sources**
-- [ARCHITECTURE.md:23-139](file://ARCHITECTURE.md#L23-L139)
-- [server/app/mcp/server.py:110-120](file://server/app/mcp/server.py#L110-L120)
+- [ARCHITECTURE.md:23-139](ARCHITECTURE.md#L23-L139)
+- [server/app/mcp/server.py:110-120](server/app/mcp/server.py#L110-L120)
 
 ### System Boundary Diagrams
 This diagram shows relationships between backend services, frontend application, firmware devices, and external integrations like Home Assistant.
@@ -287,12 +287,12 @@ NEXT --> API
 ```
 
 **Diagram sources**
-- [server/app/main.py:68-86](file://server/app/main.py#L68-L86)
-- [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [server/homeassistant/configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
+- [server/app/main.py:68-86](server/app/main.py#L68-L86)
+- [server/app/mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [server/homeassistant/configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
 
 ### Data Flow Patterns
 - Telemetry ingestion: Device publishes WheelSense/data; backend persists IMU, RSSI, motion, and optional Polar HR; room predictions and vitals are published back on MQTT.
@@ -313,10 +313,10 @@ PublishVitals --> End
 ```
 
 **Diagram sources**
-- [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [server/app/mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
 
 ### Security Boundaries and Integration Points
 - Authentication: Session-based with HttpOnly ws_token cookie; JWT injected by proxy for API requests; backend validates sessions and revokes tokens.
@@ -346,11 +346,11 @@ Next-->>Browser : UI update
 ```
 
 **Diagram sources**
-- [server/app/main.py:89-114](file://server/app/main.py#L89-L114)
-- [server/app/mcp/server.py:113-129](file://server/app/mcp/server.py#L113-L129)
+- [server/app/main.py:89-114](server/app/main.py#L89-L114)
+- [server/app/mcp/server.py:113-129](server/app/mcp/server.py#L113-L129)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
 
 ### Scalability Considerations and Deployment Topology
 - Horizontal scaling: FastAPI supports multiple replicas behind a reverse proxy; stateless design favors read replicas for analytics and read-heavy endpoints.
@@ -381,12 +381,12 @@ API1 --> RET
 ```
 
 **Diagram sources**
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
+- [ARCHITECTURE.md:140-184](ARCHITECTURE.md#L140-L184)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
 
 ## Dependency Analysis
 The backend depends on:
@@ -414,14 +414,14 @@ AIOMQ --> MQ
 ```
 
 **Diagram sources**
-- [server/app/main.py:10-16](file://server/app/main.py#L10-L16)
-- [server/app/mqtt_handler.py:12-25](file://server/app/mqtt_handler.py#L12-L25)
-- [server/app/mcp/server.py:13-27](file://server/app/mcp/server.py#L13-L27)
+- [server/app/main.py:10-16](server/app/main.py#L10-L16)
+- [server/app/mqtt_handler.py:12-25](server/app/mqtt_handler.py#L12-L25)
+- [server/app/mcp/server.py:13-27](server/app/mcp/server.py#L13-L27)
 
 **Section sources**
-- [server/app/main.py:10-16](file://server/app/main.py#L10-L16)
-- [server/app/mqtt_handler.py:12-25](file://server/app/mqtt_handler.py#L12-L25)
-- [server/app/mcp/server.py:13-27](file://server/app/mcp/server.py#L13-L27)
+- [server/app/main.py:10-16](server/app/main.py#L10-L16)
+- [server/app/mqtt_handler.py:12-25](server/app/mqtt_handler.py#L12-L25)
+- [server/app/mcp/server.py:13-27](server/app/mcp/server.py#L13-L27)
 
 ## Performance Considerations
 - Asynchronous I/O: MQTT listener and FastAPI routes leverage async/await to minimize blocking and improve throughput.
@@ -441,9 +441,9 @@ Common areas to inspect:
 - Retention scheduler: Review logs for scheduled tasks and database cleanup operations.
 
 **Section sources**
-- [server/app/config.py:23-37](file://server/app/config.py#L23-L37)
-- [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [server/app/mcp/server.py:113-129](file://server/app/mcp/server.py#L113-L129)
+- [server/app/config.py:23-37](server/app/config.py#L23-L37)
+- [server/app/mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [server/app/mcp/server.py:113-129](server/app/mcp/server.py#L113-L129)
 
 ## Conclusion
 The WheelSense Platform integrates IoT telemetry, clinical workflows, and AI-powered orchestration through a layered, event-driven architecture. The backend employs microservices and domain-driven design principles, secured by role-based access and MCP tooling. The frontend delivers role-based dashboards with robust caching and real-time updates. MQTT powers reliable, low-latency device communication, while PostgreSQL and MCP provide scalable persistence and extensibility. Deployment supports horizontal scaling and modular profiles for development and production.
@@ -456,4 +456,4 @@ The WheelSense Platform integrates IoT telemetry, clinical workflows, and AI-pow
 - Architectural decisions are captured in ADRs covering MCP transport, dual-path vitals integration, spatial model hierarchy, localization strategies, camera modes, and agent routing.
 
 **Section sources**
-- [docs/adr/README.md:1-25](file://docs/adr/README.md#L1-L25)
+- [docs/adr/README.md:1-25](docs/adr/README.md#L1-L25)

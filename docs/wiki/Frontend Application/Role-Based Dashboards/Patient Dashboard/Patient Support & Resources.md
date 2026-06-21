@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [patient/support/page.tsx](file://frontend/app/patient/support/page.tsx)
-- [supervisor/support/page.tsx](file://frontend/app/supervisor/support/page.tsx)
-- [observer/support/page.tsx](file://frontend/app/observer/support/page.tsx)
-- [head-nurse/support/page.tsx](file://frontend/app/head-nurse/support/page.tsx)
-- [admin/support/page.tsx](file://frontend/app/admin/support/page.tsx)
-- [support.py](file://server/app/api/endpoints/support.py)
-- [support.py (models)](file://server/app/models/support.py)
-- [support.py (alembic migration)](file://server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py)
-- [task-scope-types.ts](file://frontend/lib/api/task-scope-types.ts)
-- [.openapi.json](file://frontend/.openapi.json)
-- [test_identity_support_lane.py](file://server/tests/test_identity_support_lane.py)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [patient/support/page.tsx](frontend/app/patient/support/page.tsx)
+- [supervisor/support/page.tsx](frontend/app/supervisor/support/page.tsx)
+- [observer/support/page.tsx](frontend/app/observer/support/page.tsx)
+- [head-nurse/support/page.tsx](frontend/app/head-nurse/support/page.tsx)
+- [admin/support/page.tsx](frontend/app/admin/support/page.tsx)
+- [support.py](server/app/api/endpoints/support.py)
+- [support.py (models)](server/app/models/support.py)
+- [support.py (alembic migration)](server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py)
+- [task-scope-types.ts](frontend/lib/api/task-scope-types.ts)
+- [.openapi.json](frontend/.openapi.json)
+- [test_identity_support_lane.py](server/tests/test_identity_support_lane.py)
 </cite>
 
 ## Table of Contents
@@ -70,20 +70,20 @@ MOD --> DB
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [patient/support/page.tsx:1-6](file://frontend/app/patient/support/page.tsx#L1-L6)
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [supervisor/support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [head-nurse/support/page.tsx:1-6](file://frontend/app/head-nurse/support/page.tsx#L1-L6)
-- [admin/support/page.tsx:1-650](file://frontend/app/admin/support/page.tsx#L1-L650)
-- [support.py:62-121](file://server/app/api/endpoints/support.py#L62-L121)
-- [support.py (models):10-97](file://server/app/models/support.py#L10-L97)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [patient/support/page.tsx:1-6](frontend/app/patient/support/page.tsx#L1-L6)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [supervisor/support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [head-nurse/support/page.tsx:1-6](frontend/app/head-nurse/support/page.tsx#L1-L6)
+- [admin/support/page.tsx:1-650](frontend/app/admin/support/page.tsx#L1-L650)
+- [support.py:62-121](server/app/api/endpoints/support.py#L62-L121)
+- [support.py (models):10-97](server/app/models/support.py#L10-L97)
 
 **Section sources**
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [admin/support/page.tsx:1-650](file://frontend/app/admin/support/page.tsx#L1-L650)
-- [support.py:62-121](file://server/app/api/endpoints/support.py#L62-L121)
-- [support.py (models):10-97](file://server/app/models/support.py#L10-L97)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [admin/support/page.tsx:1-650](frontend/app/admin/support/page.tsx#L1-L650)
+- [support.py:62-121](server/app/api/endpoints/support.py#L62-L121)
+- [support.py (models):10-97](server/app/models/support.py#L10-L97)
 
 ## Core Components
 - Issue Reporting Form
@@ -99,12 +99,12 @@ MOD --> DB
   - Shows attachments and resolution notes
 
 **Section sources**
-- [ReportIssueForm.tsx:37-201](file://frontend/components/support/ReportIssueForm.tsx#L37-L201)
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [supervisor/support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [head-nurse/support/page.tsx:1-6](file://frontend/app/head-nurse/support/page.tsx#L1-L6)
-- [admin/support/page.tsx:128-650](file://frontend/app/admin/support/page.tsx#L128-L650)
-- [patient/support/page.tsx:1-6](file://frontend/app/patient/support/page.tsx#L1-L6)
+- [ReportIssueForm.tsx:37-201](frontend/components/support/ReportIssueForm.tsx#L37-L201)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [supervisor/support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [head-nurse/support/page.tsx:1-6](frontend/app/head-nurse/support/page.tsx#L1-L6)
+- [admin/support/page.tsx:128-650](frontend/app/admin/support/page.tsx#L128-L650)
+- [patient/support/page.tsx:1-6](frontend/app/patient/support/page.tsx#L1-L6)
 
 ## Architecture Overview
 The support system follows a clear separation of concerns:
@@ -131,14 +131,14 @@ F-->>U : Show success and admin queue note
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
-- [support.py:89-97](file://server/app/api/endpoints/support.py#L89-L97)
-- [support.py (models):10-41](file://server/app/models/support.py#L10-L41)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [support.py:89-97](server/app/api/endpoints/support.py#L89-L97)
+- [support.py (models):10-41](server/app/models/support.py#L10-L41)
 
 **Section sources**
-- [ReportIssueForm.tsx:43-87](file://frontend/components/support/ReportIssueForm.tsx#L43-L87)
-- [support.py:89-97](file://server/app/api/endpoints/support.py#L89-L97)
-- [support.py (models):10-41](file://server/app/models/support.py#L10-L41)
+- [ReportIssueForm.tsx:43-87](frontend/components/support/ReportIssueForm.tsx#L43-L87)
+- [support.py:89-97](server/app/api/endpoints/support.py#L89-L97)
+- [support.py (models):10-41](server/app/models/support.py#L10-L41)
 
 ## Detailed Component Analysis
 
@@ -171,10 +171,10 @@ Error --> End
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:45-87](file://frontend/components/support/ReportIssueForm.tsx#L45-L87)
+- [ReportIssueForm.tsx:45-87](frontend/components/support/ReportIssueForm.tsx#L45-L87)
 
 **Section sources**
-- [ReportIssueForm.tsx:30-87](file://frontend/components/support/ReportIssueForm.tsx#L30-L87)
+- [ReportIssueForm.tsx:30-87](frontend/components/support/ReportIssueForm.tsx#L30-L87)
 
 ### Role Pages and Redirects
 - Observer, Supervisor, and Head Nurse pages render the shared reporting form
@@ -191,19 +191,19 @@ ADM["Admin Support Console"] --> CONS["Live ticket list and actions"]
 ```
 
 **Diagram sources**
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [supervisor/support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [head-nurse/support/page.tsx:1-6](file://frontend/app/head-nurse/support/page.tsx#L1-L6)
-- [patient/support/page.tsx:1-6](file://frontend/app/patient/support/page.tsx#L1-L6)
-- [admin/support/page.tsx:1-650](file://frontend/app/admin/support/page.tsx#L1-L650)
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [supervisor/support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [head-nurse/support/page.tsx:1-6](frontend/app/head-nurse/support/page.tsx#L1-L6)
+- [patient/support/page.tsx:1-6](frontend/app/patient/support/page.tsx#L1-L6)
+- [admin/support/page.tsx:1-650](frontend/app/admin/support/page.tsx#L1-L650)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
 
 **Section sources**
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [supervisor/support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [head-nurse/support/page.tsx:1-6](file://frontend/app/head-nurse/support/page.tsx#L1-L6)
-- [patient/support/page.tsx:1-6](file://frontend/app/patient/support/page.tsx#L1-L6)
-- [admin/support/page.tsx:128-650](file://frontend/app/admin/support/page.tsx#L128-L650)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [supervisor/support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [head-nurse/support/page.tsx:1-6](frontend/app/head-nurse/support/page.tsx#L1-L6)
+- [patient/support/page.tsx:1-6](frontend/app/patient/support/page.tsx#L1-L6)
+- [admin/support/page.tsx:128-650](frontend/app/admin/support/page.tsx#L128-L650)
 
 ### Admin Support Console
 - Live ticket list with status badges and priority indicators
@@ -235,14 +235,14 @@ CON-->>STAFF : UI refresh with new state
 ```
 
 **Diagram sources**
-- [admin/support/page.tsx:191-237](file://frontend/app/admin/support/page.tsx#L191-L237)
-- [support.py:111-121](file://server/app/api/endpoints/support.py#L111-L121)
-- [support.py (models):10-41](file://server/app/models/support.py#L10-L41)
+- [admin/support/page.tsx:191-237](frontend/app/admin/support/page.tsx#L191-L237)
+- [support.py:111-121](server/app/api/endpoints/support.py#L111-L121)
+- [support.py (models):10-41](server/app/models/support.py#L10-L41)
 
 **Section sources**
-- [admin/support/page.tsx:128-650](file://frontend/app/admin/support/page.tsx#L128-L650)
-- [support.py:62-121](file://server/app/api/endpoints/support.py#L62-L121)
-- [support.py (models):10-97](file://server/app/models/support.py#L10-L97)
+- [admin/support/page.tsx:128-650](frontend/app/admin/support/page.tsx#L128-L650)
+- [support.py:62-121](server/app/api/endpoints/support.py#L62-L121)
+- [support.py (models):10-97](server/app/models/support.py#L10-L97)
 
 ### Backend API and Data Model
 - Endpoints:
@@ -298,12 +298,12 @@ SupportTicket "1" --> "0..*" SupportTicketAttachment : "has"
 ```
 
 **Diagram sources**
-- [support.py (models):10-97](file://server/app/models/support.py#L10-L97)
+- [support.py (models):10-97](server/app/models/support.py#L10-L97)
 
 **Section sources**
-- [support.py:62-121](file://server/app/api/endpoints/support.py#L62-L121)
-- [support.py (models):10-97](file://server/app/models/support.py#L10-L97)
-- [support.py (alembic migration)](file://server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py)
+- [support.py:62-121](server/app/api/endpoints/support.py#L62-L121)
+- [support.py (models):10-97](server/app/models/support.py#L10-L97)
+- [support.py (alembic migration)](server/alembic/versions/o9p0q1r2s3t4_add_support_ticket_domain.py)
 
 ## Dependency Analysis
 - Frontend dependencies:
@@ -325,20 +325,20 @@ API --> OPENAPI[".openapi.json"]
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:3-10](file://frontend/components/support/ReportIssueForm.tsx#L3-L10)
-- [admin/support/page.tsx:1-36](file://frontend/app/admin/support/page.tsx#L1-L36)
-- [support.py:62-121](file://server/app/api/endpoints/support.py#L62-L121)
-- [support.py (models):10-97](file://server/app/models/support.py#L10-L97)
-- [task-scope-types.ts:59-65](file://frontend/lib/api/task-scope-types.ts#L59-L65)
-- [.openapi.json:22300-22327](file://frontend/.openapi.json#L22300-L22327)
+- [ReportIssueForm.tsx:3-10](frontend/components/support/ReportIssueForm.tsx#L3-L10)
+- [admin/support/page.tsx:1-36](frontend/app/admin/support/page.tsx#L1-L36)
+- [support.py:62-121](server/app/api/endpoints/support.py#L62-L121)
+- [support.py (models):10-97](server/app/models/support.py#L10-L97)
+- [task-scope-types.ts:59-65](frontend/lib/api/task-scope-types.ts#L59-L65)
+- [.openapi.json:22300-22327](frontend/.openapi.json#L22300-L22327)
 
 **Section sources**
-- [ReportIssueForm.tsx:3-10](file://frontend/components/support/ReportIssueForm.tsx#L3-L10)
-- [admin/support/page.tsx:1-36](file://frontend/app/admin/support/page.tsx#L1-L36)
-- [support.py:62-121](file://server/app/api/endpoints/support.py#L62-L121)
-- [support.py (models):10-97](file://server/app/models/support.py#L10-L97)
-- [task-scope-types.ts:59-65](file://frontend/lib/api/task-scope-types.ts#L59-L65)
-- [.openapi.json:22300-22327](file://frontend/.openapi.json#L22300-L22327)
+- [ReportIssueForm.tsx:3-10](frontend/components/support/ReportIssueForm.tsx#L3-L10)
+- [admin/support/page.tsx:1-36](frontend/app/admin/support/page.tsx#L1-L36)
+- [support.py:62-121](server/app/api/endpoints/support.py#L62-L121)
+- [support.py (models):10-97](server/app/models/support.py#L10-L97)
+- [task-scope-types.ts:59-65](frontend/lib/api/task-scope-types.ts#L59-L65)
+- [.openapi.json:22300-22327](frontend/.openapi.json#L22300-L22327)
 
 ## Performance Considerations
 - Real-time updates:
@@ -366,9 +366,9 @@ Common issues and resolutions:
   - Re-fetch the ticket; the console displays comments and attachments when present
 
 **Section sources**
-- [ReportIssueForm.tsx:84-86](file://frontend/components/support/ReportIssueForm.tsx#L84-L86)
-- [admin/support/page.tsx:138-152](file://frontend/app/admin/support/page.tsx#L138-L152)
-- [test_identity_support_lane.py:256-273](file://server/tests/test_identity_support_lane.py#L256-L273)
+- [ReportIssueForm.tsx:84-86](frontend/components/support/ReportIssueForm.tsx#L84-L86)
+- [admin/support/page.tsx:138-152](frontend/app/admin/support/page.tsx#L138-L152)
+- [test_identity_support_lane.py:256-273](server/tests/test_identity_support_lane.py#L256-L273)
 
 ## Conclusion
 The Patient Support & Resources section provides a streamlined pathway for users to report issues and receive timely triage. The frontend offers a consistent reporting experience across roles, while the backend enforces access control and maintains a robust ticketing domain. The Admin console enables efficient triage and resolution, integrating with the broader operational workflows.

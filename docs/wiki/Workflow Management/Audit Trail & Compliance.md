@@ -2,22 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**
-- [audit_trail_events.py](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py)
-- [audit_trail_events.py](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py)
-- [audit_trail_events.py](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [tasks.py](file://server/app/models/tasks.py)
-- [task_management.py](file://server/app/schemas/task_management.py)
-- [activity.py](file://server/app/models/activity.py)
-- [activity.py](file://server/app/schemas/activity.py)
-- [activity.py](file://server/app/services/activity.py)
-- [OperationsConsole.tsx](file://frontend/components/workflow/OperationsConsole.tsx)
-- [admin_audit_log_page.tsx](file://frontend/app/admin/audit-log/page.tsx)
-- [admin_audit_page.tsx](file://frontend/app/admin/audit/page.tsx)
-- [retention.py](file://server/app/services/retention.py)
-- [retention.py](file://server/tests/test_retention.py)
-- [retention.py](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py)
-- [retention.py](file://server/app/workers/tasks/retention.py)
+- [audit_trail_events.py](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py)
+- [audit_trail_events.py](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py)
+- [audit_trail_events.py](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py)
+- [workflow.py](server/app/models/workflow.py)
+- [tasks.py](server/app/models/tasks.py)
+- [task_management.py](server/app/schemas/task_management.py)
+- [activity.py](server/app/models/activity.py)
+- [activity.py](server/app/schemas/activity.py)
+- [activity.py](server/app/services/activity.py)
+- [OperationsConsole.tsx](frontend/components/workflow/OperationsConsole.tsx)
+- [admin_audit_log_page.tsx](frontend/app/admin/audit-log/page.tsx)
+- [admin_audit_page.tsx](frontend/app/admin/audit/page.tsx)
+- [retention.py](server/app/services/retention.py)
+- [retention.py](server/tests/test_retention.py)
+- [retention.py](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py)
+- [retention.py](server/app/workers/tasks/retention.py)
 </cite>
 
 ## Table of Contents
@@ -66,24 +66,24 @@ F3 --> A
 ```
 
 **Diagram sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [audit_trail_events.py:220-223](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)
-- [audit_trail_events.py:21-78](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
-- [activity.py:19-75](file://server/app/services/activity.py#L19-L75)
-- [OperationsConsole.tsx:593-621](file://frontend/components/workflow/OperationsConsole.tsx#L593-L621)
-- [admin_audit_log_page.tsx](file://frontend/app/admin/audit-log/page.tsx)
-- [admin_audit_page.tsx](file://frontend/app/admin/audit/page.tsx)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [audit_trail_events.py:220-223](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)
+- [audit_trail_events.py:21-78](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
+- [activity.py:19-75](server/app/services/activity.py#L19-L75)
+- [OperationsConsole.tsx:593-621](frontend/components/workflow/OperationsConsole.tsx#L593-L621)
+- [admin_audit_log_page.tsx](frontend/app/admin/audit-log/page.tsx)
+- [admin_audit_page.tsx](frontend/app/admin/audit/page.tsx)
 
 **Section sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [audit_trail_events.py:220-223](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)
-- [audit_trail_events.py:21-78](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
-- [activity.py:19-75](file://server/app/services/activity.py#L19-L75)
-- [OperationsConsole.tsx:593-621](file://frontend/components/workflow/OperationsConsole.tsx#L593-L621)
-- [admin_audit_log_page.tsx](file://frontend/app/admin/audit-log/page.tsx)
-- [admin_audit_page.tsx](file://frontend/app/admin/audit/page.tsx)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [audit_trail_events.py:220-223](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)
+- [audit_trail_events.py:21-78](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
+- [activity.py:19-75](server/app/services/activity.py#L19-L75)
+- [OperationsConsole.tsx:593-621](frontend/components/workflow/OperationsConsole.tsx#L593-L621)
+- [admin_audit_log_page.tsx](frontend/app/admin/audit-log/page.tsx)
+- [admin_audit_page.tsx](frontend/app/admin/audit/page.tsx)
 
 ## Core Components
 - AuditTrailEvent model: central event record with workspace scoping, actor identification, domain/action/entity classification, and timestamps.
@@ -97,11 +97,11 @@ Key attributes and indices:
 - Device activity events: workspace_id, occurred_at, event_type, registry_device_id, smart_device_id.
 
 **Section sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [audit_trail_events.py:26-68](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L26-L68)
-- [tasks.py:22-129](file://server/app/models/tasks.py#L22-L129)
-- [task_management.py:11-166](file://server/app/schemas/task_management.py#L11-L166)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [audit_trail_events.py:26-68](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L26-L68)
+- [tasks.py:22-129](server/app/models/tasks.py#L22-L129)
+- [task_management.py:11-166](server/app/schemas/task_management.py#L11-L166)
 
 ## Architecture Overview
 The audit trail architecture separates concerns between event generation, persistence, indexing, querying, and presentation. Events are categorized by domain (task, schedule, directive, messaging, device), action (create, update, delete, approve, reject, submit), and entity (task, schedule, directive, message, device). Workspace scoping ensures isolation across facilities. Impersonation is tracked via actor_user_id. Patient privacy is enforced by scoping events to the workspace and optionally linking to patient_id where applicable.
@@ -123,9 +123,9 @@ Note over Worker,DB : "Periodic cleanup removes expired events"
 ```
 
 **Diagram sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [retention.py](file://server/app/workers/tasks/retention.py)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [retention.py](server/app/workers/tasks/retention.py)
 
 ## Detailed Component Analysis
 
@@ -159,11 +159,11 @@ class AuditTrailEvent {
 ```
 
 **Diagram sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
 
 **Section sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
 
 ### Event Logging Mechanisms
 - Domain coverage: task, schedule, directive, messaging, device.
@@ -181,9 +181,9 @@ Practical examples of event categorization:
 - Device registry change: domain="device", action="update", entity_type="Device", entity_id=<deviceId>.
 
 **Section sources**
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [audit_trail_events.py:220-223](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)
-- [audit_trail_events.py:26-68](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L26-L68)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [audit_trail_events.py:220-223](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)
+- [audit_trail_events.py:26-68](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L26-L68)
 
 ### Compliance Reporting Capabilities
 - Workspace scoping: all queries filter by workspace_id to prevent cross-workspace disclosure.
@@ -204,9 +204,9 @@ Export --> End(["Done"])
 ```
 
 **Section sources**
-- [admin_audit_log_page.tsx](file://frontend/app/admin/audit-log/page.tsx)
-- [admin_audit_page.tsx](file://frontend/app/admin/audit/page.tsx)
-- [OperationsConsole.tsx:593-621](file://frontend/components/workflow/OperationsConsole.tsx#L593-L621)
+- [admin_audit_log_page.tsx](frontend/app/admin/audit-log/page.tsx)
+- [admin_audit_page.tsx](frontend/app/admin/audit/page.tsx)
+- [OperationsConsole.tsx:593-621](frontend/components/workflow/OperationsConsole.tsx#L593-L621)
 
 ### Integration with Workflow Operations
 Task lifecycle events are integrated into the audit trail:
@@ -236,13 +236,13 @@ AuditSvc->>DB : "INSERT audit_trail_events"
 ```
 
 **Diagram sources**
-- [tasks.py:22-129](file://server/app/models/tasks.py#L22-L129)
-- [task_management.py:11-166](file://server/app/schemas/task_management.py#L11-L166)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [tasks.py:22-129](server/app/models/tasks.py#L22-L129)
+- [task_management.py:11-166](server/app/schemas/task_management.py#L11-L166)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
 
 **Section sources**
-- [tasks.py:22-129](file://server/app/models/tasks.py#L22-L129)
-- [task_management.py:11-166](file://server/app/schemas/task_management.py#L11-L166)
+- [tasks.py:22-129](server/app/models/tasks.py#L22-L129)
+- [task_management.py:11-166](server/app/schemas/task_management.py#L11-L166)
 
 ### Device Activity Events
 Administrative device registry changes are captured separately in device_activity_events with:
@@ -250,7 +250,7 @@ Administrative device registry changes are captured separately in device_activit
 - Indexed for efficient querying by workspace, time, and device identifiers.
 
 **Section sources**
-- [audit_trail_events.py:21-78](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
+- [audit_trail_events.py:21-78](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
 
 ### Activity Timeline and Alerts
 While distinct from the audit trail, the activity timeline and alerts complement compliance by capturing patient-centric events and actionable alerts:
@@ -259,9 +259,9 @@ While distinct from the audit trail, the activity timeline and alerts complement
 - Both support workspace scoping and optional patient linkage.
 
 **Section sources**
-- [activity.py:14-90](file://server/app/models/activity.py#L14-L90)
-- [activity.py:12-70](file://server/app/schemas/activity.py#L12-L70)
-- [activity.py:19-75](file://server/app/services/activity.py#L19-L75)
+- [activity.py:14-90](server/app/models/activity.py#L14-L90)
+- [activity.py:12-70](server/app/schemas/activity.py#L12-L70)
+- [activity.py:19-75](server/app/services/activity.py#L19-L75)
 
 ## Dependency Analysis
 The audit trail depends on:
@@ -283,20 +283,20 @@ FE3["Operations Console"] --> DB
 ```
 
 **Diagram sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [retention.py](file://server/app/workers/tasks/retention.py)
-- [admin_audit_log_page.tsx](file://frontend/app/admin/audit-log/page.tsx)
-- [admin_audit_page.tsx](file://frontend/app/admin/audit/page.tsx)
-- [OperationsConsole.tsx:593-621](file://frontend/components/workflow/OperationsConsole.tsx#L593-L621)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [retention.py](server/app/workers/tasks/retention.py)
+- [admin_audit_log_page.tsx](frontend/app/admin/audit-log/page.tsx)
+- [admin_audit_page.tsx](frontend/app/admin/audit/page.tsx)
+- [OperationsConsole.tsx:593-621](frontend/components/workflow/OperationsConsole.tsx#L593-L621)
 
 **Section sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [retention.py](file://server/app/workers/tasks/retention.py)
-- [admin_audit_log_page.tsx](file://frontend/app/admin/audit-log/page.tsx)
-- [admin_audit_page.tsx](file://frontend/app/admin/audit/page.tsx)
-- [OperationsConsole.tsx:593-621](file://frontend/components/workflow/OperationsConsole.tsx#L593-L621)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [retention.py](server/app/workers/tasks/retention.py)
+- [admin_audit_log_page.tsx](frontend/app/admin/audit-log/page.tsx)
+- [admin_audit_page.tsx](frontend/app/admin/audit/page.tsx)
+- [OperationsConsole.tsx:593-621](frontend/components/workflow/OperationsConsole.tsx#L593-L621)
 
 ## Performance Considerations
 - Indexing: composite index workspace_id+domain+created_at optimizes common queries.
@@ -315,9 +315,9 @@ Common issues and resolutions:
 - Retention cleanup: verify retention worker is scheduled and configured.
 
 **Section sources**
-- [audit_trail_events.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [retention.py](file://server/app/workers/tasks/retention.py)
-- [retention.py](file://server/tests/test_retention.py)
+- [audit_trail_events.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [retention.py](server/app/workers/tasks/retention.py)
+- [retention.py](server/tests/test_retention.py)
 
 ## Conclusion
 The WheelSense Platform’s audit trail and compliance system provides robust, workspace-scoped event logging with granular categorization by domain, action, and entity. It supports impersonation tracking, patient privacy protection, and comprehensive filtering for compliance reporting. Integrations with workflow operations ensure full traceability of task lifecycles. Retention policies and indexing maintain performance and data lifecycle governance.
@@ -350,6 +350,6 @@ The WheelSense Platform’s audit trail and compliance system provides robust, w
 - Backups and immutable archival can be considered for long-term compliance.
 
 **Section sources**
-- [retention.py](file://server/app/services/retention.py)
-- [retention.py](file://server/tests/test_retention.py)
-- [audit_trail_events.py:220-223](file://server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)
+- [retention.py](server/app/services/retention.py)
+- [retention.py](server/tests/test_retention.py)
+- [audit_trail_events.py:220-223](server/alembic/versions/1aac0f420dfc_add_task_management_tables.py#L220-L223)

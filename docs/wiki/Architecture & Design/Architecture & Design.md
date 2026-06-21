@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [README.md](file://README.md)
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [server/app/main.py](file://server/app/main.py)
-- [server/app/mcp/server.py](file://server/app/mcp/server.py)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [frontend/package.json](file://frontend/package.json)
-- [frontend/app/layout.tsx](file://frontend/app/layout.tsx)
-- [docs/adr/README.md](file://docs/adr/README.md)
-- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
-- [docs/adr/0007-tdd-service-layer-architecture.md](file://docs/adr/0007-tdd-service-layer-architecture.md)
-- [docs/adr/0008-workflow-domains-for-role-operations.md](file://docs/adr/0008-workflow-domains-for-role-operations.md)
-- [docs/adr/0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [README.md](README.md)
+- [server/AGENTS.md](server/AGENTS.md)
+- [server/app/main.py](server/app/main.py)
+- [server/app/mcp/server.py](server/app/mcp/server.py)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [server/pyproject.toml](server/pyproject.toml)
+- [frontend/package.json](frontend/package.json)
+- [frontend/app/layout.tsx](frontend/app/layout.tsx)
+- [docs/adr/README.md](docs/adr/README.md)
+- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [docs/adr/0007-tdd-service-layer-architecture.md](docs/adr/0007-tdd-service-layer-architecture.md)
+- [docs/adr/0008-workflow-domains-for-role-operations.md](docs/adr/0008-workflow-domains-for-role-operations.md)
+- [docs/adr/0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
 </cite>
 
 ## Table of Contents
@@ -71,13 +71,13 @@ AR --> MCP
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [server/app/main.py](file://server/app/main.py)
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [server/app/main.py](server/app/main.py)
+- [server/AGENTS.md](server/AGENTS.md)
 
 **Section sources**
-- [README.md](file://README.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [README.md](README.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Core Components
 - Firmware devices publish telemetry and camera frames to MQTT topics. The backend ingests and normalizes these events into database records and triggers derived workflows (localization, vitals, alerts).
@@ -86,10 +86,10 @@ AR --> MCP
 - The frontend is a role-based Next.js application that proxies API calls to the backend and renders dashboards for administrators, head nurses, supervisors, observers, and patients.
 
 **Section sources**
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [server/app/main.py](file://server/app/main.py)
-- [server/app/mcp/server.py](file://server/app/mcp/server.py)
+- [server/AGENTS.md](server/AGENTS.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [server/app/main.py](server/app/main.py)
+- [server/app/mcp/server.py](server/app/mcp/server.py)
 
 ## Architecture Overview
 WheelSense employs a layered, event-driven architecture:
@@ -120,9 +120,9 @@ AR->>MCP : First-party orchestration (plan/execute)
 ```
 
 **Diagram sources**
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [server/app/main.py](file://server/app/main.py)
-- [server/app/mcp/server.py](file://server/app/mcp/server.py)
+- [server/AGENTS.md](server/AGENTS.md)
+- [server/app/main.py](server/app/main.py)
+- [server/app/mcp/server.py](server/app/mcp/server.py)
 
 ## Detailed Component Analysis
 
@@ -160,12 +160,12 @@ FastAPI_App --> MQTT_Handler : "starts"
 ```
 
 **Diagram sources**
-- [server/app/main.py](file://server/app/main.py)
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [server/app/main.py](server/app/main.py)
+- [server/AGENTS.md](server/AGENTS.md)
 
 **Section sources**
-- [server/app/main.py](file://server/app/main.py)
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [server/app/main.py](server/app/main.py)
+- [server/AGENTS.md](server/AGENTS.md)
 
 ### MCP Server and AI Orchestration
 - MCP server mounted at /mcp with Streamable HTTP primary and SSE compatibility. Authentication uses bearer tokens and optional origin gating; OAuth discovery metadata is published at /.well-known.
@@ -196,14 +196,14 @@ AR-->>FE : Completion
 ```
 
 **Diagram sources**
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [server/app/mcp/server.py](file://server/app/mcp/server.py)
+- [server/AGENTS.md](server/AGENTS.md)
+- [server/app/mcp/server.py](server/app/mcp/server.py)
 
 **Section sources**
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [server/app/mcp/server.py](file://server/app/mcp/server.py)
-- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
-- [docs/adr/0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
+- [server/AGENTS.md](server/AGENTS.md)
+- [server/app/mcp/server.py](server/app/mcp/server.py)
+- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [docs/adr/0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
 
 ### Frontend: Next.js Role-Based Dashboards
 - Next.js 16 App Router with role-based pages and proxies to backend APIs.
@@ -223,13 +223,13 @@ UI --> MCP["MCP chat actions (optional)"]
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [frontend/app/layout.tsx](file://frontend/app/layout.tsx)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [frontend/app/layout.tsx](frontend/app/layout.tsx)
 
 **Section sources**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [frontend/package.json](file://frontend/package.json)
-- [frontend/app/layout.tsx](file://frontend/app/layout.tsx)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [frontend/package.json](frontend/package.json)
+- [frontend/app/layout.tsx](frontend/app/layout.tsx)
 
 ### Firmware: Telemetry and Camera Nodes
 - M5StickCPlus2 publishes IMU, motion, RSSI, and battery telemetry to MQTT.
@@ -237,8 +237,8 @@ UI --> MCP["MCP chat actions (optional)"]
 - Topics include device-specific control/ack channels and derived broadcasts (room predictions, vitals, alerts).
 
 **Section sources**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [server/AGENTS.md](server/AGENTS.md)
 
 ### MQTT Communication and Data Flows
 - Topics: WheelSense/data (telemetry), WheelSense/camera/{device_id}/registration/status/photo, control/ack channels, derived broadcasts.
@@ -246,7 +246,7 @@ UI --> MCP["MCP chat actions (optional)"]
 - Camera flow: registration/status updates device registry; photo chunks assembled into records; control commands published to camera.
 
 **Section sources**
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [server/AGENTS.md](server/AGENTS.md)
 
 ### Workspace-Based Multi-Tenancy and RBAC
 - All protected APIs and MCP tools scope by current user.workspace_id.
@@ -254,7 +254,7 @@ UI --> MCP["MCP chat actions (optional)"]
 - Patient visibility is enforced centrally; caregiver ↔ patient access is governed by explicit assignment tables.
 
 **Section sources**
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [server/AGENTS.md](server/AGENTS.md)
 
 ### Architectural Decision Records (ADRs)
 - ADR-0001: Use FastMCP SSE for AI integration — MCP mounted within FastAPI for simplicity and shared service layer.
@@ -263,11 +263,11 @@ UI --> MCP["MCP chat actions (optional)"]
 - ADR-0014: LLM-native MCP tool routing — introduce AGENT_ROUTING_MODE supporting LLM-native tool selection with fallback.
 
 **Section sources**
-- [docs/adr/README.md](file://docs/adr/README.md)
-- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
-- [docs/adr/0007-tdd-service-layer-architecture.md](file://docs/adr/0007-tdd-service-layer-architecture.md)
-- [docs/adr/0008-workflow-domains-for-role-operations.md](file://docs/adr/0008-workflow-domains-for-role-operations.md)
-- [docs/adr/0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
+- [docs/adr/README.md](docs/adr/README.md)
+- [docs/adr/0001-fastmcp-sse-for-ai-integration.md](docs/adr/0001-fastmcp-sse-for-ai-integration.md)
+- [docs/adr/0007-tdd-service-layer-architecture.md](docs/adr/0007-tdd-service-layer-architecture.md)
+- [docs/adr/0008-workflow-domains-for-role-operations.md](docs/adr/0008-workflow-domains-for-role-operations.md)
+- [docs/adr/0014-llm-native-mcp-tool-routing.md](docs/adr/0014-llm-native-mcp-tool-routing.md)
 
 ## Dependency Analysis
 - Backend runtime dependencies: Python 3.12+, FastAPI, SQLAlchemy async, Alembic, aiomqtt, MCP FastMCP, and test/tooling (pytest, ruff, mypy).
@@ -310,14 +310,14 @@ DC --> MQB
 ```
 
 **Diagram sources**
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [frontend/package.json](file://frontend/package.json)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
+- [server/pyproject.toml](server/pyproject.toml)
+- [frontend/package.json](frontend/package.json)
+- [server/docker-compose.yml](server/docker-compose.yml)
 
 **Section sources**
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [frontend/package.json](file://frontend/package.json)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
+- [server/pyproject.toml](server/pyproject.toml)
+- [frontend/package.json](frontend/package.json)
+- [server/docker-compose.yml](server/docker-compose.yml)
 
 ## Performance Considerations
 - Service layer separation reduces duplication and improves testability; shared service methods minimize round-trips.
@@ -334,8 +334,8 @@ DC --> MQB
 - MQTT topics: Confirm device registration and aliases; verify node_device_id bindings and room predictions converge to a stable state.
 
 **Section sources**
-- [server/app/main.py](file://server/app/main.py)
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [server/app/main.py](server/app/main.py)
+- [server/AGENTS.md](server/AGENTS.md)
 
 ## Conclusion
 WheelSense Platform combines a firmware telemetry layer, a FastAPI backend with a robust service layer, a role-based Next.js frontend, and an MCP-powered AI orchestration layer. The system emphasizes workspace-based multi-tenancy, event-driven communication via MQTT, and test-driven development with clear separation of concerns. ADRs codify key architectural decisions, guiding evolution toward scalable, secure, and operable deployments.
@@ -351,8 +351,8 @@ WheelSense Platform combines a firmware telemetry layer, a FastAPI backend with 
 - Home Assistant integration for room actuation
 
 **Section sources**
-- [server/AGENTS.md](file://server/AGENTS.md)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [server/AGENTS.md](server/AGENTS.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ### Infrastructure Requirements and Deployment Topology
 - Backend: FastAPI app, PostgreSQL, Mosquitto, optional Copilot CLI profile
@@ -360,8 +360,8 @@ WheelSense Platform combines a firmware telemetry layer, a FastAPI backend with 
 - Profiles: Production DB mode and mock/simulator mode using Compose includes
 
 **Section sources**
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ### Technology Stack and Version Compatibility
 - Backend: Python 3.12+, FastAPI, SQLAlchemy async, Alembic, aiomqtt, MCP FastMCP
@@ -369,8 +369,8 @@ WheelSense Platform combines a firmware telemetry layer, a FastAPI backend with 
 - Tooling: pytest, ruff, mypy, ESLint, TailwindCSS
 
 **Section sources**
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [frontend/package.json](file://frontend/package.json)
+- [server/pyproject.toml](server/pyproject.toml)
+- [frontend/package.json](frontend/package.json)
 
 ### Extensibility and Adding Features
 - Follow the service layer pattern: encapsulate business logic in services and call them from endpoints and MQTT handlers
@@ -379,5 +379,5 @@ WheelSense Platform combines a firmware telemetry layer, a FastAPI backend with 
 - Leverage MCP: add new tools to the workspace registry and prompts/resources as needed; ensure scope enforcement and proper error handling
 
 **Section sources**
-- [docs/adr/0007-tdd-service-layer-architecture.md](file://docs/adr/0007-tdd-service-layer-architecture.md)
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [docs/adr/0007-tdd-service-layer-architecture.md](docs/adr/0007-tdd-service-layer-architecture.md)
+- [server/AGENTS.md](server/AGENTS.md)

@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [frontend/app/supervisor/page.tsx](file://frontend/app/supervisor/page.tsx)
-- [frontend/app/supervisor/tasks/page.tsx](file://frontend/app/supervisor/tasks/page.tsx)
-- [frontend/components/workflow/OperationsConsole.tsx](file://frontend/components/workflow/OperationsConsole.tsx)
-- [frontend/components/workflow/WorkflowTasksKanban.tsx](file://frontend/components/workflow/WorkflowTasksKanban.tsx)
-- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx](file://frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx)
-- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx)
-- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx](file://frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx)
-- [frontend/hooks/useTasks.ts](file://frontend/hooks/useTasks.ts)
-- [frontend/lib/workflowTaskBoard.ts](file://frontend/lib/workflowTaskBoard.ts)
-- [frontend/components/supervisor/DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [frontend/components/supervisor/SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [frontend/app/supervisor/page.tsx](frontend/app/supervisor/page.tsx)
+- [frontend/app/supervisor/tasks/page.tsx](frontend/app/supervisor/tasks/page.tsx)
+- [frontend/components/workflow/OperationsConsole.tsx](frontend/components/workflow/OperationsConsole.tsx)
+- [frontend/components/workflow/WorkflowTasksKanban.tsx](frontend/components/workflow/WorkflowTasksKanban.tsx)
+- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx](frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx)
+- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx](frontend/components/head-nurse/tasks/TaskDetailModal.tsx)
+- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx](frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx)
+- [frontend/hooks/useTasks.ts](frontend/hooks/useTasks.ts)
+- [frontend/lib/workflowTaskBoard.ts](frontend/lib/workflowTaskBoard.ts)
+- [frontend/components/supervisor/DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [frontend/components/supervisor/SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 </cite>
 
 ## Table of Contents
@@ -62,18 +62,18 @@ OC --> SSC
 ```
 
 **Diagram sources**
-- [frontend/app/supervisor/page.tsx:143-354](file://frontend/app/supervisor/page.tsx#L143-L354)
-- [frontend/app/supervisor/tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
-- [frontend/components/workflow/OperationsConsole.tsx:681-800](file://frontend/components/workflow/OperationsConsole.tsx#L681-L800)
-- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](file://frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
-- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx:289-557](file://frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx#L289-L557)
-- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](file://frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
-- [frontend/components/supervisor/DataTableCard.tsx:40-167](file://frontend/components/supervisor/DataTableCard.tsx#L40-L167)
-- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
+- [frontend/app/supervisor/page.tsx:143-354](frontend/app/supervisor/page.tsx#L143-L354)
+- [frontend/app/supervisor/tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [frontend/components/workflow/OperationsConsole.tsx:681-800](frontend/components/workflow/OperationsConsole.tsx#L681-L800)
+- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
+- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx:289-557](frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx#L289-L557)
+- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
+- [frontend/components/supervisor/DataTableCard.tsx:40-167](frontend/components/supervisor/DataTableCard.tsx#L40-L167)
+- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
 
 **Section sources**
-- [frontend/app/supervisor/page.tsx:143-354](file://frontend/app/supervisor/page.tsx#L143-L354)
-- [frontend/app/supervisor/tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [frontend/app/supervisor/page.tsx:143-354](frontend/app/supervisor/page.tsx#L143-L354)
+- [frontend/app/supervisor/tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
 
 ## Core Components
 - Supervisor Dashboard page: displays active directives, task queue highlights, and navigation to tasks and monitoring.
@@ -84,13 +84,13 @@ OC --> SSC
 - Shared cards: summary metric cards and paginated data tables for robust reporting.
 
 **Section sources**
-- [frontend/app/supervisor/page.tsx:115-141](file://frontend/app/supervisor/page.tsx#L115-L141)
-- [frontend/app/supervisor/tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
-- [frontend/components/workflow/OperationsConsole.tsx:681-800](file://frontend/components/workflow/OperationsConsole.tsx#L681-L800)
-- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](file://frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
-- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](file://frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
-- [frontend/components/supervisor/DataTableCard.tsx:40-167](file://frontend/components/supervisor/DataTableCard.tsx#L40-L167)
-- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
+- [frontend/app/supervisor/page.tsx:115-141](frontend/app/supervisor/page.tsx#L115-L141)
+- [frontend/app/supervisor/tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [frontend/components/workflow/OperationsConsole.tsx:681-800](frontend/components/workflow/OperationsConsole.tsx#L681-L800)
+- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
+- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
+- [frontend/components/supervisor/DataTableCard.tsx:40-167](frontend/components/supervisor/DataTableCard.tsx#L40-L167)
+- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
 
 ## Architecture Overview
 The Supervisor Dashboard relies on:
@@ -118,11 +118,11 @@ Q-->>OC : Render queue, reports, audit
 ```
 
 **Diagram sources**
-- [frontend/app/supervisor/page.tsx:115-141](file://frontend/app/supervisor/page.tsx#L115-L141)
-- [frontend/components/workflow/OperationsConsole.tsx:763-800](file://frontend/components/workflow/OperationsConsole.tsx#L763-L800)
+- [frontend/app/supervisor/page.tsx:115-141](frontend/app/supervisor/page.tsx#L115-L141)
+- [frontend/components/workflow/OperationsConsole.tsx:763-800](frontend/components/workflow/OperationsConsole.tsx#L763-L800)
 
 **Section sources**
-- [ARCHITECTURE.md:249-251](file://ARCHITECTURE.md#L249-L251)
+- [ARCHITECTURE.md:249-251](ARCHITECTURE.md#L249-L251)
 
 ## Detailed Component Analysis
 
@@ -141,10 +141,10 @@ Nav --> End(["User actions"])
 ```
 
 **Diagram sources**
-- [frontend/app/supervisor/page.tsx:115-141](file://frontend/app/supervisor/page.tsx#L115-L141)
+- [frontend/app/supervisor/page.tsx:115-141](frontend/app/supervisor/page.tsx#L115-L141)
 
 **Section sources**
-- [frontend/app/supervisor/page.tsx:143-354](file://frontend/app/supervisor/page.tsx#L143-L354)
+- [frontend/app/supervisor/page.tsx:143-354](frontend/app/supervisor/page.tsx#L143-L354)
 
 ### Supervisor Tasks Page
 - Filters tasks to show only those assigned to the current supervisor or unassigned.
@@ -168,14 +168,14 @@ MD-->>P : onUpdateTask -> mutate
 ```
 
 **Diagram sources**
-- [frontend/app/supervisor/tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
-- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx:289-557](file://frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx#L289-L557)
-- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:185-338](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L185-L338)
-- [frontend/hooks/useTasks.ts:23-93](file://frontend/hooks/useTasks.ts#L23-L93)
+- [frontend/app/supervisor/tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx:289-557](frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx#L289-L557)
+- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:185-338](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L185-L338)
+- [frontend/hooks/useTasks.ts:23-93](frontend/hooks/useTasks.ts#L23-L93)
 
 **Section sources**
-- [frontend/app/supervisor/tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
-- [frontend/hooks/useTasks.ts:23-93](file://frontend/hooks/useTasks.ts#L23-L93)
+- [frontend/app/supervisor/tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [frontend/hooks/useTasks.ts:23-93](frontend/hooks/useTasks.ts#L23-L93)
 
 ### Workflow Tasks Kanban (Drag-and-Drop)
 - Three-column board: pending, in_progress, completed.
@@ -192,12 +192,12 @@ Change --> Persist["Persist via API"]
 ```
 
 **Diagram sources**
-- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](file://frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
-- [frontend/lib/workflowTaskBoard.ts:6-47](file://frontend/lib/workflowTaskBoard.ts#L6-L47)
+- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
+- [frontend/lib/workflowTaskBoard.ts:6-47](frontend/lib/workflowTaskBoard.ts#L6-L47)
 
 **Section sources**
-- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](file://frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
-- [frontend/lib/workflowTaskBoard.ts:6-47](file://frontend/lib/workflowTaskBoard.ts#L6-L47)
+- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
+- [frontend/lib/workflowTaskBoard.ts:6-47](frontend/lib/workflowTaskBoard.ts#L6-L47)
 
 ### Unified Task Command Bar
 - Computes completion rate, overdue, with-reports, and breakdowns by task type and priority.
@@ -218,10 +218,10 @@ Priority --> UI
 ```
 
 **Diagram sources**
-- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](file://frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
+- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
 
 **Section sources**
-- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](file://frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
+- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
 
 ### Operations Console
 - Multi-tab interface: queue, transfer, coordination, audit, reports.
@@ -244,12 +244,12 @@ OC-->>User : Render summary cards + DataTable
 ```
 
 **Diagram sources**
-- [frontend/components/workflow/OperationsConsole.tsx:681-800](file://frontend/components/workflow/OperationsConsole.tsx#L681-L800)
-- [frontend/components/workflow/OperationsConsole.tsx:365-679](file://frontend/components/workflow/OperationsConsole.tsx#L365-L679)
+- [frontend/components/workflow/OperationsConsole.tsx:681-800](frontend/components/workflow/OperationsConsole.tsx#L681-L800)
+- [frontend/components/workflow/OperationsConsole.tsx:365-679](frontend/components/workflow/OperationsConsole.tsx#L365-L679)
 
 **Section sources**
-- [frontend/components/workflow/OperationsConsole.tsx:681-800](file://frontend/components/workflow/OperationsConsole.tsx#L681-L800)
-- [frontend/components/workflow/OperationsConsole.tsx:365-679](file://frontend/components/workflow/OperationsConsole.tsx#L365-L679)
+- [frontend/components/workflow/OperationsConsole.tsx:681-800](frontend/components/workflow/OperationsConsole.tsx#L681-L800)
+- [frontend/components/workflow/OperationsConsole.tsx:365-679](frontend/components/workflow/OperationsConsole.tsx#L365-L679)
 
 ### Task Detail Modal
 - Edits task fields (title, description, priority, status, due date) and manages subtasks.
@@ -270,12 +270,12 @@ Hook2 --> Invalidate
 ```
 
 **Diagram sources**
-- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:185-338](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L185-L338)
-- [frontend/hooks/useTasks.ts:114-132](file://frontend/hooks/useTasks.ts#L114-L132)
+- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:185-338](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L185-L338)
+- [frontend/hooks/useTasks.ts:114-132](frontend/hooks/useTasks.ts#L114-L132)
 
 **Section sources**
-- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:185-338](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L185-L338)
-- [frontend/hooks/useTasks.ts:114-132](file://frontend/hooks/useTasks.ts#L114-L132)
+- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:185-338](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L185-L338)
+- [frontend/hooks/useTasks.ts:114-132](frontend/hooks/useTasks.ts#L114-L132)
 
 ### Shared Visualization Components
 - DataTableCard: sortable, paginated table with loading and empty states.
@@ -301,12 +301,12 @@ class SummaryStatCard {
 ```
 
 **Diagram sources**
-- [frontend/components/supervisor/DataTableCard.tsx:40-167](file://frontend/components/supervisor/DataTableCard.tsx#L40-L167)
-- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
+- [frontend/components/supervisor/DataTableCard.tsx:40-167](frontend/components/supervisor/DataTableCard.tsx#L40-L167)
+- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
 
 **Section sources**
-- [frontend/components/supervisor/DataTableCard.tsx:40-167](file://frontend/components/supervisor/DataTableCard.tsx#L40-L167)
-- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
+- [frontend/components/supervisor/DataTableCard.tsx:40-167](frontend/components/supervisor/DataTableCard.tsx#L40-L167)
+- [frontend/components/supervisor/SummaryStatCard.tsx:13-39](frontend/components/supervisor/SummaryStatCard.tsx#L13-L39)
 
 ## Dependency Analysis
 - Supervisor Dashboard depends on TanStack Query for data and mutations.
@@ -330,17 +330,17 @@ WTK --> WTBL["workflowTaskBoard utils"]
 ```
 
 **Diagram sources**
-- [frontend/app/supervisor/page.tsx:143-354](file://frontend/app/supervisor/page.tsx#L143-L354)
-- [frontend/app/supervisor/tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
-- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx:289-557](file://frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx#L289-L557)
-- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](file://frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
-- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](file://frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
-- [frontend/components/workflow/OperationsConsole.tsx:681-800](file://frontend/components/workflow/OperationsConsole.tsx#L681-L800)
-- [frontend/hooks/useTasks.ts:23-93](file://frontend/hooks/useTasks.ts#L23-L93)
-- [frontend/lib/workflowTaskBoard.ts:6-47](file://frontend/lib/workflowTaskBoard.ts#L6-L47)
+- [frontend/app/supervisor/page.tsx:143-354](frontend/app/supervisor/page.tsx#L143-L354)
+- [frontend/app/supervisor/tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx:289-557](frontend/components/head-nurse/tasks/UnifiedTaskKanbanBoard.tsx#L289-L557)
+- [frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx:73-333](frontend/components/head-nurse/tasks/UnifiedTaskCommandBar.tsx#L73-L333)
+- [frontend/components/workflow/WorkflowTasksKanban.tsx:150-248](frontend/components/workflow/WorkflowTasksKanban.tsx#L150-L248)
+- [frontend/components/workflow/OperationsConsole.tsx:681-800](frontend/components/workflow/OperationsConsole.tsx#L681-L800)
+- [frontend/hooks/useTasks.ts:23-93](frontend/hooks/useTasks.ts#L23-L93)
+- [frontend/lib/workflowTaskBoard.ts:6-47](frontend/lib/workflowTaskBoard.ts#L6-L47)
 
 **Section sources**
-- [ARCHITECTURE.md:249-251](file://ARCHITECTURE.md#L249-L251)
+- [ARCHITECTURE.md:249-251](ARCHITECTURE.md#L249-L251)
 
 ## Performance Considerations
 - Use paginated and sortable tables for large datasets.
@@ -356,9 +356,9 @@ WTK --> WTBL["workflowTaskBoard utils"]
 - Console refresh issues: use the built-in refresh button to invalidate cached data and reload panels.
 
 **Section sources**
-- [frontend/hooks/useTasks.ts:74-93](file://frontend/hooks/useTasks.ts#L74-L93)
-- [frontend/components/workflow/WorkflowTasksKanban.tsx:178-189](file://frontend/components/workflow/WorkflowTasksKanban.tsx#L178-L189)
-- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:322-338](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L322-L338)
+- [frontend/hooks/useTasks.ts:74-93](frontend/hooks/useTasks.ts#L74-L93)
+- [frontend/components/workflow/WorkflowTasksKanban.tsx:178-189](frontend/components/workflow/WorkflowTasksKanban.tsx#L178-L189)
+- [frontend/components/head-nurse/tasks/TaskDetailModal.tsx:322-338](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L322-L338)
 
 ## Conclusion
 The Supervisor Dashboard provides a comprehensive toolkit for task supervision and workflow oversight. Through integrated Kanban boards, command bars, and the Operations Console, supervisors can monitor priorities, track completion, analyze performance, and optimize workflows. Shared visualization components ensure consistent reporting and efficient navigation across roles.

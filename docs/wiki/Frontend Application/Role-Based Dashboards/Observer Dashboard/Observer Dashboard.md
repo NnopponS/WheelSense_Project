@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ObserverDashboardPage](file://frontend/app/observer/page.tsx)
-- [ObserverLayout](file://frontend/app/observer/layout.tsx)
-- [ObserverAlertsPage](file://frontend/app/observer/alerts/page.tsx)
-- [ObserverAlertsQueue](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx)
-- [ObserverDevicesPage](file://frontend/app/observer/devices/page.tsx)
-- [ObserverPatientsPage](file://frontend/app/observer/patients/page.tsx)
-- [ObserverPrescriptionsPage](file://frontend/app/observer/prescriptions/page.tsx)
-- [ObserverTasksPage](file://frontend/app/observer/tasks/page.tsx)
-- [ObserverFloorplansPage](file://frontend/app/observer/floorplans/page.tsx)
-- [DashboardFloorplanPanel](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [RoleSidebar](file://frontend/components/RoleSidebar.tsx)
-- [sidebarConfig](file://frontend/lib/sidebarConfig.ts)
-- [ObserverTaskListPanel](file://frontend/components/workflow/ObserverTaskListPanel.tsx)
-- [api](file://frontend/lib/api.ts)
+- [ObserverDashboardPage](frontend/app/observer/page.tsx)
+- [ObserverLayout](frontend/app/observer/layout.tsx)
+- [ObserverAlertsPage](frontend/app/observer/alerts/page.tsx)
+- [ObserverAlertsQueue](frontend/app/observer/alerts/ObserverAlertsQueue.tsx)
+- [ObserverDevicesPage](frontend/app/observer/devices/page.tsx)
+- [ObserverPatientsPage](frontend/app/observer/patients/page.tsx)
+- [ObserverPrescriptionsPage](frontend/app/observer/prescriptions/page.tsx)
+- [ObserverTasksPage](frontend/app/observer/tasks/page.tsx)
+- [ObserverFloorplansPage](frontend/app/observer/floorplans/page.tsx)
+- [DashboardFloorplanPanel](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [RoleSidebar](frontend/components/RoleSidebar.tsx)
+- [sidebarConfig](frontend/lib/sidebarConfig.ts)
+- [ObserverTaskListPanel](frontend/components/workflow/ObserverTaskListPanel.tsx)
+- [api](frontend/lib/api.ts)
 </cite>
 
 ## Table of Contents
@@ -66,23 +66,23 @@ SB --> SBC
 ```
 
 **Diagram sources**
-- [ObserverLayout:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [ObserverDashboardPage:1-464](file://frontend/app/observer/page.tsx#L1-L464)
-- [ObserverAlertsPage:1-36](file://frontend/app/observer/alerts/page.tsx#L1-L36)
-- [ObserverAlertsQueue:1-188](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L1-L188)
-- [ObserverPatientsPage:1-258](file://frontend/app/observer/patients/page.tsx#L1-L258)
-- [ObserverPrescriptionsPage:1-130](file://frontend/app/observer/prescriptions/page.tsx#L1-L130)
-- [ObserverTasksPage:1-137](file://frontend/app/observer/tasks/page.tsx#L1-L137)
-- [ObserverFloorplansPage:1-26](file://frontend/app/observer/floorplans/page.tsx#L1-L26)
-- [ObserverDevicesPage:1-259](file://frontend/app/observer/devices/page.tsx#L1-L259)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [RoleSidebar:1-228](file://frontend/components/RoleSidebar.tsx#L1-L228)
-- [sidebarConfig:1-300](file://frontend/lib/sidebarConfig.ts#L1-L300)
+- [ObserverLayout:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [ObserverDashboardPage:1-464](frontend/app/observer/page.tsx#L1-L464)
+- [ObserverAlertsPage:1-36](frontend/app/observer/alerts/page.tsx#L1-L36)
+- [ObserverAlertsQueue:1-188](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L1-L188)
+- [ObserverPatientsPage:1-258](frontend/app/observer/patients/page.tsx#L1-L258)
+- [ObserverPrescriptionsPage:1-130](frontend/app/observer/prescriptions/page.tsx#L1-L130)
+- [ObserverTasksPage:1-137](frontend/app/observer/tasks/page.tsx#L1-L137)
+- [ObserverFloorplansPage:1-26](frontend/app/observer/floorplans/page.tsx#L1-L26)
+- [ObserverDevicesPage:1-259](frontend/app/observer/devices/page.tsx#L1-L259)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [RoleSidebar:1-228](frontend/components/RoleSidebar.tsx#L1-L228)
+- [sidebarConfig:1-300](frontend/lib/sidebarConfig.ts#L1-L300)
 
 **Section sources**
-- [ObserverLayout:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [RoleSidebar:1-228](file://frontend/components/RoleSidebar.tsx#L1-L228)
-- [sidebarConfig:198-237](file://frontend/lib/sidebarConfig.ts#L198-L237)
+- [ObserverLayout:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [RoleSidebar:1-228](frontend/components/RoleSidebar.tsx#L1-L228)
+- [sidebarConfig:198-237](frontend/lib/sidebarConfig.ts#L198-L237)
 
 ## Core Components
 - ObserverDashboardPage: Orchestrates real-time dashboards for patients, tasks, alerts, vitals, and shift checklists; renders summary cards and embedded floorplan.
@@ -95,15 +95,15 @@ SB --> SBC
 - RoleSidebar + sidebarConfig: Defines observer navigation items, active states, and capability-based filtering.
 
 **Section sources**
-- [ObserverDashboardPage:65-464](file://frontend/app/observer/page.tsx#L65-L464)
-- [ObserverAlertsQueue:31-188](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L188)
-- [ObserverDevicesPage:55-259](file://frontend/app/observer/devices/page.tsx#L55-L259)
-- [ObserverPatientsPage:31-258](file://frontend/app/observer/patients/page.tsx#L31-L258)
-- [ObserverTasksPage:23-137](file://frontend/app/observer/tasks/page.tsx#L23-L137)
-- [ObserverFloorplansPage:7-26](file://frontend/app/observer/floorplans/page.tsx#L7-L26)
-- [DashboardFloorplanPanel:13-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
-- [RoleSidebar:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig:198-237](file://frontend/lib/sidebarConfig.ts#L198-L237)
+- [ObserverDashboardPage:65-464](frontend/app/observer/page.tsx#L65-L464)
+- [ObserverAlertsQueue:31-188](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L188)
+- [ObserverDevicesPage:55-259](frontend/app/observer/devices/page.tsx#L55-L259)
+- [ObserverPatientsPage:31-258](frontend/app/observer/patients/page.tsx#L31-L258)
+- [ObserverTasksPage:23-137](frontend/app/observer/tasks/page.tsx#L23-L137)
+- [ObserverFloorplansPage:7-26](frontend/app/observer/floorplans/page.tsx#L7-L26)
+- [DashboardFloorplanPanel:13-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
+- [RoleSidebar:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig:198-237](frontend/lib/sidebarConfig.ts#L198-L237)
 
 ## Architecture Overview
 The observer dashboard follows a data-driven React architecture with:
@@ -132,9 +132,9 @@ D->>C : Render DashboardFloorplanPanel
 ```
 
 **Diagram sources**
-- [ObserverLayout:5-11](file://frontend/app/observer/layout.tsx#L5-L11)
-- [ObserverDashboardPage:69-95](file://frontend/app/observer/page.tsx#L69-L95)
-- [api:1-200](file://frontend/lib/api.ts#L1-L200)
+- [ObserverLayout:5-11](frontend/app/observer/layout.tsx#L5-L11)
+- [ObserverDashboardPage:69-95](frontend/app/observer/page.tsx#L69-L95)
+- [api:1-200](frontend/lib/api.ts#L1-L200)
 
 ## Detailed Component Analysis
 
@@ -159,10 +159,10 @@ Render --> End(["Interactive Dashboard"])
 ```
 
 **Diagram sources**
-- [ObserverDashboardPage:69-171](file://frontend/app/observer/page.tsx#L69-L171)
+- [ObserverDashboardPage:69-171](frontend/app/observer/page.tsx#L69-L171)
 
 **Section sources**
-- [ObserverDashboardPage:65-464](file://frontend/app/observer/page.tsx#L65-L464)
+- [ObserverDashboardPage:65-464](frontend/app/observer/page.tsx#L65-L464)
 
 ### Observer Alerts Queue
 Responsibilities:
@@ -192,13 +192,13 @@ AQ-->>U : Render table with actions to patient detail
 ```
 
 **Diagram sources**
-- [ObserverAlertsPage:20-36](file://frontend/app/observer/alerts/page.tsx#L20-L36)
-- [ObserverAlertsQueue:31-82](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L82)
-- [api:1-200](file://frontend/lib/api.ts#L1-L200)
+- [ObserverAlertsPage:20-36](frontend/app/observer/alerts/page.tsx#L20-L36)
+- [ObserverAlertsQueue:31-82](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L82)
+- [api:1-200](frontend/lib/api.ts#L1-L200)
 
 **Section sources**
-- [ObserverAlertsPage:1-36](file://frontend/app/observer/alerts/page.tsx#L1-L36)
-- [ObserverAlertsQueue:31-188](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L188)
+- [ObserverAlertsPage:1-36](frontend/app/observer/alerts/page.tsx#L1-L36)
+- [ObserverAlertsQueue:31-188](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L188)
 
 ### Observer Devices Panel
 Responsibilities:
@@ -220,10 +220,10 @@ Table --> DevEnd(["Device Monitoring Panel"])
 ```
 
 **Diagram sources**
-- [ObserverDevicesPage:55-259](file://frontend/app/observer/devices/page.tsx#L55-L259)
+- [ObserverDevicesPage:55-259](frontend/app/observer/devices/page.tsx#L55-L259)
 
 **Section sources**
-- [ObserverDevicesPage:55-259](file://frontend/app/observer/devices/page.tsx#L55-L259)
+- [ObserverDevicesPage:55-259](frontend/app/observer/devices/page.tsx#L55-L259)
 
 ### Observer Patients and Prescriptions
 Responsibilities:
@@ -256,13 +256,13 @@ Q-->>PR : Rows with medication info and patient names
 ```
 
 **Diagram sources**
-- [ObserverPatientsPage:31-258](file://frontend/app/observer/patients/page.tsx#L31-L258)
-- [ObserverPrescriptionsPage:29-130](file://frontend/app/observer/prescriptions/page.tsx#L29-L130)
-- [api:1-200](file://frontend/lib/api.ts#L1-L200)
+- [ObserverPatientsPage:31-258](frontend/app/observer/patients/page.tsx#L31-L258)
+- [ObserverPrescriptionsPage:29-130](frontend/app/observer/prescriptions/page.tsx#L29-L130)
+- [api:1-200](frontend/lib/api.ts#L1-L200)
 
 **Section sources**
-- [ObserverPatientsPage:31-258](file://frontend/app/observer/patients/page.tsx#L31-L258)
-- [ObserverPrescriptionsPage:29-130](file://frontend/app/observer/prescriptions/page.tsx#L29-L130)
+- [ObserverPatientsPage:31-258](frontend/app/observer/patients/page.tsx#L31-L258)
+- [ObserverPrescriptionsPage:29-130](frontend/app/observer/prescriptions/page.tsx#L29-L130)
 
 ### Observer Tasks Management
 Responsibilities:
@@ -293,11 +293,11 @@ TP-->>U : Toast success/error
 ```
 
 **Diagram sources**
-- [ObserverTasksPage:23-137](file://frontend/app/observer/tasks/page.tsx#L23-L137)
+- [ObserverTasksPage:23-137](frontend/app/observer/tasks/page.tsx#L23-L137)
 
 **Section sources**
-- [ObserverTasksPage:23-137](file://frontend/app/observer/tasks/page.tsx#L23-L137)
-- [ObserverTaskListPanel:33-148](file://frontend/components/workflow/ObserverTaskListPanel.tsx#L33-L148)
+- [ObserverTasksPage:23-137](frontend/app/observer/tasks/page.tsx#L23-L137)
+- [ObserverTaskListPanel:33-148](frontend/components/workflow/ObserverTaskListPanel.tsx#L33-L148)
 
 ### Observer Floorplan Surveillance
 Responsibilities:
@@ -321,12 +321,12 @@ FRV-->>U : Display compact floorplan with presence
 ```
 
 **Diagram sources**
-- [ObserverFloorplansPage:7-26](file://frontend/app/observer/floorplans/page.tsx#L7-L26)
-- [DashboardFloorplanPanel:13-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
+- [ObserverFloorplansPage:7-26](frontend/app/observer/floorplans/page.tsx#L7-L26)
+- [DashboardFloorplanPanel:13-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
 
 **Section sources**
-- [ObserverFloorplansPage:7-26](file://frontend/app/observer/floorplans/page.tsx#L7-L26)
-- [DashboardFloorplanPanel:13-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
+- [ObserverFloorplansPage:7-26](frontend/app/observer/floorplans/page.tsx#L7-L26)
+- [DashboardFloorplanPanel:13-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
 
 ### Observer Navigation Patterns
 - RoleSidebar dynamically builds the observer menu from sidebarConfig.
@@ -342,12 +342,12 @@ Active --> Render["Render items with icons, labels, badges"]
 ```
 
 **Diagram sources**
-- [RoleSidebar:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig:198-237](file://frontend/lib/sidebarConfig.ts#L198-L237)
+- [RoleSidebar:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig:198-237](frontend/lib/sidebarConfig.ts#L198-L237)
 
 **Section sources**
-- [RoleSidebar:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig:198-237](file://frontend/lib/sidebarConfig.ts#L198-L237)
+- [RoleSidebar:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig:198-237](frontend/lib/sidebarConfig.ts#L198-L237)
 
 ## Dependency Analysis
 - ObserverDashboardPage depends on:
@@ -390,22 +390,22 @@ DFP --> FRV["FloorplanRoleViewer"]
 ```
 
 **Diagram sources**
-- [ObserverDashboardPage:69-95](file://frontend/app/observer/page.tsx#L69-L95)
-- [ObserverAlertsQueue:31-82](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L82)
-- [ObserverDevicesPage:55-158](file://frontend/app/observer/devices/page.tsx#L55-L158)
-- [ObserverPatientsPage:70-145](file://frontend/app/observer/patients/page.tsx#L70-L145)
-- [ObserverTasksPage:23-137](file://frontend/app/observer/tasks/page.tsx#L23-L137)
-- [ObserverFloorplansPage:7-26](file://frontend/app/observer/floorplans/page.tsx#L7-L26)
-- [DashboardFloorplanPanel:13-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
+- [ObserverDashboardPage:69-95](frontend/app/observer/page.tsx#L69-L95)
+- [ObserverAlertsQueue:31-82](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L82)
+- [ObserverDevicesPage:55-158](frontend/app/observer/devices/page.tsx#L55-L158)
+- [ObserverPatientsPage:70-145](frontend/app/observer/patients/page.tsx#L70-L145)
+- [ObserverTasksPage:23-137](frontend/app/observer/tasks/page.tsx#L23-L137)
+- [ObserverFloorplansPage:7-26](frontend/app/observer/floorplans/page.tsx#L7-L26)
+- [DashboardFloorplanPanel:13-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
 
 **Section sources**
-- [ObserverDashboardPage:69-95](file://frontend/app/observer/page.tsx#L69-L95)
-- [ObserverAlertsQueue:31-82](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L82)
-- [ObserverDevicesPage:55-158](file://frontend/app/observer/devices/page.tsx#L55-L158)
-- [ObserverPatientsPage:70-145](file://frontend/app/observer/patients/page.tsx#L70-L145)
-- [ObserverTasksPage:23-137](file://frontend/app/observer/tasks/page.tsx#L23-L137)
-- [ObserverFloorplansPage:7-26](file://frontend/app/observer/floorplans/page.tsx#L7-L26)
-- [DashboardFloorplanPanel:13-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
+- [ObserverDashboardPage:69-95](frontend/app/observer/page.tsx#L69-L95)
+- [ObserverAlertsQueue:31-82](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L31-L82)
+- [ObserverDevicesPage:55-158](frontend/app/observer/devices/page.tsx#L55-L158)
+- [ObserverPatientsPage:70-145](frontend/app/observer/patients/page.tsx#L70-L145)
+- [ObserverTasksPage:23-137](frontend/app/observer/tasks/page.tsx#L23-L137)
+- [ObserverFloorplansPage:7-26](frontend/app/observer/floorplans/page.tsx#L7-L26)
+- [DashboardFloorplanPanel:13-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L30)
 
 ## Performance Considerations
 - Polling and stale times:
@@ -436,10 +436,10 @@ Common issues and resolutions:
   - Check toast feedback for error messages and retry after resolving backend errors.
 
 **Section sources**
-- [ObserverAlertsQueue:35-39](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L39)
-- [ObserverDevicesPage:59-95](file://frontend/app/observer/devices/page.tsx#L59-L95)
-- [ObserverPatientsPage:70-88](file://frontend/app/observer/patients/page.tsx#L70-L88)
-- [ObserverTasksPage:38-51](file://frontend/app/observer/tasks/page.tsx#L38-L51)
+- [ObserverAlertsQueue:35-39](frontend/app/observer/alerts/ObserverAlertsQueue.tsx#L35-L39)
+- [ObserverDevicesPage:59-95](frontend/app/observer/devices/page.tsx#L59-L95)
+- [ObserverPatientsPage:70-88](frontend/app/observer/patients/page.tsx#L70-L88)
+- [ObserverTasksPage:38-51](frontend/app/observer/tasks/page.tsx#L38-L51)
 
 ## Conclusion
 The Observer Dashboard consolidates real-time monitoring, alert management, device surveillance, patient oversight, and workflow execution into a cohesive interface. Its modular design leverages shared components, typed APIs, and reactive data fetching to deliver a responsive, role-specific experience. By following the documented workflows and leveraging the provided tools, observers can efficiently maintain clinical surveillance, respond to incidents, and coordinate care across zones and teams.

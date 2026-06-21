@@ -2,83 +2,83 @@
 
 <cite>
 **Referenced Files in This Document**
-- [button.tsx](file://frontend/components/ui/button.tsx)
-- [dialog.tsx](file://frontend/components/ui/dialog.tsx)
-- [table.tsx](file://frontend/components/ui/table.tsx)
-- [alert-dialog.tsx](file://frontend/components/ui/alert-dialog.tsx)
-- [badge.tsx](file://frontend/components/ui/badge.tsx)
-- [card.tsx](file://frontend/components/ui/card.tsx)
-- [checkbox.tsx](file://frontend/components/ui/checkbox.tsx)
-- [input.tsx](file://frontend/components/ui/input.tsx)
-- [label.tsx](file://frontend/components/ui/label.tsx)
-- [select.tsx](file://frontend/components/ui/select.tsx)
-- [textarea.tsx](file://frontend/components/ui/textarea.tsx)
-- [switch.tsx](file://frontend/components/ui/switch.tsx)
-- [tabs.tsx](file://frontend/components/ui/tabs.tsx)
-- [dropdown-menu.tsx](file://frontend/components/ui/dropdown-menu.tsx)
-- [progress.tsx](file://frontend/components/ui/progress.tsx)
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [ThemeToggle.tsx](file://frontend/components/theme/ThemeToggle.tsx)
-- [globals.css](file://frontend/app/globals.css)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [SonnerToaster.tsx](file://frontend/components/SonnerToaster.tsx)
-- [NotificationBell.tsx](file://frontend/components/NotificationBell.tsx)
-- [NotificationDrawer.tsx](file://frontend/components/NotificationDrawer.tsx)
-- [EmptyState.tsx](file://frontend/components/EmptyState.tsx)
-- [PatientList.tsx](file://frontend/components/shared/PatientList.tsx)
-- [SearchableListboxPicker.tsx](file://frontend/components/shared/SearchableListboxPicker.tsx)
-- [UserAvatar.tsx](file://frontend/components/shared/UserAvatar.tsx)
-- [AdminAlertsTable.tsx](file://frontend/components/admin/alerts/AdminAlertsTable.tsx)
-- [PatientsDataTable.tsx](file://frontend/components/admin/patients/PatientsDataTable.tsx)
-- [AlertToastCard.tsx](file://frontend/components/notifications/AlertToastCard.tsx)
-- [WorkflowMessageDetailDialog.tsx](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx)
-- [AIChatPopup.tsx](file://frontend/components/ai/AIChatPopup.tsx)
-- [ActionPlanPreview.tsx](file://frontend/components/ai/ActionPlanPreview.tsx)
-- [ExecutionStepList.tsx](file://frontend/components/ai/ExecutionStepList.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [WardTimelineEmbed.tsx](file://frontend/components/timeline/WardTimelineEmbed.tsx)
-- [ShiftChecklistWorkspaceClient.tsx](file://frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx)
-- [ReportPreviewTable.tsx](file://frontend/components/reports/ReportPreviewTable.tsx)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [WorkflowJobsPanel.tsx](file://frontend/components/workflow/WorkflowJobsPanel.tsx)
-- [WorkflowTasksKanban.tsx](file://frontend/components/workflow/WorkflowTasksKanban.tsx)
-- [WorkflowTasksHubContent.tsx](file://frontend/components/workflow/WorkflowTasksHubContent.tsx)
-- [WorkflowJobCreateDialog.tsx](file://frontend/components/workflow/WorkflowJobCreateDialog.tsx)
-- [ObserverTaskListPanel.tsx](file://frontend/components/workflow/ObserverTaskListPanel.tsx)
-- [OperationsConsole.tsx](file://frontend/components/workflow/OperationsConsole.tsx)
-- [FloorplanCanvas.tsx](file://frontend/components/floorplan/FloorplanCanvas.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [RoomDetailDrawer.tsx](file://frontend/components/admin/monitoring/RoomDetailDrawer.tsx)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [FacilityFloorToolbar.tsx](file://frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
-- [AddCaregiverModal.tsx](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx)
-- [EditCaregiverModal.tsx](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx)
-- [CaregiverDetailPane.tsx](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
-- [CaregiverCardGrid.tsx](file://frontend/components/admin/caregivers/CaregiverCardGrid.tsx)
-- [StaffRoutineAndCalendarPanel.tsx](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
-- [AddPatientModal.tsx](file://frontend/components/admin/patients/AddPatientModal.tsx)
-- [PatientEditorModal.tsx](file://frontend/components/admin/patients/PatientEditorModal.tsx)
-- [AdminPatientsQuickFind.tsx](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx)
-- [RoomFormModal.tsx](file://frontend/components/admin/RoomFormModal.tsx)
-- [SupportTicketList.tsx](file://frontend/components/admin/SupportTicketList.tsx)
-- [AiSettingsPanel.tsx](file://frontend/components/admin/settings/AiSettingsPanel.tsx)
-- [ServerSettingsPanel.tsx](file://frontend/components/admin/settings/ServerSettingsPanel.tsx)
-- [DemoPanel.tsx](file://frontend/components/admin/demo-control/DemoPanel.tsx)
-- [FacilitiesPanel.tsx](file://frontend/components/admin/FacilitiesPanel.tsx)
-- [FloorplansPanel.tsx](file://frontend/components/admin/FloorplansPanel.tsx)
-- [HeadNurseStaffMemberSheet.tsx](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
-- [PatientRoutineManager.tsx](file://frontend/components/head-nurse/tasks/PatientRoutineManager.tsx)
-- [RoleTasksPage.tsx](file://frontend/components/head-nurse/tasks/RoleTasksPage.tsx)
-- [RoutineTaskManager.tsx](file://frontend/components/head-nurse/tasks/RoutineTaskManager.tsx)
-- [TaskCommandBar.tsx](file://frontend/components/head-nurse/tasks/TaskCommandBar.tsx)
-- [TaskKanbanBoard.tsx](file://frontend/components/head-nurse/tasks/TaskKanbanBoard.tsx)
-- [ObserverAlertsQueue.tsx](file://frontend/app/observer/alerts/ObserverAlertsQueue.tsx)
-- [AdminWorkflowMailbox.tsx](file://frontend/components/messaging/AdminWorkflowMailbox.tsx)
-- [PatientWorkflowMailbox.tsx](file://frontend/components/messaging/PatientWorkflowMailbox.tsx)
+- [button.tsx](frontend/components/ui/button.tsx)
+- [dialog.tsx](frontend/components/ui/dialog.tsx)
+- [table.tsx](frontend/components/ui/table.tsx)
+- [alert-dialog.tsx](frontend/components/ui/alert-dialog.tsx)
+- [badge.tsx](frontend/components/ui/badge.tsx)
+- [card.tsx](frontend/components/ui/card.tsx)
+- [checkbox.tsx](frontend/components/ui/checkbox.tsx)
+- [input.tsx](frontend/components/ui/input.tsx)
+- [label.tsx](frontend/components/ui/label.tsx)
+- [select.tsx](frontend/components/ui/select.tsx)
+- [textarea.tsx](frontend/components/ui/textarea.tsx)
+- [switch.tsx](frontend/components/ui/switch.tsx)
+- [tabs.tsx](frontend/components/ui/tabs.tsx)
+- [dropdown-menu.tsx](frontend/components/ui/dropdown-menu.tsx)
+- [progress.tsx](frontend/components/ui/progress.tsx)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [ThemeToggle.tsx](frontend/components/theme/ThemeToggle.tsx)
+- [globals.css](frontend/app/globals.css)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [SonnerToaster.tsx](frontend/components/SonnerToaster.tsx)
+- [NotificationBell.tsx](frontend/components/NotificationBell.tsx)
+- [NotificationDrawer.tsx](frontend/components/NotificationDrawer.tsx)
+- [EmptyState.tsx](frontend/components/EmptyState.tsx)
+- [PatientList.tsx](frontend/components/shared/PatientList.tsx)
+- [SearchableListboxPicker.tsx](frontend/components/shared/SearchableListboxPicker.tsx)
+- [UserAvatar.tsx](frontend/components/shared/UserAvatar.tsx)
+- [AdminAlertsTable.tsx](frontend/components/admin/alerts/AdminAlertsTable.tsx)
+- [PatientsDataTable.tsx](frontend/components/admin/patients/PatientsDataTable.tsx)
+- [AlertToastCard.tsx](frontend/components/notifications/AlertToastCard.tsx)
+- [WorkflowMessageDetailDialog.tsx](frontend/components/messaging/WorkflowMessageDetailDialog.tsx)
+- [AIChatPopup.tsx](frontend/components/ai/AIChatPopup.tsx)
+- [ActionPlanPreview.tsx](frontend/components/ai/ActionPlanPreview.tsx)
+- [ExecutionStepList.tsx](frontend/components/ai/ExecutionStepList.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [WardTimelineEmbed.tsx](frontend/components/timeline/WardTimelineEmbed.tsx)
+- [ShiftChecklistWorkspaceClient.tsx](frontend/components/shift-checklist/ShiftChecklistWorkspaceClient.tsx)
+- [ReportPreviewTable.tsx](frontend/components/reports/ReportPreviewTable.tsx)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [WorkflowJobsPanel.tsx](frontend/components/workflow/WorkflowJobsPanel.tsx)
+- [WorkflowTasksKanban.tsx](frontend/components/workflow/WorkflowTasksKanban.tsx)
+- [WorkflowTasksHubContent.tsx](frontend/components/workflow/WorkflowTasksHubContent.tsx)
+- [WorkflowJobCreateDialog.tsx](frontend/components/workflow/WorkflowJobCreateDialog.tsx)
+- [ObserverTaskListPanel.tsx](frontend/components/workflow/ObserverTaskListPanel.tsx)
+- [OperationsConsole.tsx](frontend/components/workflow/OperationsConsole.tsx)
+- [FloorplanCanvas.tsx](frontend/components/floorplan/FloorplanCanvas.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [RoomDetailDrawer.tsx](frontend/components/admin/monitoring/RoomDetailDrawer.tsx)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [FacilityFloorToolbar.tsx](frontend/components/admin/monitoring/FacilityFloorToolbar.tsx)
+- [AddCaregiverModal.tsx](frontend/components/admin/caregivers/AddCaregiverModal.tsx)
+- [EditCaregiverModal.tsx](frontend/components/admin/caregivers/EditCaregiverModal.tsx)
+- [CaregiverDetailPane.tsx](frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
+- [CaregiverCardGrid.tsx](frontend/components/admin/caregivers/CaregiverCardGrid.tsx)
+- [StaffRoutineAndCalendarPanel.tsx](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
+- [AddPatientModal.tsx](frontend/components/admin/patients/AddPatientModal.tsx)
+- [PatientEditorModal.tsx](frontend/components/admin/patients/PatientEditorModal.tsx)
+- [AdminPatientsQuickFind.tsx](frontend/components/admin/patients/AdminPatientsQuickFind.tsx)
+- [RoomFormModal.tsx](frontend/components/admin/RoomFormModal.tsx)
+- [SupportTicketList.tsx](frontend/components/admin/SupportTicketList.tsx)
+- [AiSettingsPanel.tsx](frontend/components/admin/settings/AiSettingsPanel.tsx)
+- [ServerSettingsPanel.tsx](frontend/components/admin/settings/ServerSettingsPanel.tsx)
+- [DemoPanel.tsx](frontend/components/admin/demo-control/DemoPanel.tsx)
+- [FacilitiesPanel.tsx](frontend/components/admin/FacilitiesPanel.tsx)
+- [FloorplansPanel.tsx](frontend/components/admin/FloorplansPanel.tsx)
+- [HeadNurseStaffMemberSheet.tsx](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
+- [PatientRoutineManager.tsx](frontend/components/head-nurse/tasks/PatientRoutineManager.tsx)
+- [RoleTasksPage.tsx](frontend/components/head-nurse/tasks/RoleTasksPage.tsx)
+- [RoutineTaskManager.tsx](frontend/components/head-nurse/tasks/RoutineTaskManager.tsx)
+- [TaskCommandBar.tsx](frontend/components/head-nurse/tasks/TaskCommandBar.tsx)
+- [TaskKanbanBoard.tsx](frontend/components/head-nurse/tasks/TaskKanbanBoard.tsx)
+- [ObserverAlertsQueue.tsx](frontend/app/observer/alerts/ObserverAlertsQueue.tsx)
+- [AdminWorkflowMailbox.tsx](frontend/components/messaging/AdminWorkflowMailbox.tsx)
+- [PatientWorkflowMailbox.tsx](frontend/components/messaging/PatientWorkflowMailbox.tsx)
 </cite>
 
 ## Table of Contents
@@ -164,49 +164,49 @@ prov --> sup
 ```
 
 **Diagram sources**
-- [button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
-- [input.tsx:1-22](file://frontend/components/ui/input.tsx#L1-L22)
-- [textarea.tsx:1-21](file://frontend/components/ui/textarea.tsx#L1-L21)
-- [select.tsx:1-147](file://frontend/components/ui/select.tsx#L1-L147)
-- [checkbox.tsx:1-30](file://frontend/components/ui/checkbox.tsx#L1-L30)
-- [switch.tsx:1-30](file://frontend/components/ui/switch.tsx#L1-L30)
-- [label.tsx:1-18](file://frontend/components/ui/label.tsx#L1-L18)
-- [tabs.tsx:1-55](file://frontend/components/ui/tabs.tsx#L1-L55)
-- [dropdown-menu.tsx:1-201](file://frontend/components/ui/dropdown-menu.tsx#L1-L201)
-- [dialog.tsx:1-110](file://frontend/components/ui/dialog.tsx#L1-L110)
-- [alert-dialog.tsx:1-142](file://frontend/components/ui/alert-dialog.tsx#L1-L142)
-- [table.tsx:1-90](file://frontend/components/ui/table.tsx#L1-L90)
-- [badge.tsx:1-31](file://frontend/components/ui/badge.tsx#L1-L31)
-- [card.tsx:1-53](file://frontend/components/ui/card.tsx#L1-L53)
-- [progress.tsx:1-35](file://frontend/components/ui/progress.tsx#L1-L35)
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [UserAvatar.tsx](file://frontend/components/shared/UserAvatar.tsx)
-- [PatientList.tsx](file://frontend/components/shared/PatientList.tsx)
-- [SearchableListboxPicker.tsx](file://frontend/components/shared/SearchableListboxPicker.tsx)
-- [globals.css](file://frontend/app/globals.css)
-- [ThemeToggle.tsx](file://frontend/components/theme/ThemeToggle.tsx)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
+- [button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
+- [input.tsx:1-22](frontend/components/ui/input.tsx#L1-L22)
+- [textarea.tsx:1-21](frontend/components/ui/textarea.tsx#L1-L21)
+- [select.tsx:1-147](frontend/components/ui/select.tsx#L1-L147)
+- [checkbox.tsx:1-30](frontend/components/ui/checkbox.tsx#L1-L30)
+- [switch.tsx:1-30](frontend/components/ui/switch.tsx#L1-L30)
+- [label.tsx:1-18](frontend/components/ui/label.tsx#L1-L18)
+- [tabs.tsx:1-55](frontend/components/ui/tabs.tsx#L1-L55)
+- [dropdown-menu.tsx:1-201](frontend/components/ui/dropdown-menu.tsx#L1-L201)
+- [dialog.tsx:1-110](frontend/components/ui/dialog.tsx#L1-L110)
+- [alert-dialog.tsx:1-142](frontend/components/ui/alert-dialog.tsx#L1-L142)
+- [table.tsx:1-90](frontend/components/ui/table.tsx#L1-L90)
+- [badge.tsx:1-31](frontend/components/ui/badge.tsx#L1-L31)
+- [card.tsx:1-53](frontend/components/ui/card.tsx#L1-L53)
+- [progress.tsx:1-35](frontend/components/ui/progress.tsx#L1-L35)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [UserAvatar.tsx](frontend/components/shared/UserAvatar.tsx)
+- [PatientList.tsx](frontend/components/shared/PatientList.tsx)
+- [SearchableListboxPicker.tsx](frontend/components/shared/SearchableListboxPicker.tsx)
+- [globals.css](frontend/app/globals.css)
+- [ThemeToggle.tsx](frontend/components/theme/ThemeToggle.tsx)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
 
 **Section sources**
-- [button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
-- [dialog.tsx:1-110](file://frontend/components/ui/dialog.tsx#L1-L110)
-- [table.tsx:1-90](file://frontend/components/ui/table.tsx#L1-L90)
-- [alert-dialog.tsx:1-142](file://frontend/components/ui/alert-dialog.tsx#L1-L142)
-- [badge.tsx:1-31](file://frontend/components/ui/badge.tsx#L1-L31)
-- [card.tsx:1-53](file://frontend/components/ui/card.tsx#L1-L53)
-- [checkbox.tsx:1-30](file://frontend/components/ui/checkbox.tsx#L1-L30)
-- [input.tsx:1-22](file://frontend/components/ui/input.tsx#L1-L22)
-- [label.tsx:1-18](file://frontend/components/ui/label.tsx#L1-L18)
-- [select.tsx:1-147](file://frontend/components/ui/select.tsx#L1-L147)
-- [textarea.tsx:1-21](file://frontend/components/ui/textarea.tsx#L1-L21)
-- [switch.tsx:1-30](file://frontend/components/ui/switch.tsx#L1-L30)
-- [tabs.tsx:1-55](file://frontend/components/ui/tabs.tsx#L1-L55)
-- [dropdown-menu.tsx:1-201](file://frontend/components/ui/dropdown-menu.tsx#L1-L201)
-- [progress.tsx:1-35](file://frontend/components/ui/progress.tsx#L1-L35)
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [ThemeToggle.tsx](file://frontend/components/theme/ThemeToggle.tsx)
-- [globals.css](file://frontend/app/globals.css)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
+- [button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
+- [dialog.tsx:1-110](frontend/components/ui/dialog.tsx#L1-L110)
+- [table.tsx:1-90](frontend/components/ui/table.tsx#L1-L90)
+- [alert-dialog.tsx:1-142](frontend/components/ui/alert-dialog.tsx#L1-L142)
+- [badge.tsx:1-31](frontend/components/ui/badge.tsx#L1-L31)
+- [card.tsx:1-53](frontend/components/ui/card.tsx#L1-L53)
+- [checkbox.tsx:1-30](frontend/components/ui/checkbox.tsx#L1-L30)
+- [input.tsx:1-22](frontend/components/ui/input.tsx#L1-L22)
+- [label.tsx:1-18](frontend/components/ui/label.tsx#L1-L18)
+- [select.tsx:1-147](frontend/components/ui/select.tsx#L1-L147)
+- [textarea.tsx:1-21](frontend/components/ui/textarea.tsx#L1-L21)
+- [switch.tsx:1-30](frontend/components/ui/switch.tsx#L1-L30)
+- [tabs.tsx:1-55](frontend/components/ui/tabs.tsx#L1-L55)
+- [dropdown-menu.tsx:1-201](frontend/components/ui/dropdown-menu.tsx#L1-L201)
+- [progress.tsx:1-35](frontend/components/ui/progress.tsx#L1-L35)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [ThemeToggle.tsx](frontend/components/theme/ThemeToggle.tsx)
+- [globals.css](frontend/app/globals.css)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
 
 ## Core Components
 This section summarizes the foundational UI primitives and shared utilities that form the backbone of the design system.
@@ -249,25 +249,25 @@ This section summarizes the foundational UI primitives and shared utilities that
   - SearchableListboxPicker: searchable selection component
 
 **Section sources**
-- [button.tsx:6-33](file://frontend/components/ui/button.tsx#L6-L33)
-- [input.tsx:4-18](file://frontend/components/ui/input.tsx#L4-L18)
-- [textarea.tsx:4-16](file://frontend/components/ui/textarea.tsx#L4-L16)
-- [select.tsx:11-88](file://frontend/components/ui/select.tsx#L11-L88)
-- [checkbox.tsx:8-26](file://frontend/components/ui/checkbox.tsx#L8-L26)
-- [switch.tsx:8-26](file://frontend/components/ui/switch.tsx#L8-L26)
-- [label.tsx:5-14](file://frontend/components/ui/label.tsx#L5-L14)
-- [dialog.tsx:13-51](file://frontend/components/ui/dialog.tsx#L13-L51)
-- [alert-dialog.tsx:15-46](file://frontend/components/ui/alert-dialog.tsx#L15-L46)
-- [table.tsx:4-78](file://frontend/components/ui/table.tsx#L4-L78)
-- [badge.tsx:5-22](file://frontend/components/ui/badge.tsx#L5-L22)
-- [card.tsx:4-50](file://frontend/components/ui/card.tsx#L4-L50)
-- [progress.tsx:11-31](file://frontend/components/ui/progress.tsx#L11-L31)
-- [tabs.tsx:9-52](file://frontend/components/ui/tabs.tsx#L9-L52)
-- [dropdown-menu.tsx:59-75](file://frontend/components/ui/dropdown-menu.tsx#L59-L75)
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [UserAvatar.tsx](file://frontend/components/shared/UserAvatar.tsx)
-- [PatientList.tsx](file://frontend/components/shared/PatientList.tsx)
-- [SearchableListboxPicker.tsx](file://frontend/components/shared/SearchableListboxPicker.tsx)
+- [button.tsx:6-33](frontend/components/ui/button.tsx#L6-L33)
+- [input.tsx:4-18](frontend/components/ui/input.tsx#L4-L18)
+- [textarea.tsx:4-16](frontend/components/ui/textarea.tsx#L4-L16)
+- [select.tsx:11-88](frontend/components/ui/select.tsx#L11-L88)
+- [checkbox.tsx:8-26](frontend/components/ui/checkbox.tsx#L8-L26)
+- [switch.tsx:8-26](frontend/components/ui/switch.tsx#L8-L26)
+- [label.tsx:5-14](frontend/components/ui/label.tsx#L5-L14)
+- [dialog.tsx:13-51](frontend/components/ui/dialog.tsx#L13-L51)
+- [alert-dialog.tsx:15-46](frontend/components/ui/alert-dialog.tsx#L15-L46)
+- [table.tsx:4-78](frontend/components/ui/table.tsx#L4-L78)
+- [badge.tsx:5-22](frontend/components/ui/badge.tsx#L5-L22)
+- [card.tsx:4-50](frontend/components/ui/card.tsx#L4-L50)
+- [progress.tsx:11-31](frontend/components/ui/progress.tsx#L11-L31)
+- [tabs.tsx:9-52](frontend/components/ui/tabs.tsx#L9-L52)
+- [dropdown-menu.tsx:59-75](frontend/components/ui/dropdown-menu.tsx#L59-L75)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [UserAvatar.tsx](frontend/components/shared/UserAvatar.tsx)
+- [PatientList.tsx](frontend/components/shared/PatientList.tsx)
+- [SearchableListboxPicker.tsx](frontend/components/shared/SearchableListboxPicker.tsx)
 
 ## Architecture Overview
 The component library leverages Radix UI for accessibility and composability, class-variance-authority for variant-driven styling, and a global design system for consistent tokens. Providers manage theme state and global styles.
@@ -283,16 +283,16 @@ pages --> workflows["Workflows & Features<br/>Messaging, Reports, Devices, Monit
 ```
 
 **Diagram sources**
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [ThemeToggle.tsx](file://frontend/components/theme/ThemeToggle.tsx)
-- [globals.css](file://frontend/app/globals.css)
-- [button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
-- [dialog.tsx:1-110](file://frontend/components/ui/dialog.tsx#L1-L110)
-- [table.tsx:1-90](file://frontend/components/ui/table.tsx#L1-L90)
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [ThemeToggle.tsx](frontend/components/theme/ThemeToggle.tsx)
+- [globals.css](frontend/app/globals.css)
+- [button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
+- [dialog.tsx:1-110](frontend/components/ui/dialog.tsx#L1-L110)
+- [table.tsx:1-90](frontend/components/ui/table.tsx#L1-L90)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
 
 ## Detailed Component Analysis
 
@@ -329,10 +329,10 @@ Button --> buttonVariants : "uses"
 ```
 
 **Diagram sources**
-- [button.tsx:6-33](file://frontend/components/ui/button.tsx#L6-L33)
+- [button.tsx:6-33](frontend/components/ui/button.tsx#L6-L33)
 
 **Section sources**
-- [button.tsx:35-53](file://frontend/components/ui/button.tsx#L35-L53)
+- [button.tsx:35-53](frontend/components/ui/button.tsx#L35-L53)
 
 ### Dialogs and Alerts
 - Dialog:
@@ -362,7 +362,7 @@ D-->>C : Unmount content
 ```
 
 **Diagram sources**
-- [dialog.tsx:13-51](file://frontend/components/ui/dialog.tsx#L13-L51)
+- [dialog.tsx:13-51](frontend/components/ui/dialog.tsx#L13-L51)
 
 ```mermaid
 sequenceDiagram
@@ -382,11 +382,11 @@ CA-->>AD : Dismiss
 ```
 
 **Diagram sources**
-- [alert-dialog.tsx:15-127](file://frontend/components/ui/alert-dialog.tsx#L15-L127)
+- [alert-dialog.tsx:15-127](frontend/components/ui/alert-dialog.tsx#L15-L127)
 
 **Section sources**
-- [dialog.tsx:1-110](file://frontend/components/ui/dialog.tsx#L1-L110)
-- [alert-dialog.tsx:1-142](file://frontend/components/ui/alert-dialog.tsx#L1-L142)
+- [dialog.tsx:1-110](frontend/components/ui/dialog.tsx#L1-L110)
+- [alert-dialog.tsx:1-142](frontend/components/ui/alert-dialog.tsx#L1-L142)
 
 ### Tables and Data Displays
 - Table:
@@ -413,13 +413,13 @@ Footer --> End(["Done"])
 ```
 
 **Diagram sources**
-- [table.tsx:4-78](file://frontend/components/ui/table.tsx#L4-L78)
+- [table.tsx:4-78](frontend/components/ui/table.tsx#L4-L78)
 
 **Section sources**
-- [table.tsx:1-90](file://frontend/components/ui/table.tsx#L1-L90)
-- [badge.tsx:1-31](file://frontend/components/ui/badge.tsx#L1-L31)
-- [card.tsx:1-53](file://frontend/components/ui/card.tsx#L1-L53)
-- [progress.tsx:1-35](file://frontend/components/ui/progress.tsx#L1-L35)
+- [table.tsx:1-90](frontend/components/ui/table.tsx#L1-L90)
+- [badge.tsx:1-31](frontend/components/ui/badge.tsx#L1-L31)
+- [card.tsx:1-53](frontend/components/ui/card.tsx#L1-L53)
+- [progress.tsx:1-35](frontend/components/ui/progress.tsx#L1-L35)
 
 ### Forms and Controls
 - Input and Textarea:
@@ -464,20 +464,20 @@ class Label {
 ```
 
 **Diagram sources**
-- [input.tsx:4-18](file://frontend/components/ui/input.tsx#L4-L18)
-- [textarea.tsx:4-16](file://frontend/components/ui/textarea.tsx#L4-L16)
-- [select.tsx:8-146](file://frontend/components/ui/select.tsx#L8-L146)
-- [checkbox.tsx:8-26](file://frontend/components/ui/checkbox.tsx#L8-L26)
-- [switch.tsx:8-26](file://frontend/components/ui/switch.tsx#L8-L26)
-- [label.tsx:5-14](file://frontend/components/ui/label.tsx#L5-L14)
+- [input.tsx:4-18](frontend/components/ui/input.tsx#L4-L18)
+- [textarea.tsx:4-16](frontend/components/ui/textarea.tsx#L4-L16)
+- [select.tsx:8-146](frontend/components/ui/select.tsx#L8-L146)
+- [checkbox.tsx:8-26](frontend/components/ui/checkbox.tsx#L8-L26)
+- [switch.tsx:8-26](frontend/components/ui/switch.tsx#L8-L26)
+- [label.tsx:5-14](frontend/components/ui/label.tsx#L5-L14)
 
 **Section sources**
-- [input.tsx:1-22](file://frontend/components/ui/input.tsx#L1-L22)
-- [textarea.tsx:1-21](file://frontend/components/ui/textarea.tsx#L1-L21)
-- [select.tsx:1-147](file://frontend/components/ui/select.tsx#L1-L147)
-- [checkbox.tsx:1-30](file://frontend/components/ui/checkbox.tsx#L1-L30)
-- [switch.tsx:1-30](file://frontend/components/ui/switch.tsx#L1-L30)
-- [label.tsx:1-18](file://frontend/components/ui/label.tsx#L1-L18)
+- [input.tsx:1-22](frontend/components/ui/input.tsx#L1-L22)
+- [textarea.tsx:1-21](frontend/components/ui/textarea.tsx#L1-L21)
+- [select.tsx:1-147](frontend/components/ui/select.tsx#L1-L147)
+- [checkbox.tsx:1-30](frontend/components/ui/checkbox.tsx#L1-L30)
+- [switch.tsx:1-30](frontend/components/ui/switch.tsx#L1-L30)
+- [label.tsx:1-18](frontend/components/ui/label.tsx#L1-L18)
 
 ### Navigation Elements
 - Tabs:
@@ -513,12 +513,12 @@ class DropdownMenu {
 ```
 
 **Diagram sources**
-- [tabs.tsx:7-52](file://frontend/components/ui/tabs.tsx#L7-L52)
-- [dropdown-menu.tsx:9-200](file://frontend/components/ui/dropdown-menu.tsx#L9-L200)
+- [tabs.tsx:7-52](frontend/components/ui/tabs.tsx#L7-L52)
+- [dropdown-menu.tsx:9-200](frontend/components/ui/dropdown-menu.tsx#L9-L200)
 
 **Section sources**
-- [tabs.tsx:1-55](file://frontend/components/ui/tabs.tsx#L1-L55)
-- [dropdown-menu.tsx:1-201](file://frontend/components/ui/dropdown-menu.tsx#L1-L201)
+- [tabs.tsx:1-55](frontend/components/ui/tabs.tsx#L1-L55)
+- [dropdown-menu.tsx:1-201](frontend/components/ui/dropdown-menu.tsx#L1-L201)
 
 ### Shared Components Used Across Roles
 - AlertPanel: role-aware alert presentation
@@ -527,10 +527,10 @@ class DropdownMenu {
 - SearchableListboxPicker: searchable selection component
 
 **Section sources**
-- [AlertPanel.tsx](file://frontend/components/shared/AlertPanel.tsx)
-- [UserAvatar.tsx](file://frontend/components/shared/UserAvatar.tsx)
-- [PatientList.tsx](file://frontend/components/shared/PatientList.tsx)
-- [SearchableListboxPicker.tsx](file://frontend/components/shared/SearchableListboxPicker.tsx)
+- [AlertPanel.tsx](frontend/components/shared/AlertPanel.tsx)
+- [UserAvatar.tsx](frontend/components/shared/UserAvatar.tsx)
+- [PatientList.tsx](frontend/components/shared/PatientList.tsx)
+- [SearchableListboxPicker.tsx](frontend/components/shared/SearchableListboxPicker.tsx)
 
 ### Theming, Dark Mode, and Responsive Patterns
 - Design Tokens and Base Styles:
@@ -557,14 +557,14 @@ CSS-->>U : Re-render with new tokens
 ```
 
 **Diagram sources**
-- [ThemeToggle.tsx](file://frontend/components/theme/ThemeToggle.tsx)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [globals.css](file://frontend/app/globals.css)
+- [ThemeToggle.tsx](frontend/components/theme/ThemeToggle.tsx)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [globals.css](frontend/app/globals.css)
 
 **Section sources**
-- [ThemeToggle.tsx](file://frontend/components/theme/ThemeToggle.tsx)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [globals.css](file://frontend/app/globals.css)
+- [ThemeToggle.tsx](frontend/components/theme/ThemeToggle.tsx)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [globals.css](frontend/app/globals.css)
 
 ## Dependency Analysis
 The UI primitives depend on Radix UI and shared utilities. Shared components depend on base styles and tokens. Role pages consume shared components and primitives.
@@ -605,26 +605,26 @@ PAGES --> DDL
 ```
 
 **Diagram sources**
-- [button.tsx:1-5](file://frontend/components/ui/button.tsx#L1-L5)
-- [dialog.tsx:1-6](file://frontend/components/ui/dialog.tsx#L1-L6)
-- [alert-dialog.tsx:1-7](file://frontend/components/ui/alert-dialog.tsx#L1-L7)
-- [tabs.tsx:1-5](file://frontend/components/ui/tabs.tsx#L1-L5)
-- [dropdown-menu.tsx:1-7](file://frontend/components/ui/dropdown-menu.tsx#L1-L7)
-- [select.tsx:1-6](file://frontend/components/ui/select.tsx#L1-L6)
-- [checkbox.tsx:1-6](file://frontend/components/ui/checkbox.tsx#L1-L6)
-- [switch.tsx:1-6](file://frontend/components/ui/switch.tsx#L1-L6)
-- [globals.css](file://frontend/app/globals.css)
+- [button.tsx:1-5](frontend/components/ui/button.tsx#L1-L5)
+- [dialog.tsx:1-6](frontend/components/ui/dialog.tsx#L1-L6)
+- [alert-dialog.tsx:1-7](frontend/components/ui/alert-dialog.tsx#L1-L7)
+- [tabs.tsx:1-5](frontend/components/ui/tabs.tsx#L1-L5)
+- [dropdown-menu.tsx:1-7](frontend/components/ui/dropdown-menu.tsx#L1-L7)
+- [select.tsx:1-6](frontend/components/ui/select.tsx#L1-L6)
+- [checkbox.tsx:1-6](frontend/components/ui/checkbox.tsx#L1-L6)
+- [switch.tsx:1-6](frontend/components/ui/switch.tsx#L1-L6)
+- [globals.css](frontend/app/globals.css)
 
 **Section sources**
-- [button.tsx:1-56](file://frontend/components/ui/button.tsx#L1-L56)
-- [dialog.tsx:1-110](file://frontend/components/ui/dialog.tsx#L1-L110)
-- [alert-dialog.tsx:1-142](file://frontend/components/ui/alert-dialog.tsx#L1-L142)
-- [tabs.tsx:1-55](file://frontend/components/ui/tabs.tsx#L1-L55)
-- [dropdown-menu.tsx:1-201](file://frontend/components/ui/dropdown-menu.tsx#L1-L201)
-- [select.tsx:1-147](file://frontend/components/ui/select.tsx#L1-L147)
-- [checkbox.tsx:1-30](file://frontend/components/ui/checkbox.tsx#L1-L30)
-- [switch.tsx:1-30](file://frontend/components/ui/switch.tsx#L1-L30)
-- [globals.css](file://frontend/app/globals.css)
+- [button.tsx:1-56](frontend/components/ui/button.tsx#L1-L56)
+- [dialog.tsx:1-110](frontend/components/ui/dialog.tsx#L1-L110)
+- [alert-dialog.tsx:1-142](frontend/components/ui/alert-dialog.tsx#L1-L142)
+- [tabs.tsx:1-55](frontend/components/ui/tabs.tsx#L1-L55)
+- [dropdown-menu.tsx:1-201](frontend/components/ui/dropdown-menu.tsx#L1-L201)
+- [select.tsx:1-147](frontend/components/ui/select.tsx#L1-L147)
+- [checkbox.tsx:1-30](frontend/components/ui/checkbox.tsx#L1-L30)
+- [switch.tsx:1-30](frontend/components/ui/switch.tsx#L1-L30)
+- [globals.css](frontend/app/globals.css)
 
 ## Performance Considerations
 - Minimize re-renders by composing small, focused primitives and avoiding unnecessary prop drilling.
@@ -646,12 +646,12 @@ PAGES --> DDL
   - Confirm ARIA attributes (description, label) are set; ensure keyboard navigation works for menus and tabs.
 
 **Section sources**
-- [dialog.tsx:13-51](file://frontend/components/ui/dialog.tsx#L13-L51)
-- [alert-dialog.tsx:15-46](file://frontend/components/ui/alert-dialog.tsx#L15-L46)
-- [select.tsx:62-88](file://frontend/components/ui/select.tsx#L62-L88)
-- [tabs.tsx:24-52](file://frontend/components/ui/tabs.tsx#L24-L52)
-- [dropdown-menu.tsx:59-75](file://frontend/components/ui/dropdown-menu.tsx#L59-L75)
-- [globals.css](file://frontend/app/globals.css)
+- [dialog.tsx:13-51](frontend/components/ui/dialog.tsx#L13-L51)
+- [alert-dialog.tsx:15-46](frontend/components/ui/alert-dialog.tsx#L15-L46)
+- [select.tsx:62-88](frontend/components/ui/select.tsx#L62-L88)
+- [tabs.tsx:24-52](frontend/components/ui/tabs.tsx#L24-L52)
+- [dropdown-menu.tsx:59-75](frontend/components/ui/dropdown-menu.tsx#L59-L75)
+- [globals.css](frontend/app/globals.css)
 
 ## Conclusion
 WheelSense Platform’s component library combines Radix UI primitives with a cohesive design system to deliver accessible, themeable, and performant UI across roles. The primitives, shared utilities, and role-specific components are structured for reuse, composition, and scalability. By adhering to the documented patterns—variants, composition, accessibility, and theming—you can confidently extend and integrate components across the platform.
@@ -686,10 +686,10 @@ WheelSense Platform’s component library combines Radix UI primitives with a co
   - Integrate dialogs for creation/editing; tables for listings; cards for summaries.
 
 **Section sources**
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [SonnerToaster.tsx](file://frontend/components/SonnerToaster.tsx)
-- [NotificationBell.tsx](file://frontend/components/NotificationBell.tsx)
-- [NotificationDrawer.tsx](file://frontend/components/NotificationDrawer.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [SonnerToaster.tsx](frontend/components/SonnerToaster.tsx)
+- [NotificationBell.tsx](frontend/components/NotificationBell.tsx)
+- [NotificationDrawer.tsx](frontend/components/NotificationDrawer.tsx)

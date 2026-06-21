@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [localization.py](file://server/app/localization.py)
-- [localization.py](file://server/app/api/endpoints/localization.py)
-- [localization.py](file://server/app/schemas/localization.py)
-- [localization_setup.py](file://server/app/services/localization_setup.py)
-- [telemetry.py](file://server/app/models/telemetry.py)
-- [0004-configurable-localization-strategy.md](file://docs/adr/0004-configurable-localization-strategy.md)
-- [q1r2s3t4u5v6_add_device_localization_runtime_tables.py](file://server/alembic/versions/q1r2s3t4u5v6_add_device_localization_runtime_tables.py)
-- [test_localization.py](file://server/tests/test_localization.py)
-- [BLEManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
-- [BLEManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
-- [FloorplansPanel.tsx](file://frontend/components/admin/FloorplansPanel.tsx)
-- [floorplanLayout.ts](file://frontend/lib/floorplanLayout.ts)
-- [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
-- [MlCalibrationClient.tsx](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx)
+- [localization.py](server/app/localization.py)
+- [localization.py](server/app/api/endpoints/localization.py)
+- [localization.py](server/app/schemas/localization.py)
+- [localization_setup.py](server/app/services/localization_setup.py)
+- [telemetry.py](server/app/models/telemetry.py)
+- [0004-configurable-localization-strategy.md](docs/adr/0004-configurable-localization-strategy.md)
+- [q1r2s3t4u5v6_add_device_localization_runtime_tables.py](server/alembic/versions/q1r2s3t4u5v6_add_device_localization_runtime_tables.py)
+- [test_localization.py](server/tests/test_localization.py)
+- [BLEManager.cpp](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
+- [BLEManager.h](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
+- [FloorplansPanel.tsx](frontend/components/admin/FloorplansPanel.tsx)
+- [floorplanLayout.ts](frontend/lib/floorplanLayout.ts)
+- [nodeDeviceRoomKey.ts](frontend/lib/nodeDeviceRoomKey.ts)
+- [MlCalibrationClient.tsx](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx)
 </cite>
 
 ## Table of Contents
@@ -75,20 +75,20 @@ FP --> SVC
 ```
 
 **Diagram sources**
-- [localization.py:1-321](file://server/app/localization.py#L1-L321)
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
-- [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
+- [localization.py:1-321](server/app/localization.py#L1-L321)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization_setup.py:1-678](server/app/services/localization_setup.py#L1-L678)
+- [telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [BLEManager.cpp:1-78](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
 
 **Section sources**
-- [localization.py:1-321](file://server/app/localization.py#L1-L321)
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
-- [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
+- [localization.py:1-321](server/app/localization.py#L1-L321)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization_setup.py:1-678](server/app/services/localization_setup.py#L1-L678)
+- [telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [BLEManager.cpp:1-78](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
 
 ## Core Components
 - Localization Engine: KNN fingerprinting and Max RSSI prediction with a configurable strategy per workspace.
@@ -104,11 +104,11 @@ Key capabilities:
 - Persist predictions and training data for validation and retraining.
 
 **Section sources**
-- [localization.py:22-321](file://server/app/localization.py#L22-L321)
-- [localization.py:52-396](file://server/app/api/endpoints/localization.py#L52-L396)
-- [localization_setup.py:124-678](file://server/app/services/localization_setup.py#L124-L678)
-- [telemetry.py:42-222](file://server/app/models/telemetry.py#L42-L222)
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
+- [localization.py:22-321](server/app/localization.py#L22-L321)
+- [localization.py:52-396](server/app/api/endpoints/localization.py#L52-L396)
+- [localization_setup.py:124-678](server/app/services/localization_setup.py#L124-L678)
+- [telemetry.py:42-222](server/app/models/telemetry.py#L42-L222)
+- [BLEManager.cpp:33-62](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
 
 ## Architecture Overview
 The system integrates real-time RSSI telemetry from mobile/wheelchair devices and BLE/Wi-Fi nodes to infer room presence. The backend exposes endpoints to configure strategy, train, predict, and manage calibration sessions. The frontend provides an ML calibration UI and floorplan visualization.
@@ -137,14 +137,14 @@ API-->>Client : Prediction result
 ```
 
 **Diagram sources**
-- [localization.py:129-201](file://server/app/api/endpoints/localization.py#L129-L201)
-- [localization.py:93-154](file://server/app/localization.py#L93-L154)
-- [localization.py:268-291](file://server/app/localization.py#L268-L291)
+- [localization.py:129-201](server/app/api/endpoints/localization.py#L129-L201)
+- [localization.py:93-154](server/app/localization.py#L93-L154)
+- [localization.py:268-291](server/app/localization.py#L268-L291)
 
 **Section sources**
-- [localization.py:129-201](file://server/app/api/endpoints/localization.py#L129-L201)
-- [localization.py:93-154](file://server/app/localization.py#L93-L154)
-- [localization.py:268-291](file://server/app/localization.py#L268-L291)
+- [localization.py:129-201](server/app/api/endpoints/localization.py#L129-L201)
+- [localization.py:93-154](server/app/localization.py#L93-L154)
+- [localization.py:268-291](server/app/localization.py#L268-L291)
 
 ## Detailed Component Analysis
 
@@ -168,12 +168,12 @@ Fallback --> ReturnMax
 ```
 
 **Diagram sources**
-- [localization.py:268-291](file://server/app/localization.py#L268-L291)
-- [localization.py:157-179](file://server/app/localization.py#L157-L179)
-- [localization.py:215-265](file://server/app/localization.py#L215-L265)
+- [localization.py:268-291](server/app/localization.py#L268-L291)
+- [localization.py:157-179](server/app/localization.py#L157-L179)
+- [localization.py:215-265](server/app/localization.py#L215-L265)
 
 **Section sources**
-- [localization.py:22-321](file://server/app/localization.py#L22-L321)
+- [localization.py:22-321](server/app/localization.py#L22-L321)
 
 ### Signal Strength Analysis and Beacon Triangulation
 - RSSI readings are ingested from mobile/wheelchair devices and BLE/Wi-Fi nodes.
@@ -192,14 +192,14 @@ Note over FW,DB : RSSI vector aggregated per device
 ```
 
 **Diagram sources**
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
-- [telemetry.py:42-51](file://server/app/models/telemetry.py#L42-L51)
-- [telemetry.py:132-153](file://server/app/models/telemetry.py#L132-L153)
+- [BLEManager.cpp:33-62](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
+- [telemetry.py:42-51](server/app/models/telemetry.py#L42-L51)
+- [telemetry.py:132-153](server/app/models/telemetry.py#L132-L153)
 
 **Section sources**
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
-- [telemetry.py:42-153](file://server/app/models/telemetry.py#L42-L153)
+- [BLEManager.cpp:1-78](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
+- [telemetry.py:42-153](server/app/models/telemetry.py#L42-L153)
 
 ### Room Prediction Model, Confidence Scoring, and Accuracy Validation
 - KNN model:
@@ -248,13 +248,13 @@ LocalizationEngine --> RSSITrainingData : "consumes"
 ```
 
 **Diagram sources**
-- [localization.py:39-321](file://server/app/localization.py#L39-L321)
-- [telemetry.py:53-74](file://server/app/models/telemetry.py#L53-L74)
+- [localization.py:39-321](server/app/localization.py#L39-L321)
+- [telemetry.py:53-74](server/app/models/telemetry.py#L53-L74)
 
 **Section sources**
-- [localization.py:93-154](file://server/app/localization.py#L93-L154)
-- [localization.py:157-179](file://server/app/localization.py#L157-L179)
-- [telemetry.py:53-74](file://server/app/models/telemetry.py#L53-L74)
+- [localization.py:93-154](server/app/localization.py#L93-L154)
+- [localization.py:157-179](server/app/localization.py#L157-L179)
+- [telemetry.py:53-74](server/app/models/telemetry.py#L53-L74)
 
 ### Localization Calibration Process, Sessions, and Sample Collection
 - Calibration sessions capture labeled RSSI samples for rooms.
@@ -278,12 +278,12 @@ API-->>User : {session_id, persisted_samples, training_stats}
 ```
 
 **Diagram sources**
-- [localization.py:233-396](file://server/app/api/endpoints/localization.py#L233-L396)
-- [telemetry.py:178-221](file://server/app/models/telemetry.py#L178-L221)
+- [localization.py:233-396](server/app/api/endpoints/localization.py#L233-L396)
+- [telemetry.py:178-221](server/app/models/telemetry.py#L178-L221)
 
 **Section sources**
-- [localization.py:233-396](file://server/app/api/endpoints/localization.py#L233-L396)
-- [telemetry.py:178-221](file://server/app/models/telemetry.py#L178-L221)
+- [localization.py:233-396](server/app/api/endpoints/localization.py#L233-L396)
+- [telemetry.py:178-221](server/app/models/telemetry.py#L178-L221)
 
 ### Room Prediction Model, Confidence Scoring, and Accuracy Validation
 - KNN model:
@@ -310,14 +310,14 @@ G --> H["Persist RoomPrediction"]
 ```
 
 **Diagram sources**
-- [localization.py:129-189](file://server/app/api/endpoints/localization.py#L129-L189)
-- [localization.py:93-154](file://server/app/localization.py#L93-L154)
-- [telemetry.py:53-74](file://server/app/models/telemetry.py#L53-L74)
+- [localization.py:129-189](server/app/api/endpoints/localization.py#L129-L189)
+- [localization.py:93-154](server/app/localization.py#L93-L154)
+- [telemetry.py:53-74](server/app/models/telemetry.py#L53-L74)
 
 **Section sources**
-- [localization.py:93-154](file://server/app/localization.py#L93-L154)
-- [localization.py:157-179](file://server/app/localization.py#L157-L179)
-- [telemetry.py:53-74](file://server/app/models/telemetry.py#L53-L74)
+- [localization.py:93-154](server/app/localization.py#L93-L154)
+- [localization.py:157-179](server/app/localization.py#L157-L179)
+- [telemetry.py:53-74](server/app/models/telemetry.py#L53-L74)
 
 ### BLE Node Device Management, WSN_* Beacon Handling, and Node Discovery
 - Firmware BLEManager scans for WSN_* prefixed names, normalizes to WSN_XXX, and tracks RSSI per node.
@@ -344,13 +344,13 @@ note for BLEManager "Discovers WSN_* nodes and aggregates RSSI"
 ```
 
 **Diagram sources**
-- [BLEManager.h:12-43](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L12-L43)
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
+- [BLEManager.h:12-43](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L12-L43)
+- [BLEManager.cpp:33-62](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
 
 **Section sources**
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
-- [localization_setup.py:198-213](file://server/app/services/localization_setup.py#L198-L213)
+- [BLEManager.cpp:1-78](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
+- [localization_setup.py:198-213](server/app/services/localization_setup.py#L198-L213)
 
 ### Localization Configuration, Threshold Settings, and Environmental Factors Impact
 - Strategy configuration: choose between “knn” and “max_rssi” per workspace.
@@ -362,9 +362,9 @@ note for BLEManager "Discovers WSN_* nodes and aggregates RSSI"
   - KNN fingerprints mitigate some variability but require representative training data.
 
 **Section sources**
-- [localization.py:39-45](file://server/app/localization.py#L39-L45)
-- [localization.py:256-265](file://server/app/localization.py#L256-L265)
-- [0004-configurable-localization-strategy.md:1-46](file://docs/adr/0004-configurable-localization-strategy.md#L1-L46)
+- [localization.py:39-45](server/app/localization.py#L39-L45)
+- [localization.py:256-265](server/app/localization.py#L256-L265)
+- [0004-configurable-localization-strategy.md:1-46](docs/adr/0004-configurable-localization-strategy.md#L1-L46)
 
 ### Multi-Room Scenarios, Edge Cases, and Fallback Mechanisms
 - Multi-room inference: KNN predicts the most likely room; Max RSSI assigns to the room bound to the strongest node.
@@ -376,8 +376,8 @@ note for BLEManager "Discovers WSN_* nodes and aggregates RSSI"
   - When KNN is requested but not trained, the system falls back to Max RSSI with a fallback reason.
 
 **Section sources**
-- [localization.py:268-291](file://server/app/localization.py#L268-L291)
-- [localization_setup.py:444-678](file://server/app/services/localization_setup.py#L444-L678)
+- [localization.py:268-291](server/app/localization.py#L268-L291)
+- [localization_setup.py:444-678](server/app/services/localization_setup.py#L444-L678)
 
 ### Examples of Localization Queries, Calibration Workflows, and Floorplan Integration
 - Example: Predict room for a device’s latest RSSI vector.
@@ -403,15 +403,15 @@ API-->>UI : Updated readiness payload
 ```
 
 **Diagram sources**
-- [MlCalibrationClient.tsx:318-358](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L318-L358)
-- [localization.py:233-396](file://server/app/api/endpoints/localization.py#L233-L396)
-- [localization_setup.py:434-678](file://server/app/services/localization_setup.py#L434-L678)
+- [MlCalibrationClient.tsx:318-358](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L318-L358)
+- [localization.py:233-396](server/app/api/endpoints/localization.py#L233-L396)
+- [localization_setup.py:434-678](server/app/services/localization_setup.py#L434-L678)
 
 **Section sources**
-- [MlCalibrationClient.tsx:318-358](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L318-L358)
-- [localization.py:191-231](file://server/app/api/endpoints/localization.py#L191-L231)
-- [localization.py:233-396](file://server/app/api/endpoints/localization.py#L233-L396)
-- [localization_setup.py:434-678](file://server/app/services/localization_setup.py#L434-L678)
+- [MlCalibrationClient.tsx:318-358](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L318-L358)
+- [localization.py:191-231](server/app/api/endpoints/localization.py#L191-L231)
+- [localization.py:233-396](server/app/api/endpoints/localization.py#L233-L396)
+- [localization_setup.py:434-678](server/app/services/localization_setup.py#L434-L678)
 
 ## Dependency Analysis
 The localization system has clear module boundaries:
@@ -433,20 +433,20 @@ FP["Floorplan Panel"] --> Setup
 ```
 
 **Diagram sources**
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization.py:1-321](file://server/app/localization.py#L1-L321)
-- [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
-- [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
-- [FloorplansPanel.tsx:44-239](file://frontend/components/admin/FloorplansPanel.tsx#L44-L239)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization.py:1-321](server/app/localization.py#L1-L321)
+- [localization_setup.py:1-678](server/app/services/localization_setup.py#L1-L678)
+- [telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [BLEManager.cpp:1-78](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [FloorplansPanel.tsx:44-239](frontend/components/admin/FloorplansPanel.tsx#L44-L239)
 
 **Section sources**
-- [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
-- [localization.py:1-321](file://server/app/localization.py#L1-L321)
-- [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
-- [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
-- [FloorplansPanel.tsx:44-239](file://frontend/components/admin/FloorplansPanel.tsx#L44-L239)
+- [localization.py:1-396](server/app/api/endpoints/localization.py#L1-L396)
+- [localization.py:1-321](server/app/localization.py#L1-L321)
+- [localization_setup.py:1-678](server/app/services/localization_setup.py#L1-L678)
+- [telemetry.py:1-222](server/app/models/telemetry.py#L1-L222)
+- [BLEManager.cpp:1-78](firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [FloorplansPanel.tsx:44-239](frontend/components/admin/FloorplansPanel.tsx#L44-L239)
 
 ## Performance Considerations
 - KNN training:
@@ -478,10 +478,10 @@ Operational checks:
 - Historical accuracy: review RoomPrediction entries for confidence trends.
 
 **Section sources**
-- [localization.py:268-291](file://server/app/localization.py#L268-L291)
-- [localization.py:52-231](file://server/app/api/endpoints/localization.py#L52-L231)
-- [localization_setup.py:434-678](file://server/app/services/localization_setup.py#L434-L678)
-- [test_localization.py:1-84](file://server/tests/test_localization.py#L1-L84)
+- [localization.py:268-291](server/app/localization.py#L268-L291)
+- [localization.py:52-231](server/app/api/endpoints/localization.py#L52-L231)
+- [localization_setup.py:434-678](server/app/services/localization_setup.py#L434-L678)
+- [test_localization.py:1-84](server/tests/test_localization.py#L1-L84)
 
 ## Conclusion
 The WheelSense localization system provides a flexible, configurable approach to RSSI-based room positioning. By combining KNN fingerprinting with a simple Max RSSI fallback, it balances accuracy and immediate deployability. Robust calibration workflows, readiness inspection/repair, and floorplan integration streamline deployment and maintenance. Proper node placement, representative training data, and consistent aliasing are key to achieving reliable accuracy.
@@ -504,8 +504,8 @@ The WheelSense localization system provides a flexible, configurable approach to
 - Repair readiness: POST /api/localization/readiness/repair
 
 **Section sources**
-- [localization.py:52-396](file://server/app/api/endpoints/localization.py#L52-L396)
-- [localization.py:11-93](file://server/app/schemas/localization.py#L11-L93)
+- [localization.py:52-396](server/app/api/endpoints/localization.py#L52-L396)
+- [localization.py:11-93](server/app/schemas/localization.py#L11-L93)
 
 ### Database Schema Notes
 - LocalizationConfig: per-workspace strategy.
@@ -515,15 +515,15 @@ The WheelSense localization system provides a flexible, configurable approach to
 - LocalizationCalibrationSession and Sample: calibration artifacts.
 
 **Section sources**
-- [q1r2s3t4u5v6_add_device_localization_runtime_tables.py:68-152](file://server/alembic/versions/q1r2s3t4u5v6_add_device_localization_runtime_tables.py#L68-L152)
-- [telemetry.py:42-222](file://server/app/models/telemetry.py#L42-L222)
+- [q1r2s3t4u5v6_add_device_localization_runtime_tables.py:68-152](server/alembic/versions/q1r2s3t4u5v6_add_device_localization_runtime_tables.py#L68-L152)
+- [telemetry.py:42-222](server/app/models/telemetry.py#L42-L222)
 
 ### Frontend Integration Notes
 - ML Calibration UI drives calibration sessions and strategy updates.
 - Floorplan panel merges room and node device associations for visualization.
 
 **Section sources**
-- [MlCalibrationClient.tsx:318-358](file://frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L318-L358)
-- [FloorplansPanel.tsx:44-239](file://frontend/components/admin/FloorplansPanel.tsx#L44-L239)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [nodeDeviceRoomKey.ts:28-43](file://frontend/lib/nodeDeviceRoomKey.ts#L28-L43)
+- [MlCalibrationClient.tsx:318-358](frontend/app/admin/ml-calibration/MlCalibrationClient.tsx#L318-L358)
+- [FloorplansPanel.tsx:44-239](frontend/components/admin/FloorplansPanel.tsx#L44-L239)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [nodeDeviceRoomKey.ts:28-43](frontend/lib/nodeDeviceRoomKey.ts#L28-L43)

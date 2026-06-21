@@ -2,23 +2,23 @@
 
 <cite>
 **Referenced Files in This Document**
-- [session.py](file://server/app/db/session.py)
-- [init_db.py](file://server/app/db/init_db.py)
-- [__init__.py](file://server/app/db/__init__.py)
-- [base.py](file://server/app/models/base.py)
-- [core.py](file://server/app/models/core.py)
-- [users.py](file://server/app/models/users.py)
-- [__init__.py](file://server/app/models/__init__.py)
-- [env.py](file://server/alembic/env.py)
-- [script.py.mako](file://server/alembic/script.py.mako)
-- [7eb2ee25df34_initial_workspace_schema.py](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py)
-- [5f91820b6334_add_workspaces_and_dual_mode_.py](file://server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py)
-- [8957f9d4c3ba_add_user_model_for_auth_rbac.py](file://server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py)
-- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py](file://server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py)
-- [config.py](file://server/app/config.py)
-- [security.py](file://server/app/core/security.py)
-- [seed_demo.py](file://server/scripts/seed_demo.py)
-- [alembic.ini](file://server/alembic.ini)
+- [session.py](server/app/db/session.py)
+- [init_db.py](server/app/db/init_db.py)
+- [__init__.py](server/app/db/__init__.py)
+- [base.py](server/app/models/base.py)
+- [core.py](server/app/models/core.py)
+- [users.py](server/app/models/users.py)
+- [__init__.py](server/app/models/__init__.py)
+- [env.py](server/alembic/env.py)
+- [script.py.mako](server/alembic/script.py.mako)
+- [7eb2ee25df34_initial_workspace_schema.py](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py)
+- [5f91820b6334_add_workspaces_and_dual_mode_.py](server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py)
+- [8957f9d4c3ba_add_user_model_for_auth_rbac.py](server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py)
+- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py](server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py)
+- [config.py](server/app/config.py)
+- [security.py](server/app/core/security.py)
+- [seed_demo.py](server/scripts/seed_demo.py)
+- [alembic.ini](server/alembic.ini)
 </cite>
 
 ## Table of Contents
@@ -86,42 +86,42 @@ SD --> MI
 ```
 
 **Diagram sources**
-- [session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
-- [__init__.py:1-20](file://server/app/db/__init__.py#L1-L20)
-- [base.py:1-11](file://server/app/models/base.py#L1-L11)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [__init__.py:1-136](file://server/app/models/__init__.py#L1-L136)
-- [env.py:1-89](file://server/alembic/env.py#L1-L89)
-- [script.py.mako:1-27](file://server/alembic/script.py.mako#L1-L27)
-- [7eb2ee25df34_initial_workspace_schema.py:1-176](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L1-L176)
-- [5f91820b6334_add_workspaces_and_dual_mode_.py:1-29](file://server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L1-L29)
-- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:1-50](file://server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L1-L50)
-- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:1-35](file://server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L1-L35)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [seed_demo.py:1-1549](file://server/scripts/seed_demo.py#L1-L1549)
-- [alembic.ini:1-117](file://server/alembic.ini#L1-L117)
+- [session.py:1-64](server/app/db/session.py#L1-L64)
+- [init_db.py:1-101](server/app/db/init_db.py#L1-L101)
+- [__init__.py:1-20](server/app/db/__init__.py#L1-L20)
+- [base.py:1-11](server/app/models/base.py#L1-L11)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [__init__.py:1-136](server/app/models/__init__.py#L1-L136)
+- [env.py:1-89](server/alembic/env.py#L1-L89)
+- [script.py.mako:1-27](server/alembic/script.py.mako#L1-L27)
+- [7eb2ee25df34_initial_workspace_schema.py:1-176](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L1-L176)
+- [5f91820b6334_add_workspaces_and_dual_mode_.py:1-29](server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L1-L29)
+- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:1-50](server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L1-L50)
+- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:1-35](server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L1-L35)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [seed_demo.py:1-1549](server/scripts/seed_demo.py#L1-L1549)
+- [alembic.ini:1-117](server/alembic.ini#L1-L117)
 
 **Section sources**
-- [session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
-- [__init__.py:1-20](file://server/app/db/__init__.py#L1-L20)
-- [base.py:1-11](file://server/app/models/base.py#L1-L11)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [__init__.py:1-136](file://server/app/models/__init__.py#L1-L136)
-- [env.py:1-89](file://server/alembic/env.py#L1-L89)
-- [script.py.mako:1-27](file://server/alembic/script.py.mako#L1-L27)
-- [7eb2ee25df34_initial_workspace_schema.py:1-176](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L1-L176)
-- [5f91820b6334_add_workspaces_and_dual_mode_.py:1-29](file://server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L1-L29)
-- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:1-50](file://server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L1-L50)
-- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:1-35](file://server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L1-L35)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [seed_demo.py:1-1549](file://server/scripts/seed_demo.py#L1-L1549)
-- [alembic.ini:1-117](file://server/alembic.ini#L1-L117)
+- [session.py:1-64](server/app/db/session.py#L1-L64)
+- [init_db.py:1-101](server/app/db/init_db.py#L1-L101)
+- [__init__.py:1-20](server/app/db/__init__.py#L1-L20)
+- [base.py:1-11](server/app/models/base.py#L1-L11)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [__init__.py:1-136](server/app/models/__init__.py#L1-L136)
+- [env.py:1-89](server/alembic/env.py#L1-L89)
+- [script.py.mako:1-27](server/alembic/script.py.mako#L1-L27)
+- [7eb2ee25df34_initial_workspace_schema.py:1-176](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L1-L176)
+- [5f91820b6334_add_workspaces_and_dual_mode_.py:1-29](server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L1-L29)
+- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:1-50](server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L1-L50)
+- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:1-35](server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L1-L35)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [seed_demo.py:1-1549](server/scripts/seed_demo.py#L1-L1549)
+- [alembic.ini:1-117](server/alembic.ini#L1-L117)
 
 ## Core Components
 - Declarative base and UTC timestamp utility define the ORM foundation.
@@ -131,12 +131,12 @@ SD --> MI
 - Bootstrap admin initialization and demo workspace attachment utilities.
 
 **Section sources**
-- [base.py:1-11](file://server/app/models/base.py#L1-L11)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [env.py:1-89](file://server/alembic/env.py#L1-L89)
-- [init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
+- [base.py:1-11](server/app/models/base.py#L1-L11)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [session.py:1-64](server/app/db/session.py#L1-L64)
+- [env.py:1-89](server/alembic/env.py#L1-L89)
+- [init_db.py:1-101](server/app/db/init_db.py#L1-L101)
 
 ## Architecture Overview
 The database layer follows a clean separation:
@@ -177,12 +177,12 @@ AMETA --> AS
 ```
 
 **Diagram sources**
-- [config.py:19-22](file://server/app/config.py#L19-L22)
-- [session.py:18-44](file://server/app/db/session.py#L18-L44)
-- [base.py:6-11](file://server/app/models/base.py#L6-L11)
-- [core.py:18-124](file://server/app/models/core.py#L18-L124)
-- [users.py:9-92](file://server/app/models/users.py#L9-L92)
-- [env.py:14-31](file://server/alembic/env.py#L14-L31)
+- [config.py:19-22](server/app/config.py#L19-L22)
+- [session.py:18-44](server/app/db/session.py#L18-L44)
+- [base.py:6-11](server/app/models/base.py#L6-L11)
+- [core.py:18-124](server/app/models/core.py#L18-L124)
+- [users.py:9-92](server/app/models/users.py#L9-L92)
+- [env.py:14-31](server/alembic/env.py#L14-L31)
 
 ## Detailed Component Analysis
 
@@ -210,14 +210,14 @@ AuthSession --> Base : "inherits"
 ```
 
 **Diagram sources**
-- [base.py:6-11](file://server/app/models/base.py#L6-L11)
-- [core.py:18-124](file://server/app/models/core.py#L18-L124)
-- [users.py:9-92](file://server/app/models/users.py#L9-L92)
+- [base.py:6-11](server/app/models/base.py#L6-L11)
+- [core.py:18-124](server/app/models/core.py#L18-L124)
+- [users.py:9-92](server/app/models/users.py#L9-L92)
 
 **Section sources**
-- [base.py:1-11](file://server/app/models/base.py#L1-L11)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
+- [base.py:1-11](server/app/models/base.py#L1-L11)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
 
 ### Session Management and Connection Pooling
 - Async engine is lazily created from settings.database_url with echo controlled by debug.
@@ -243,12 +243,12 @@ Conn-->>App : AsyncSession
 ```
 
 **Diagram sources**
-- [session.py:18-56](file://server/app/db/session.py#L18-L56)
-- [config.py:20-21](file://server/app/config.py#L20-L21)
+- [session.py:18-56](server/app/db/session.py#L18-L56)
+- [config.py:20-21](server/app/config.py#L20-L21)
 
 **Section sources**
-- [session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
+- [session.py:1-64](server/app/db/session.py#L1-L64)
+- [config.py:1-152](server/app/config.py#L1-L152)
 
 ### Database Initialization and Admin Bootstrap
 - On startup, a connectivity check executes a simple SELECT against the async engine.
@@ -281,14 +281,14 @@ MoveAdmin --> End
 ```
 
 **Diagram sources**
-- [init_db.py:16-100](file://server/app/db/init_db.py#L16-L100)
-- [config.py:52-62](file://server/app/config.py#L52-L62)
-- [security.py:52-56](file://server/app/core/security.py#L52-L56)
+- [init_db.py:16-100](server/app/db/init_db.py#L16-L100)
+- [config.py:52-62](server/app/config.py#L52-L62)
+- [security.py:52-56](server/app/core/security.py#L52-L56)
 
 **Section sources**
-- [init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
+- [init_db.py:1-101](server/app/db/init_db.py#L1-L101)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
 
 ### Model Inheritance Patterns and Relationships
 - Workspace-scoped entities:
@@ -383,12 +383,12 @@ ROOM ||--o{ SMARTDEVICE : "hosts"
 ```
 
 **Diagram sources**
-- [core.py:18-124](file://server/app/models/core.py#L18-L124)
-- [users.py:9-92](file://server/app/models/users.py#L9-L92)
+- [core.py:18-124](server/app/models/core.py#L18-L124)
+- [users.py:9-92](server/app/models/users.py#L9-L92)
 
 **Section sources**
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
 
 ### Alembic Migration System and Schema Evolution
 - Alembic env.py:
@@ -419,21 +419,21 @@ DB-->>CLI : Apply/Drop tables and indexes
 ```
 
 **Diagram sources**
-- [env.py:11-89](file://server/alembic/env.py#L11-L89)
-- [script.py.mako:1-27](file://server/alembic/script.py.mako#L1-L27)
-- [7eb2ee25df34_initial_workspace_schema.py:21-176](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L21-L176)
-- [5f91820b6334_add_workspaces_and_dual_mode_.py:19-29](file://server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L19-L29)
-- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:21-50](file://server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L21-L50)
-- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:19-35](file://server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L19-L35)
+- [env.py:11-89](server/alembic/env.py#L11-L89)
+- [script.py.mako:1-27](server/alembic/script.py.mako#L1-L27)
+- [7eb2ee25df34_initial_workspace_schema.py:21-176](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L21-L176)
+- [5f91820b6334_add_workspaces_and_dual_mode_.py:19-29](server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L19-L29)
+- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:21-50](server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L21-L50)
+- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:19-35](server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L19-L35)
 
 **Section sources**
-- [env.py:1-89](file://server/alembic/env.py#L1-L89)
-- [script.py.mako:1-27](file://server/alembic/script.py.mako#L1-L27)
-- [7eb2ee25df34_initial_workspace_schema.py:1-176](file://server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L1-L176)
-- [5f91820b6334_add_workspaces_and_dual_mode_.py:1-29](file://server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L1-L29)
-- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:1-50](file://server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L1-L50)
-- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:1-35](file://server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L1-L35)
-- [alembic.ini:1-117](file://server/alembic.ini#L1-L117)
+- [env.py:1-89](server/alembic/env.py#L1-L89)
+- [script.py.mako:1-27](server/alembic/script.py.mako#L1-L27)
+- [7eb2ee25df34_initial_workspace_schema.py:1-176](server/alembic/versions/7eb2ee25df34_initial_workspace_schema.py#L1-L176)
+- [5f91820b6334_add_workspaces_and_dual_mode_.py:1-29](server/alembic/versions/5f91820b6334_add_workspaces_and_dual_mode_.py#L1-L29)
+- [8957f9d4c3ba_add_user_model_for_auth_rbac.py:1-50](server/alembic/versions/8957f9d4c3ba_add_user_model_for_auth_rbac.py#L1-L50)
+- [i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py:1-35](server/alembic/versions/i4j5k6l7m8n9_add_unique_patient_link_per_workspace.py#L1-L35)
+- [alembic.ini:1-117](server/alembic.ini#L1-L117)
 
 ### Transaction Management, Session Lifecycle, and Error Handling
 - Session lifecycle:
@@ -461,14 +461,14 @@ Close --> Resp["Return response"]
 ```
 
 **Diagram sources**
-- [session.py:52-56](file://server/app/db/session.py#L52-L56)
-- [init_db.py:28-65](file://server/app/db/init_db.py#L28-L65)
-- [security.py:43-56](file://server/app/core/security.py#L43-L56)
+- [session.py:52-56](server/app/db/session.py#L52-L56)
+- [init_db.py:28-65](server/app/db/init_db.py#L28-L65)
+- [security.py:43-56](server/app/core/security.py#L43-L56)
 
 **Section sources**
-- [session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
+- [session.py:1-64](server/app/db/session.py#L1-L64)
+- [init_db.py:1-101](server/app/db/init_db.py#L1-L101)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
 
 ### Dual-Mode Workspace Scoping and Data Integrity Rules
 - Workspace mode supports “real” and “simulation” modes to differentiate environments.
@@ -494,40 +494,40 @@ USR --> |Partial Unique| U4["workspace_id + patient_id (NOT NULL)"]
 ```
 
 **Diagram sources**
-- [core.py:29-31](file://server/app/models/core.py#L29-L31)
-- [core.py:89-91](file://server/app/models/core.py#L89-L91)
-- [core.py:107-109](file://server/app/models/core.py#L107-L109)
-- [users.py:13-22](file://server/app/models/users.py#L13-L22)
+- [core.py:29-31](server/app/models/core.py#L29-L31)
+- [core.py:89-91](server/app/models/core.py#L89-L91)
+- [core.py:107-109](server/app/models/core.py#L107-L109)
+- [users.py:13-22](server/app/models/users.py#L13-L22)
 
 **Section sources**
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
 
 ### Practical Examples
 - Model definition pattern:
   - Define a table class inheriting from Base, declare columns and constraints, and optionally add indexes or unique constraints.
-  - Reference [core.py:18-124](file://server/app/models/core.py#L18-L124) and [users.py:9-92](file://server/app/models/users.py#L9-L92).
+  - Reference [core.py:18-124](server/app/models/core.py#L18-L124) and [users.py:9-92](server/app/models/users.py#L9-L92).
 - Creating a migration:
   - Use Alembic CLI to generate a revision from script.py.mako template.
-  - Reference [alembic.ini:1-117](file://server/alembic.ini#L1-L117) and [script.py.mako:1-27](file://server/alembic/script.py.mako#L1-L27).
+  - Reference [alembic.ini:1-117](server/alembic.ini#L1-L117) and [script.py.mako:1-27](server/alembic/script.py.mako#L1-L27).
 - Running migrations:
   - Alembic env.py dynamically loads metadata and applies migrations offline/online.
-  - Reference [env.py:63-89](file://server/alembic/env.py#L63-L89).
+  - Reference [env.py:63-89](server/alembic/env.py#L63-L89).
 - Database operations pattern:
   - Acquire session via get_session() dependency, perform CRUD, commit, and handle exceptions.
-  - Reference [session.py:52-56](file://server/app/db/session.py#L52-L56).
+  - Reference [session.py:52-56](server/app/db/session.py#L52-L56).
 - Demo workspace seeding:
   - scripts/seed_demo.py creates a demo workspace and role-ready data; it uses AsyncSession and model classes.
-  - Reference [seed_demo.py:201-218](file://server/scripts/seed_demo.py#L201-L218).
+  - Reference [seed_demo.py:201-218](server/scripts/seed_demo.py#L201-L218).
 
 **Section sources**
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [alembic.ini:1-117](file://server/alembic.ini#L1-L117)
-- [script.py.mako:1-27](file://server/alembic/script.py.mako#L1-L27)
-- [env.py:63-89](file://server/alembic/env.py#L63-L89)
-- [session.py:52-56](file://server/app/db/session.py#L52-L56)
-- [seed_demo.py:201-218](file://server/scripts/seed_demo.py#L201-L218)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [alembic.ini:1-117](server/alembic.ini#L1-L117)
+- [script.py.mako:1-27](server/alembic/script.py.mako#L1-L27)
+- [env.py:63-89](server/alembic/env.py#L63-L89)
+- [session.py:52-56](server/app/db/session.py#L52-L56)
+- [seed_demo.py:201-218](server/scripts/seed_demo.py#L201-L218)
 
 ## Dependency Analysis
 - The session module depends on configuration for database URLs and debug toggles.
@@ -548,24 +548,24 @@ USERS --> META
 ```
 
 **Diagram sources**
-- [config.py:19-22](file://server/app/config.py#L19-L22)
-- [session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [env.py:14-31](file://server/alembic/env.py#L14-L31)
-- [base.py:6-11](file://server/app/models/base.py#L6-L11)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [__init__.py:1-136](file://server/app/models/__init__.py#L1-L136)
-- [init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
+- [config.py:19-22](server/app/config.py#L19-L22)
+- [session.py:1-64](server/app/db/session.py#L1-L64)
+- [env.py:14-31](server/alembic/env.py#L14-L31)
+- [base.py:6-11](server/app/models/base.py#L6-L11)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [__init__.py:1-136](server/app/models/__init__.py#L1-L136)
+- [init_db.py:1-101](server/app/db/init_db.py#L1-L101)
 
 **Section sources**
-- [config.py:1-152](file://server/app/config.py#L1-L152)
-- [session.py:1-64](file://server/app/db/session.py#L1-L64)
-- [env.py:1-89](file://server/alembic/env.py#L1-L89)
-- [base.py:1-11](file://server/app/models/base.py#L1-L11)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [__init__.py:1-136](file://server/app/models/__init__.py#L1-L136)
-- [init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
+- [config.py:1-152](server/app/config.py#L1-L152)
+- [session.py:1-64](server/app/db/session.py#L1-L64)
+- [env.py:1-89](server/alembic/env.py#L1-L89)
+- [base.py:1-11](server/app/models/base.py#L1-L11)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [__init__.py:1-136](server/app/models/__init__.py#L1-L136)
+- [init_db.py:1-101](server/app/db/init_db.py#L1-L101)
 
 ## Performance Considerations
 - Connection pooling:
@@ -591,10 +591,10 @@ USERS --> META
   - Ensure settings.database_url_sync is correct and env.py can import app.models.Base.metadata.
 
 **Section sources**
-- [session.py:58-64](file://server/app/db/session.py#L58-L64)
-- [init_db.py:16-100](file://server/app/db/init_db.py#L16-L100)
-- [security.py:43-56](file://server/app/core/security.py#L43-L56)
-- [env.py:21-31](file://server/alembic/env.py#L21-L31)
+- [session.py:58-64](server/app/db/session.py#L58-L64)
+- [init_db.py:16-100](server/app/db/init_db.py#L16-L100)
+- [security.py:43-56](server/app/core/security.py#L43-L56)
+- [env.py:21-31](server/alembic/env.py#L21-L31)
 
 ## Conclusion
 The WheelSense database layer leverages SQLAlchemy’s async ORM with a robust workspace-scoped design, strict unique constraints, and Alembic-driven migrations. Session management is streamlined via a lazy-initialized async engine and a reusable session factory. The bootstrap admin and demo workspace attachment utilities simplify local development and testing. Together, these components provide a scalable, maintainable, and integrity-focused persistence layer.
@@ -611,4 +611,4 @@ The WheelSense database layer leverages SQLAlchemy’s async ORM with a robust w
   - bootstrap_admin_enabled, bootstrap_admin_username, bootstrap_admin_password, bootstrap_admin_sync_password, bootstrap_demo_workspace_name, bootstrap_admin_attach_demo_workspace.
 
 **Section sources**
-- [config.py:19-62](file://server/app/config.py#L19-L62)
+- [config.py:19-62](server/app/config.py#L19-L62)

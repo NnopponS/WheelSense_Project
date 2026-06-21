@@ -2,21 +2,21 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/admin/smart-devices/page.tsx)
-- [page.tsx](file://frontend/app/admin/devices/page.tsx)
-- [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
-- [RoomSmartDevicesPanel.tsx](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
-- [smartDeviceOnline.ts](file://frontend/lib/smartDeviceOnline.ts)
-- [homeassistant.py](file://server/app/api/endpoints/homeassistant.py)
-- [homeassistant.py](file://server/app/services/homeassistant.py)
-- [homeassistant.py](file://server/app/schemas/homeassistant.py)
-- [configuration.yaml](file://server/homeassistant/configuration.yaml)
-- [automations.yaml](file://server/homeassistant/automations.yaml)
-- [motion_light.yaml](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
-- [notify_leaving_zone.yaml](file://server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml)
-- [confirmable_notification.yaml](file://server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml)
-- [inverted_binary_sensor.yaml](file://server/homeassistant/blueprints/template/inverted_binary_sensor.yaml)
-- [openapi.generated.json](file://server/openapi.generated.json)
+- [page.tsx](frontend/app/admin/smart-devices/page.tsx)
+- [page.tsx](frontend/app/admin/devices/page.tsx)
+- [DeviceDetailDrawer.tsx](frontend/components/admin/devices/DeviceDetailDrawer.tsx)
+- [RoomSmartDevicesPanel.tsx](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx)
+- [smartDeviceOnline.ts](frontend/lib/smartDeviceOnline.ts)
+- [homeassistant.py](server/app/api/endpoints/homeassistant.py)
+- [homeassistant.py](server/app/services/homeassistant.py)
+- [homeassistant.py](server/app/schemas/homeassistant.py)
+- [configuration.yaml](server/homeassistant/configuration.yaml)
+- [automations.yaml](server/homeassistant/automations.yaml)
+- [motion_light.yaml](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
+- [notify_leaving_zone.yaml](server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml)
+- [confirmable_notification.yaml](server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml)
+- [inverted_binary_sensor.yaml](server/homeassistant/blueprints/template/inverted_binary_sensor.yaml)
+- [openapi.generated.json](server/openapi.generated.json)
 </cite>
 
 ## Table of Contents
@@ -76,30 +76,30 @@ K --> L
 ```
 
 **Diagram sources**
-- [page.tsx:1-7](file://frontend/app/admin/smart-devices/page.tsx#L1-L7)
-- [page.tsx:1-383](file://frontend/app/admin/devices/page.tsx#L1-L383)
-- [DeviceDetailDrawer.tsx:1-1228](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L1228)
-- [RoomSmartDevicesPanel.tsx:1-34](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L1-L34)
-- [smartDeviceOnline.ts:1-10](file://frontend/lib/smartDeviceOnline.ts#L1-L10)
-- [homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
-- [homeassistant.py:1-76](file://server/app/services/homeassistant.py#L1-L76)
-- [homeassistant.py:1-46](file://server/app/schemas/homeassistant.py#L1-L46)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [automations.yaml](file://server/homeassistant/automations.yaml)
-- [openapi.generated.json:5634-5867](file://server/openapi.generated.json#L5634-L5867)
+- [page.tsx:1-7](frontend/app/admin/smart-devices/page.tsx#L1-L7)
+- [page.tsx:1-383](frontend/app/admin/devices/page.tsx#L1-L383)
+- [DeviceDetailDrawer.tsx:1-1228](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L1228)
+- [RoomSmartDevicesPanel.tsx:1-34](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L1-L34)
+- [smartDeviceOnline.ts:1-10](frontend/lib/smartDeviceOnline.ts#L1-L10)
+- [homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
+- [homeassistant.py:1-76](server/app/services/homeassistant.py#L1-L76)
+- [homeassistant.py:1-46](server/app/schemas/homeassistant.py#L1-L46)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [automations.yaml](server/homeassistant/automations.yaml)
+- [openapi.generated.json:5634-5867](server/openapi.generated.json#L5634-L5867)
 
 **Section sources**
-- [page.tsx:1-7](file://frontend/app/admin/smart-devices/page.tsx#L1-L7)
-- [page.tsx:1-383](file://frontend/app/admin/devices/page.tsx#L1-L383)
-- [DeviceDetailDrawer.tsx:1-1228](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L1228)
-- [RoomSmartDevicesPanel.tsx:1-34](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L1-L34)
-- [smartDeviceOnline.ts:1-10](file://frontend/lib/smartDeviceOnline.ts#L1-L10)
-- [homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
-- [homeassistant.py:1-76](file://server/app/services/homeassistant.py#L1-L76)
-- [homeassistant.py:1-46](file://server/app/schemas/homeassistant.py#L1-L46)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [automations.yaml](file://server/homeassistant/automations.yaml)
-- [openapi.generated.json:5634-5867](file://server/openapi.generated.json#L5634-L5867)
+- [page.tsx:1-7](frontend/app/admin/smart-devices/page.tsx#L1-L7)
+- [page.tsx:1-383](frontend/app/admin/devices/page.tsx#L1-L383)
+- [DeviceDetailDrawer.tsx:1-1228](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L1-L1228)
+- [RoomSmartDevicesPanel.tsx:1-34](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L1-L34)
+- [smartDeviceOnline.ts:1-10](frontend/lib/smartDeviceOnline.ts#L1-L10)
+- [homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
+- [homeassistant.py:1-76](server/app/services/homeassistant.py#L1-L76)
+- [homeassistant.py:1-46](server/app/schemas/homeassistant.py#L1-L46)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [automations.yaml](server/homeassistant/automations.yaml)
+- [openapi.generated.json:5634-5867](server/openapi.generated.json#L5634-L5867)
 
 ## Core Components
 - Smart device model and control:
@@ -115,13 +115,13 @@ K --> L
   - Online heuristic determines smart device reachability
 
 **Section sources**
-- [homeassistant.py:1-46](file://server/app/schemas/homeassistant.py#L1-L46)
-- [homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:1-76](file://server/app/services/homeassistant.py#L1-L76)
-- [page.tsx:54-178](file://frontend/app/admin/devices/page.tsx#L54-L178)
-- [DeviceDetailDrawer.tsx:286-640](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
-- [RoomSmartDevicesPanel.tsx:16-34](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L34)
-- [smartDeviceOnline.ts:1-10](file://frontend/lib/smartDeviceOnline.ts#L1-L10)
+- [homeassistant.py:1-46](server/app/schemas/homeassistant.py#L1-L46)
+- [homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:1-76](server/app/services/homeassistant.py#L1-L76)
+- [page.tsx:54-178](frontend/app/admin/devices/page.tsx#L54-L178)
+- [DeviceDetailDrawer.tsx:286-640](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L286-L640)
+- [RoomSmartDevicesPanel.tsx:16-34](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L34)
+- [smartDeviceOnline.ts:1-10](frontend/lib/smartDeviceOnline.ts#L1-L10)
 
 ## Architecture Overview
 The Admin Dashboard integrates with Home Assistant through a dedicated API layer. Admins manage smart devices by creating mappings to HA entities, controlling them via service calls, and monitoring their state. The system caches HA state in the database for display and filtering.
@@ -151,9 +151,9 @@ API-->>Admin : HAResponse with cached state
 ```
 
 **Diagram sources**
-- [homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:20-73](file://server/app/services/homeassistant.py#L20-L73)
-- [openapi.generated.json:5634-5867](file://server/openapi.generated.json#L5634-L5867)
+- [homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:20-73](server/app/services/homeassistant.py#L20-L73)
+- [openapi.generated.json:5634-5867](server/openapi.generated.json#L5634-L5867)
 
 ## Detailed Component Analysis
 
@@ -185,10 +185,10 @@ RenderRegistry --> End
 ```
 
 **Diagram sources**
-- [page.tsx:54-178](file://frontend/app/admin/devices/page.tsx#L54-L178)
+- [page.tsx:54-178](frontend/app/admin/devices/page.tsx#L54-L178)
 
 **Section sources**
-- [page.tsx:54-178](file://frontend/app/admin/devices/page.tsx#L54-L178)
+- [page.tsx:54-178](frontend/app/admin/devices/page.tsx#L54-L178)
 
 ### Device Status Monitoring
 Smart device online status is determined by:
@@ -208,10 +208,10 @@ StateEmpty --> |No| Online["Return true"]
 ```
 
 **Diagram sources**
-- [smartDeviceOnline.ts:1-10](file://frontend/lib/smartDeviceOnline.ts#L1-L10)
+- [smartDeviceOnline.ts:1-10](frontend/lib/smartDeviceOnline.ts#L1-L10)
 
 **Section sources**
-- [smartDeviceOnline.ts:1-10](file://frontend/lib/smartDeviceOnline.ts#L1-L10)
+- [smartDeviceOnline.ts:1-10](frontend/lib/smartDeviceOnline.ts#L1-L10)
 
 ### Home Assistant Bridge Functionality
 The backend provides a Home Assistant bridge with:
@@ -252,13 +252,13 @@ HAResponse --> SmartDevice : "may update cached state"
 ```
 
 **Diagram sources**
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [homeassistant.py:8-46](file://server/app/schemas/homeassistant.py#L8-L46)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [homeassistant.py:8-46](server/app/schemas/homeassistant.py#L8-L46)
 
 **Section sources**
-- [homeassistant.py:65-255](file://server/app/api/endpoints/homeassistant.py#L65-L255)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [homeassistant.py:1-46](file://server/app/schemas/homeassistant.py#L1-L46)
+- [homeassistant.py:65-255](server/app/api/endpoints/homeassistant.py#L65-L255)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [homeassistant.py:1-46](server/app/schemas/homeassistant.py#L1-L46)
 
 ### Device Pairing Procedures
 Admins pair a Home Assistant entity to a smart device by:
@@ -274,9 +274,9 @@ Admins pair a Home Assistant entity to a smart device by:
 The operation logs an activity event and returns the created device.
 
 **Section sources**
-- [page.tsx:82-100](file://frontend/app/admin/devices/page.tsx#L82-L100)
-- [homeassistant.py:84-116](file://server/app/api/endpoints/homeassistant.py#L84-L116)
-- [homeassistant.py:16-26](file://server/app/schemas/homeassistant.py#L16-L26)
+- [page.tsx:82-100](frontend/app/admin/devices/page.tsx#L82-L100)
+- [homeassistant.py:84-116](server/app/api/endpoints/homeassistant.py#L84-L116)
+- [homeassistant.py:16-26](server/app/schemas/homeassistant.py#L16-L26)
 
 ### Automation Rule Management
 Home Assistant automations are managed via configuration and blueprints:
@@ -290,12 +290,12 @@ Administrators can:
 - Use blueprints to accelerate common automation setups
 
 **Section sources**
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [automations.yaml](file://server/homeassistant/automations.yaml)
-- [motion_light.yaml](file://server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
-- [notify_leaving_zone.yaml](file://server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml)
-- [confirmable_notification.yaml](file://server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml)
-- [inverted_binary_sensor.yaml](file://server/homeassistant/blueprints/template/inverted_binary_sensor.yaml)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [automations.yaml](server/homeassistant/automations.yaml)
+- [motion_light.yaml](server/homeassistant/blueprints/automation/homeassistant/motion_light.yaml)
+- [notify_leaving_zone.yaml](server/homeassistant/blueprints/automation/homeassistant/notify_leaving_zone.yaml)
+- [confirmable_notification.yaml](server/homeassistant/blueprints/script/homeassistant/confirmable_notification.yaml)
+- [inverted_binary_sensor.yaml](server/homeassistant/blueprints/template/inverted_binary_sensor.yaml)
 
 ### Smart Device Command Execution
 Admins can control smart devices from the Devices page:
@@ -322,14 +322,14 @@ UI-->>Admin : Feedback
 ```
 
 **Diagram sources**
-- [page.tsx:222-269](file://frontend/app/admin/devices/page.tsx#L222-L269)
-- [homeassistant.py:187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
-- [homeassistant.py:42-73](file://server/app/services/homeassistant.py#L42-L73)
+- [page.tsx:222-269](frontend/app/admin/devices/page.tsx#L222-L269)
+- [homeassistant.py:187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
+- [homeassistant.py:42-73](server/app/services/homeassistant.py#L42-L73)
 
 **Section sources**
-- [page.tsx:222-269](file://frontend/app/admin/devices/page.tsx#L222-L269)
-- [homeassistant.py:187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
-- [homeassistant.py:42-73](file://server/app/services/homeassistant.py#L42-L73)
+- [page.tsx:222-269](frontend/app/admin/devices/page.tsx#L222-L269)
+- [homeassistant.py:187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
+- [homeassistant.py:42-73](server/app/services/homeassistant.py#L42-L73)
 
 ### Device Relationship Management
 Room-scoped device listing:
@@ -341,8 +341,8 @@ Room assignment for registry devices:
 - Room node device keys align registry identifiers with room.node_device_id
 
 **Section sources**
-- [RoomSmartDevicesPanel.tsx:16-34](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L34)
-- [DeviceDetailDrawer.tsx:522-563](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L522-L563)
+- [RoomSmartDevicesPanel.tsx:16-34](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L16-L34)
+- [DeviceDetailDrawer.tsx:522-563](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L522-L563)
 
 ### Status Tracking and Refresh
 - State polling:
@@ -353,9 +353,9 @@ Room assignment for registry devices:
   - Battery and motion metrics are shown for applicable hardware types
 
 **Section sources**
-- [page.tsx:94-100](file://frontend/app/admin/devices/page.tsx#L94-L100)
-- [homeassistant.py:225-253](file://server/app/api/endpoints/homeassistant.py#L225-L253)
-- [DeviceDetailDrawer.tsx:299-331](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx#L299-L331)
+- [page.tsx:94-100](frontend/app/admin/devices/page.tsx#L94-L100)
+- [homeassistant.py:225-253](server/app/api/endpoints/homeassistant.py#L225-L253)
+- [DeviceDetailDrawer.tsx:299-331](frontend/components/admin/devices/DeviceDetailDrawer.tsx#L299-L331)
 
 ## Dependency Analysis
 The smart device integration exhibits clear separation of concerns:
@@ -376,22 +376,22 @@ HA_Automations --> HA_Blueprints["HA Blueprints"]
 ```
 
 **Diagram sources**
-- [page.tsx:82-100](file://frontend/app/admin/devices/page.tsx#L82-L100)
-- [RoomSmartDevicesPanel.tsx:18-26](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L18-L26)
-- [homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
-- [homeassistant.py:1-46](file://server/app/schemas/homeassistant.py#L1-L46)
-- [homeassistant.py:1-76](file://server/app/services/homeassistant.py#L1-L76)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [automations.yaml](file://server/homeassistant/automations.yaml)
+- [page.tsx:82-100](frontend/app/admin/devices/page.tsx#L82-L100)
+- [RoomSmartDevicesPanel.tsx:18-26](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L18-L26)
+- [homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
+- [homeassistant.py:1-46](server/app/schemas/homeassistant.py#L1-L46)
+- [homeassistant.py:1-76](server/app/services/homeassistant.py#L1-L76)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [automations.yaml](server/homeassistant/automations.yaml)
 
 **Section sources**
-- [page.tsx:82-100](file://frontend/app/admin/devices/page.tsx#L82-L100)
-- [RoomSmartDevicesPanel.tsx:18-26](file://frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L18-L26)
-- [homeassistant.py:1-255](file://server/app/api/endpoints/homeassistant.py#L1-L255)
-- [homeassistant.py:1-46](file://server/app/schemas/homeassistant.py#L1-L46)
-- [homeassistant.py:1-76](file://server/app/services/homeassistant.py#L1-L76)
-- [configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
-- [automations.yaml](file://server/homeassistant/automations.yaml)
+- [page.tsx:82-100](frontend/app/admin/devices/page.tsx#L82-L100)
+- [RoomSmartDevicesPanel.tsx:18-26](frontend/components/admin/monitoring/RoomSmartDevicesPanel.tsx#L18-L26)
+- [homeassistant.py:1-255](server/app/api/endpoints/homeassistant.py#L1-L255)
+- [homeassistant.py:1-46](server/app/schemas/homeassistant.py#L1-L46)
+- [homeassistant.py:1-76](server/app/services/homeassistant.py#L1-L76)
+- [configuration.yaml:1-62](server/homeassistant/configuration.yaml#L1-L62)
+- [automations.yaml](server/homeassistant/automations.yaml)
 
 ## Performance Considerations
 - Polling intervals:
@@ -423,9 +423,9 @@ Operational checks:
 - Review activity logs for device lifecycle events
 
 **Section sources**
-- [homeassistant.py:22-40](file://server/app/services/homeassistant.py#L22-L40)
-- [homeassistant.py:201-216](file://server/app/api/endpoints/homeassistant.py#L201-L216)
-- [homeassistant.py:238-243](file://server/app/api/endpoints/homeassistant.py#L238-L243)
+- [homeassistant.py:22-40](server/app/services/homeassistant.py#L22-L40)
+- [homeassistant.py:201-216](server/app/api/endpoints/homeassistant.py#L201-L216)
+- [homeassistant.py:238-243](server/app/api/endpoints/homeassistant.py#L238-L243)
 
 ## Conclusion
 The Smart Device Integration provides a robust Admin Dashboard for managing Home Assistant-powered smart devices. Administrators can discover and pair devices, configure automation rules, control devices, and monitor status. The system’s design separates frontend UX, backend API, and Home Assistant integration, enabling scalable and maintainable smart home operations within the broader IoT ecosystem.

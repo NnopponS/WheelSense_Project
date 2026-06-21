@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/patient/pharmacy/page.tsx)
-- [medication.py](file://server/app/api/endpoints/medication.py)
-- [medication.py](file://server/app/models/medication.py)
-- [medication.py](file://server/app/services/medication.py)
-- [medication.py](file://server/app/schemas/medication.py)
-- [task-scope-types.ts](file://frontend/lib/api/task-scope-types.ts)
-- [PatientWorkflowMailbox.tsx](file://frontend/components/messaging/PatientWorkflowMailbox.tsx)
-- [workflowMessaging.ts](file://frontend/lib/workflowMessaging.ts)
-- [page.tsx](file://frontend/app/patient/messages/page.tsx)
+- [page.tsx](frontend/app/patient/pharmacy/page.tsx)
+- [medication.py](server/app/api/endpoints/medication.py)
+- [medication.py](server/app/models/medication.py)
+- [medication.py](server/app/services/medication.py)
+- [medication.py](server/app/schemas/medication.py)
+- [task-scope-types.ts](frontend/lib/api/task-scope-types.ts)
+- [PatientWorkflowMailbox.tsx](frontend/components/messaging/PatientWorkflowMailbox.tsx)
+- [workflowMessaging.ts](frontend/lib/workflowMessaging.ts)
+- [page.tsx](frontend/app/patient/messages/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -54,22 +54,22 @@ EP --> SCH
 ```
 
 **Diagram sources**
-- [page.tsx:1-413](file://frontend/app/patient/pharmacy/page.tsx#L1-L413)
-- [medication.py:1-169](file://server/app/api/endpoints/medication.py#L1-L169)
-- [medication.py:1-108](file://server/app/services/medication.py#L1-L108)
-- [medication.py:1-54](file://server/app/models/medication.py#L1-L54)
-- [medication.py:1-89](file://server/app/schemas/medication.py#L1-L89)
-- [PatientWorkflowMailbox.tsx:1-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L1-L517)
-- [task-scope-types.ts:1-406](file://frontend/lib/api/task-scope-types.ts#L1-L406)
+- [page.tsx:1-413](frontend/app/patient/pharmacy/page.tsx#L1-L413)
+- [medication.py:1-169](server/app/api/endpoints/medication.py#L1-L169)
+- [medication.py:1-108](server/app/services/medication.py#L1-L108)
+- [medication.py:1-54](server/app/models/medication.py#L1-L54)
+- [medication.py:1-89](server/app/schemas/medication.py#L1-L89)
+- [PatientWorkflowMailbox.tsx:1-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L1-L517)
+- [task-scope-types.ts:1-406](frontend/lib/api/task-scope-types.ts#L1-L406)
 
 **Section sources**
-- [page.tsx:1-413](file://frontend/app/patient/pharmacy/page.tsx#L1-L413)
-- [medication.py:1-169](file://server/app/api/endpoints/medication.py#L1-L169)
-- [medication.py:1-108](file://server/app/services/medication.py#L1-L108)
-- [medication.py:1-54](file://server/app/models/medication.py#L1-L54)
-- [medication.py:1-89](file://server/app/schemas/medication.py#L1-L89)
-- [PatientWorkflowMailbox.tsx:1-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L1-L517)
-- [task-scope-types.ts:1-406](file://frontend/lib/api/task-scope-types.ts#L1-L406)
+- [page.tsx:1-413](frontend/app/patient/pharmacy/page.tsx#L1-L413)
+- [medication.py:1-169](server/app/api/endpoints/medication.py#L1-L169)
+- [medication.py:1-108](server/app/services/medication.py#L1-L108)
+- [medication.py:1-54](server/app/models/medication.py#L1-L54)
+- [medication.py:1-89](server/app/schemas/medication.py#L1-L89)
+- [PatientWorkflowMailbox.tsx:1-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L1-L517)
+- [task-scope-types.ts:1-406](frontend/lib/api/task-scope-types.ts#L1-L406)
 
 ## Core Components
 - Patient Pharmacy Page: Provides refill request form, active prescriptions list, and pharmacy orders history.
@@ -84,12 +84,12 @@ Key capabilities:
 - Communicate with providers using the workflow messaging system.
 
 **Section sources**
-- [page.tsx:71-413](file://frontend/app/patient/pharmacy/page.tsx#L71-L413)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [page.tsx:71-413](frontend/app/patient/pharmacy/page.tsx#L71-L413)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
 
 ## Architecture Overview
 The system follows a layered architecture:
@@ -119,11 +119,11 @@ API-->>U : Order created
 ```
 
 **Diagram sources**
-- [medication.py:35-55](file://server/app/api/endpoints/medication.py#L35-L55)
-- [medication.py:131-152](file://server/app/api/endpoints/medication.py#L131-L152)
-- [medication.py:22-44](file://server/app/services/medication.py#L22-L44)
-- [medication.py:74-103](file://server/app/services/medication.py#L74-L103)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
+- [medication.py:35-55](server/app/api/endpoints/medication.py#L35-L55)
+- [medication.py:131-152](server/app/api/endpoints/medication.py#L131-L152)
+- [medication.py:22-44](server/app/services/medication.py#L22-L44)
+- [medication.py:74-103](server/app/services/medication.py#L74-L103)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
 
 ## Detailed Component Analysis
 
@@ -162,12 +162,12 @@ Reload --> End
 ```
 
 **Diagram sources**
-- [page.tsx:84-130](file://frontend/app/patient/pharmacy/page.tsx#L84-L130)
-- [page.tsx:132-189](file://frontend/app/patient/pharmacy/page.tsx#L132-L189)
-- [page.tsx:293-387](file://frontend/app/patient/pharmacy/page.tsx#L293-L387)
+- [page.tsx:84-130](frontend/app/patient/pharmacy/page.tsx#L84-L130)
+- [page.tsx:132-189](frontend/app/patient/pharmacy/page.tsx#L132-L189)
+- [page.tsx:293-387](frontend/app/patient/pharmacy/page.tsx#L293-L387)
 
 **Section sources**
-- [page.tsx:71-413](file://frontend/app/patient/pharmacy/page.tsx#L71-L413)
+- [page.tsx:71-413](frontend/app/patient/pharmacy/page.tsx#L71-L413)
 
 ### Backend API: Prescriptions and Orders
 Endpoints:
@@ -195,11 +195,11 @@ E-->>P : 201 Created
 ```
 
 **Diagram sources**
-- [medication.py:131-152](file://server/app/api/endpoints/medication.py#L131-L152)
-- [medication.py:74-103](file://server/app/services/medication.py#L74-L103)
+- [medication.py:131-152](server/app/api/endpoints/medication.py#L131-L152)
+- [medication.py:74-103](server/app/services/medication.py#L74-L103)
 
 **Section sources**
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
 
 ### Data Models and Schemas
 Models:
@@ -247,11 +247,11 @@ PRESCRIPTIONS ||--o{ PHARMACY_ORDERS : "links via prescription_id"
 ```
 
 **Diagram sources**
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
 
 **Section sources**
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
 
 ### Workflow Messaging Integration
 The Patient Workflow Mailbox provides:
@@ -277,14 +277,14 @@ MB-->>U : Refresh inbox/sent, show success
 ```
 
 **Diagram sources**
-- [PatientWorkflowMailbox.tsx:97-129](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L97-L129)
-- [workflowMessaging.ts:1-21](file://frontend/lib/workflowMessaging.ts#L1-L21)
-- [page.tsx:1-7](file://frontend/app/patient/messages/page.tsx#L1-L7)
+- [PatientWorkflowMailbox.tsx:97-129](frontend/components/messaging/PatientWorkflowMailbox.tsx#L97-L129)
+- [workflowMessaging.ts:1-21](frontend/lib/workflowMessaging.ts#L1-L21)
+- [page.tsx:1-7](frontend/app/patient/messages/page.tsx#L1-L7)
 
 **Section sources**
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [workflowMessaging.ts:1-21](file://frontend/lib/workflowMessaging.ts#L1-L21)
-- [page.tsx:1-7](file://frontend/app/patient/messages/page.tsx#L1-L7)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [workflowMessaging.ts:1-21](frontend/lib/workflowMessaging.ts#L1-L21)
+- [page.tsx:1-7](frontend/app/patient/messages/page.tsx#L1-L7)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -308,18 +308,18 @@ MW --> EP
 ```
 
 **Diagram sources**
-- [task-scope-types.ts:100-147](file://frontend/lib/api/task-scope-types.ts#L100-L147)
-- [page.tsx:84-94](file://frontend/app/patient/pharmacy/page.tsx#L84-L94)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [medication.py:22-108](file://server/app/services/medication.py#L22-L108)
-- [medication.py:10-54](file://server/app/models/medication.py#L10-L54)
-- [medication.py:11-89](file://server/app/schemas/medication.py#L11-L89)
-- [PatientWorkflowMailbox.tsx:85-95](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L85-L95)
+- [task-scope-types.ts:100-147](frontend/lib/api/task-scope-types.ts#L100-L147)
+- [page.tsx:84-94](frontend/app/patient/pharmacy/page.tsx#L84-L94)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py:22-108](server/app/services/medication.py#L22-L108)
+- [medication.py:10-54](server/app/models/medication.py#L10-L54)
+- [medication.py:11-89](server/app/schemas/medication.py#L11-L89)
+- [PatientWorkflowMailbox.tsx:85-95](frontend/components/messaging/PatientWorkflowMailbox.tsx#L85-L95)
 
 **Section sources**
-- [task-scope-types.ts:100-147](file://frontend/lib/api/task-scope-types.ts#L100-L147)
-- [page.tsx:84-94](file://frontend/app/patient/pharmacy/page.tsx#L84-L94)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [task-scope-types.ts:100-147](frontend/lib/api/task-scope-types.ts#L100-L147)
+- [page.tsx:84-94](frontend/app/patient/pharmacy/page.tsx#L84-L94)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
 
 ## Performance Considerations
 - Pagination and limits: Queries limit results to prevent large payloads.
@@ -347,10 +347,10 @@ Operational tips:
 - For messaging, ensure recipients are selected and content is present before sending.
 
 **Section sources**
-- [page.tsx:76-81](file://frontend/app/patient/pharmacy/page.tsx#L76-L81)
-- [page.tsx:371-379](file://frontend/app/patient/pharmacy/page.tsx#L371-L379)
-- [medication.py:138-140](file://server/app/api/endpoints/medication.py#L138-L140)
-- [medication.py:163-165](file://server/app/api/endpoints/medication.py#L163-L165)
+- [page.tsx:76-81](frontend/app/patient/pharmacy/page.tsx#L76-L81)
+- [page.tsx:371-379](frontend/app/patient/pharmacy/page.tsx#L371-L379)
+- [medication.py:138-140](server/app/api/endpoints/medication.py#L138-L140)
+- [medication.py:163-165](server/app/api/endpoints/medication.py#L163-L165)
 
 ## Conclusion
 The Patient Pharmacy Services interface integrates seamlessly with backend APIs to let patients request refills against active prescriptions, track order status, and communicate with providers via workflow messaging. The system enforces role-based access, validates inputs, and maintains clear separation between UI, API, service, and persistence layers. Pharmacy staff can process orders while patients receive timely updates and notifications through order status changes.

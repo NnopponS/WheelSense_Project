@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/admin/audit/page.tsx)
-- [page.tsx](file://frontend/app/admin/audit-log/page.tsx)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [server.py](file://server/app/mcp/server.py)
-- [f1a2b3c4d5e6_add_device_activity_events.py](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py)
-- [9a6b3f4d2c10_add_workflow_domain_tables.py](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [openapi.generated.json](file://server/openapi.generated.json)
-- [page.tsx](file://frontend/app/admin/audit/page.tsx)
-- [page.tsx](file://frontend/app/admin/audit-log/page.tsx)
+- [page.tsx](frontend/app/admin/audit/page.tsx)
+- [page.tsx](frontend/app/admin/audit-log/page.tsx)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [server.py](server/app/mcp/server.py)
+- [f1a2b3c4d5e6_add_device_activity_events.py](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py)
+- [9a6b3f4d2c10_add_workflow_domain_tables.py](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py)
+- [workflow.py](server/app/models/workflow.py)
+- [openapi.generated.json](server/openapi.generated.json)
+- [page.tsx](frontend/app/admin/audit/page.tsx)
+- [page.tsx](frontend/app/admin/audit-log/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -64,20 +64,20 @@ EP --> OAS
 ```
 
 **Diagram sources**
-- [page.tsx:1-85](file://frontend/app/admin/audit/page.tsx#L1-L85)
-- [page.tsx:1-7](file://frontend/app/admin/audit-log/page.tsx#L1-L7)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [page.tsx:1-85](frontend/app/admin/audit/page.tsx#L1-L85)
+- [page.tsx:1-7](frontend/app/admin/audit-log/page.tsx#L1-L7)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 **Section sources**
-- [page.tsx:1-85](file://frontend/app/admin/audit/page.tsx#L1-L85)
-- [page.tsx:1-7](file://frontend/app/admin/audit-log/page.tsx#L1-L7)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [page.tsx:1-85](frontend/app/admin/audit/page.tsx#L1-L85)
+- [page.tsx:1-7](frontend/app/admin/audit-log/page.tsx#L1-L7)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 ## Core Components
 - Admin Audit Page (frontend): Fetches and displays recent audit events with pagination and basic filtering via URL query parameters. Renders a table with timestamp, domain, action, entity, and details.
@@ -87,11 +87,11 @@ EP --> OAS
 - OpenAPI Contract: Documents the endpoint parameters, defaults, and response schema.
 
 **Section sources**
-- [page.tsx:18-24](file://frontend/app/admin/audit/page.tsx#L18-L24)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [page.tsx:18-24](frontend/app/admin/audit/page.tsx#L18-L24)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 ## Architecture Overview
 The audit trail architecture integrates frontend, backend, and database layers to support compliance and security monitoring.
@@ -114,9 +114,9 @@ FE-->>Admin : Render table with events
 ```
 
 **Diagram sources**
-- [page.tsx:18-24](file://frontend/app/admin/audit/page.tsx#L18-L24)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
+- [page.tsx:18-24](frontend/app/admin/audit/page.tsx#L18-L24)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
 
 ## Detailed Component Analysis
 
@@ -143,10 +143,10 @@ RenderTable --> End
 ```
 
 **Diagram sources**
-- [page.tsx:18-84](file://frontend/app/admin/audit/page.tsx#L18-L84)
+- [page.tsx:18-84](frontend/app/admin/audit/page.tsx#L18-L84)
 
 **Section sources**
-- [page.tsx:1-85](file://frontend/app/admin/audit/page.tsx#L1-L85)
+- [page.tsx:1-85](frontend/app/admin/audit/page.tsx#L1-L85)
 
 ### Workflow Audit Endpoint (Backend)
 - Endpoint: GET /api/workflow/audit
@@ -175,12 +175,12 @@ Router-->>Client : 200 OK JSON
 ```
 
 **Diagram sources**
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 **Section sources**
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 ### Audit Models (Database)
 - audit_trail_events:
@@ -220,14 +220,14 @@ WORKSPACES ||--o{ DEVICE_ACTIVITY_EVENTS : "has"
 ```
 
 **Diagram sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [f1a2b3c4d5e6_add_device_activity_events.py:26-38](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L26-L38)
-- [9a6b3f4d2c10_add_workflow_domain_tables.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [f1a2b3c4d5e6_add_device_activity_events.py:26-38](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L26-L38)
+- [9a6b3f4d2c10_add_workflow_domain_tables.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
 
 **Section sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [f1a2b3c4d5e6_add_device_activity_events.py:21-78](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
-- [9a6b3f4d2c10_add_workflow_domain_tables.py:180-200](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L200)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [f1a2b3c4d5e6_add_device_activity_events.py:21-78](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L21-L78)
+- [9a6b3f4d2c10_add_workflow_domain_tables.py:180-200](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L200)
 
 ### MCP Tool: get_audit_trail
 - Purpose: Programmatic retrieval of audit trail events for admin actors.
@@ -248,10 +248,10 @@ MCP-->>Caller : List of minimal event records
 ```
 
 **Diagram sources**
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
 
 **Section sources**
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
 
 ### Activity Timeline Implementation
 - Timeline events are modeled by ActivityTimeline entries with fields such as event_type, room_id, room_name, description, and source.
@@ -273,10 +273,10 @@ class ActivityTimeline {
 ```
 
 **Diagram sources**
-- [page.tsx:547-570](file://server/tests/test_models.py#L547-L570)
+- [page.tsx:547-570](server/tests/test_models.py#L547-L570)
 
 **Section sources**
-- [page.tsx:547-570](file://server/tests/test_models.py#L547-L570)
+- [page.tsx:547-570](server/tests/test_models.py#L547-L570)
 
 ### Compliance Monitoring and Regulatory Reporting
 - Event categorization: domain, action, entity_type, entity_id enable categorization for compliance domains (e.g., directives, care plans).
@@ -285,9 +285,9 @@ class ActivityTimeline {
 - Retention: Data retention policies can leverage indexed timestamps and workspace scoping for lifecycle management.
 
 **Section sources**
-- [workflow.py:180-196](file://server/app/models/workflow.py#L180-L196)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [workflow.py:180-196](server/app/models/workflow.py#L180-L196)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 ## Dependency Analysis
 - Frontend depends on the backend audit endpoint and OpenAPI spec for type safety.
@@ -305,16 +305,16 @@ API --> OAS["OpenAPI Spec"]
 ```
 
 **Diagram sources**
-- [page.tsx:18-24](file://frontend/app/admin/audit/page.tsx#L18-L24)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [page.tsx:18-24](frontend/app/admin/audit/page.tsx#L18-L24)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 **Section sources**
-- [page.tsx:1-85](file://frontend/app/admin/audit/page.tsx#L1-L85)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
+- [page.tsx:1-85](frontend/app/admin/audit/page.tsx#L1-L85)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
 
 ## Performance Considerations
 - Indexing: audit_trail_events and device_activity_events include strategic indexes on workspace_id, timestamps, and event_type to optimize filtering and sorting.
@@ -323,10 +323,10 @@ API --> OAS["OpenAPI Spec"]
 - Query construction: Backend composes queries with workspace scoping and optional filters to minimize result sets.
 
 **Section sources**
-- [9a6b3f4d2c10_add_workflow_domain_tables.py:180-191](file://server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
-- [f1a2b3c4d5e6_add_device_activity_events.py:39-68](file://server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L39-L68)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [page.tsx:20-24](file://frontend/app/admin/audit/page.tsx#L20-L24)
+- [9a6b3f4d2c10_add_workflow_domain_tables.py:180-191](server/alembic/versions/9a6b3f4d2c10_add_workflow_domain_tables.py#L180-L191)
+- [f1a2b3c4d5e6_add_device_activity_events.py:39-68](server/alembic/versions/f1a2b3c4d5e6_add_device_activity_events.py#L39-L68)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [page.tsx:20-24](frontend/app/admin/audit/page.tsx#L20-L24)
 
 ## Troubleshooting Guide
 - Endpoint returns validation errors: Verify query parameters against the OpenAPI spec (domain, action, entity_type, patient_id, limit).
@@ -335,10 +335,10 @@ API --> OAS["OpenAPI Spec"]
 - Legacy URL: Requests to the old audit log URL are redirected to the canonical audit page.
 
 **Section sources**
-- [openapi.generated.json:7662-7778](file://server/openapi.generated.json#L7662-L7778)
-- [workflow.py:521-544](file://server/app/api/endpoints/workflow.py#L521-L544)
-- [server.py:1757-1769](file://server/app/mcp/server.py#L1757-L1769)
-- [page.tsx:1-7](file://frontend/app/admin/audit-log/page.tsx#L1-L7)
+- [openapi.generated.json:7662-7778](server/openapi.generated.json#L7662-L7778)
+- [workflow.py:521-544](server/app/api/endpoints/workflow.py#L521-L544)
+- [server.py:1757-1769](server/app/mcp/server.py#L1757-L1769)
+- [page.tsx:1-7](frontend/app/admin/audit-log/page.tsx#L1-L7)
 
 ## Conclusion
 The Audit Trail and Compliance feature provides a robust, workspace-scoped audit log with flexible filtering, access control logging, and programmatic access for admins. The frontend offers a responsive interface for reviewing activities, while the backend enforces security and scalability through indexing, limits, and role-based access. Together, these components support compliance monitoring, regulatory reporting, and incident investigation workflows.

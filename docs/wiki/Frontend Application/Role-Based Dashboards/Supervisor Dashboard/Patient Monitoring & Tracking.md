@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [SupervisorDashboardPage.tsx](file://frontend/app/supervisor/page.tsx)
-- [SupervisorPatientDetailPage.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [patientMetrics.ts](file://frontend/lib/patientMetrics.ts)
-- [patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
-- [api.ts](file://frontend/lib/api.ts)
+- [SupervisorDashboardPage.tsx](frontend/app/supervisor/page.tsx)
+- [SupervisorPatientDetailPage.tsx](frontend/app/supervisor/patients/[id]/page.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [patientMetrics.ts](frontend/lib/patientMetrics.ts)
+- [patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
+- [api.ts](frontend/lib/api.ts)
 </cite>
 
 ## Table of Contents
@@ -67,26 +67,26 @@ PRI --> SPD
 ```
 
 **Diagram sources**
-- [SupervisorDashboardPage.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:1-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
-- [SupervisorPatientDetailPage.tsx:65-569](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [patientMetrics.ts:1-21](file://frontend/lib/patientMetrics.ts#L1-L21)
-- [patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [SupervisorDashboardPage.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:1-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
+- [SupervisorPatientDetailPage.tsx:65-569](frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [patientMetrics.ts:1-21](frontend/lib/patientMetrics.ts#L1-L21)
+- [patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:1-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
-- [SupervisorPatientDetailPage.tsx:65-569](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [patientMetrics.ts:1-21](file://frontend/lib/patientMetrics.ts#L1-L21)
-- [patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [SupervisorDashboardPage.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:1-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
+- [SupervisorPatientDetailPage.tsx:65-569](frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [patientMetrics.ts:1-21](frontend/lib/patientMetrics.ts#L1-L21)
+- [patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
 
 ## Core Components
 - SupervisorDashboardPage: Aggregates critical stats, directives, and task queue; embeds a floorplan panel for zone overview.
@@ -104,14 +104,14 @@ Key capabilities:
 - Patient-centric monitoring via alerts, tasks, and directives in the patient detail view.
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:34-394](file://frontend/app/supervisor/page.tsx#L34-L394)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [SupervisorPatientDetailPage.tsx:65-569](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [patientMetrics.ts:1-21](file://frontend/lib/patientMetrics.ts#L1-L21)
-- [patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [SupervisorDashboardPage.tsx:34-394](frontend/app/supervisor/page.tsx#L34-L394)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [SupervisorPatientDetailPage.tsx:65-569](frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [patientMetrics.ts:1-21](frontend/lib/patientMetrics.ts#L1-L21)
+- [patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
 
 ## Architecture Overview
 The Supervisor Dashboard composes modular components:
@@ -138,16 +138,16 @@ FRV-->>U : Render floorplan with occupancy and alerts
 ```
 
 **Diagram sources**
-- [SupervisorDashboardPage.tsx:40-66](file://frontend/app/supervisor/page.tsx#L40-L66)
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
-- [FloorplanRoleViewer.tsx:596-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
-- [api.ts](file://frontend/lib/api.ts)
+- [SupervisorDashboardPage.tsx:40-66](frontend/app/supervisor/page.tsx#L40-L66)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [FloorplanRoleViewer.tsx:596-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
+- [api.ts](frontend/lib/api.ts)
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:40-66](file://frontend/app/supervisor/page.tsx#L40-L66)
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
-- [FloorplanRoleViewer.tsx:596-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
-- [api.ts](file://frontend/lib/api.ts)
+- [SupervisorDashboardPage.tsx:40-66](frontend/app/supervisor/page.tsx#L40-L66)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [FloorplanRoleViewer.tsx:596-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
+- [api.ts](frontend/lib/api.ts)
 
 ## Detailed Component Analysis
 
@@ -189,12 +189,12 @@ Floorplan --> Tasks["Render task queue"]
 ```
 
 **Diagram sources**
-- [SupervisorDashboardPage.tsx:40-118](file://frontend/app/supervisor/page.tsx#L40-L118)
-- [SupervisorDashboardPage.tsx:178-390](file://frontend/app/supervisor/page.tsx#L178-L390)
+- [SupervisorDashboardPage.tsx:40-118](frontend/app/supervisor/page.tsx#L40-L118)
+- [SupervisorDashboardPage.tsx:178-390](frontend/app/supervisor/page.tsx#L178-L390)
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:40-118](file://frontend/app/supervisor/page.tsx#L40-L118)
-- [SupervisorDashboardPage.tsx:178-390](file://frontend/app/supervisor/page.tsx#L178-L390)
+- [SupervisorDashboardPage.tsx:40-118](frontend/app/supervisor/page.tsx#L40-L118)
+- [SupervisorDashboardPage.tsx:178-390](frontend/app/supervisor/page.tsx#L178-L390)
 
 ### DashboardFloorplanPanel
 Responsibilities:
@@ -205,7 +205,7 @@ Implementation highlights:
 - Delegates all rendering and logic to FloorplanRoleViewer.
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ### FloorplanRoleViewer
 Responsibilities:
@@ -240,11 +240,11 @@ Canvas-->>FRV : Interactive room selection
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer.tsx:596-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
-- [FloorplanRoleViewer.tsx:722-780](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L722-L780)
+- [FloorplanRoleViewer.tsx:596-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
+- [FloorplanRoleViewer.tsx:722-780](frontend/components/floorplan/FloorplanRoleViewer.tsx#L722-L780)
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
 
 ### SupervisorPatientDetailPage
 Responsibilities:
@@ -274,13 +274,13 @@ SPD->>DTC : Render Directives card
 ```
 
 **Diagram sources**
-- [SupervisorPatientDetailPage.tsx:77-86](file://frontend/app/supervisor/patients/[id]/page.tsx#L77-L86)
-- [SupervisorPatientDetailPage.tsx:532-557](file://frontend/app/supervisor/patients/[id]/page.tsx#L532-L557)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
+- [SupervisorPatientDetailPage.tsx:77-86](frontend/app/supervisor/patients/[id]/page.tsx#L77-L86)
+- [SupervisorPatientDetailPage.tsx:532-557](frontend/app/supervisor/patients/[id]/page.tsx#L532-L557)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
 
 **Section sources**
-- [SupervisorPatientDetailPage.tsx:65-569](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
-- [patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [SupervisorPatientDetailPage.tsx:65-569](frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
+- [patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
 
 ### Data Table Cards and Status Indicators
 - DataTableCard: Accepts title, description, data rows, columns, loading state, and empty text. Used across dashboard and patient detail pages.
@@ -291,10 +291,10 @@ Usage examples:
 - SupervisorPatientDetailPage renders Alerts, Tasks, and Directives cards.
 
 **Section sources**
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [SupervisorDashboardPage.tsx:178-256](file://frontend/app/supervisor/page.tsx#L178-L256)
-- [SupervisorPatientDetailPage.tsx:532-557](file://frontend/app/supervisor/patients/[id]/page.tsx#L532-L557)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [SupervisorDashboardPage.tsx:178-256](frontend/app/supervisor/page.tsx#L178-L256)
+- [SupervisorPatientDetailPage.tsx:532-557](frontend/app/supervisor/patients/[id]/page.tsx#L532-L557)
 
 ### Monitoring Dashboard Layouts
 - DashboardFloorplanPanel embeds FloorplanRoleViewer with optional initial selections.
@@ -305,9 +305,9 @@ Usage examples:
   - Device and camera telemetry panels in the inspector.
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
-- [FloorplanRoleViewer.tsx:223-281](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L281)
-- [FloorplanRoleViewer.tsx:369-562](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L369-L562)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [FloorplanRoleViewer.tsx:223-281](frontend/components/floorplan/FloorplanRoleViewer.tsx#L223-L281)
+- [FloorplanRoleViewer.tsx:369-562](frontend/components/floorplan/FloorplanRoleViewer.tsx#L369-L562)
 
 ### Patient Monitoring Features
 - Real-time patient location tracking:
@@ -321,9 +321,9 @@ Usage examples:
   - Directives and task queues prioritize actions; quick acknowledgment and completion flows.
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:52-56](file://frontend/app/supervisor/page.tsx#L52-L56)
-- [FloorplanRoleViewer.tsx:682-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L682-L702)
-- [FloorplanRoleViewer.tsx:204-210](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L204-L210)
+- [SupervisorDashboardPage.tsx:52-56](frontend/app/supervisor/page.tsx#L52-L56)
+- [FloorplanRoleViewer.tsx:682-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L682-L702)
+- [FloorplanRoleViewer.tsx:204-210](frontend/components/floorplan/FloorplanRoleViewer.tsx#L204-L210)
 
 ### Supervisor Workflows
 - Monitoring patient conditions:
@@ -379,26 +379,26 @@ SPD --> API
 ```
 
 **Diagram sources**
-- [SupervisorDashboardPage.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:1-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
-- [SupervisorPatientDetailPage.tsx:65-569](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
-- [patientMetrics.ts:1-21](file://frontend/lib/patientMetrics.ts#L1-L21)
+- [SupervisorDashboardPage.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:1-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
+- [SupervisorPatientDetailPage.tsx:65-569](frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [patientMetrics.ts:1-21](frontend/lib/patientMetrics.ts#L1-L21)
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:1-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
-- [SupervisorPatientDetailPage.tsx:65-569](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [patientRoomQuickInfo.ts:1-20](file://frontend/lib/patientRoomQuickInfo.ts#L1-L20)
-- [patientMetrics.ts:1-21](file://frontend/lib/patientMetrics.ts#L1-L21)
+- [SupervisorDashboardPage.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:1-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L800)
+- [SupervisorPatientDetailPage.tsx:65-569](frontend/app/supervisor/patients/[id]/page.tsx#L65-L569)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [patientRoomQuickInfo.ts:1-20](frontend/lib/patientRoomQuickInfo.ts#L1-L20)
+- [patientMetrics.ts:1-21](frontend/lib/patientMetrics.ts#L1-L21)
 
 ## Performance Considerations
 - Polling intervals:
@@ -417,8 +417,8 @@ Recommendations:
 - Consider pagination for large datasets (patients, alerts, tasks).
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:46-56](file://frontend/app/supervisor/page.tsx#L46-L56)
-- [FloorplanRoleViewer.tsx:596-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
+- [SupervisorDashboardPage.tsx:46-56](frontend/app/supervisor/page.tsx#L46-L56)
+- [FloorplanRoleViewer.tsx:596-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -439,8 +439,8 @@ Operational tips:
 - Inspect room occupancy and device telemetry to identify stale or offline nodes.
 
 **Section sources**
-- [SupervisorDashboardPage.tsx:121-141](file://frontend/app/supervisor/page.tsx#L121-L141)
-- [FloorplanRoleViewer.tsx:539-559](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L539-L559)
+- [SupervisorDashboardPage.tsx:121-141](frontend/app/supervisor/page.tsx#L121-L141)
+- [FloorplanRoleViewer.tsx:539-559](frontend/components/floorplan/FloorplanRoleViewer.tsx#L539-L559)
 
 ## Conclusion
 The Supervisor Dashboard provides a comprehensive oversight interface for patient monitoring and tracking. It combines real-time floorplan presence, vital sign summaries, directive and task management, and patient-centric detail views. The modular component architecture ensures maintainability and scalability, while thoughtful data fetching and memoization deliver responsive UX. Supervisors can efficiently monitor conditions, coordinate care, manage flow, and enforce safety protocols through integrated tools and visual indicators.

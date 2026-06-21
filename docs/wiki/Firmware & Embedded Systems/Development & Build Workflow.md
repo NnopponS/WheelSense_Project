@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [Config.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [ConfigManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
-- [NetworkManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
-- [SensorManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
-- [DisplayManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
-- [secrets.h.example (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [Config.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [ConfigManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
+- [NetworkManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [SensorManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [DisplayManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
+- [secrets.h.example (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
 </cite>
 
 ## Table of Contents
@@ -57,15 +57,15 @@ B -. "Telemetry Topics & Payloads" .-> C
 ```
 
 **Diagram sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
 
 **Section sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 ## Core Components
 - PlatformIO Environments
@@ -79,15 +79,15 @@ B -. "Telemetry Topics & Payloads" .-> C
   - Centralized configuration via Preferences, Wi-Fi and MQTT connectivity, sensor fusion and motion computation, and UI rendering.
 
 **Section sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [Config.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [ConfigManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
-- [NetworkManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
-- [SensorManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
-- [DisplayManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [Config.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [ConfigManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
+- [NetworkManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [SensorManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [DisplayManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
 
 ## Architecture Overview
 The firmware architecture centers on a modular manager pattern with a main loop orchestrating sensors, network, BLE scanning, UI, and telemetry publishing. Configuration is persisted and loaded at boot. The telemetry contract governs MQTT messaging semantics.
@@ -114,12 +114,12 @@ Main --> CFG
 ```
 
 **Diagram sources**
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [Config.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [ConfigManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
-- [NetworkManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
-- [SensorManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
-- [DisplayManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [Config.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [ConfigManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
+- [NetworkManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [SensorManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [DisplayManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
 
 ## Detailed Component Analysis
 
@@ -162,12 +162,12 @@ Flash --> End(["Build Complete"])
 ```
 
 **Diagram sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
 
 **Section sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
 
 ### Compilation Process, Dependency Management, and Library Integration
 - Dependencies are declared per environment and resolved by PlatformIO.
@@ -176,8 +176,8 @@ Flash --> End(["Build Complete"])
 - Build flags enable debug logging and hardware-specific features (e.g., PSRAM, camera model).
 
 **Section sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
 
 ### Debugging Workflow
 - Serial Monitoring
@@ -204,14 +204,14 @@ Dev->>Serial : Observe logs and troubleshoot
 ```
 
 **Diagram sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
 
 **Section sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
 
 ### Deployment Procedures
 - M5StickCPlus2
@@ -232,12 +232,12 @@ Verify --> Done(["Deployment Complete"])
 ```
 
 **Diagram sources**
-- [secrets.h.example (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [secrets.h.example (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 **Section sources**
-- [secrets.h.example (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [secrets.h.example (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 ### Version Control Practices, Branching Strategies, and Release Management
 - Use semantic versioning for firmware (e.g., MAJOR.MINOR.PATCH).
@@ -246,7 +246,7 @@ Verify --> Done(["Deployment Complete"])
 - Store firmware versions in configuration headers for runtime identification.
 
 **Section sources**
-- [Config.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [Config.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
 
 ### Continuous Integration, Automated Testing, and Quality Assurance
 - CI should compile both environments and run lint checks.
@@ -261,8 +261,8 @@ Verify --> Done(["Deployment Complete"])
 - Use breakpoints and print statements judiciously; rely on logs for production builds.
 
 **Section sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
 
 ### Firmware Security Considerations, Signing, and Secure Deployment
 - Store secrets securely; do not commit secrets.h.
@@ -271,8 +271,8 @@ Verify --> Done(["Deployment Complete"])
 - Limit exposure of debug logs and disable verbose logging in production.
 
 **Section sources**
-- [secrets.h.example (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [secrets.h.example (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 ### Practical Examples
 - Build and flash M5StickCPlus2: run the M5StickCPlus2 environment; verify serial logs and MQTT data.
@@ -280,9 +280,9 @@ Verify --> Done(["Deployment Complete"])
 - Adjust publish frequency: tune intervals in configuration headers for power/performance trade-offs.
 
 **Section sources**
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [Config.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [Config.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 ## Dependency Analysis
 The M5StickCPlus2 firmware depends on Arduino, M5 hardware libraries, PubSubClient, and ArduinoJson. The Node_Tsimcam environment depends on ArduinoJson, PubSubClient, WebSockets, and an external camera library. Both share the telemetry contract for MQTT messaging.
@@ -303,14 +303,14 @@ CAM -. "Telemetry Contract" .- TC
 ```
 
 **Diagram sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 **Section sources**
-- [platformio.ini (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
-- [platformio.ini (Node_Tsimcam)](file://firmware/Node_Tsimcam/platformio.ini)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [platformio.ini (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [platformio.ini (Node_Tsimcam)](firmware/Node_Tsimcam/platformio.ini)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 ## Performance Considerations
 - Power-aware design: LCD brightness and sleep modes reduce power consumption.
@@ -319,9 +319,9 @@ CAM -. "Telemetry Contract" .- TC
 - Motion detection: auto-stop recording when velocity remains below threshold for a period.
 
 **Section sources**
-- [main.cpp (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
-- [Config.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
-- [SensorManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [main.cpp (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [Config.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [SensorManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
 
 ## Troubleshooting Guide
 - Build Issues
@@ -336,9 +336,9 @@ CAM -. "Telemetry Contract" .- TC
   - Photo transport failures: verify camera model flag and PSRAM availability.
 
 **Section sources**
-- [secrets.h.example (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
-- [NetworkManager.h (M5StickCPlus2)](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [secrets.h.example (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
+- [NetworkManager.h (M5StickCPlus2)](firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
 
 ## Conclusion
 This workflow document outlines a structured approach to developing, building, debugging, and deploying firmware for M5StickCPlus2 and Node_Tsimcam devices. By leveraging PlatformIO environments, adhering to the telemetry contract, and applying sound configuration and security practices, teams can maintain reliable, efficient, and secure firmware releases.
@@ -355,4 +355,4 @@ This workflow document outlines a structured approach to developing, building, d
   - Transport: photo (chunked JSON) and frame (raw JPEG)
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)

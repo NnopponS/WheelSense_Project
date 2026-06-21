@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [main.py](file://server/app/main.py)
-- [config.py](file://server/app/config.py)
-- [router.py](file://server/app/api/router.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [session.py](file://server/app/db/session.py)
-- [env.py](file://server/alembic/env.py)
-- [init_db.py](file://server/app/db/init_db.py)
-- [base.py](file://server/app/models/base.py)
-- [security.py](file://server/app/core/security.py)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [mcp_server.py](file://server/app/mcp_server.py)
-- [base_service.py](file://server/app/services/base.py)
-- [core_schemas.py](file://server/app/schemas/core.py)
+- [main.py](server/app/main.py)
+- [config.py](server/app/config.py)
+- [router.py](server/app/api/router.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [session.py](server/app/db/session.py)
+- [env.py](server/alembic/env.py)
+- [init_db.py](server/app/db/init_db.py)
+- [base.py](server/app/models/base.py)
+- [security.py](server/app/core/security.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [mcp_server.py](server/app/mcp_server.py)
+- [base_service.py](server/app/services/base.py)
+- [core_schemas.py](server/app/schemas/core.py)
 </cite>
 
 ## Table of Contents
@@ -71,25 +71,25 @@ ALEMBICENV --> MODELSBASE
 ```
 
 **Diagram sources**
-- [main.py:68-123](file://server/app/main.py#L68-L123)
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [dependencies.py:25-402](file://server/app/api/dependencies.py#L25-L402)
-- [config.py:12-152](file://server/app/config.py#L12-L152)
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [init_db.py:16-101](file://server/app/db/init_db.py#L16-L101)
-- [base.py:6-11](file://server/app/models/base.py#L6-L11)
-- [env.py:14-89](file://server/alembic/env.py#L14-L89)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mcp_server.py:5-13](file://server/app/mcp_server.py#L5-L13)
+- [main.py:68-123](server/app/main.py#L68-L123)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
+- [dependencies.py:25-402](server/app/api/dependencies.py#L25-L402)
+- [config.py:12-152](server/app/config.py#L12-L152)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [init_db.py:16-101](server/app/db/init_db.py#L16-L101)
+- [base.py:6-11](server/app/models/base.py#L6-L11)
+- [env.py:14-89](server/alembic/env.py#L14-L89)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mcp_server.py:5-13](server/app/mcp_server.py#L5-L13)
 
 **Section sources**
-- [main.py:68-123](file://server/app/main.py#L68-L123)
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [dependencies.py:25-402](file://server/app/api/dependencies.py#L25-L402)
-- [config.py:12-152](file://server/app/config.py#L12-L152)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [env.py:14-89](file://server/alembic/env.py#L14-L89)
+- [main.py:68-123](server/app/main.py#L68-L123)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
+- [dependencies.py:25-402](server/app/api/dependencies.py#L25-L402)
+- [config.py:12-152](server/app/config.py#L12-L152)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [env.py:14-89](server/alembic/env.py#L14-L89)
 
 ## Core Components
 - FastAPI application entrypoint initializes logging, validates runtime settings, sets up database, starts MQTT listener, and mounts routers and optional MCP service.
@@ -101,13 +101,13 @@ ALEMBICENV --> MODELSBASE
 - MCP server exposes remote MCP endpoints and tools when enabled.
 
 **Section sources**
-- [main.py:26-66](file://server/app/main.py#L26-L66)
-- [config.py:19-94](file://server/app/config.py#L19-L94)
-- [dependencies.py:25-170](file://server/app/api/dependencies.py#L25-L170)
-- [base_service.py:13-90](file://server/app/services/base.py#L13-L90)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [mqtt_handler.py:73-325](file://server/app/mqtt_handler.py#L73-L325)
-- [mcp_server.py:5-13](file://server/app/mcp_server.py#L5-L13)
+- [main.py:26-66](server/app/main.py#L26-L66)
+- [config.py:19-94](server/app/config.py#L19-L94)
+- [dependencies.py:25-170](server/app/api/dependencies.py#L25-L170)
+- [base_service.py:13-90](server/app/services/base.py#L13-L90)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [mqtt_handler.py:73-325](server/app/mqtt_handler.py#L73-L325)
+- [mcp_server.py:5-13](server/app/mcp_server.py#L5-L13)
 
 ## Architecture Overview
 The backend follows a layered architecture:
@@ -135,11 +135,11 @@ API --> MCP
 ```
 
 **Diagram sources**
-- [main.py:68-123](file://server/app/main.py#L68-L123)
-- [dependencies.py:41-170](file://server/app/api/dependencies.py#L41-L170)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mcp_server.py:5-13](file://server/app/mcp_server.py#L5-L13)
+- [main.py:68-123](server/app/main.py#L68-L123)
+- [dependencies.py:41-170](server/app/api/dependencies.py#L41-L170)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mcp_server.py:5-13](server/app/mcp_server.py#L5-L13)
 
 ## Detailed Component Analysis
 
@@ -170,13 +170,13 @@ App->>MQTT : cancel task
 ```
 
 **Diagram sources**
-- [main.py:26-66](file://server/app/main.py#L26-L66)
-- [init_db.py:16-101](file://server/app/db/init_db.py#L16-L101)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
+- [main.py:26-66](server/app/main.py#L26-L66)
+- [init_db.py:16-101](server/app/db/init_db.py#L16-L101)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
 
 **Section sources**
-- [main.py:26-66](file://server/app/main.py#L26-L66)
-- [main.py:78-123](file://server/app/main.py#L78-L123)
+- [main.py:26-66](server/app/main.py#L26-L66)
+- [main.py:78-123](server/app/main.py#L78-L123)
 
 ### Dependency Injection and Authentication/Authorization
 - Database session dependency yields an async session factory scoped to requests.
@@ -201,12 +201,12 @@ Roles --> |Yes| Allow["Proceed to Endpoint"]
 ```
 
 **Diagram sources**
-- [dependencies.py:41-170](file://server/app/api/dependencies.py#L41-L170)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
+- [dependencies.py:41-170](server/app/api/dependencies.py#L41-L170)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
 
 **Section sources**
-- [dependencies.py:25-170](file://server/app/api/dependencies.py#L25-L170)
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
+- [dependencies.py:25-170](server/app/api/dependencies.py#L25-L170)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
 
 ### Service Layer and Business Logic
 - Generic CRUD base class enforces workspace isolation and supports create, read, update, delete operations.
@@ -225,10 +225,10 @@ class CRUDBase {
 ```
 
 **Diagram sources**
-- [base_service.py:13-90](file://server/app/services/base.py#L13-L90)
+- [base_service.py:13-90](server/app/services/base.py#L13-L90)
 
 **Section sources**
-- [base_service.py:13-90](file://server/app/services/base.py#L13-L90)
+- [base_service.py:13-90](server/app/services/base.py#L13-L90)
 
 ### Database Layer: SQLAlchemy, Alembic, and Sessions
 - Asynchronous engine and session factory configured with pool settings for PostgreSQL; SQLite detection adjusts behavior.
@@ -247,14 +247,14 @@ ALEMBIC["Alembic env.py"] --> MODELS["models.Base.metadata"]
 ```
 
 **Diagram sources**
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [env.py:21-31](file://server/alembic/env.py#L21-L31)
-- [init_db.py:16-101](file://server/app/db/init_db.py#L16-L101)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [env.py:21-31](server/alembic/env.py#L21-L31)
+- [init_db.py:16-101](server/app/db/init_db.py#L16-L101)
 
 **Section sources**
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [env.py:21-89](file://server/alembic/env.py#L21-L89)
-- [init_db.py:16-101](file://server/app/db/init_db.py#L16-L101)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [env.py:21-89](server/alembic/env.py#L21-L89)
+- [init_db.py:16-101](server/app/db/init_db.py#L16-L101)
 
 ### API Organization and Request/Response Schemas
 - Routers are mounted under /api with prefixes for domains (workspaces, devices, rooms, telemetry, localization, motion, patients, caregivers, facilities, vitals, timeline, alerts, analytics, auth, users, homeassistant, retention, cameras, chat, ai_settings, workflow, floorplans, care, medication, service_requests, calendar, support, chat_actions, demo_control, admin_database, shift_checklist, task_management, tasks).
@@ -299,11 +299,11 @@ R --> TK["/tasks"]
 ```
 
 **Diagram sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
 
 **Section sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [core_schemas.py:6-60](file://server/app/schemas/core.py#L6-L60)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
+- [core_schemas.py:6-60](server/app/schemas/core.py#L6-L60)
 
 ### MQTT Integration for Device Communication
 - Background task subscribes to telemetry, camera, and device ACK topics.
@@ -331,10 +331,10 @@ Handler->>DB : Apply Command ACK
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:73-325](file://server/app/mqtt_handler.py#L73-L325)
+- [mqtt_handler.py:73-325](server/app/mqtt_handler.py#L73-L325)
 
 **Section sources**
-- [mqtt_handler.py:73-667](file://server/app/mqtt_handler.py#L73-L667)
+- [mqtt_handler.py:73-667](server/app/mqtt_handler.py#L73-L667)
 
 ### AI Agent Runtime and MCP Integration
 - MCP server is conditionally mounted based on environment variable.
@@ -350,12 +350,12 @@ REMOTE --> TOOLS["execute_workspace_tool()"]
 ```
 
 **Diagram sources**
-- [main.py:117-123](file://server/app/main.py#L117-L123)
-- [mcp_server.py:5-13](file://server/app/mcp_server.py#L5-L13)
+- [main.py:117-123](server/app/main.py#L117-L123)
+- [mcp_server.py:5-13](server/app/mcp_server.py#L5-L13)
 
 **Section sources**
-- [main.py:117-123](file://server/app/main.py#L117-L123)
-- [mcp_server.py:5-13](file://server/app/mcp_server.py#L5-L13)
+- [main.py:117-123](server/app/main.py#L117-L123)
+- [mcp_server.py:5-13](server/app/mcp_server.py#L5-L13)
 
 ### Transaction Management and Concurrency
 - Async sessions are created per request and committed after write operations.
@@ -363,8 +363,8 @@ REMOTE --> TOOLS["execute_workspace_tool()"]
 - Session factory manages pooling and expiration behavior.
 
 **Section sources**
-- [session.py:52-56](file://server/app/db/session.py#L52-L56)
-- [mqtt_handler.py:161-277](file://server/app/mqtt_handler.py#L161-L277)
+- [session.py:52-56](server/app/db/session.py#L52-L56)
+- [mqtt_handler.py:161-277](server/app/mqtt_handler.py#L161-L277)
 
 ## Dependency Analysis
 - Application depends on configuration, database session factory, and routers.
@@ -386,19 +386,19 @@ ALEMBIC["server/alembic/env.py"] --> MODELS
 ```
 
 **Diagram sources**
-- [main.py:68-123](file://server/app/main.py#L68-L123)
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [dependencies.py:25-402](file://server/app/api/dependencies.py#L25-L402)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [base.py:6-11](file://server/app/models/base.py#L6-L11)
-- [env.py:14-89](file://server/alembic/env.py#L14-L89)
+- [main.py:68-123](server/app/main.py#L68-L123)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
+- [dependencies.py:25-402](server/app/api/dependencies.py#L25-L402)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [base.py:6-11](server/app/models/base.py#L6-L11)
+- [env.py:14-89](server/alembic/env.py#L14-L89)
 
 **Section sources**
-- [main.py:68-123](file://server/app/main.py#L68-L123)
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
-- [dependencies.py:25-402](file://server/app/api/dependencies.py#L25-L402)
-- [session.py:18-64](file://server/app/db/session.py#L18-L64)
-- [env.py:14-89](file://server/alembic/env.py#L14-L89)
+- [main.py:68-123](server/app/main.py#L68-L123)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
+- [dependencies.py:25-402](server/app/api/dependencies.py#L25-L402)
+- [session.py:18-64](server/app/db/session.py#L18-L64)
+- [env.py:14-89](server/alembic/env.py#L14-L89)
 
 ## Performance Considerations
 - Asynchronous database operations reduce blocking during I/O-bound requests.
@@ -416,10 +416,10 @@ ALEMBIC["server/alembic/env.py"] --> MODELS
 - MCP availability: Ensure environment flag allows mounting and that OAuth scopes are correctly advertised.
 
 **Section sources**
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [session.py:58-64](file://server/app/db/session.py#L58-L64)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [main.py:117-123](file://server/app/main.py#L117-L123)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [session.py:58-64](server/app/db/session.py#L58-L64)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [main.py:117-123](server/app/main.py#L117-L123)
 
 ## Conclusion
 The WheelSense backend integrates FastAPI, async SQLAlchemy, Alembic, and MQTT to deliver a scalable IoT platform. The dependency injection and RBAC layers ensure secure, workspace-scoped operations, while the service layer organizes business logic cleanly. MQTT ingestion powers real-time telemetry and alerts, and MCP enables extensible tooling. Proper configuration, logging, and retention policies support reliable operation across environments.

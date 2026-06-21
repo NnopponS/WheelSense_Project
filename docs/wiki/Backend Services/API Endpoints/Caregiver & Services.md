@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [router.py](file://server/app/api/router.py)
-- [caregivers.py](file://server/app/api/endpoints/caregivers.py)
-- [care.py](file://server/app/api/endpoints/care.py)
-- [service_requests.py](file://server/app/api/endpoints/service_requests.py)
-- [medication.py](file://server/app/api/endpoints/medication.py)
-- [caregivers.py (schemas)](file://server/app/schemas/caregivers.py)
-- [service_requests.py (schemas)](file://server/app/schemas/service_requests.py)
-- [medication.py (schemas)](file://server/app/schemas/medication.py)
-- [caregivers.py (models)](file://server/app/models/caregivers.py)
-- [service_requests.py (models)](file://server/app/models/service_requests.py)
-- [medication.py (models)](file://server/app/models/medication.py)
+- [router.py](server/app/api/router.py)
+- [caregivers.py](server/app/api/endpoints/caregivers.py)
+- [care.py](server/app/api/endpoints/care.py)
+- [service_requests.py](server/app/api/endpoints/service_requests.py)
+- [medication.py](server/app/api/endpoints/medication.py)
+- [caregivers.py (schemas)](server/app/schemas/caregivers.py)
+- [service_requests.py (schemas)](server/app/schemas/service_requests.py)
+- [medication.py (schemas)](server/app/schemas/medication.py)
+- [caregivers.py (models)](server/app/models/caregivers.py)
+- [service_requests.py (models)](server/app/models/service_requests.py)
+- [medication.py (models)](server/app/models/medication.py)
 </cite>
 
 ## Table of Contents
@@ -56,10 +56,10 @@ API --> MED["Medication Router (/api/medication)"]
 ```
 
 **Diagram sources**
-- [router.py:26-96](file://server/app/api/router.py#L26-L96)
+- [router.py:26-96](server/app/api/router.py#L26-L96)
 
 **Section sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
 
 ## Core Components
 - Caregivers API: Provides CRUD for caregivers, zone assignments, shifts, device assignments, and caregiver-patient access management.
@@ -68,10 +68,10 @@ API --> MED["Medication Router (/api/medication)"]
 - Medication API: Supports listing and managing prescriptions and pharmacy orders, with patient visibility controls and role-based access.
 
 **Section sources**
-- [caregivers.py:100-269](file://server/app/api/endpoints/caregivers.py#L100-L269)
-- [care.py:21-59](file://server/app/api/endpoints/care.py#L21-L59)
-- [service_requests.py:17-55](file://server/app/api/endpoints/service_requests.py#L17-L55)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [caregivers.py:100-269](server/app/api/endpoints/caregivers.py#L100-L269)
+- [care.py:21-59](server/app/api/endpoints/care.py#L21-L59)
+- [service_requests.py:17-55](server/app/api/endpoints/service_requests.py#L17-L55)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
 
 ## Architecture Overview
 The API layer composes domain routers and enforces workspace-scoped access and roles. Each endpoint validates the current user’s role and workspace membership before operating on domain models.
@@ -112,11 +112,11 @@ S_MD --> M_MD
 ```
 
 **Diagram sources**
-- [router.py:26-96](file://server/app/api/router.py#L26-L96)
-- [caregivers.py:44](file://server/app/api/endpoints/caregivers.py#L44)
-- [care.py:14](file://server/app/api/endpoints/care.py#L14)
-- [service_requests.py:12](file://server/app/api/endpoints/service_requests.py#L12)
-- [medication.py:28](file://server/app/api/endpoints/medication.py#L28)
+- [router.py:26-96](server/app/api/router.py#L26-L96)
+- [caregivers.py:44](server/app/api/endpoints/caregivers.py#L44)
+- [care.py:14](server/app/api/endpoints/care.py#L14)
+- [service_requests.py:12](server/app/api/endpoints/service_requests.py#L12)
+- [medication.py:28](server/app/api/endpoints/medication.py#L28)
 
 ## Detailed Component Analysis
 
@@ -326,7 +326,7 @@ CAREGIVER ||--o{ CAREGIVER_DEVICE_ASSIGNMENT : "uses"
 ```
 
 **Diagram sources**
-- [caregivers.py (models):22-166](file://server/app/models/caregivers.py#L22-L166)
+- [caregivers.py (models):22-166](server/app/models/caregivers.py#L22-L166)
 
 #### Sequence: Create Caregiver
 
@@ -345,8 +345,8 @@ R-->>C : 201 CareGiverOut
 ```
 
 **Diagram sources**
-- [caregivers.py:110-117](file://server/app/api/endpoints/caregivers.py#L110-L117)
-- [caregivers.py:44](file://server/app/api/endpoints/caregivers.py#L44)
+- [caregivers.py:110-117](server/app/api/endpoints/caregivers.py#L110-L117)
+- [caregivers.py:44](server/app/api/endpoints/caregivers.py#L44)
 
 #### Sequence: Replace Caregiver-Patient Access
 
@@ -363,12 +363,12 @@ R-->>C : 200 Array of CaregiverPatientAccessOut
 ```
 
 **Diagram sources**
-- [caregivers.py:140-191](file://server/app/api/endpoints/caregivers.py#L140-L191)
+- [caregivers.py:140-191](server/app/api/endpoints/caregivers.py#L140-L191)
 
 **Section sources**
-- [caregivers.py:100-502](file://server/app/api/endpoints/caregivers.py#L100-L502)
-- [caregivers.py (schemas):11-122](file://server/app/schemas/caregivers.py#L11-L122)
-- [caregivers.py (models):22-166](file://server/app/models/caregivers.py#L22-L166)
+- [caregivers.py:100-502](server/app/api/endpoints/caregivers.py#L100-L502)
+- [caregivers.py (schemas):11-122](server/app/schemas/caregivers.py#L11-L122)
+- [caregivers.py (models):22-166](server/app/models/caregivers.py#L22-L166)
 
 ### Care Team Coordination and Specialist Lookup
 
@@ -400,7 +400,7 @@ R-->>C : 200 Array of CaregiverPatientAccessOut
 Note: The specialist resource is backed by the care service and is used to enrich caregiver profiles with specialty information.
 
 **Section sources**
-- [care.py:21-59](file://server/app/api/endpoints/care.py#L21-L59)
+- [care.py:21-59](server/app/api/endpoints/care.py#L21-L59)
 
 ### Service Request Handling
 
@@ -453,7 +453,7 @@ timestamp updated_at
 ```
 
 **Diagram sources**
-- [service_requests.py (models):10-45](file://server/app/models/service_requests.py#L10-L45)
+- [service_requests.py (models):10-45](server/app/models/service_requests.py#L10-L45)
 
 #### Sequence: Create Service Request (Patient)
 
@@ -472,13 +472,13 @@ R-->>P : 201 ServiceRequestOut
 ```
 
 **Diagram sources**
-- [service_requests.py:36-44](file://server/app/api/endpoints/service_requests.py#L36-L44)
-- [service_requests.py:12](file://server/app/api/endpoints/service_requests.py#L12)
+- [service_requests.py:36-44](server/app/api/endpoints/service_requests.py#L36-L44)
+- [service_requests.py:12](server/app/api/endpoints/service_requests.py#L12)
 
 **Section sources**
-- [service_requests.py:17-55](file://server/app/api/endpoints/service_requests.py#L17-L55)
-- [service_requests.py (schemas):14-39](file://server/app/schemas/service_requests.py#L14-L39)
-- [service_requests.py (models):10-45](file://server/app/models/service_requests.py#L10-L45)
+- [service_requests.py:17-55](server/app/api/endpoints/service_requests.py#L17-L55)
+- [service_requests.py (schemas):14-39](server/app/schemas/service_requests.py#L14-L39)
+- [service_requests.py (models):10-45](server/app/models/service_requests.py#L10-L45)
 
 ### Medication Management
 
@@ -573,7 +573,7 @@ PRESCRIPTION ||--o{ PHARMACY_ORDER : "generates"
 ```
 
 **Diagram sources**
-- [medication.py (models):10-54](file://server/app/models/medication.py#L10-L54)
+- [medication.py (models):10-54](server/app/models/medication.py#L10-L54)
 
 #### Sequence: Patient Requests Pharmacy Order
 
@@ -592,13 +592,13 @@ R-->>PT : 201 PharmacyOrderOut
 ```
 
 **Diagram sources**
-- [medication.py:131-152](file://server/app/api/endpoints/medication.py#L131-L152)
-- [medication.py:28](file://server/app/api/endpoints/medication.py#L28)
+- [medication.py:131-152](server/app/api/endpoints/medication.py#L131-L152)
+- [medication.py:28](server/app/api/endpoints/medication.py#L28)
 
 **Section sources**
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
-- [medication.py (schemas):11-89](file://server/app/schemas/medication.py#L11-L89)
-- [medication.py (models):10-54](file://server/app/models/medication.py#L10-L54)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)
+- [medication.py (schemas):11-89](server/app/schemas/medication.py#L11-L89)
+- [medication.py (models):10-54](server/app/models/medication.py#L10-L54)
 
 ### Care Plan Management and Service Delivery Tracking
 While dedicated “care plan” and “service delivery” resources are not present in the referenced files, the following patterns align with the existing domain:
@@ -622,10 +622,10 @@ D --> E4["/api/medication/*"]
 ```
 
 **Diagram sources**
-- [router.py:26-96](file://server/app/api/router.py#L26-L96)
+- [router.py:26-96](server/app/api/router.py#L26-L96)
 
 **Section sources**
-- [router.py:16-159](file://server/app/api/router.py#L16-L159)
+- [router.py:16-159](server/app/api/router.py#L16-L159)
 
 ## Performance Considerations
 - Pagination and limits: Several endpoints cap results (e.g., limit=200) to control payload sizes.
@@ -642,8 +642,8 @@ D --> E4["/api/medication/*"]
 - Role mismatches: Ensure the caller has the required roles for the endpoint (e.g., patient_managers for caregiver CRUD).
 
 **Section sources**
-- [medication.py:138-140](file://server/app/api/endpoints/medication.py#L138-L140)
-- [caregivers.py:49-96](file://server/app/api/endpoints/caregivers.py#L49-L96)
+- [medication.py:138-140](server/app/api/endpoints/medication.py#L138-L140)
+- [caregivers.py:49-96](server/app/api/endpoints/caregivers.py#L49-L96)
 
 ## Conclusion
 The caregiver and service management APIs provide a cohesive foundation for staffing, scheduling, care coordination, and service delivery. By leveraging role-based access, workspace scoping, and explicit schemas, integrators can build robust workflows around caregiver operations, specialist coordination, service requests, and medication management.
@@ -694,7 +694,7 @@ The caregiver and service management APIs provide a cohesive foundation for staf
   - PATCH /api/medication/pharmacy/orders/{id}
 
 **Section sources**
-- [caregivers.py:100-502](file://server/app/api/endpoints/caregivers.py#L100-L502)
-- [care.py:21-59](file://server/app/api/endpoints/care.py#L21-L59)
-- [service_requests.py:17-55](file://server/app/api/endpoints/service_requests.py#L17-L55)
-- [medication.py:35-169](file://server/app/api/endpoints/medication.py#L35-L169)
+- [caregivers.py:100-502](server/app/api/endpoints/caregivers.py#L100-L502)
+- [care.py:21-59](server/app/api/endpoints/care.py#L21-L59)
+- [service_requests.py:17-55](server/app/api/endpoints/service_requests.py#L17-L55)
+- [medication.py:35-169](server/app/api/endpoints/medication.py#L35-L169)

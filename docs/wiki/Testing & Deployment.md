@@ -2,22 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**
-- [pytest.ini](file://server/pytest.ini)
-- [pyproject.toml](file://server/pyproject.toml)
-- [requirements.txt](file://server/requirements.txt)
-- [conftest.py](file://server/tests/conftest.py)
-- [Dockerfile (server)](file://server/Dockerfile)
-- [docker-compose.yml](file://server/docker-compose.yml)
-- [docker-compose.core.yml](file://server/docker-compose.core.yml)
-- [docker-compose.data-prod.yml](file://server/docker-compose.data-prod.yml)
-- [docker-compose.sim.yml](file://server/docker-compose.sim.yml)
-- [start-prod.sh](file://server/scripts/start-prod.sh)
-- [start-sim.sh](file://server/scripts/start-sim.sh)
-- [Dockerfile (frontend)](file://frontend/Dockerfile)
-- [package.json](file://frontend/package.json)
-- [sim_controller.py](file://server/sim_controller.py)
-- [mypy.ini](file://server/mypy.ini)
-- [MCP-README.md](file://docs/MCP-README.md)
+- [pytest.ini](server/pytest.ini)
+- [pyproject.toml](server/pyproject.toml)
+- [requirements.txt](server/requirements.txt)
+- [conftest.py](server/tests/conftest.py)
+- [Dockerfile (server)](server/Dockerfile)
+- [docker-compose.yml](server/docker-compose.yml)
+- [docker-compose.core.yml](server/docker-compose.core.yml)
+- [docker-compose.data-prod.yml](server/docker-compose.data-prod.yml)
+- [docker-compose.sim.yml](server/docker-compose.sim.yml)
+- [start-prod.sh](server/scripts/start-prod.sh)
+- [start-sim.sh](server/scripts/start-sim.sh)
+- [Dockerfile (frontend)](frontend/Dockerfile)
+- [package.json](frontend/package.json)
+- [sim_controller.py](server/sim_controller.py)
+- [mypy.ini](server/mypy.ini)
+- [MCP-README.md](docs/MCP-README.md)
 </cite>
 
 ## Table of Contents
@@ -70,16 +70,16 @@ FW --> SIM
 ```
 
 **Diagram sources**
-- [Dockerfile (server):1-22](file://server/Dockerfile#L1-L22)
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [Dockerfile (frontend):1-31](file://frontend/Dockerfile#L1-L31)
-- [sim_controller.py:1-200](file://server/sim_controller.py#L1-L200)
+- [Dockerfile (server):1-22](server/Dockerfile#L1-L22)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [Dockerfile (frontend):1-31](frontend/Dockerfile#L1-L31)
+- [sim_controller.py:1-200](server/sim_controller.py#L1-L200)
 
 **Section sources**
-- [Dockerfile (server):1-22](file://server/Dockerfile#L1-L22)
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [Dockerfile (frontend):1-31](file://frontend/Dockerfile#L1-L31)
-- [sim_controller.py:1-200](file://server/sim_controller.py#L1-L200)
+- [Dockerfile (server):1-22](server/Dockerfile#L1-L22)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [Dockerfile (frontend):1-31](frontend/Dockerfile#L1-L31)
+- [sim_controller.py:1-200](server/sim_controller.py#L1-L200)
 
 ## Core Components
 - Backend testing framework: pytest with async fixtures, in-memory SQLite, and dependency overrides for isolation and speed.
@@ -89,15 +89,15 @@ FW --> SIM
 - Environment management: Separate production and simulator stacks with isolated volumes and ports.
 
 **Section sources**
-- [pytest.ini:1-5](file://server/pytest.ini#L1-L5)
-- [pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [conftest.py:1-189](file://server/tests/conftest.py#L1-L189)
-- [package.json:1-58](file://frontend/package.json#L1-L58)
-- [sim_controller.py:1-200](file://server/sim_controller.py#L1-L200)
-- [Dockerfile (server):1-22](file://server/Dockerfile#L1-L22)
-- [Dockerfile (frontend):1-31](file://frontend/Dockerfile#L1-L31)
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
+- [pytest.ini:1-5](server/pytest.ini#L1-L5)
+- [pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [conftest.py:1-189](server/tests/conftest.py#L1-L189)
+- [package.json:1-58](frontend/package.json#L1-L58)
+- [sim_controller.py:1-200](server/sim_controller.py#L1-L200)
+- [Dockerfile (server):1-22](server/Dockerfile#L1-L22)
+- [Dockerfile (frontend):1-31](frontend/Dockerfile#L1-L31)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
 
 ## Architecture Overview
 The testing and deployment architecture integrates:
@@ -126,11 +126,11 @@ BE --> DB
 ```
 
 **Diagram sources**
-- [Dockerfile (server):1-22](file://server/Dockerfile#L1-L22)
-- [Dockerfile (frontend):1-31](file://frontend/Dockerfile#L1-L31)
-- [docker-compose.core.yml](file://server/docker-compose.core.yml)
-- [docker-compose.data-prod.yml](file://server/docker-compose.data-prod.yml)
-- [sim_controller.py:1-200](file://server/sim_controller.py#L1-L200)
+- [Dockerfile (server):1-22](server/Dockerfile#L1-L22)
+- [Dockerfile (frontend):1-31](frontend/Dockerfile#L1-L31)
+- [docker-compose.core.yml](server/docker-compose.core.yml)
+- [docker-compose.data-prod.yml](server/docker-compose.data-prod.yml)
+- [sim_controller.py:1-200](server/sim_controller.py#L1-L200)
 
 ## Detailed Component Analysis
 
@@ -153,13 +153,13 @@ Teardown --> End(["pytest session end"])
 ```
 
 **Diagram sources**
-- [conftest.py:13-86](file://server/tests/conftest.py#L13-L86)
+- [conftest.py:13-86](server/tests/conftest.py#L13-L86)
 
 **Section sources**
-- [pytest.ini:1-5](file://server/pytest.ini#L1-L5)
-- [pyproject.toml:7-15](file://server/pyproject.toml#L7-L15)
-- [requirements.txt:16-25](file://server/requirements.txt#L16-L25)
-- [conftest.py:1-189](file://server/tests/conftest.py#L1-L189)
+- [pytest.ini:1-5](server/pytest.ini#L1-L5)
+- [pyproject.toml:7-15](server/pyproject.toml#L7-L15)
+- [requirements.txt:16-25](server/requirements.txt#L16-L25)
+- [conftest.py:1-189](server/tests/conftest.py#L1-L189)
 
 ### Frontend Testing Strategy (Next.js)
 - Tooling: Next.js dev/build/start commands and ESLint integration.
@@ -174,12 +174,12 @@ Build --> OpenAPI["npm run openapi:types<br/>export + generate types"]
 ```
 
 **Diagram sources**
-- [package.json:5-11](file://frontend/package.json#L5-L11)
-- [Dockerfile (frontend):14-15](file://frontend/Dockerfile#L14-L15)
+- [package.json:5-11](frontend/package.json#L5-L11)
+- [Dockerfile (frontend):14-15](frontend/Dockerfile#L14-L15)
 
 **Section sources**
-- [package.json:1-58](file://frontend/package.json#L1-L58)
-- [Dockerfile (frontend):1-31](file://frontend/Dockerfile#L1-L31)
+- [package.json:1-58](frontend/package.json#L1-L58)
+- [Dockerfile (frontend):1-31](frontend/Dockerfile#L1-L31)
 
 ### Device Simulation Testing
 - Simulation controller orchestrates patient vitals, room movements, alerts, and workflow events.
@@ -201,10 +201,10 @@ BE-->>BE : "Persist events, emit alerts, update timelines"
 ```
 
 **Diagram sources**
-- [sim_controller.py:1-200](file://server/sim_controller.py#L1-L200)
+- [sim_controller.py:1-200](server/sim_controller.py#L1-L200)
 
 **Section sources**
-- [sim_controller.py:1-200](file://server/sim_controller.py#L1-L200)
+- [sim_controller.py:1-200](server/sim_controller.py#L1-L200)
 
 ### Docker Deployment Configuration
 - Server image: Python slim base, installs system build dependencies, copies app, alembic, scripts, seeds, and runs migrations then starts Uvicorn.
@@ -226,17 +226,17 @@ SIMSET --> SIM
 ```
 
 **Diagram sources**
-- [docker-compose.yml:7-10](file://server/docker-compose.yml#L7-L10)
-- [docker-compose.core.yml](file://server/docker-compose.core.yml)
-- [docker-compose.data-prod.yml](file://server/docker-compose.data-prod.yml)
-- [docker-compose.sim.yml](file://server/docker-compose.sim.yml)
+- [docker-compose.yml:7-10](server/docker-compose.yml#L7-L10)
+- [docker-compose.core.yml](server/docker-compose.core.yml)
+- [docker-compose.data-prod.yml](server/docker-compose.data-prod.yml)
+- [docker-compose.sim.yml](server/docker-compose.sim.yml)
 
 **Section sources**
-- [Dockerfile (server):1-22](file://server/Dockerfile#L1-L22)
-- [Dockerfile (frontend):1-31](file://frontend/Dockerfile#L1-L31)
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [start-prod.sh:1-134](file://server/scripts/start-prod.sh#L1-L134)
-- [start-sim.sh:1-134](file://server/scripts/start-sim.sh#L1-L134)
+- [Dockerfile (server):1-22](server/Dockerfile#L1-L22)
+- [Dockerfile (frontend):1-31](frontend/Dockerfile#L1-L31)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [start-prod.sh:1-134](server/scripts/start-prod.sh#L1-L134)
+- [start-sim.sh:1-134](server/scripts/start-sim.sh#L1-L134)
 
 ### Environment Management and Scaling
 - Environments: Production vs simulator with isolated volumes and ports.
@@ -245,9 +245,9 @@ SIMSET --> SIM
 - Data: PostgreSQL managed by compose; migrations applied at startup.
 
 **Section sources**
-- [start-prod.sh:113-118](file://server/scripts/start-prod.sh#L113-L118)
-- [start-sim.sh:114-118](file://server/scripts/start-sim.sh#L114-L118)
-- [docker-compose.data-prod.yml](file://server/docker-compose.data-prod.yml)
+- [start-prod.sh:113-118](server/scripts/start-prod.sh#L113-L118)
+- [start-sim.sh:114-118](server/scripts/start-sim.sh#L114-L118)
+- [docker-compose.data-prod.yml](server/docker-compose.data-prod.yml)
 
 ### CI/CD Pipeline, Automated Testing, and Release Management
 - Linting and formatting: Ruff configured for target Python version and line length.
@@ -265,9 +265,9 @@ Recommended CI stages (conceptual):
 - Smoke tests and health checks
 
 **Section sources**
-- [pyproject.toml:7-15](file://server/pyproject.toml#L7-L15)
-- [mypy.ini:1-3](file://server/mypy.ini#L1-L3)
-- [requirements.txt:24-24](file://server/requirements.txt#L24-L24)
+- [pyproject.toml:7-15](server/pyproject.toml#L7-L15)
+- [mypy.ini:1-3](server/mypy.ini#L1-L3)
+- [requirements.txt:24-24](server/requirements.txt#L24-L24)
 
 ### Production Deployment Procedures
 - Pre-deploy:
@@ -293,11 +293,11 @@ Services-->>Ops : "Expose ports and readiness"
 ```
 
 **Diagram sources**
-- [start-prod.sh:95-106](file://server/scripts/start-prod.sh#L95-L106)
+- [start-prod.sh:95-106](server/scripts/start-prod.sh#L95-L106)
 
 **Section sources**
-- [start-prod.sh:1-134](file://server/scripts/start-prod.sh#L1-L134)
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
+- [start-prod.sh:1-134](server/scripts/start-prod.sh#L1-L134)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
 
 ### Monitoring Setup and Maintenance
 - Health endpoints: Use backend health checks and frontend reachability.
@@ -306,7 +306,7 @@ Services-->>Ops : "Expose ports and readiness"
 - Maintenance: Scheduled jobs via APScheduler; retention worker for cleanup.
 
 **Section sources**
-- [requirements.txt:23-23](file://server/requirements.txt#L23-L23)
+- [requirements.txt:23-23](server/requirements.txt#L23-L23)
 
 ### Backup Strategies, Disaster Recovery, and Performance Optimization
 - Backups:
@@ -321,9 +321,9 @@ Services-->>Ops : "Expose ports and readiness"
   - Cache static assets and leverage CDN for frontend.
 
 **Section sources**
-- [start-sim.sh:77-87](file://server/scripts/start-sim.sh#L77-L87)
-- [start-prod.sh:76-86](file://server/scripts/start-prod.sh#L76-L86)
-- [MCP-README.md:1-423](file://docs/MCP-README.md#L1-L423)
+- [start-sim.sh:77-87](server/scripts/start-sim.sh#L77-L87)
+- [start-prod.sh:76-86](server/scripts/start-prod.sh#L76-L86)
+- [MCP-README.md:1-423](docs/MCP-README.md#L1-L423)
 
 ### Operational Runbooks
 - Start simulator: ./start-sim.sh [--build] [--detach]
@@ -333,9 +333,9 @@ Services-->>Ops : "Expose ports and readiness"
 - OpenAPI types regeneration: npm run openapi:types
 
 **Section sources**
-- [start-sim.sh:1-134](file://server/scripts/start-sim.sh#L1-L134)
-- [start-prod.sh:1-134](file://server/scripts/start-prod.sh#L1-L134)
-- [package.json:10-11](file://frontend/package.json#L10-L11)
+- [start-sim.sh:1-134](server/scripts/start-sim.sh#L1-L134)
+- [start-prod.sh:1-134](server/scripts/start-prod.sh#L1-L134)
+- [package.json:10-11](frontend/package.json#L10-L11)
 
 ## Dependency Analysis
 Backend and frontend dependencies are declared separately. Backend relies on FastAPI, SQLAlchemy, Alembic, MQTT, and testing libraries. Frontend uses Next.js, React, TanStack Query, and OpenAPI tooling.
@@ -354,12 +354,12 @@ FE_PKG --> OPENAPI["openapi-typescript"]
 ```
 
 **Diagram sources**
-- [requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [package.json:13-44](file://frontend/package.json#L13-L44)
+- [requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [package.json:13-44](frontend/package.json#L13-L44)
 
 **Section sources**
-- [requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [package.json:1-58](file://frontend/package.json#L1-L58)
+- [requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [package.json:1-58](frontend/package.json#L1-L58)
 
 ## Performance Considerations
 - Use in-memory SQLite for tests to maximize speed.
@@ -378,10 +378,10 @@ Common issues and resolutions:
 - Health checks: Use compose logs and curl endpoints to verify service readiness.
 
 **Section sources**
-- [start-prod.sh:29-33](file://server/scripts/start-prod.sh#L29-L33)
-- [start-sim.sh:30-34](file://server/scripts/start-sim.sh#L30-L34)
-- [start-prod.sh:79-86](file://server/scripts/start-prod.sh#L79-L86)
-- [start-sim.sh:78-87](file://server/scripts/start-sim.sh#L78-L87)
+- [start-prod.sh:29-33](server/scripts/start-prod.sh#L29-L33)
+- [start-sim.sh:30-34](server/scripts/start-sim.sh#L30-L34)
+- [start-prod.sh:79-86](server/scripts/start-prod.sh#L79-L86)
+- [start-sim.sh:78-87](server/scripts/start-sim.sh#L78-L87)
 
 ## Conclusion
 The WheelSense Platform provides a robust foundation for testing and deployment through pytest-driven backend tests, Next.js tooling, and a comprehensive Docker Compose setup. By leveraging environment-specific stacks, simulation capabilities, and structured CI/CD practices, teams can reliably develop, validate, and operate the system at scale while maintaining strong security and observability.
@@ -403,9 +403,9 @@ The WheelSense Platform provides a robust foundation for testing and deployment 
   - Confirm backend handlers ingest and persist events.
 
 **Section sources**
-- [pytest.ini:1-5](file://server/pytest.ini#L1-L5)
-- [conftest.py:167-189](file://server/tests/conftest.py#L167-L189)
-- [sim_controller.py:1-200](file://server/sim_controller.py#L1-L200)
+- [pytest.ini:1-5](server/pytest.ini#L1-L5)
+- [conftest.py:167-189](server/tests/conftest.py#L167-L189)
+- [sim_controller.py:1-200](server/sim_controller.py#L1-L200)
 
 ### Deployment Automation Examples
 - Build and start production:
@@ -416,6 +416,6 @@ The WheelSense Platform provides a robust foundation for testing and deployment 
   - npm run openapi:types
 
 **Section sources**
-- [start-prod.sh:90-93](file://server/scripts/start-prod.sh#L90-L93)
-- [start-sim.sh:90-93](file://server/scripts/start-sim.sh#L90-L93)
-- [package.json:10-11](file://frontend/package.json#L10-L11)
+- [start-prod.sh:90-93](server/scripts/start-prod.sh#L90-L93)
+- [start-sim.sh:90-93](server/scripts/start-sim.sh#L90-L93)
+- [package.json:10-11](frontend/package.json#L10-L11)

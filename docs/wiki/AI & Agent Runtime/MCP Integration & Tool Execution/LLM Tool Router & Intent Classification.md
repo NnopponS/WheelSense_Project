@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [language_bridge.py](file://server/app/agent_runtime/language_bridge.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [server.py](file://server/app/mcp/server.py)
-- [ai_chat.py](file://server/app/services/ai_chat.py)
-- [agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [test_llm_tool_router.py](file://server/tests/test_llm_tool_router.py)
-- [test_llm_tool_propose_integration.py](file://server/tests/test_llm_tool_propose_integration.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [language_bridge.py](server/app/agent_runtime/language_bridge.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [server.py](server/app/mcp/server.py)
+- [ai_chat.py](server/app/services/ai_chat.py)
+- [agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [test_llm_tool_router.py](server/tests/test_llm_tool_router.py)
+- [test_llm_tool_propose_integration.py](server/tests/test_llm_tool_propose_integration.py)
 </cite>
 
 ## Table of Contents
@@ -74,22 +74,22 @@ AIC --> MCP
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-1024](file://server/app/agent_runtime/intent.py#L347-L1024)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [server.py:2614-2754](file://server/app/mcp/server.py#L2614-L2754)
-- [ai_chat.py:748-776](file://server/app/services/ai_chat.py#L748-L776)
-- [agent_runtime.py:10-57](file://server/app/schemas/agent_runtime.py#L10-L57)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-1024](server/app/agent_runtime/intent.py#L347-L1024)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [server.py:2614-2754](server/app/mcp/server.py#L2614-L2754)
+- [ai_chat.py:748-776](server/app/services/ai_chat.py#L748-L776)
+- [agent_runtime.py:10-57](server/app/schemas/agent_runtime.py#L10-L57)
 
 **Section sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-1024](file://server/app/agent_runtime/intent.py#L347-L1024)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [server.py:2614-2754](file://server/app/mcp/server.py#L2614-L2754)
-- [ai_chat.py:748-776](file://server/app/services/ai_chat.py#L748-L776)
-- [agent_runtime.py:10-57](file://server/app/schemas/agent_runtime.py#L10-L57)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-1024](server/app/agent_runtime/intent.py#L347-L1024)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [server.py:2614-2754](server/app/mcp/server.py#L2614-L2754)
+- [ai_chat.py:748-776](server/app/services/ai_chat.py#L748-L776)
+- [agent_runtime.py:10-57](server/app/schemas/agent_runtime.py#L10-L57)
 
 ## Core Components
 - LLM Tool Router: Builds role-specific tool schemas, routes user messages to MCP tools, constructs execution plans, and auto-runs safe reads.
@@ -99,11 +99,11 @@ AIC --> MCP
 - Agent Runtime Service: Orchestrates routing modes, conversation fast-path, plan execution, and error handling.
 
 **Section sources**
-- [llm_tool_router.py:84-171](file://server/app/agent_runtime/llm_tool_router.py#L84-L171)
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [server.py:2614-2754](file://server/app/mcp/server.py#L2614-L2754)
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
+- [llm_tool_router.py:84-171](server/app/agent_runtime/llm_tool_router.py#L84-L171)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [server.py:2614-2754](server/app/mcp/server.py#L2614-L2754)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
 
 ## Architecture Overview
 The system supports two routing modes:
@@ -132,11 +132,11 @@ SRV-->>U : Plan + confirmation or grounded answer
 ```
 
 **Diagram sources**
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-1024](file://server/app/agent_runtime/intent.py#L347-L1024)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [server.py:2734-2754](file://server/app/mcp/server.py#L2734-L2754)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-1024](server/app/agent_runtime/intent.py#L347-L1024)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [server.py:2734-2754](server/app/mcp/server.py#L2734-L2754)
 
 ## Detailed Component Analysis
 
@@ -178,13 +178,13 @@ Payload --> PlanResp["AgentRuntimeProposeResponse(plan)"]
 ```
 
 **Diagram sources**
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [ai_chat.py:748-776](file://server/app/services/ai_chat.py#L748-L776)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [ai_chat.py:748-776](server/app/services/ai_chat.py#L748-L776)
 
 **Section sources**
-- [llm_tool_router.py:84-171](file://server/app/agent_runtime/llm_tool_router.py#L84-L171)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [ai_chat.py:748-776](file://server/app/services/ai_chat.py#L748-L776)
+- [llm_tool_router.py:84-171](server/app/agent_runtime/llm_tool_router.py#L84-L171)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [ai_chat.py:748-776](server/app/services/ai_chat.py#L748-L776)
 
 ### Intent Classification System
 The classifier combines regex patterns and semantic similarity to extract intents, arguments, and entities. It supports compound intents, context-aware references, and immediate-read shortcuts.
@@ -211,12 +211,12 @@ Similar --> |No| Fallback["Return None"]
 ```
 
 **Diagram sources**
-- [intent.py:347-878](file://server/app/agent_runtime/intent.py#L347-L878)
+- [intent.py:347-878](server/app/agent_runtime/intent.py#L347-L878)
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [intent.py:347-878](file://server/app/agent_runtime/intent.py#L347-L878)
-- [intent.py:880-1024](file://server/app/agent_runtime/intent.py#L880-L1024)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:347-878](server/app/agent_runtime/intent.py#L347-L878)
+- [intent.py:880-1024](server/app/agent_runtime/intent.py#L880-L1024)
 
 ### Language Bridge (Multilingual Normalization)
 The language bridge optionally translates non-English messages into English for improved intent classification. It respects provider settings and timeouts.
@@ -240,11 +240,11 @@ BRG-->>SRV : normalized text or None
 ```
 
 **Diagram sources**
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [ai_chat.py:385-387](file://server/app/services/ai_chat.py#L385-L387)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [ai_chat.py:385-387](server/app/services/ai_chat.py#L385-L387)
 
 **Section sources**
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
 
 ### Tool Registry and Metadata
 The MCP server maintains a central registry of tools with metadata for permissions, risk levels, and execution semantics. The agent runtime maps roles to allowed tools and enforces scope checks at execution time.
@@ -266,14 +266,14 @@ ToolRegistry <.. PermissionMetadata : "used by router"
 ```
 
 **Diagram sources**
-- [server.py:2614-2754](file://server/app/mcp/server.py#L2614-L2754)
-- [ai_chat.py:77-202](file://server/app/services/ai_chat.py#L77-L202)
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
+- [server.py:2614-2754](server/app/mcp/server.py#L2614-L2754)
+- [ai_chat.py:77-202](server/app/services/ai_chat.py#L77-L202)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
 
 **Section sources**
-- [server.py:2614-2754](file://server/app/mcp/server.py#L2614-L2754)
-- [ai_chat.py:77-202](file://server/app/services/ai_chat.py#L77-L202)
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
+- [server.py:2614-2754](server/app/mcp/server.py#L2614-L2754)
+- [ai_chat.py:77-202](server/app/services/ai_chat.py#L77-L202)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
 
 ### Three-Stage Action Flow
 The system implements a consistent three-stage flow across both routing modes:
@@ -308,13 +308,13 @@ SRV-->>UI : Execution summary + results
 ```
 
 **Diagram sources**
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
-- [agent_runtime.py:10-30](file://server/app/schemas/agent_runtime.py#L10-L30)
-- [server.py:2734-2754](file://server/app/mcp/server.py#L2734-L2754)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
+- [agent_runtime.py:10-30](server/app/schemas/agent_runtime.py#L10-L30)
+- [server.py:2734-2754](server/app/mcp/server.py#L2734-L2754)
 
 **Section sources**
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
-- [agent_runtime.py:10-30](file://server/app/schemas/agent_runtime.py#L10-L30)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
+- [agent_runtime.py:10-30](server/app/schemas/agent_runtime.py#L10-L30)
 
 ### Practical Routing Scenarios
 - Multiple reads: Router auto-executes read-only tools and returns a grounded, multi-tool answer
@@ -323,9 +323,9 @@ SRV-->>UI : Execution summary + results
 - Conversation fast-path: Social/small-talk messages bypass routing and return AI answers
 
 **Section sources**
-- [test_llm_tool_propose_integration.py:28-79](file://server/tests/test_llm_tool_propose_integration.py#L28-L79)
-- [test_llm_tool_propose_integration.py:112-129](file://server/tests/test_llm_tool_propose_integration.py#L112-L129)
-- [service.py:356-367](file://server/app/agent_runtime/service.py#L356-L367)
+- [test_llm_tool_propose_integration.py:28-79](server/tests/test_llm_tool_propose_integration.py#L28-L79)
+- [test_llm_tool_propose_integration.py:112-129](server/tests/test_llm_tool_propose_integration.py#L112-L129)
+- [service.py:356-367](server/app/agent_runtime/service.py#L356-L367)
 
 ### Risk Assessment Logic
 - Read-only tools: low risk; may auto-execute when sole selection
@@ -333,8 +333,8 @@ SRV-->>UI : Execution summary + results
 - Plan risk: derived from step risks; highest risk wins
 
 **Section sources**
-- [llm_tool_router.py:144-170](file://server/app/agent_runtime/llm_tool_router.py#L144-L170)
-- [intent.py:956-985](file://server/app/agent_runtime/intent.py#L956-L985)
+- [llm_tool_router.py:144-170](server/app/agent_runtime/llm_tool_router.py#L144-L170)
+- [intent.py:956-985](server/app/agent_runtime/intent.py#L956-L985)
 
 ### Tool Execution Monitoring and Error Handling
 - Direct MCP execution path with structured result extraction
@@ -343,9 +343,9 @@ SRV-->>UI : Execution summary + results
 - Execution plan step-by-step monitoring with results aggregation
 
 **Section sources**
-- [service.py:122-146](file://server/app/agent_runtime/service.py#L122-L146)
-- [service.py:69-121](file://server/app/agent_runtime/service.py#L69-L121)
-- [service.py:533-561](file://server/app/agent_runtime/service.py#L533-L561)
+- [service.py:122-146](server/app/agent_runtime/service.py#L122-L146)
+- [service.py:69-121](server/app/agent_runtime/service.py#L69-L121)
+- [service.py:533-561](server/app/agent_runtime/service.py#L533-L561)
 
 ## Dependency Analysis
 The agent runtime orchestrates multiple subsystems with clear boundaries and minimal coupling.
@@ -365,22 +365,22 @@ SRV --> ART["schemas/agent_runtime.py"]
 ```
 
 **Diagram sources**
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-1024](file://server/app/agent_runtime/intent.py#L347-L1024)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [server.py:2614-2754](file://server/app/mcp/server.py#L2614-L2754)
-- [ai_chat.py:748-776](file://server/app/services/ai_chat.py#L748-L776)
-- [agent_runtime.py:10-57](file://server/app/schemas/agent_runtime.py#L10-L57)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-1024](server/app/agent_runtime/intent.py#L347-L1024)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [server.py:2614-2754](server/app/mcp/server.py#L2614-L2754)
+- [ai_chat.py:748-776](server/app/services/ai_chat.py#L748-L776)
+- [agent_runtime.py:10-57](server/app/schemas/agent_runtime.py#L10-L57)
 
 **Section sources**
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [intent.py:347-1024](file://server/app/agent_runtime/intent.py#L347-L1024)
-- [language_bridge.py:38-125](file://server/app/agent_runtime/language_bridge.py#L38-L125)
-- [service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
-- [server.py:2614-2754](file://server/app/mcp/server.py#L2614-L2754)
-- [ai_chat.py:748-776](file://server/app/services/ai_chat.py#L748-L776)
-- [agent_runtime.py:10-57](file://server/app/schemas/agent_runtime.py#L10-L57)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [intent.py:347-1024](server/app/agent_runtime/intent.py#L347-L1024)
+- [language_bridge.py:38-125](server/app/agent_runtime/language_bridge.py#L38-L125)
+- [service.py:346-520](server/app/agent_runtime/service.py#L346-L520)
+- [server.py:2614-2754](server/app/mcp/server.py#L2614-L2754)
+- [ai_chat.py:748-776](server/app/services/ai_chat.py#L748-L776)
+- [agent_runtime.py:10-57](server/app/schemas/agent_runtime.py#L10-L57)
 
 ## Performance Considerations
 - Prefer regex-based classification for high-confidence, low-latency reads
@@ -398,9 +398,9 @@ Common issues and resolutions:
 - Low confidence routing: enable language bridge normalization for non-English inputs
 
 **Section sources**
-- [llm_tool_router.py:231-263](file://server/app/agent_runtime/llm_tool_router.py#L231-L263)
-- [service.py:380-382](file://server/app/agent_runtime/service.py#L380-L382)
-- [language_bridge.py:56-61](file://server/app/agent_runtime/language_bridge.py#L56-L61)
+- [llm_tool_router.py:231-263](server/app/agent_runtime/llm_tool_router.py#L231-L263)
+- [service.py:380-382](server/app/agent_runtime/service.py#L380-L382)
+- [language_bridge.py:56-61](server/app/agent_runtime/language_bridge.py#L56-L61)
 
 ## Conclusion
 The LLM tool router and intent classification system provide a robust, multilingual, and permission-aware pathway from natural language to MCP tool execution. By combining deterministic regex patterns with LLM-native tool-calling and optional semantic matching, the system balances accuracy, safety, and responsiveness. Clear risk assessment, execution monitoring, and fallback strategies ensure reliable operation across diverse user inputs and languages.
@@ -413,23 +413,23 @@ The LLM tool router and intent classification system provide a robust, multiling
 - Router validates calls against role allowlists and MCP registry keys
 
 **Section sources**
-- [ai_chat.py:345-383](file://server/app/services/ai_chat.py#L345-L383)
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [llm_tool_router.py:95-103](file://server/app/agent_runtime/llm_tool_router.py#L95-L103)
+- [ai_chat.py:345-383](server/app/services/ai_chat.py#L345-L383)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [llm_tool_router.py:95-103](server/app/agent_runtime/llm_tool_router.py#L95-L103)
 
 ### B. Conversation Fast Path
 - General conversation-only messages bypass routing and return AI answers directly
 - Reduces unnecessary tool invocations for small talk
 
 **Section sources**
-- [conversation_fastpath.py:32-44](file://server/app/agent_runtime/conversation_fastpath.py#L32-L44)
-- [service.py:356-367](file://server/app/agent_runtime/service.py#L356-L367)
+- [conversation_fastpath.py:32-44](server/app/agent_runtime/conversation_fastpath.py#L32-L44)
+- [service.py:356-367](server/app/agent_runtime/service.py#L356-L367)
 
 ### C. Tests and Validation
 - Unit tests validate role-based tool schema building and call validation
 - Integration tests validate LLM tool router behavior for reads and plans
 
 **Section sources**
-- [test_llm_tool_router.py:13-33](file://server/tests/test_llm_tool_router.py#L13-L33)
-- [test_llm_tool_propose_integration.py:28-79](file://server/tests/test_llm_tool_propose_integration.py#L28-L79)
-- [test_llm_tool_propose_integration.py:112-129](file://server/tests/test_llm_tool_propose_integration.py#L112-L129)
+- [test_llm_tool_router.py:13-33](server/tests/test_llm_tool_router.py#L13-L33)
+- [test_llm_tool_propose_integration.py:28-79](server/tests/test_llm_tool_propose_integration.py#L28-L79)
+- [test_llm_tool_propose_integration.py:112-129](server/tests/test_llm_tool_propose_integration.py#L112-L129)

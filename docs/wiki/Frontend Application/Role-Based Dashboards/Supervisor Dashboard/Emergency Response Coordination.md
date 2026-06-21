@@ -2,14 +2,14 @@
 
 <cite>
 **Referenced Files in This Document**
-- [SupervisorEmergencyPage](file://frontend/app/supervisor/emergency/page.tsx)
-- [SummaryStatCard](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [DataTableCard](file://frontend/components/supervisor/DataTableCard.tsx)
-- [useAlertRowHighlight](file://frontend/hooks/useAlertRowHighlight.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
-- [.openapi.json](file://frontend/.openapi.json)
-- [openapi.generated.json](file://server/openapi.generated.json)
+- [SupervisorEmergencyPage](frontend/app/supervisor/emergency/page.tsx)
+- [SummaryStatCard](frontend/components/supervisor/SummaryStatCard.tsx)
+- [DataTableCard](frontend/components/supervisor/DataTableCard.tsx)
+- [useAlertRowHighlight](frontend/hooks/useAlertRowHighlight.ts)
+- [api.ts](frontend/lib/api.ts)
+- [alerts.py](server/app/api/endpoints/alerts.py)
+- [.openapi.json](frontend/.openapi.json)
+- [openapi.generated.json](server/openapi.generated.json)
 </cite>
 
 ## Table of Contents
@@ -49,20 +49,20 @@ API --> ALERTS
 ```
 
 **Diagram sources**
-- [SupervisorEmergencyPage:68-439](file://frontend/app/supervisor/emergency/page.tsx#L68-L439)
-- [SummaryStatCard:13-37](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
-- [DataTableCard:40-166](file://frontend/components/supervisor/DataTableCard.tsx#L40-L166)
-- [useAlertRowHighlight:9-34](file://frontend/hooks/useAlertRowHighlight.ts#L9-L34)
-- [api.ts:491-498](file://frontend/lib/api.ts#L491-L498)
-- [alerts.py:29-55](file://server/app/api/endpoints/alerts.py#L29-L55)
+- [SupervisorEmergencyPage:68-439](frontend/app/supervisor/emergency/page.tsx#L68-L439)
+- [SummaryStatCard:13-37](frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
+- [DataTableCard:40-166](frontend/components/supervisor/DataTableCard.tsx#L40-L166)
+- [useAlertRowHighlight:9-34](frontend/hooks/useAlertRowHighlight.ts#L9-L34)
+- [api.ts:491-498](frontend/lib/api.ts#L491-L498)
+- [alerts.py:29-55](server/app/api/endpoints/alerts.py#L29-L55)
 
 **Section sources**
-- [SupervisorEmergencyPage:68-439](file://frontend/app/supervisor/emergency/page.tsx#L68-L439)
-- [SummaryStatCard:13-37](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
-- [DataTableCard:40-166](file://frontend/components/supervisor/DataTableCard.tsx#L40-L166)
-- [useAlertRowHighlight:9-34](file://frontend/hooks/useAlertRowHighlight.ts#L9-L34)
-- [api.ts:491-498](file://frontend/lib/api.ts#L491-L498)
-- [alerts.py:29-55](file://server/app/api/endpoints/alerts.py#L29-L55)
+- [SupervisorEmergencyPage:68-439](frontend/app/supervisor/emergency/page.tsx#L68-L439)
+- [SummaryStatCard:13-37](frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
+- [DataTableCard:40-166](frontend/components/supervisor/DataTableCard.tsx#L40-L166)
+- [useAlertRowHighlight:9-34](frontend/hooks/useAlertRowHighlight.ts#L9-L34)
+- [api.ts:491-498](frontend/lib/api.ts#L491-L498)
+- [alerts.py:29-55](server/app/api/endpoints/alerts.py#L29-L55)
 
 ## Core Components
 - Emergency Dashboard Page: Orchestrates queries for active critical alerts, rooms, localization predictions, and patients; computes derived metrics and renders summary cards and data tables.
@@ -78,11 +78,11 @@ Key responsibilities:
 - Responsive, accessible table rendering with pagination and sorting.
 
 **Section sources**
-- [SupervisorEmergencyPage:68-439](file://frontend/app/supervisor/emergency/page.tsx#L68-L439)
-- [SummaryStatCard:13-37](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
-- [DataTableCard:40-166](file://frontend/components/supervisor/DataTableCard.tsx#L40-L166)
-- [useAlertRowHighlight:9-34](file://frontend/hooks/useAlertRowHighlight.ts#L9-L34)
-- [api.ts:491-498](file://frontend/lib/api.ts#L491-L498)
+- [SupervisorEmergencyPage:68-439](frontend/app/supervisor/emergency/page.tsx#L68-L439)
+- [SummaryStatCard:13-37](frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
+- [DataTableCard:40-166](frontend/components/supervisor/DataTableCard.tsx#L40-L166)
+- [useAlertRowHighlight:9-34](frontend/hooks/useAlertRowHighlight.ts#L9-L34)
+- [api.ts:491-498](frontend/lib/api.ts#L491-L498)
 
 ## Architecture Overview
 The emergency dashboard integrates frontend components with backend alert endpoints. The page performs concurrent queries to fetch active critical alerts, room metadata, recent localization predictions, and patient records. Derived computations produce summary statistics and table rows. The API client abstracts HTTP requests and error handling.
@@ -105,9 +105,9 @@ Page-->>User : Render summary stats + tables
 ```
 
 **Diagram sources**
-- [SupervisorEmergencyPage:71-104](file://frontend/app/supervisor/emergency/page.tsx#L71-L104)
-- [api.ts:491-498](file://frontend/lib/api.ts#L491-L498)
-- [alerts.py:29-55](file://server/app/api/endpoints/alerts.py#L29-L55)
+- [SupervisorEmergencyPage:71-104](frontend/app/supervisor/emergency/page.tsx#L71-L104)
+- [api.ts:491-498](frontend/lib/api.ts#L491-L498)
+- [alerts.py:29-55](server/app/api/endpoints/alerts.py#L29-L55)
 
 ## Detailed Component Analysis
 
@@ -145,10 +145,10 @@ RenderTables --> End
 ```
 
 **Diagram sources**
-- [SupervisorEmergencyPage:106-246](file://frontend/app/supervisor/emergency/page.tsx#L106-L246)
+- [SupervisorEmergencyPage:106-246](frontend/app/supervisor/emergency/page.tsx#L106-L246)
 
 **Section sources**
-- [SupervisorEmergencyPage:68-439](file://frontend/app/supervisor/emergency/page.tsx#L68-L439)
+- [SupervisorEmergencyPage:68-439](frontend/app/supervisor/emergency/page.tsx#L68-L439)
 
 ### Summary Statistics Cards
 Displays three key metrics:
@@ -161,8 +161,8 @@ Implementation highlights:
 - Accepts an icon prop for contextual labeling.
 
 **Section sources**
-- [SummaryStatCard:13-37](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
-- [SupervisorEmergencyPage:382-401](file://frontend/app/supervisor/emergency/page.tsx#L382-L401)
+- [SummaryStatCard:13-37](frontend/components/supervisor/SummaryStatCard.tsx#L13-L37)
+- [SupervisorEmergencyPage:382-401](frontend/app/supervisor/emergency/page.tsx#L382-L401)
 
 ### Data Tables
 Three tables provide coordinated situational awareness:
@@ -176,8 +176,8 @@ Features:
 - Accessibility-friendly headers and row IDs for deep linking.
 
 **Section sources**
-- [DataTableCard:40-166](file://frontend/components/supervisor/DataTableCard.tsx#L40-L166)
-- [SupervisorEmergencyPage:248-356](file://frontend/app/supervisor/emergency/page.tsx#L248-L356)
+- [DataTableCard:40-166](frontend/components/supervisor/DataTableCard.tsx#L40-L166)
+- [SupervisorEmergencyPage:248-356](frontend/app/supervisor/emergency/page.tsx#L248-L356)
 
 ### Row Highlight Hook
 Behavior:
@@ -190,8 +190,8 @@ Usage:
 - DOM ID pattern: ws-alert-{alertId}.
 
 **Section sources**
-- [useAlertRowHighlight:9-34](file://frontend/hooks/useAlertRowHighlight.ts#L9-L34)
-- [SupervisorEmergencyPage:361-373](file://frontend/app/supervisor/emergency/page.tsx#L361-L373)
+- [useAlertRowHighlight:9-34](frontend/hooks/useAlertRowHighlight.ts#L9-L34)
+- [SupervisorEmergencyPage:361-373](frontend/app/supervisor/emergency/page.tsx#L361-L373)
 
 ### Backend Alert Endpoints
 The backend supports the full alert lifecycle:
@@ -220,16 +220,16 @@ API-->>Client : Updated alert
 ```
 
 **Diagram sources**
-- [api.ts:571-575](file://frontend/lib/api.ts#L571-L575)
-- [alerts.py:91-112](file://server/app/api/endpoints/alerts.py#L91-L112)
-- [.openapi.json:4899-4903](file://frontend/.openapi.json#L4899-L4903)
-- [openapi.generated.json:4666-4685](file://server/openapi.generated.json#L4666-L4685)
+- [api.ts:571-575](frontend/lib/api.ts#L571-L575)
+- [alerts.py:91-112](server/app/api/endpoints/alerts.py#L91-L112)
+- [.openapi.json:4899-4903](frontend/.openapi.json#L4899-L4903)
+- [openapi.generated.json:4666-4685](server/openapi.generated.json#L4666-L4685)
 
 **Section sources**
-- [api.ts:571-575](file://frontend/lib/api.ts#L571-L575)
-- [alerts.py:91-112](file://server/app/api/endpoints/alerts.py#L91-L112)
-- [.openapi.json:4899-4903](file://frontend/.openapi.json#L4899-L4903)
-- [openapi.generated.json:4666-4685](file://server/openapi.generated.json#L4666-L4685)
+- [api.ts:571-575](frontend/lib/api.ts#L571-L575)
+- [alerts.py:91-112](server/app/api/endpoints/alerts.py#L91-L112)
+- [.openapi.json:4899-4903](frontend/.openapi.json#L4899-L4903)
+- [openapi.generated.json:4666-4685](server/openapi.generated.json#L4666-L4685)
 
 ## Dependency Analysis
 - SupervisorEmergencyPage depends on:
@@ -256,18 +256,18 @@ ALERTS --> OPENAPI["OpenAPI Specs"]
 ```
 
 **Diagram sources**
-- [SupervisorEmergencyPage:68-439](file://frontend/app/supervisor/emergency/page.tsx#L68-L439)
-- [api.ts:491-498](file://frontend/lib/api.ts#L491-L498)
-- [alerts.py:29-55](file://server/app/api/endpoints/alerts.py#L29-L55)
-- [.openapi.json:4799-4903](file://frontend/.openapi.json#L4799-L4903)
-- [openapi.generated.json:4540-4685](file://server/openapi.generated.json#L4540-L4685)
+- [SupervisorEmergencyPage:68-439](frontend/app/supervisor/emergency/page.tsx#L68-L439)
+- [api.ts:491-498](frontend/lib/api.ts#L491-L498)
+- [alerts.py:29-55](server/app/api/endpoints/alerts.py#L29-L55)
+- [.openapi.json:4799-4903](frontend/.openapi.json#L4799-L4903)
+- [openapi.generated.json:4540-4685](server/openapi.generated.json#L4540-L4685)
 
 **Section sources**
-- [SupervisorEmergencyPage:68-439](file://frontend/app/supervisor/emergency/page.tsx#L68-L439)
-- [api.ts:491-498](file://frontend/lib/api.ts#L491-L498)
-- [alerts.py:29-55](file://server/app/api/endpoints/alerts.py#L29-L55)
-- [.openapi.json:4799-4903](file://frontend/.openapi.json#L4799-L4903)
-- [openapi.generated.json:4540-4685](file://server/openapi.generated.json#L4540-L4685)
+- [SupervisorEmergencyPage:68-439](frontend/app/supervisor/emergency/page.tsx#L68-L439)
+- [api.ts:491-498](frontend/lib/api.ts#L491-L498)
+- [alerts.py:29-55](server/app/api/endpoints/alerts.py#L29-L55)
+- [.openapi.json:4799-4903](frontend/.openapi.json#L4799-L4903)
+- [openapi.generated.json:4540-4685](server/openapi.generated.json#L4540-L4685)
 
 ## Performance Considerations
 - Data freshness:
@@ -296,9 +296,9 @@ Common issues and resolutions:
   - Review backend logs for permission denials or missing resources.
 
 **Section sources**
-- [SupervisorEmergencyPage:358-373](file://frontend/app/supervisor/emergency/page.tsx#L358-L373)
-- [api.ts:118-297](file://frontend/lib/api.ts#L118-L297)
-- [alerts.py:38-55](file://server/app/api/endpoints/alerts.py#L38-L55)
+- [SupervisorEmergencyPage:358-373](frontend/app/supervisor/emergency/page.tsx#L358-L373)
+- [api.ts:118-297](frontend/lib/api.ts#L118-L297)
+- [alerts.py:38-55](server/app/api/endpoints/alerts.py#L38-L55)
 
 ## Conclusion
 The Emergency Response Coordination feature delivers a real-time, data-driven dashboard for supervisors to monitor and manage incidents. Its modular design—summary cards, interactive tables, and row highlighting—enables rapid situational awareness and efficient response coordination. The backend’s alert lifecycle endpoints provide robust control over incident states, while the typed API client ensures reliable integrations. Together, these components support critical alert escalation, resource allocation, documentation, and multi-department collaboration during crises.

@@ -2,24 +2,24 @@
 
 <cite>
 **Referenced Files in This Document**
-- [types.ts](file://frontend/lib/types.ts)
-- [permissions.ts](file://frontend/lib/permissions.ts)
-- [sidebarConfig.ts](file://frontend/lib/sidebarConfig.ts)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [useAuth.tsx](file://frontend/hooks/useAuth.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [admin/layout.tsx](file://frontend/app/admin/layout.tsx)
-- [head-nurse/layout.tsx](file://frontend/app/head-nurse/layout.tsx)
-- [supervisor/layout.tsx](file://frontend/app/supervisor/layout.tsx)
-- [observer/layout.tsx](file://frontend/app/observer/layout.tsx)
-- [patient/layout.tsx](file://frontend/app/patient/layout.tsx)
-- [admin/page.tsx](file://frontend/app/admin/page.tsx)
-- [head-nurse/page.tsx](file://frontend/app/head-nurse/page.tsx)
-- [supervisor/page.tsx](file://frontend/app/supervisor/page.tsx)
-- [observer/page.tsx](file://frontend/app/observer/page.tsx)
-- [patient/page.tsx](file://frontend/app/patient/page.tsx)
+- [types.ts](frontend/lib/types.ts)
+- [permissions.ts](frontend/lib/permissions.ts)
+- [sidebarConfig.ts](frontend/lib/sidebarConfig.ts)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [useAuth.tsx](frontend/hooks/useAuth.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [admin/layout.tsx](frontend/app/admin/layout.tsx)
+- [head-nurse/layout.tsx](frontend/app/head-nurse/layout.tsx)
+- [supervisor/layout.tsx](frontend/app/supervisor/layout.tsx)
+- [observer/layout.tsx](frontend/app/observer/layout.tsx)
+- [patient/layout.tsx](frontend/app/patient/layout.tsx)
+- [admin/page.tsx](frontend/app/admin/page.tsx)
+- [head-nurse/page.tsx](frontend/app/head-nurse/page.tsx)
+- [supervisor/page.tsx](frontend/app/supervisor/page.tsx)
+- [observer/page.tsx](frontend/app/observer/page.tsx)
+- [patient/page.tsx](frontend/app/patient/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -86,33 +86,33 @@ D_PATIENT --> L_PATIENT
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
-- [RoleSidebar.tsx:1-228](file://frontend/components/RoleSidebar.tsx#L1-L228)
-- [TopBar.tsx:1-197](file://frontend/components/TopBar.tsx#L1-L197)
-- [permissions.ts:1-111](file://frontend/lib/permissions.ts#L1-L111)
-- [sidebarConfig.ts:1-300](file://frontend/lib/sidebarConfig.ts#L1-L300)
-- [admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [head-nurse/layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [supervisor/layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [observer/layout.tsx:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
-- [admin/page.tsx:1-488](file://frontend/app/admin/page.tsx#L1-L488)
-- [head-nurse/page.tsx:1-595](file://frontend/app/head-nurse/page.tsx#L1-L595)
-- [supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [observer/page.tsx:1-464](file://frontend/app/observer/page.tsx#L1-L464)
-- [patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
+- [RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
+- [RoleSidebar.tsx:1-228](frontend/components/RoleSidebar.tsx#L1-L228)
+- [TopBar.tsx:1-197](frontend/components/TopBar.tsx#L1-L197)
+- [permissions.ts:1-111](frontend/lib/permissions.ts#L1-L111)
+- [sidebarConfig.ts:1-300](frontend/lib/sidebarConfig.ts#L1-L300)
+- [admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [head-nurse/layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [supervisor/layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [observer/layout.tsx:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
+- [admin/page.tsx:1-488](frontend/app/admin/page.tsx#L1-L488)
+- [head-nurse/page.tsx:1-595](frontend/app/head-nurse/page.tsx#L1-L595)
+- [supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [observer/page.tsx:1-464](frontend/app/observer/page.tsx#L1-L464)
+- [patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
 
 **Section sources**
-- [RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
-- [RoleSidebar.tsx:1-228](file://frontend/components/RoleSidebar.tsx#L1-L228)
-- [TopBar.tsx:1-197](file://frontend/components/TopBar.tsx#L1-L197)
-- [permissions.ts:1-111](file://frontend/lib/permissions.ts#L1-L111)
-- [sidebarConfig.ts:1-300](file://frontend/lib/sidebarConfig.ts#L1-L300)
-- [admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [head-nurse/layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [supervisor/layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [observer/layout.tsx:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
+- [RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
+- [RoleSidebar.tsx:1-228](frontend/components/RoleSidebar.tsx#L1-L228)
+- [TopBar.tsx:1-197](frontend/components/TopBar.tsx#L1-L197)
+- [permissions.ts:1-111](frontend/lib/permissions.ts#L1-L111)
+- [sidebarConfig.ts:1-300](frontend/lib/sidebarConfig.ts#L1-L300)
+- [admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [head-nurse/layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [supervisor/layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [observer/layout.tsx:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
 
 ## Core Components
 - RoleShell: Centralized role guard, auth guard, layout scaffolding, and AI chat popup integration.
@@ -123,16 +123,16 @@ D_PATIENT --> L_PATIENT
 - Role Dashboards: Domain-specific pages with scoped queries, data processing, and visualization components.
 
 **Section sources**
-- [RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
-- [RoleSidebar.tsx:1-228](file://frontend/components/RoleSidebar.tsx#L1-L228)
-- [TopBar.tsx:1-197](file://frontend/components/TopBar.tsx#L1-L197)
-- [permissions.ts:1-111](file://frontend/lib/permissions.ts#L1-L111)
-- [sidebarConfig.ts:1-300](file://frontend/lib/sidebarConfig.ts#L1-L300)
-- [admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [head-nurse/layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [supervisor/layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [observer/layout.tsx:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
+- [RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
+- [RoleSidebar.tsx:1-228](frontend/components/RoleSidebar.tsx#L1-L228)
+- [TopBar.tsx:1-197](frontend/components/TopBar.tsx#L1-L197)
+- [permissions.ts:1-111](frontend/lib/permissions.ts#L1-L111)
+- [sidebarConfig.ts:1-300](frontend/lib/sidebarConfig.ts#L1-L300)
+- [admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [head-nurse/layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [supervisor/layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [observer/layout.tsx:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
 
 ## Architecture Overview
 The system enforces role-based access control at two levels:
@@ -161,14 +161,14 @@ end
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:29-66](file://frontend/components/RoleShell.tsx#L29-L66)
-- [useAuth.tsx:99-184](file://frontend/hooks/useAuth.tsx#L99-L184)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
+- [RoleShell.tsx:29-66](frontend/components/RoleShell.tsx#L29-L66)
+- [useAuth.tsx:99-184](frontend/hooks/useAuth.tsx#L99-L184)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
 
 **Section sources**
-- [RoleShell.tsx:29-66](file://frontend/components/RoleShell.tsx#L29-L66)
-- [useAuth.tsx:99-184](file://frontend/hooks/useAuth.tsx#L99-L184)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
+- [RoleShell.tsx:29-66](frontend/components/RoleShell.tsx#L29-L66)
+- [useAuth.tsx:99-184](frontend/hooks/useAuth.tsx#L99-L184)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
 
 ## Detailed Component Analysis
 
@@ -189,12 +189,12 @@ GoLogin --> End
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:44-66](file://frontend/components/RoleShell.tsx#L44-L66)
-- [permissions.ts:103-111](file://frontend/lib/permissions.ts#L103-L111)
+- [RoleShell.tsx:44-66](frontend/components/RoleShell.tsx#L44-L66)
+- [permissions.ts:103-111](frontend/lib/permissions.ts#L103-L111)
 
 **Section sources**
-- [RoleShell.tsx:44-66](file://frontend/components/RoleShell.tsx#L44-L66)
-- [TopBar.tsx:118](file://frontend/components/TopBar.tsx#L118)
+- [RoleShell.tsx:44-66](frontend/components/RoleShell.tsx#L44-L66)
+- [TopBar.tsx:118](frontend/components/TopBar.tsx#L118)
 
 ### Permission-Based Access Control
 - Capabilities define fine-grained permissions (e.g., users.manage, patients.read, alerts.manage).
@@ -222,11 +222,11 @@ APP_ROUTE_ROLES --> AppRole : "keys"
 ```
 
 **Diagram sources**
-- [permissions.ts:5-109](file://frontend/lib/permissions.ts#L5-L109)
+- [permissions.ts:5-109](frontend/lib/permissions.ts#L5-L109)
 
 **Section sources**
-- [permissions.ts:5-109](file://frontend/lib/permissions.ts#L5-L109)
-- [sidebarConfig.ts:287-300](file://frontend/lib/sidebarConfig.ts#L287-L300)
+- [permissions.ts:5-109](frontend/lib/permissions.ts#L5-L109)
+- [sidebarConfig.ts:287-300](frontend/lib/sidebarConfig.ts#L287-L300)
 
 ### Workspace Scoping
 - Role dashboards use workspace-aware queries to ensure data isolation and relevance.
@@ -244,10 +244,10 @@ API-->>Page : Response data
 ```
 
 **Diagram sources**
-- [admin/page.tsx:52-95](file://frontend/app/admin/page.tsx#L52-L95)
+- [admin/page.tsx:52-95](frontend/app/admin/page.tsx#L52-L95)
 
 **Section sources**
-- [admin/page.tsx:52-95](file://frontend/app/admin/page.tsx#L52-L95)
+- [admin/page.tsx:52-95](frontend/app/admin/page.tsx#L52-L95)
 
 ### Sidebar Navigation
 - RoleSidebar renders navigation groups and items based on the user’s role and capability filters.
@@ -263,12 +263,12 @@ Active --> Output["Render with active/inactive styles"]
 ```
 
 **Diagram sources**
-- [RoleSidebar.tsx:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig.ts:280-300](file://frontend/lib/sidebarConfig.ts#L280-L300)
+- [RoleSidebar.tsx:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig.ts:280-300](frontend/lib/sidebarConfig.ts#L280-L300)
 
 **Section sources**
-- [RoleSidebar.tsx:60-101](file://frontend/components/RoleSidebar.tsx#L60-L101)
-- [sidebarConfig.ts:60-275](file://frontend/lib/sidebarConfig.ts#L60-L275)
+- [RoleSidebar.tsx:60-101](frontend/components/RoleSidebar.tsx#L60-L101)
+- [sidebarConfig.ts:60-275](frontend/lib/sidebarConfig.ts#L60-L275)
 
 ### Top Bar Components
 - TopBar includes search, role switcher, environment badge (admin simulator), language switcher, theme toggle, alert sound toggle, notifications bell/drawer, and user profile.
@@ -287,10 +287,10 @@ TB --> User["User Avatar + Profile"]
 ```
 
 **Diagram sources**
-- [TopBar.tsx:44-196](file://frontend/components/TopBar.tsx#L44-L196)
+- [TopBar.tsx:44-196](frontend/components/TopBar.tsx#L44-L196)
 
 **Section sources**
-- [TopBar.tsx:44-196](file://frontend/components/TopBar.tsx#L44-L196)
+- [TopBar.tsx:44-196](frontend/components/TopBar.tsx#L44-L196)
 
 ### Admin Dashboard
 - Focuses on system/device health, fleet statistics, user distribution, and recent activity.
@@ -308,12 +308,12 @@ A --> Activity["Activity Feed"]
 ```
 
 **Diagram sources**
-- [admin/page.tsx:46-488](file://frontend/app/admin/page.tsx#L46-L488)
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [admin/page.tsx:46-488](frontend/app/admin/page.tsx#L46-L488)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
 
 **Section sources**
-- [admin/page.tsx:46-488](file://frontend/app/admin/page.tsx#L46-L488)
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [admin/page.tsx:46-488](frontend/app/admin/page.tsx#L46-L488)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
 
 ### Head Nurse Dashboard
 - Ward overview with active alerts, open tasks, schedules, directives, and timeline events.
@@ -331,11 +331,11 @@ HN --> Timeline["Recent Timeline Events"]
 ```
 
 **Diagram sources**
-- [head-nurse/page.tsx:58-595](file://frontend/app/head-nurse/page.tsx#L58-L595)
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [head-nurse/page.tsx:58-595](frontend/app/head-nurse/page.tsx#L58-L595)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
 
 **Section sources**
-- [head-nurse/page.tsx:58-595](file://frontend/app/head-nurse/page.tsx#L58-L595)
+- [head-nurse/page.tsx:58-595](frontend/app/head-nurse/page.tsx#L58-L595)
 
 ### Supervisor Dashboard
 - Command center focused on critical alerts, open tasks, patients in zone, and active directives.
@@ -351,11 +351,11 @@ SUP --> TaskQueue["Task Queue Preview"]
 ```
 
 **Diagram sources**
-- [supervisor/page.tsx:34-394](file://frontend/app/supervisor/page.tsx#L34-L394)
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [supervisor/page.tsx:34-394](frontend/app/supervisor/page.tsx#L34-L394)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
 
 **Section sources**
-- [supervisor/page.tsx:34-394](file://frontend/app/supervisor/page.tsx#L34-L394)
+- [supervisor/page.tsx:34-394](frontend/app/supervisor/page.tsx#L34-L394)
 
 ### Observer Dashboard
 - Monitoring console with assigned patients, tasks, shift checklist progress, and alerts.
@@ -370,11 +370,11 @@ OBS --> Patients["My Patients Preview"]
 ```
 
 **Diagram sources**
-- [observer/page.tsx:65-464](file://frontend/app/observer/page.tsx#L65-L464)
-- [DashboardFloorplanPanel.tsx:13-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
+- [observer/page.tsx:65-464](frontend/app/observer/page.tsx#L65-L464)
+- [DashboardFloorplanPanel.tsx:13-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L29)
 
 **Section sources**
-- [observer/page.tsx:65-464](file://frontend/app/observer/page.tsx#L65-L464)
+- [observer/page.tsx:65-464](frontend/app/observer/page.tsx#L65-L464)
 
 ### Patient Dashboard
 - Hub-style interface with three tabs: overview, profile, support.
@@ -394,10 +394,10 @@ Overview --> Sensors["PatientMySensors"]
 ```
 
 **Diagram sources**
-- [patient/page.tsx:67-455](file://frontend/app/patient/page.tsx#L67-L455)
+- [patient/page.tsx:67-455](frontend/app/patient/page.tsx#L67-L455)
 
 **Section sources**
-- [patient/page.tsx:67-455](file://frontend/app/patient/page.tsx#L67-L455)
+- [patient/page.tsx:67-455](frontend/app/patient/page.tsx#L67-L455)
 
 ### Responsive Design Adaptations
 - RoleSidebar adapts with a mobile sheet overlay and desktop fixed sidebar.
@@ -405,9 +405,9 @@ Overview --> Sensors["PatientMySensors"]
 - Patient layout adds rounded containers and increased spacing for mobile.
 
 **Section sources**
-- [RoleSidebar.tsx:197-228](file://frontend/components/RoleSidebar.tsx#L197-L228)
-- [TopBar.tsx:86-109](file://frontend/components/TopBar.tsx#L86-L109)
-- [patient/layout.tsx:10-24](file://frontend/app/patient/layout.tsx#L10-L24)
+- [RoleSidebar.tsx:197-228](frontend/components/RoleSidebar.tsx#L197-L228)
+- [TopBar.tsx:86-109](frontend/components/TopBar.tsx#L86-L109)
+- [patient/layout.tsx:10-24](frontend/app/patient/layout.tsx#L10-L24)
 
 ### Role-Specific API Integrations and Data Filtering
 - Admin: Devices, HA devices, device activity, users; fleet health computations; recent activity feed.
@@ -417,11 +417,11 @@ Overview --> Sensors["PatientMySensors"]
 - Patient: Patient profile, room info, alerts, care roadmap, sensors; support form submission.
 
 **Section sources**
-- [admin/page.tsx:69-95](file://frontend/app/admin/page.tsx#L69-L95)
-- [head-nurse/page.tsx:63-104](file://frontend/app/head-nurse/page.tsx#L63-L104)
-- [supervisor/page.tsx:40-67](file://frontend/app/supervisor/page.tsx#L40-L67)
-- [observer/page.tsx:74-96](file://frontend/app/observer/page.tsx#L74-L96)
-- [patient/page.tsx:92-112](file://frontend/app/patient/page.tsx#L92-L112)
+- [admin/page.tsx:69-95](frontend/app/admin/page.tsx#L69-L95)
+- [head-nurse/page.tsx:63-104](frontend/app/head-nurse/page.tsx#L63-L104)
+- [supervisor/page.tsx:40-67](frontend/app/supervisor/page.tsx#L40-L67)
+- [observer/page.tsx:74-96](frontend/app/observer/page.tsx#L74-L96)
+- [patient/page.tsx:92-112](frontend/app/patient/page.tsx#L92-L112)
 
 ### Implementation Patterns
 - Conditional rendering: RoleSidebar filters items by capability; TopBar shows environment badge only for admins in simulator mode; Patient dashboard conditionally renders tabs.
@@ -429,9 +429,9 @@ Overview --> Sensors["PatientMySensors"]
 - Role-specific customizations: Admin dashboard emphasizes fleet and ops; Head Nurse highlights staff and directives; Supervisor focuses on command and directives; Observer centers on checklist and vitals; Patient provides a care-centric hub.
 
 **Section sources**
-- [RoleSidebar.tsx:69-72](file://frontend/components/RoleSidebar.tsx#L69-L72)
-- [TopBar.tsx:120-128](file://frontend/components/TopBar.tsx#L120-L128)
-- [patient/page.tsx:227-246](file://frontend/app/patient/page.tsx#L227-L246)
+- [RoleSidebar.tsx:69-72](frontend/components/RoleSidebar.tsx#L69-L72)
+- [TopBar.tsx:120-128](frontend/components/TopBar.tsx#L120-L128)
+- [patient/page.tsx:227-246](frontend/app/patient/page.tsx#L227-L246)
 
 ## Dependency Analysis
 The following diagram shows key dependencies among role components and configuration:
@@ -456,40 +456,40 @@ patient_layout["patient/layout.tsx"] --> RoleShell
 ```
 
 **Diagram sources**
-- [RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
-- [RoleSidebar.tsx:1-228](file://frontend/components/RoleSidebar.tsx#L1-L228)
-- [TopBar.tsx:1-197](file://frontend/components/TopBar.tsx#L1-L197)
-- [permissions.ts:1-111](file://frontend/lib/permissions.ts#L1-L111)
-- [sidebarConfig.ts:1-300](file://frontend/lib/sidebarConfig.ts#L1-L300)
-- [useAuth.tsx:1-184](file://frontend/hooks/useAuth.tsx#L1-L184)
-- [admin/page.tsx:1-488](file://frontend/app/admin/page.tsx#L1-L488)
-- [head-nurse/page.tsx:1-595](file://frontend/app/head-nurse/page.tsx#L1-L595)
-- [supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [observer/page.tsx:1-464](file://frontend/app/observer/page.tsx#L1-L464)
-- [patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
-- [admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [head-nurse/layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [supervisor/layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [observer/layout.tsx:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
+- [RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
+- [RoleSidebar.tsx:1-228](frontend/components/RoleSidebar.tsx#L1-L228)
+- [TopBar.tsx:1-197](frontend/components/TopBar.tsx#L1-L197)
+- [permissions.ts:1-111](frontend/lib/permissions.ts#L1-L111)
+- [sidebarConfig.ts:1-300](frontend/lib/sidebarConfig.ts#L1-L300)
+- [useAuth.tsx:1-184](frontend/hooks/useAuth.tsx#L1-L184)
+- [admin/page.tsx:1-488](frontend/app/admin/page.tsx#L1-L488)
+- [head-nurse/page.tsx:1-595](frontend/app/head-nurse/page.tsx#L1-L595)
+- [supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [observer/page.tsx:1-464](frontend/app/observer/page.tsx#L1-L464)
+- [patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
+- [admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [head-nurse/layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [supervisor/layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [observer/layout.tsx:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
 
 **Section sources**
-- [RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
-- [RoleSidebar.tsx:1-228](file://frontend/components/RoleSidebar.tsx#L1-L228)
-- [TopBar.tsx:1-197](file://frontend/components/TopBar.tsx#L1-L197)
-- [permissions.ts:1-111](file://frontend/lib/permissions.ts#L1-L111)
-- [sidebarConfig.ts:1-300](file://frontend/lib/sidebarConfig.ts#L1-L300)
-- [useAuth.tsx:1-184](file://frontend/hooks/useAuth.tsx#L1-L184)
-- [admin/page.tsx:1-488](file://frontend/app/admin/page.tsx#L1-L488)
-- [head-nurse/page.tsx:1-595](file://frontend/app/head-nurse/page.tsx#L1-L595)
-- [supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [observer/page.tsx:1-464](file://frontend/app/observer/page.tsx#L1-L464)
-- [patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
-- [admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [head-nurse/layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [supervisor/layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [observer/layout.tsx:1-12](file://frontend/app/observer/layout.tsx#L1-L12)
-- [patient/layout.tsx:1-24](file://frontend/app/patient/layout.tsx#L1-L24)
+- [RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
+- [RoleSidebar.tsx:1-228](frontend/components/RoleSidebar.tsx#L1-L228)
+- [TopBar.tsx:1-197](frontend/components/TopBar.tsx#L1-L197)
+- [permissions.ts:1-111](frontend/lib/permissions.ts#L1-L111)
+- [sidebarConfig.ts:1-300](frontend/lib/sidebarConfig.ts#L1-L300)
+- [useAuth.tsx:1-184](frontend/hooks/useAuth.tsx#L1-L184)
+- [admin/page.tsx:1-488](frontend/app/admin/page.tsx#L1-L488)
+- [head-nurse/page.tsx:1-595](frontend/app/head-nurse/page.tsx#L1-L595)
+- [supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [observer/page.tsx:1-464](frontend/app/observer/page.tsx#L1-L464)
+- [patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
+- [admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [head-nurse/layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [supervisor/layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [observer/layout.tsx:1-12](frontend/app/observer/layout.tsx#L1-L12)
+- [patient/layout.tsx:1-24](frontend/app/patient/layout.tsx#L1-L24)
 
 ## Performance Considerations
 - Query caching and polling: Role dashboards leverage React Query with stale times and polling intervals tailored to each endpoint to balance freshness and performance.
@@ -505,10 +505,10 @@ patient_layout["patient/layout.tsx"] --> RoleShell
 - Workspace data mismatch: Ensure workspace_id is present and endpoints are composed with workspace scope.
 
 **Section sources**
-- [RoleShell.tsx:37-66](file://frontend/components/RoleShell.tsx#L37-L66)
-- [useAuth.tsx:48-86](file://frontend/hooks/useAuth.tsx#L48-L86)
-- [RoleSidebar.tsx:69-72](file://frontend/components/RoleSidebar.tsx#L69-L72)
-- [sidebarConfig.ts:287-300](file://frontend/lib/sidebarConfig.ts#L287-L300)
+- [RoleShell.tsx:37-66](frontend/components/RoleShell.tsx#L37-L66)
+- [useAuth.tsx:48-86](frontend/hooks/useAuth.tsx#L48-L86)
+- [RoleSidebar.tsx:69-72](frontend/components/RoleSidebar.tsx#L69-L72)
+- [sidebarConfig.ts:287-300](frontend/lib/sidebarConfig.ts#L287-L300)
 
 ## Conclusion
 The WheelSense Platform implements a robust, scalable role-based dashboard system. A shared shell and navigation layer, combined with a strict capability taxonomy and workspace scoping, deliver secure, role-appropriate experiences across Admin, Head Nurse, Supervisor, Observer, and Patient interfaces. The design emphasizes maintainability, performance, and user focus through domain-specific dashboards and responsive UI patterns.
@@ -518,8 +518,8 @@ The WheelSense Platform implements a robust, scalable role-based dashboard syste
 - Role types: User role is a union of admin, head_nurse, supervisor, observer, and patient.
 
 **Section sources**
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
-- [types.ts:243-258](file://frontend/lib/types.ts#L243-L258)
-- [types.ts:54-78](file://frontend/lib/types.ts#L54-L78)
-- [types.ts:101-111](file://frontend/lib/types.ts#L101-L111)
-- [types.ts:309-321](file://frontend/lib/types.ts#L309-L321)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
+- [types.ts:243-258](frontend/lib/types.ts#L243-L258)
+- [types.ts:54-78](frontend/lib/types.ts#L54-L78)
+- [types.ts:101-111](frontend/lib/types.ts#L101-L111)
+- [types.ts:309-321](frontend/lib/types.ts#L309-L321)

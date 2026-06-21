@@ -2,32 +2,32 @@
 
 <cite>
 **Referenced Files in This Document**
-- [layout.tsx](file://frontend/app/supervisor/layout.tsx)
-- [page.tsx](file://frontend/app/supervisor/page.tsx)
-- [emergency/page.tsx](file://frontend/app/supervisor/emergency/page.tsx)
-- [floorplans/page.tsx](file://frontend/app/supervisor/floorplans/page.tsx)
-- [monitoring/page.tsx](file://frontend/app/supervisor/monitoring/page.tsx)
-- [prescriptions/page.tsx](file://frontend/app/supervisor/prescriptions/page.tsx)
-- [tasks/page.tsx](file://frontend/app/supervisor/tasks/page.tsx)
-- [support/page.tsx](file://frontend/app/supervisor/support/page.tsx)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx)
-- [DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
-- [SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [routes.ts](file://frontend/lib/routes.ts)
-- [sidebarConfig.ts](file://frontend/lib/sidebarConfig.ts)
-- [useAlertRowHighlight.ts](file://frontend/hooks/useAlertRowHighlight.ts)
-- [useAuth.tsx](file://frontend/hooks/useAuth.tsx)
-- [useFixedNowMs.ts](file://frontend/hooks/useFixedNowMs.ts)
-- [datetime.ts](file://frontend/lib/datetime.ts)
-- [i18n.tsx](file://frontend/lib/i18n.tsx)
-- [patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [layout.tsx](frontend/app/supervisor/layout.tsx)
+- [page.tsx](frontend/app/supervisor/page.tsx)
+- [emergency/page.tsx](frontend/app/supervisor/emergency/page.tsx)
+- [floorplans/page.tsx](frontend/app/supervisor/floorplans/page.tsx)
+- [monitoring/page.tsx](frontend/app/supervisor/monitoring/page.tsx)
+- [prescriptions/page.tsx](frontend/app/supervisor/prescriptions/page.tsx)
+- [tasks/page.tsx](frontend/app/supervisor/tasks/page.tsx)
+- [support/page.tsx](frontend/app/supervisor/support/page.tsx)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx)
+- [DataTableCard.tsx](frontend/components/supervisor/DataTableCard.tsx)
+- [SummaryStatCard.tsx](frontend/components/supervisor/SummaryStatCard.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [routes.ts](frontend/lib/routes.ts)
+- [sidebarConfig.ts](frontend/lib/sidebarConfig.ts)
+- [useAlertRowHighlight.ts](frontend/hooks/useAlertRowHighlight.ts)
+- [useAuth.tsx](frontend/hooks/useAuth.tsx)
+- [useFixedNowMs.ts](frontend/hooks/useFixedNowMs.ts)
+- [datetime.ts](frontend/lib/datetime.ts)
+- [i18n.tsx](frontend/lib/i18n.tsx)
+- [patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
+- [types.ts](frontend/lib/types.ts)
 </cite>
 
 ## Table of Contents
@@ -88,33 +88,33 @@ PD --> SS
 ```
 
 **Diagram sources**
-- [layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [emergency/page.tsx:1-441](file://frontend/app/supervisor/emergency/page.tsx#L1-L441)
-- [floorplans/page.tsx:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [monitoring/page.tsx:1-6](file://frontend/app/supervisor/monitoring/page.tsx#L1-L6)
-- [prescriptions/page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [tasks/page.tsx:1-138](file://frontend/app/supervisor/tasks/page.tsx#L1-L138)
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [DataTableCard.tsx:1-167](file://frontend/components/supervisor/DataTableCard.tsx#L1-L167)
-- [SummaryStatCard.tsx:1-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
+- [layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [emergency/page.tsx:1-441](frontend/app/supervisor/emergency/page.tsx#L1-L441)
+- [floorplans/page.tsx:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [monitoring/page.tsx:1-6](frontend/app/supervisor/monitoring/page.tsx#L1-L6)
+- [prescriptions/page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [tasks/page.tsx:1-138](frontend/app/supervisor/tasks/page.tsx#L1-L138)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [DataTableCard.tsx:1-167](frontend/components/supervisor/DataTableCard.tsx#L1-L167)
+- [SummaryStatCard.tsx:1-39](frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
 
 **Section sources**
-- [layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [emergency/page.tsx:1-441](file://frontend/app/supervisor/emergency/page.tsx#L1-L441)
-- [floorplans/page.tsx:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [monitoring/page.tsx:1-6](file://frontend/app/supervisor/monitoring/page.tsx#L1-L6)
-- [prescriptions/page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [tasks/page.tsx:1-138](file://frontend/app/supervisor/tasks/page.tsx#L1-L138)
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
+- [layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [emergency/page.tsx:1-441](frontend/app/supervisor/emergency/page.tsx#L1-L441)
+- [floorplans/page.tsx:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [monitoring/page.tsx:1-6](frontend/app/supervisor/monitoring/page.tsx#L1-L6)
+- [prescriptions/page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [tasks/page.tsx:1-138](frontend/app/supervisor/tasks/page.tsx#L1-L138)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
 
 ## Core Components
 - Dashboard overview: Real-time stats, directive acknowledgments, and task queue.
@@ -130,15 +130,15 @@ Key reusable components:
 - SummaryStatCard: Compact stat cards with icon and tone-based styling.
 
 **Section sources**
-- [page.tsx:177-390](file://frontend/app/supervisor/page.tsx#L177-L390)
-- [emergency/page.tsx:382-438](file://frontend/app/supervisor/emergency/page.tsx#L382-L438)
-- [floorplans/page.tsx:7-24](file://frontend/app/supervisor/floorplans/page.tsx#L7-L24)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L496-L557)
-- [prescriptions/page.tsx:207-322](file://frontend/app/supervisor/prescriptions/page.tsx#L207-L322)
-- [tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [DataTableCard.tsx:1-167](file://frontend/components/supervisor/DataTableCard.tsx#L1-L167)
-- [SummaryStatCard.tsx:1-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
+- [page.tsx:177-390](frontend/app/supervisor/page.tsx#L177-L390)
+- [emergency/page.tsx:382-438](frontend/app/supervisor/emergency/page.tsx#L382-L438)
+- [floorplans/page.tsx:7-24](frontend/app/supervisor/floorplans/page.tsx#L7-L24)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L496-L557)
+- [prescriptions/page.tsx:207-322](frontend/app/supervisor/prescriptions/page.tsx#L207-L322)
+- [tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [DataTableCard.tsx:1-167](frontend/components/supervisor/DataTableCard.tsx#L1-L167)
+- [SummaryStatCard.tsx:1-39](frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
 
 ## Architecture Overview
 The supervisor dashboard is a client-side Next.js app router application. Pages fetch data via React Query and render reusable UI components. Navigation is role-scoped through RoleShell, with sidebar and top bar providing contextual navigation and branding. Data access is centralized via api.ts, with translations handled by i18n.tsx.
@@ -204,24 +204,24 @@ RS --> TB
 ```
 
 **Diagram sources**
-- [page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [emergency/page.tsx:1-441](file://frontend/app/supervisor/emergency/page.tsx#L1-L441)
-- [floorplans/page.tsx:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
-- [prescriptions/page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [tasks/page.tsx:1-138](file://frontend/app/supervisor/tasks/page.tsx#L1-L138)
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [DataTableCard.tsx:1-167](file://frontend/components/supervisor/DataTableCard.tsx#L1-L167)
-- [SummaryStatCard.tsx:1-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
-- [api.ts](file://frontend/lib/api.ts)
-- [i18n.tsx](file://frontend/lib/i18n.tsx)
-- [datetime.ts](file://frontend/lib/datetime.ts)
-- [useAlertRowHighlight.ts](file://frontend/hooks/useAlertRowHighlight.ts)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
+- [page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [emergency/page.tsx:1-441](frontend/app/supervisor/emergency/page.tsx#L1-L441)
+- [floorplans/page.tsx:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
+- [prescriptions/page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [tasks/page.tsx:1-138](frontend/app/supervisor/tasks/page.tsx#L1-L138)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [DataTableCard.tsx:1-167](frontend/components/supervisor/DataTableCard.tsx#L1-L167)
+- [SummaryStatCard.tsx:1-39](frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
+- [api.ts](frontend/lib/api.ts)
+- [i18n.tsx](frontend/lib/i18n.tsx)
+- [datetime.ts](frontend/lib/datetime.ts)
+- [useAlertRowHighlight.ts](frontend/hooks/useAlertRowHighlight.ts)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
 
 ## Detailed Component Analysis
 
@@ -254,12 +254,12 @@ D->>Q : Invalidate queries to refresh data
 ```
 
 **Diagram sources**
-- [page.tsx:41-141](file://frontend/app/supervisor/page.tsx#L41-L141)
-- [api.ts](file://frontend/lib/api.ts)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [page.tsx:41-141](frontend/app/supervisor/page.tsx#L41-L141)
+- [api.ts](frontend/lib/api.ts)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
 
 **Section sources**
-- [page.tsx:34-394](file://frontend/app/supervisor/page.tsx#L34-L394)
+- [page.tsx:34-394](frontend/app/supervisor/page.tsx#L34-L394)
 
 ### Emergency Response Interface
 The emergency page centralizes active alerts, room occupancy derived from localization predictions, and device localization feed:
@@ -284,12 +284,12 @@ Ack --> Wait
 ```
 
 **Diagram sources**
-- [emergency/page.tsx:68-438](file://frontend/app/supervisor/emergency/page.tsx#L68-L438)
-- [useAlertRowHighlight.ts](file://frontend/hooks/useAlertRowHighlight.ts)
-- [datetime.ts](file://frontend/lib/datetime.ts)
+- [emergency/page.tsx:68-438](frontend/app/supervisor/emergency/page.tsx#L68-L438)
+- [useAlertRowHighlight.ts](frontend/hooks/useAlertRowHighlight.ts)
+- [datetime.ts](frontend/lib/datetime.ts)
 
 **Section sources**
-- [emergency/page.tsx:1-441](file://frontend/app/supervisor/emergency/page.tsx#L1-L441)
+- [emergency/page.tsx:1-441](frontend/app/supervisor/emergency/page.tsx#L1-L441)
 
 ### Floorplan Monitoring
 The floorplan page displays a role-aware floorplan viewer with live presence indicators, enabling supervisors to oversee zones and readiness.
@@ -308,11 +308,11 @@ VR-->>U : Show live floorplan with presence
 ```
 
 **Diagram sources**
-- [floorplans/page.tsx:7-24](file://frontend/app/supervisor/floorplans/page.tsx#L7-L24)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [floorplans/page.tsx:7-24](frontend/app/supervisor/floorplans/page.tsx#L7-L24)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
 
 **Section sources**
-- [floorplans/page.tsx:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [floorplans/page.tsx:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
 
 ### Patient Detail and Clinical Supervision
 The patient detail page consolidates vitals, alerts, tasks, and directives for a selected patient:
@@ -340,14 +340,14 @@ PD->>Q : Invalidate queries to refresh
 ```
 
 **Diagram sources**
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L65-L557)
-- [api.ts](file://frontend/lib/api.ts)
-- [datetime.ts](file://frontend/lib/datetime.ts)
-- [patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L65-L557)
+- [api.ts](frontend/lib/api.ts)
+- [datetime.ts](frontend/lib/datetime.ts)
+- [patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
+- [types.ts](frontend/lib/types.ts)
 
 **Section sources**
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
 
 ### Prescription Management
 The prescriptions page enables supervisors to create and review prescriptions:
@@ -373,11 +373,11 @@ PR->>Q : Invalidate prescriptions query
 ```
 
 **Diagram sources**
-- [prescriptions/page.tsx:66-322](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L322)
-- [api.ts](file://frontend/lib/api.ts)
+- [prescriptions/page.tsx:66-322](frontend/app/supervisor/prescriptions/page.tsx#L66-L322)
+- [api.ts](frontend/lib/api.ts)
 
 **Section sources**
-- [prescriptions/page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [prescriptions/page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
 
 ### Task Supervision
 The tasks page presents a unified kanban board for viewing and executing tasks assigned to the supervisor:
@@ -406,17 +406,17 @@ TK-->>U : Show success/error toast
 ```
 
 **Diagram sources**
-- [tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
-- [useAuth.tsx](file://frontend/hooks/useAuth.tsx)
+- [tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [useAuth.tsx](frontend/hooks/useAuth.tsx)
 
 **Section sources**
-- [tasks/page.tsx:1-138](file://frontend/app/supervisor/tasks/page.tsx#L1-L138)
+- [tasks/page.tsx:1-138](frontend/app/supervisor/tasks/page.tsx#L1-L138)
 
 ### Support Coordination
 The support page provides a form for reporting issues, enabling supervisors to coordinate support requests.
 
 **Section sources**
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
 
 ### Reusable Components
 
@@ -441,10 +441,10 @@ class DataTableCard {
 ```
 
 **Diagram sources**
-- [DataTableCard.tsx:26-51](file://frontend/components/supervisor/DataTableCard.tsx#L26-L51)
+- [DataTableCard.tsx:26-51](frontend/components/supervisor/DataTableCard.tsx#L26-L51)
 
 **Section sources**
-- [DataTableCard.tsx:1-167](file://frontend/components/supervisor/DataTableCard.tsx#L1-L167)
+- [DataTableCard.tsx:1-167](frontend/components/supervisor/DataTableCard.tsx#L1-L167)
 
 #### SummaryStatCard
 A compact stat card with:
@@ -462,10 +462,10 @@ class SummaryStatCard {
 ```
 
 **Diagram sources**
-- [SummaryStatCard.tsx:13-23](file://frontend/components/supervisor/SummaryStatCard.tsx#L13-L23)
+- [SummaryStatCard.tsx:13-23](frontend/components/supervisor/SummaryStatCard.tsx#L13-L23)
 
 **Section sources**
-- [SummaryStatCard.tsx:1-39](file://frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
+- [SummaryStatCard.tsx:1-39](frontend/components/supervisor/SummaryStatCard.tsx#L1-L39)
 
 ## Dependency Analysis
 - Role routing: Supervisor pages are wrapped by RoleShell with appRoot="/supervisor".
@@ -497,40 +497,40 @@ P --> TY["types.ts"]
 ```
 
 **Diagram sources**
-- [layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [emergency/page.tsx:1-441](file://frontend/app/supervisor/emergency/page.tsx#L1-L441)
-- [floorplans/page.tsx:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
-- [prescriptions/page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [tasks/page.tsx:1-138](file://frontend/app/supervisor/tasks/page.tsx#L1-L138)
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [api.ts](file://frontend/lib/api.ts)
-- [useAlertRowHighlight.ts](file://frontend/hooks/useAlertRowHighlight.ts)
-- [datetime.ts](file://frontend/lib/datetime.ts)
-- [patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [emergency/page.tsx:1-441](frontend/app/supervisor/emergency/page.tsx#L1-L441)
+- [floorplans/page.tsx:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
+- [prescriptions/page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [tasks/page.tsx:1-138](frontend/app/supervisor/tasks/page.tsx#L1-L138)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [api.ts](frontend/lib/api.ts)
+- [useAlertRowHighlight.ts](frontend/hooks/useAlertRowHighlight.ts)
+- [datetime.ts](frontend/lib/datetime.ts)
+- [patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
+- [types.ts](frontend/lib/types.ts)
 
 **Section sources**
-- [layout.tsx:1-12](file://frontend/app/supervisor/layout.tsx#L1-L12)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [RoleSidebar.tsx](file://frontend/components/RoleSidebar.tsx)
-- [TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [emergency/page.tsx:1-441](file://frontend/app/supervisor/emergency/page.tsx#L1-L441)
-- [floorplans/page.tsx:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
-- [prescriptions/page.tsx:1-326](file://frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
-- [tasks/page.tsx:1-138](file://frontend/app/supervisor/tasks/page.tsx#L1-L138)
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [api.ts](file://frontend/lib/api.ts)
-- [useAlertRowHighlight.ts](file://frontend/hooks/useAlertRowHighlight.ts)
-- [datetime.ts](file://frontend/lib/datetime.ts)
-- [patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [layout.tsx:1-12](frontend/app/supervisor/layout.tsx#L1-L12)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [RoleSidebar.tsx](frontend/components/RoleSidebar.tsx)
+- [TopBar.tsx](frontend/components/TopBar.tsx)
+- [page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [emergency/page.tsx:1-441](frontend/app/supervisor/emergency/page.tsx#L1-L441)
+- [floorplans/page.tsx:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
+- [prescriptions/page.tsx:1-326](frontend/app/supervisor/prescriptions/page.tsx#L1-L326)
+- [tasks/page.tsx:1-138](frontend/app/supervisor/tasks/page.tsx#L1-L138)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [api.ts](frontend/lib/api.ts)
+- [useAlertRowHighlight.ts](frontend/hooks/useAlertRowHighlight.ts)
+- [datetime.ts](frontend/lib/datetime.ts)
+- [patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
+- [types.ts](frontend/lib/types.ts)
 
 ## Performance Considerations
 - Efficient data fetching: Queries are scoped with keys and refetch intervals optimized for real-time dashboards (alerts and vitals).
@@ -549,10 +549,10 @@ Common issues and resolutions:
 - Time formatting: Relative and absolute time formatting via datetime utilities ensures clarity across tables.
 
 **Section sources**
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L443-L455)
-- [prescriptions/page.tsx:60-64](file://frontend/app/supervisor/prescriptions/page.tsx#L60-L64)
-- [emergency/page.tsx:361-373](file://frontend/app/supervisor/emergency/page.tsx#L361-L373)
-- [datetime.ts](file://frontend/lib/datetime.ts)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L443-L455)
+- [prescriptions/page.tsx:60-64](frontend/app/supervisor/prescriptions/page.tsx#L60-L64)
+- [emergency/page.tsx:361-373](frontend/app/supervisor/emergency/page.tsx#L361-L373)
+- [datetime.ts](frontend/lib/datetime.ts)
 
 ## Conclusion
 The Supervisor Dashboard in WheelSense Platform provides a comprehensive oversight interface integrating emergency response, patient monitoring, prescription management, task supervision, and facility oversight. Through role-scoped navigation, reusable data table cards, and summary stat cards, supervisors can monitor real-time conditions, coordinate directives and tasks, track patients, and manage prescriptions—all backed by robust data fetching and responsive UI components.
@@ -585,9 +585,9 @@ P-->>U : Updated data reflected
 ```
 
 **Diagram sources**
-- [emergency/page.tsx:274-281](file://frontend/app/supervisor/emergency/page.tsx#L274-L281)
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L406-L422)
-- [api.ts](file://frontend/lib/api.ts)
+- [emergency/page.tsx:274-281](frontend/app/supervisor/emergency/page.tsx#L274-L281)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L406-L422)
+- [api.ts](frontend/lib/api.ts)
 
 #### Patient Care Supervision
 - Access patient detail from dashboard or emergency views
@@ -596,7 +596,7 @@ P-->>U : Updated data reflected
 - Track room and status badges for quick situational awareness
 
 **Section sources**
-- [patients/[id]/page.tsx](file://frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
+- [patients/[id]/page.tsx](frontend/app/supervisor/patients/[id]/page.tsx#L1-L570)
 
 #### Medication Oversight
 - Create prescriptions with patient and optional specialist linkage
@@ -604,7 +604,7 @@ P-->>U : Updated data reflected
 - Ensure proper routing and instructions for safe administration
 
 **Section sources**
-- [prescriptions/page.tsx:66-322](file://frontend/app/supervisor/prescriptions/page.tsx#L66-L322)
+- [prescriptions/page.tsx:66-322](frontend/app/supervisor/prescriptions/page.tsx#L66-L322)
 
 #### Task Delegation and Execution
 - View assigned tasks in kanban board
@@ -612,7 +612,7 @@ P-->>U : Updated data reflected
 - Use command bar for task statistics and filtering
 
 **Section sources**
-- [tasks/page.tsx:23-137](file://frontend/app/supervisor/tasks/page.tsx#L23-L137)
+- [tasks/page.tsx:23-137](frontend/app/supervisor/tasks/page.tsx#L23-L137)
 
 #### Facility Management Activities
 - Use floorplan viewer to monitor live presence and readiness
@@ -620,6 +620,6 @@ P-->>U : Updated data reflected
 - Monitor dashboard stats for overall zone health
 
 **Section sources**
-- [floorplans/page.tsx:7-24](file://frontend/app/supervisor/floorplans/page.tsx#L7-L24)
-- [support/page.tsx:1-6](file://frontend/app/supervisor/support/page.tsx#L1-L6)
-- [page.tsx:177-256](file://frontend/app/supervisor/page.tsx#L177-L256)
+- [floorplans/page.tsx:7-24](frontend/app/supervisor/floorplans/page.tsx#L7-L24)
+- [support/page.tsx:1-6](frontend/app/supervisor/support/page.tsx#L1-L6)
+- [page.tsx:177-256](frontend/app/supervisor/page.tsx#L177-L256)

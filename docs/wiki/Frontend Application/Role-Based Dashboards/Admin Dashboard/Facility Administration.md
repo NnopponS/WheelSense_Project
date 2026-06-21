@@ -2,22 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**
-- [FacilitiesPanel.tsx](file://frontend/components/admin/FacilitiesPanel.tsx)
-- [FloorplansPanel.tsx](file://frontend/components/admin/FloorplansPanel.tsx)
-- [RoomFormModal.tsx](file://frontend/components/admin/RoomFormModal.tsx)
-- [facility-management page.tsx](file://frontend/app/admin/facility-management/page.tsx)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [README.md](file://frontend/README.md)
-- [facilities.py](file://server/app/api/endpoints/facilities.py)
-- [floorplans.py](file://server/app/api/endpoints/floorplans.py)
-- [rooms.py](file://server/app/api/endpoints/rooms.py)
-- [facility.py](file://server/app/models/facility.py)
-- [floorplans.py](file://server/app/models/floorplans.py)
-- [floorplanLayout.ts](file://frontend/lib/floorplanLayout.ts)
-- [floorplanRoomResolve.ts](file://frontend/lib/floorplanRoomResolve.ts)
-- [floorplanSaveProvision.ts](file://frontend/lib/floorplanSaveProvision.ts)
+- [FacilitiesPanel.tsx](frontend/components/admin/FacilitiesPanel.tsx)
+- [FloorplansPanel.tsx](frontend/components/admin/FloorplansPanel.tsx)
+- [RoomFormModal.tsx](frontend/components/admin/RoomFormModal.tsx)
+- [facility-management page.tsx](frontend/app/admin/facility-management/page.tsx)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [README.md](frontend/README.md)
+- [facilities.py](server/app/api/endpoints/facilities.py)
+- [floorplans.py](server/app/api/endpoints/floorplans.py)
+- [rooms.py](server/app/api/endpoints/rooms.py)
+- [facility.py](server/app/models/facility.py)
+- [floorplans.py](server/app/models/floorplans.py)
+- [floorplanLayout.ts](frontend/lib/floorplanLayout.ts)
+- [floorplanRoomResolve.ts](frontend/lib/floorplanRoomResolve.ts)
+- [floorplanSaveProvision.ts](frontend/lib/floorplanSaveProvision.ts)
 </cite>
 
 ## Table of Contents
@@ -73,21 +73,21 @@ FPanel --> EFloor
 ```
 
 **Diagram sources**
-- [facility-management page.tsx:38-576](file://frontend/app/admin/facility-management/page.tsx#L38-L576)
-- [FloorplansPanel.tsx:86-775](file://frontend/components/admin/FloorplansPanel.tsx#L86-L775)
-- [FacilitiesPanel.tsx:25-228](file://frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
-- [RoomFormModal.tsx:51-344](file://frontend/components/admin/RoomFormModal.tsx#L51-L344)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [facilities.py](file://server/app/api/endpoints/facilities.py)
-- [floorplans.py](file://server/app/api/endpoints/floorplans.py)
-- [rooms.py](file://server/app/api/endpoints/rooms.py)
+- [facility-management page.tsx:38-576](frontend/app/admin/facility-management/page.tsx#L38-L576)
+- [FloorplansPanel.tsx:86-775](frontend/components/admin/FloorplansPanel.tsx#L86-L775)
+- [FacilitiesPanel.tsx:25-228](frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
+- [RoomFormModal.tsx:51-344](frontend/components/admin/RoomFormModal.tsx#L51-L344)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [facilities.py](server/app/api/endpoints/facilities.py)
+- [floorplans.py](server/app/api/endpoints/floorplans.py)
+- [rooms.py](server/app/api/endpoints/rooms.py)
 
 **Section sources**
-- [facility-management page.tsx:38-576](file://frontend/app/admin/facility-management/page.tsx#L38-L576)
-- [FloorplansPanel.tsx:86-775](file://frontend/components/admin/FloorplansPanel.tsx#L86-L775)
-- [FacilitiesPanel.tsx:25-228](file://frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
-- [RoomFormModal.tsx:51-344](file://frontend/components/admin/RoomFormModal.tsx#L51-L344)
+- [facility-management page.tsx:38-576](frontend/app/admin/facility-management/page.tsx#L38-L576)
+- [FloorplansPanel.tsx:86-775](frontend/components/admin/FloorplansPanel.tsx#L86-L775)
+- [FacilitiesPanel.tsx:25-228](frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
+- [RoomFormModal.tsx:51-344](frontend/components/admin/RoomFormModal.tsx#L51-L344)
 
 ## Core Components
 - Facilities Panel: Lists, creates, edits, and deletes facilities; supports search and displays address/description.
@@ -96,10 +96,10 @@ FPanel --> EFloor
 - Facility Management Page: Orchestrates Facilities and Floors tabs, and embeds Floorplans Panel with external scope.
 
 **Section sources**
-- [FacilitiesPanel.tsx:25-228](file://frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
-- [FloorplansPanel.tsx:86-775](file://frontend/components/admin/FloorplansPanel.tsx#L86-L775)
-- [RoomFormModal.tsx:51-344](file://frontend/components/admin/RoomFormModal.tsx#L51-L344)
-- [facility-management page.tsx:38-576](file://frontend/app/admin/facility-management/page.tsx#L38-L576)
+- [FacilitiesPanel.tsx:25-228](frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
+- [FloorplansPanel.tsx:86-775](frontend/components/admin/FloorplansPanel.tsx#L86-L775)
+- [RoomFormModal.tsx:51-344](frontend/components/admin/RoomFormModal.tsx#L51-L344)
+- [facility-management page.tsx:38-576](frontend/app/admin/facility-management/page.tsx#L38-L576)
 
 ## Architecture Overview
 The admin UI integrates with backend endpoints to manage spatial hierarchy and room assignments. The Floorplans Panel centralizes floor editing and room operations, while the Facility Management Page coordinates scope selection and embedding.
@@ -122,15 +122,15 @@ FP-->>Admin : Save success/error feedback
 ```
 
 **Diagram sources**
-- [facility-management page.tsx:75-78](file://frontend/app/admin/facility-management/page.tsx#L75-L78)
-- [FloorplansPanel.tsx:125-142](file://frontend/components/admin/FloorplansPanel.tsx#L125-L142)
-- [FloorplansPanel.tsx:469-555](file://frontend/components/admin/FloorplansPanel.tsx#L469-L555)
-- [floorplans.py](file://server/app/api/endpoints/floorplans.py)
-- [rooms.py](file://server/app/api/endpoints/rooms.py)
+- [facility-management page.tsx:75-78](frontend/app/admin/facility-management/page.tsx#L75-L78)
+- [FloorplansPanel.tsx:125-142](frontend/components/admin/FloorplansPanel.tsx#L125-L142)
+- [FloorplansPanel.tsx:469-555](frontend/components/admin/FloorplansPanel.tsx#L469-L555)
+- [floorplans.py](server/app/api/endpoints/floorplans.py)
+- [rooms.py](server/app/api/endpoints/rooms.py)
 
 **Section sources**
-- [ARCHITECTURE.md:171-202](file://ARCHITECTURE.md#L171-L202)
-- [README.md:186-192](file://frontend/README.md#L186-L192)
+- [ARCHITECTURE.md:171-202](ARCHITECTURE.md#L171-L202)
+- [README.md:186-192](frontend/README.md#L186-L192)
 
 ## Detailed Component Analysis
 
@@ -164,10 +164,10 @@ Refresh --> End(["Done"])
 ```
 
 **Diagram sources**
-- [FacilitiesPanel.tsx:27-107](file://frontend/components/admin/FacilitiesPanel.tsx#L27-L107)
+- [FacilitiesPanel.tsx:27-107](frontend/components/admin/FacilitiesPanel.tsx#L27-L107)
 
 **Section sources**
-- [FacilitiesPanel.tsx:25-228](file://frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
+- [FacilitiesPanel.tsx:25-228](frontend/components/admin/FacilitiesPanel.tsx#L25-L228)
 
 ### Floorplans Panel
 Purpose:
@@ -200,15 +200,15 @@ FP-->>User : Save success/error
 ```
 
 **Diagram sources**
-- [FloorplansPanel.tsx:125-153](file://frontend/components/admin/FloorplansPanel.tsx#L125-L153)
-- [FloorplansPanel.tsx:469-555](file://frontend/components/admin/FloorplansPanel.tsx#L469-L555)
-- [floorplanSaveProvision.ts](file://frontend/lib/floorplanSaveProvision.ts)
-- [floorplanRoomResolve.ts](file://frontend/lib/floorplanRoomResolve.ts)
-- [floorplanLayout.ts](file://frontend/lib/floorplanLayout.ts)
+- [FloorplansPanel.tsx:125-153](frontend/components/admin/FloorplansPanel.tsx#L125-L153)
+- [FloorplansPanel.tsx:469-555](frontend/components/admin/FloorplansPanel.tsx#L469-L555)
+- [floorplanSaveProvision.ts](frontend/lib/floorplanSaveProvision.ts)
+- [floorplanRoomResolve.ts](frontend/lib/floorplanRoomResolve.ts)
+- [floorplanLayout.ts](frontend/lib/floorplanLayout.ts)
 
 **Section sources**
-- [FloorplansPanel.tsx:86-775](file://frontend/components/admin/FloorplansPanel.tsx#L86-L775)
-- [README.md:186-192](file://frontend/README.md#L186-L192)
+- [FloorplansPanel.tsx:86-775](frontend/components/admin/FloorplansPanel.tsx#L86-L775)
+- [README.md:186-192](frontend/README.md#L186-L192)
 
 ### Room Form Modal
 Purpose:
@@ -235,11 +235,11 @@ Close --> End(["Done"])
 ```
 
 **Diagram sources**
-- [RoomFormModal.tsx:93-129](file://frontend/components/admin/RoomFormModal.tsx#L93-L129)
-- [RoomFormModal.tsx:291-342](file://frontend/components/admin/RoomFormModal.tsx#L291-L342)
+- [RoomFormModal.tsx:93-129](frontend/components/admin/RoomFormModal.tsx#L93-L129)
+- [RoomFormModal.tsx:291-342](frontend/components/admin/RoomFormModal.tsx#L291-L342)
 
 **Section sources**
-- [RoomFormModal.tsx:51-344](file://frontend/components/admin/RoomFormModal.tsx#L51-L344)
+- [RoomFormModal.tsx:51-344](frontend/components/admin/RoomFormModal.tsx#L51-L344)
 
 ### Facility Management Page
 Purpose:
@@ -269,10 +269,10 @@ Refetch --> End(["Done"])
 ```
 
 **Diagram sources**
-- [facility-management page.tsx:38-576](file://frontend/app/admin/facility-management/page.tsx#L38-L576)
+- [facility-management page.tsx:38-576](frontend/app/admin/facility-management/page.tsx#L38-L576)
 
 **Section sources**
-- [facility-management page.tsx:38-576](file://frontend/app/admin/facility-management/page.tsx#L38-L576)
+- [facility-management page.tsx:38-576](frontend/app/admin/facility-management/page.tsx#L38-L576)
 
 ## Dependency Analysis
 - Frontend dependencies:
@@ -303,15 +303,15 @@ FM --> FPanel
 ```
 
 **Diagram sources**
-- [FloorplansPanel.tsx:11-29](file://frontend/components/admin/FloorplansPanel.tsx#L11-L29)
-- [FacilitiesPanel.tsx:27-33](file://frontend/components/admin/FacilitiesPanel.tsx#L27-L33)
-- [RoomFormModal.tsx:93-129](file://frontend/components/admin/RoomFormModal.tsx#L93-L129)
-- [facility-management page.tsx:75-78](file://frontend/app/admin/facility-management/page.tsx#L75-L78)
+- [FloorplansPanel.tsx:11-29](frontend/components/admin/FloorplansPanel.tsx#L11-L29)
+- [FacilitiesPanel.tsx:27-33](frontend/components/admin/FacilitiesPanel.tsx#L27-L33)
+- [RoomFormModal.tsx:93-129](frontend/components/admin/RoomFormModal.tsx#L93-L129)
+- [facility-management page.tsx:75-78](frontend/app/admin/facility-management/page.tsx#L75-L78)
 
 **Section sources**
-- [FloorplansPanel.tsx:11-29](file://frontend/components/admin/FloorplansPanel.tsx#L11-L29)
-- [RoomFormModal.tsx:93-129](file://frontend/components/admin/RoomFormModal.tsx#L93-L129)
-- [facility-management page.tsx:75-78](file://frontend/app/admin/facility-management/page.tsx#L75-L78)
+- [FloorplansPanel.tsx:11-29](frontend/components/admin/FloorplansPanel.tsx#L11-L29)
+- [RoomFormModal.tsx:93-129](frontend/components/admin/RoomFormModal.tsx#L93-L129)
+- [facility-management page.tsx:75-78](frontend/app/admin/facility-management/page.tsx#L75-L78)
 
 ## Performance Considerations
 - Polling and caching: Facilities, Floors, and Floorplans use query stale times and polling intervals to balance freshness and performance.
@@ -334,9 +334,9 @@ Common issues and resolutions:
   - When editing rooms via Room Form Modal, ensure facility and floor selections are consistent with the current scope.
 
 **Section sources**
-- [FloorplansPanel.tsx:469-555](file://frontend/components/admin/FloorplansPanel.tsx#L469-L555)
-- [FloorplansPanel.tsx:557-587](file://frontend/components/admin/FloorplansPanel.tsx#L557-L587)
-- [RoomFormModal.tsx:291-342](file://frontend/components/admin/RoomFormModal.tsx#L291-L342)
+- [FloorplansPanel.tsx:469-555](frontend/components/admin/FloorplansPanel.tsx#L469-L555)
+- [FloorplansPanel.tsx:557-587](frontend/components/admin/FloorplansPanel.tsx#L557-L587)
+- [RoomFormModal.tsx:291-342](frontend/components/admin/RoomFormModal.tsx#L291-L342)
 
 ## Conclusion
 The Facility Administration module provides a cohesive admin experience for managing facilities, floors, and floor plans. The Facilities Panel offers straightforward building management, while the Floorplans Panel consolidates spatial editing, device linking, and patient assignment into a single, robust workflow. The Room Form Modal enables precise room creation and updates with workspace scoping. Together with the Facility Management Page orchestrator, administrators can efficiently configure the spatial model, assign rooms to departments, and maintain facility-wide settings.

@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [admin_database.py](file://server/app/api/endpoints/admin_database.py)
-- [admin_database.py](file://server/app/schemas/admin_database.py)
-- [users.py](file://server/app/api/endpoints/users.py)
-- [users.py](file://server/app/schemas/users.py)
-- [facilities.py](file://server/app/api/endpoints/facilities.py)
-- [workspaces.py](file://server/app/api/endpoints/workspaces.py)
-- [support.py](file://server/app/api/endpoints/support.py)
-- [analytics.py](file://server/app/api/endpoints/analytics.py)
-- [analytics.py](file://server/app/schemas/analytics.py)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
-- [server.py](file://server/app/mcp/server.py)
-- [openapi.generated.json](file://server/openapi.generated.json)
-- [frontend admin floorplans page.tsx](file://frontend/app/admin/floorplans/page.tsx)
+- [admin_database.py](server/app/api/endpoints/admin_database.py)
+- [admin_database.py](server/app/schemas/admin_database.py)
+- [users.py](server/app/api/endpoints/users.py)
+- [users.py](server/app/schemas/users.py)
+- [facilities.py](server/app/api/endpoints/facilities.py)
+- [workspaces.py](server/app/api/endpoints/workspaces.py)
+- [support.py](server/app/api/endpoints/support.py)
+- [analytics.py](server/app/api/endpoints/analytics.py)
+- [analytics.py](server/app/schemas/analytics.py)
+- [alerts.py](server/app/api/endpoints/alerts.py)
+- [server.py](server/app/mcp/server.py)
+- [openapi.generated.json](server/openapi.generated.json)
+- [frontend admin floorplans page.tsx](frontend/app/admin/floorplans/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -53,22 +53,22 @@ F --> A
 ```
 
 **Diagram sources**
-- [admin_database.py:15-59](file://server/app/api/endpoints/admin_database.py#L15-L59)
-- [users.py:23-98](file://server/app/api/endpoints/users.py#L23-L98)
-- [facilities.py:38-165](file://server/app/api/endpoints/facilities.py#L38-L165)
-- [workspaces.py:15-56](file://server/app/api/endpoints/workspaces.py#L15-L56)
-- [support.py:62-169](file://server/app/api/endpoints/support.py#L62-L169)
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [alerts.py:29-132](file://server/app/api/endpoints/alerts.py#L29-L132)
+- [admin_database.py:15-59](server/app/api/endpoints/admin_database.py#L15-L59)
+- [users.py:23-98](server/app/api/endpoints/users.py#L23-L98)
+- [facilities.py:38-165](server/app/api/endpoints/facilities.py#L38-L165)
+- [workspaces.py:15-56](server/app/api/endpoints/workspaces.py#L15-L56)
+- [support.py:62-169](server/app/api/endpoints/support.py#L62-L169)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [alerts.py:29-132](server/app/api/endpoints/alerts.py#L29-L132)
 
 **Section sources**
-- [admin_database.py:1-60](file://server/app/api/endpoints/admin_database.py#L1-L60)
-- [users.py:1-99](file://server/app/api/endpoints/users.py#L1-L99)
-- [facilities.py:1-166](file://server/app/api/endpoints/facilities.py#L1-L166)
-- [workspaces.py:1-58](file://server/app/api/endpoints/workspaces.py#L1-L58)
-- [support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [alerts.py:1-134](file://server/app/api/endpoints/alerts.py#L1-L134)
+- [admin_database.py:1-60](server/app/api/endpoints/admin_database.py#L1-L60)
+- [users.py:1-99](server/app/api/endpoints/users.py#L1-L99)
+- [facilities.py:1-166](server/app/api/endpoints/facilities.py#L1-L166)
+- [workspaces.py:1-58](server/app/api/endpoints/workspaces.py#L1-L58)
+- [support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [alerts.py:1-134](server/app/api/endpoints/alerts.py#L1-L134)
 
 ## Core Components
 - Administrative database maintenance: wipe application data with password confirmation and session safety checks.
@@ -81,13 +81,13 @@ F --> A
 - Administrative security controls: role gating, impersonation protections, and workspace scoping.
 
 **Section sources**
-- [admin_database.py:15-59](file://server/app/api/endpoints/admin_database.py#L15-L59)
-- [users.py:23-98](file://server/app/api/endpoints/users.py#L23-L98)
-- [facilities.py:38-165](file://server/app/api/endpoints/facilities.py#L38-L165)
-- [workspaces.py:15-56](file://server/app/api/endpoints/workspaces.py#L15-L56)
-- [support.py:62-169](file://server/app/api/endpoints/support.py#L62-L169)
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [alerts.py:29-132](file://server/app/api/endpoints/alerts.py#L29-L132)
+- [admin_database.py:15-59](server/app/api/endpoints/admin_database.py#L15-L59)
+- [users.py:23-98](server/app/api/endpoints/users.py#L23-L98)
+- [facilities.py:38-165](server/app/api/endpoints/facilities.py#L38-L165)
+- [workspaces.py:15-56](server/app/api/endpoints/workspaces.py#L15-L56)
+- [support.py:62-169](server/app/api/endpoints/support.py#L62-L169)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [alerts.py:29-132](server/app/api/endpoints/alerts.py#L29-L132)
 
 ## Architecture Overview
 Administrative APIs are organized by domain and layered with services and schemas. Security is enforced via role decorators and workspace scoping. Frontend dashboards integrate with these endpoints to provide administrative capabilities.
@@ -109,10 +109,10 @@ API-->>Admin : "ClearDatabaseResult"
 ```
 
 **Diagram sources**
-- [admin_database.py:15-59](file://server/app/api/endpoints/admin_database.py#L15-L59)
+- [admin_database.py:15-59](server/app/api/endpoints/admin_database.py#L15-L59)
 
 **Section sources**
-- [admin_database.py:15-59](file://server/app/api/endpoints/admin_database.py#L15-L59)
+- [admin_database.py:15-59](server/app/api/endpoints/admin_database.py#L15-L59)
 
 ## Detailed Component Analysis
 
@@ -138,12 +138,12 @@ BuildResp --> Done(["Return result"])
 ```
 
 **Diagram sources**
-- [admin_database.py:15-59](file://server/app/api/endpoints/admin_database.py#L15-L59)
-- [admin_database.py:6-14](file://server/app/schemas/admin_database.py#L6-L14)
+- [admin_database.py:15-59](server/app/api/endpoints/admin_database.py#L15-L59)
+- [admin_database.py:6-14](server/app/schemas/admin_database.py#L6-L14)
 
 **Section sources**
-- [admin_database.py:15-59](file://server/app/api/endpoints/admin_database.py#L15-L59)
-- [admin_database.py:6-14](file://server/app/schemas/admin_database.py#L6-L14)
+- [admin_database.py:15-59](server/app/api/endpoints/admin_database.py#L15-L59)
+- [admin_database.py:6-14](server/app/schemas/admin_database.py#L6-L14)
 
 ### User Management APIs
 - Create user: POST /api/users (Admin required)
@@ -155,8 +155,8 @@ BuildResp --> Done(["Return result"])
 Access control and workspace scoping are enforced via role decorators and workspace context.
 
 **Section sources**
-- [users.py:23-98](file://server/app/api/endpoints/users.py#L23-L98)
-- [users.py:68-87](file://server/app/schemas/users.py#L68-L87)
+- [users.py:23-98](server/app/api/endpoints/users.py#L23-L98)
+- [users.py:68-87](server/app/schemas/users.py#L68-L87)
 
 ### Facility Administration
 - List facilities: GET /api/facilities
@@ -173,7 +173,7 @@ Access control and workspace scoping are enforced via role decorators and worksp
 All endpoints are scoped to the current workspace and require appropriate roles.
 
 **Section sources**
-- [facilities.py:38-165](file://server/app/api/endpoints/facilities.py#L38-L165)
+- [facilities.py:38-165](server/app/api/endpoints/facilities.py#L38-L165)
 
 ### Floorplan Configuration
 - Get floorplan layout: GET /api/floorplans/layout (requires facility_id and floor_id)
@@ -182,8 +182,8 @@ All endpoints are scoped to the current workspace and require appropriate roles.
 These endpoints are documented in the OpenAPI specification and return structured floorplan data.
 
 **Section sources**
-- [openapi.generated.json:8487-8587](file://server/openapi.generated.json#L8487-L8587)
-- [openapi.generated.json:8216-8261](file://server/openapi.generated.json#L8216-L8261)
+- [openapi.generated.json:8487-8587](server/openapi.generated.json#L8487-L8587)
+- [openapi.generated.json:8216-8261](server/openapi.generated.json#L8216-L8261)
 
 ### Support Ticket Management
 Endpoints:
@@ -198,7 +198,7 @@ Endpoints:
 Security: All authenticated users can access; service enforces workspace and role constraints.
 
 **Section sources**
-- [support.py:62-169](file://server/app/api/endpoints/support.py#L62-L169)
+- [support.py:62-169](server/app/api/endpoints/support.py#L62-L169)
 
 ### Analytics and Reporting
 - Alerts summary: GET /api/analytics/alerts/summary
@@ -208,8 +208,8 @@ Security: All authenticated users can access; service enforces workspace and rol
 Roles: Admin, supervisor, head_nurse, observer (alerts), supervisor/head_nurse (wards).
 
 **Section sources**
-- [analytics.py:17-47](file://server/app/api/endpoints/analytics.py#L17-L47)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:17-47](server/app/api/endpoints/analytics.py#L17-L47)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
 
 ### Workspace Administration
 - List workspaces: GET /api/workspaces
@@ -219,7 +219,7 @@ Roles: Admin, supervisor, head_nurse, observer (alerts), supervisor/head_nurse (
 Activation updates the admin/supervisor’s current workspace context.
 
 **Section sources**
-- [workspaces.py:15-56](file://server/app/api/endpoints/workspaces.py#L15-L56)
+- [workspaces.py:15-56](server/app/api/endpoints/workspaces.py#L15-L56)
 
 ### Administrative Security Controls
 - Role-based access: RequireRole decorator restricts endpoints to specific roles.
@@ -228,9 +228,9 @@ Activation updates the admin/supervisor’s current workspace context.
 - Audit-relevant flows: Support tickets and administrative actions are logged by the backend services.
 
 **Section sources**
-- [admin_database.py:25-29](file://server/app/api/endpoints/admin_database.py#L25-L29)
-- [users.py:28-33](file://server/app/api/endpoints/users.py#L28-L33)
-- [facilities.py:53-55](file://server/app/api/endpoints/facilities.py#L53-L55)
+- [admin_database.py:25-29](server/app/api/endpoints/admin_database.py#L25-L29)
+- [users.py:28-33](server/app/api/endpoints/users.py#L28-L33)
+- [facilities.py:53-55](server/app/api/endpoints/facilities.py#L53-L55)
 
 ### Administrative MCP Tool (Floor Creation)
 - Tool: create_facility_floor (admin-only)
@@ -238,13 +238,13 @@ Activation updates the admin/supervisor’s current workspace context.
 - Behavior: validates actor role, creates floor, returns created floor metadata
 
 **Section sources**
-- [server.py:2438-2449](file://server/app/mcp/server.py#L2438-L2449)
+- [server.py:2438-2449](server/app/mcp/server.py#L2438-L2449)
 
 ### Legacy Floorplans Redirect
 - Legacy URL: /admin/floorplans redirects to /admin/facility-management
 
 **Section sources**
-- [frontend admin floorplans page.tsx:1-6](file://frontend/app/admin/floorplans/page.tsx#L1-L6)
+- [frontend admin floorplans page.tsx:1-6](frontend/app/admin/floorplans/page.tsx#L1-L6)
 
 ## Dependency Analysis
 Administrative endpoints depend on:
@@ -267,20 +267,20 @@ W["workspaces.py"] --> WS["models.core.Workspace"]
 ```
 
 **Diagram sources**
-- [users.py:23-98](file://server/app/api/endpoints/users.py#L23-L98)
-- [facilities.py:31-32](file://server/app/api/endpoints/facilities.py#L31-L32)
-- [admin_database.py:10-10](file://server/app/api/endpoints/admin_database.py#L10-L10)
-- [support.py:22-22](file://server/app/api/endpoints/support.py#L22-L22)
-- [analytics.py:13-13](file://server/app/api/endpoints/analytics.py#L13-L13)
-- [workspaces.py:9-11](file://server/app/api/endpoints/workspaces.py#L9-L11)
+- [users.py:23-98](server/app/api/endpoints/users.py#L23-L98)
+- [facilities.py:31-32](server/app/api/endpoints/facilities.py#L31-L32)
+- [admin_database.py:10-10](server/app/api/endpoints/admin_database.py#L10-L10)
+- [support.py:22-22](server/app/api/endpoints/support.py#L22-L22)
+- [analytics.py:13-13](server/app/api/endpoints/analytics.py#L13-L13)
+- [workspaces.py:9-11](server/app/api/endpoints/workspaces.py#L9-L11)
 
 **Section sources**
-- [users.py:23-98](file://server/app/api/endpoints/users.py#L23-L98)
-- [facilities.py:31-32](file://server/app/api/endpoints/facilities.py#L31-L32)
-- [admin_database.py:10-10](file://server/app/api/endpoints/admin_database.py#L10-L10)
-- [support.py:22-22](file://server/app/api/endpoints/support.py#L22-L22)
-- [analytics.py:13-13](file://server/app/api/endpoints/analytics.py#L13-L13)
-- [workspaces.py:9-11](file://server/app/api/endpoints/workspaces.py#L9-L11)
+- [users.py:23-98](server/app/api/endpoints/users.py#L23-L98)
+- [facilities.py:31-32](server/app/api/endpoints/facilities.py#L31-L32)
+- [admin_database.py:10-10](server/app/api/endpoints/admin_database.py#L10-L10)
+- [support.py:22-22](server/app/api/endpoints/support.py#L22-L22)
+- [analytics.py:13-13](server/app/api/endpoints/analytics.py#L13-L13)
+- [workspaces.py:9-11](server/app/api/endpoints/workspaces.py#L9-L11)
 
 ## Performance Considerations
 - Pagination and limits: Many endpoints accept limit parameters to constrain result sizes (e.g., user search, analytics).
@@ -299,9 +299,9 @@ Common issues and resolutions:
 - 422 Validation errors: Confirm request bodies match schemas (e.g., user role enums, ticket categories).
 
 **Section sources**
-- [admin_database.py:25-35](file://server/app/api/endpoints/admin_database.py#L25-L35)
-- [facilities.py:158-161](file://server/app/api/endpoints/facilities.py#L158-L161)
-- [support.py:136-154](file://server/app/api/endpoints/support.py#L136-L154)
+- [admin_database.py:25-35](server/app/api/endpoints/admin_database.py#L25-L35)
+- [facilities.py:158-161](server/app/api/endpoints/facilities.py#L158-L161)
+- [support.py:136-154](server/app/api/endpoints/support.py#L136-L154)
 
 ## Conclusion
 The administrative API suite provides comprehensive controls for managing users, facilities, floorplans, support tickets, analytics, and workspaces. Strong role-based access control, workspace scoping, and safeguards against unsafe operations ensure secure administration. Integration with the frontend dashboards enables efficient operational workflows.
@@ -325,5 +325,5 @@ The administrative API suite provides comprehensive controls for managing users,
 - OpenAPI documents define endpoint signatures and schemas for client generation.
 
 **Section sources**
-- [frontend admin floorplans page.tsx:1-6](file://frontend/app/admin/floorplans/page.tsx#L1-L6)
-- [openapi.generated.json:8487-8587](file://server/openapi.generated.json#L8487-L8587)
+- [frontend admin floorplans page.tsx:1-6](frontend/app/admin/floorplans/page.tsx#L1-L6)
+- [openapi.generated.json:8487-8587](server/openapi.generated.json#L8487-L8587)

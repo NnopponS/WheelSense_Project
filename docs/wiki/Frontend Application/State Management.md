@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [auth-store.ts](file://frontend/lib/stores/auth-store.ts)
-- [useAuth.tsx](file://frontend/hooks/useAuth.tsx)
-- [useNotifications.tsx](file://frontend/hooks/useNotifications.tsx)
-- [useWorkflowJobsAttention.ts](file://frontend/hooks/useWorkflowJobsAttention.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [queryEndpointDefaults.ts](file://frontend/lib/queryEndpointDefaults.ts)
-- [refetchOrThrow.ts](file://frontend/lib/refetchOrThrow.ts)
-- [types.ts](file://frontend/lib/types.ts)
-- [constants.ts](file://frontend/lib/constants.ts)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [auth-store.ts](frontend/lib/stores/auth-store.ts)
+- [useAuth.tsx](frontend/hooks/useAuth.tsx)
+- [useNotifications.tsx](frontend/hooks/useNotifications.tsx)
+- [useWorkflowJobsAttention.ts](frontend/hooks/useWorkflowJobsAttention.ts)
+- [api.ts](frontend/lib/api.ts)
+- [queryEndpointDefaults.ts](frontend/lib/queryEndpointDefaults.ts)
+- [refetchOrThrow.ts](frontend/lib/refetchOrThrow.ts)
+- [types.ts](frontend/lib/types.ts)
+- [constants.ts](frontend/lib/constants.ts)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 </cite>
 
 ## Table of Contents
@@ -87,28 +87,28 @@ RFT --> UN
 ```
 
 **Diagram sources**
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
-- [useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
-- [useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [queryEndpointDefaults.ts:1-22](file://frontend/lib/queryEndpointDefaults.ts#L1-L22)
-- [refetchOrThrow.ts:1-10](file://frontend/lib/refetchOrThrow.ts#L1-L10)
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
+- [useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
+- [useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [queryEndpointDefaults.ts:1-22](frontend/lib/queryEndpointDefaults.ts#L1-L22)
+- [refetchOrThrow.ts:1-10](frontend/lib/refetchOrThrow.ts#L1-L10)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
 
 **Section sources**
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
-- [useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
-- [useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [queryEndpointDefaults.ts:1-22](file://frontend/lib/queryEndpointDefaults.ts#L1-L22)
-- [refetchOrThrow.ts:1-10](file://frontend/lib/refetchOrThrow.ts#L1-L10)
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
+- [useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
+- [useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [queryEndpointDefaults.ts:1-22](frontend/lib/queryEndpointDefaults.ts#L1-L22)
+- [refetchOrThrow.ts:1-10](frontend/lib/refetchOrThrow.ts#L1-L10)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
 
 ## Core Components
 - AppProviders: Initializes TanStack Query client, theme, i18n, and wraps children with AuthProvider. Sets default query behavior (retry, staleTime, refetchOnWindowFocus, refetchOnReconnect).
@@ -120,14 +120,14 @@ RFT --> UN
 - Types and Constants: Strongly typed models and API base constants.
 
 **Section sources**
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
-- [useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
-- [useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
+- [useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
+- [useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
 
 ## Architecture Overview
 WheelSense composes a layered state management approach:
@@ -154,11 +154,11 @@ Note over AuthHook,Store : Hydration complete
 ```
 
 **Diagram sources**
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [useAuth.tsx:88-97](file://frontend/hooks/useAuth.tsx#L88-L97)
-- [useAuth.tsx:48-86](file://frontend/hooks/useAuth.tsx#L48-L86)
-- [auth-store.ts:22-38](file://frontend/lib/stores/auth-store.ts#L22-L38)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [useAuth.tsx:88-97](frontend/hooks/useAuth.tsx#L88-L97)
+- [useAuth.tsx:48-86](frontend/hooks/useAuth.tsx#L48-L86)
+- [auth-store.ts:22-38](frontend/lib/stores/auth-store.ts#L22-L38)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
 
 ## Detailed Component Analysis
 
@@ -200,11 +200,11 @@ ImpersonationState <.. AuthState : "nested field"
 ```
 
 **Diagram sources**
-- [auth-store.ts:6-20](file://frontend/lib/stores/auth-store.ts#L6-L20)
-- [auth-store.ts:22-38](file://frontend/lib/stores/auth-store.ts#L22-L38)
+- [auth-store.ts:6-20](frontend/lib/stores/auth-store.ts#L6-L20)
+- [auth-store.ts:22-38](frontend/lib/stores/auth-store.ts#L22-L38)
 
 **Section sources**
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
 
 ### AuthProvider and useAuth Hook
 - AuthProvider triggers hydration on mount by calling a fetch routine that calls the backend session endpoint and updates the store.
@@ -229,13 +229,13 @@ Hook->>Store : subscribe to state slices
 ```
 
 **Diagram sources**
-- [useAuth.tsx:88-97](file://frontend/hooks/useAuth.tsx#L88-L97)
-- [useAuth.tsx:48-86](file://frontend/hooks/useAuth.tsx#L48-L86)
-- [auth-store.ts:22-38](file://frontend/lib/stores/auth-store.ts#L22-L38)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
+- [useAuth.tsx:88-97](frontend/hooks/useAuth.tsx#L88-L97)
+- [useAuth.tsx:48-86](frontend/hooks/useAuth.tsx#L48-L86)
+- [auth-store.ts:22-38](frontend/lib/stores/auth-store.ts#L22-L38)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
 
 **Section sources**
-- [useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
+- [useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
 
 ### Notifications and Polling (TanStack Query)
 The notifications hook integrates TanStack Query to:
@@ -266,15 +266,15 @@ Hook->>API : markWorkflowMessageRead(...) on demand
 ```
 
 **Diagram sources**
-- [useNotifications.tsx:203-229](file://frontend/hooks/useNotifications.tsx#L203-L229)
-- [useNotifications.tsx:231-297](file://frontend/hooks/useNotifications.tsx#L231-L297)
-- [useNotifications.tsx:299-351](file://frontend/hooks/useNotifications.tsx#L299-L351)
-- [useNotifications.tsx:353-422](file://frontend/hooks/useNotifications.tsx#L353-L422)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
+- [useNotifications.tsx:203-229](frontend/hooks/useNotifications.tsx#L203-L229)
+- [useNotifications.tsx:231-297](frontend/hooks/useNotifications.tsx#L231-L297)
+- [useNotifications.tsx:299-351](frontend/hooks/useNotifications.tsx#L299-L351)
+- [useNotifications.tsx:353-422](frontend/hooks/useNotifications.tsx#L353-L422)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
 
 **Section sources**
-- [useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
-- [queryEndpointDefaults.ts:1-22](file://frontend/lib/queryEndpointDefaults.ts#L1-L22)
+- [useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
+- [queryEndpointDefaults.ts:1-22](frontend/lib/queryEndpointDefaults.ts#L1-L22)
 
 ### Workflow Job Attention Count
 This hook computes a badge count for active/open workflow jobs:
@@ -297,10 +297,10 @@ ReturnZero --> Done
 ```
 
 **Diagram sources**
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
 
 **Section sources**
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
 
 ### Provider Pattern and Context Management
 AppProviders composes:
@@ -312,7 +312,7 @@ AppProviders composes:
 This ensures all components below receive a consistent environment and hydrated auth state.
 
 **Section sources**
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
 
 ### State Synchronization with Backend APIs
 - Auth hydration and actions call backend endpoints via typed wrappers in api.ts, which centralize error handling and 401 redirects.
@@ -320,9 +320,9 @@ This ensures all components below receive a consistent environment and hydrated 
 - Local read-state is persisted via in-memory sets and invalidated via queryClient invalidation.
 
 **Section sources**
-- [useAuth.tsx:48-86](file://frontend/hooks/useAuth.tsx#L48-L86)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [useNotifications.tsx:409-412](file://frontend/hooks/useNotifications.tsx#L409-L412)
+- [useAuth.tsx:48-86](frontend/hooks/useAuth.tsx#L48-L86)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [useNotifications.tsx:409-412](frontend/hooks/useNotifications.tsx#L409-L412)
 
 ### State Consumption Patterns and Custom Hook Implementations
 Common patterns:
@@ -337,10 +337,10 @@ Examples of consumption patterns:
 - Attention: useWorkflowJobsAttentionCount() returns a badge number derived from cached data
 
 **Section sources**
-- [useAuth.tsx:99-183](file://frontend/hooks/useAuth.tsx#L99-L183)
-- [useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
-- [refetchOrThrow.ts:1-10](file://frontend/lib/refetchOrThrow.ts#L1-L10)
+- [useAuth.tsx:99-183](frontend/hooks/useAuth.tsx#L99-L183)
+- [useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [refetchOrThrow.ts:1-10](frontend/lib/refetchOrThrow.ts#L1-L10)
 
 ## Dependency Analysis
 ```mermaid
@@ -360,25 +360,25 @@ API --> CONST["constants.ts"]
 ```
 
 **Diagram sources**
-- [useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
-- [useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [queryEndpointDefaults.ts:1-22](file://frontend/lib/queryEndpointDefaults.ts#L1-L22)
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
+- [useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
+- [useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [queryEndpointDefaults.ts:1-22](frontend/lib/queryEndpointDefaults.ts#L1-L22)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
 
 **Section sources**
-- [useAuth.tsx:88-183](file://frontend/hooks/useAuth.tsx#L88-L183)
-- [useNotifications.tsx:186-422](file://frontend/hooks/useNotifications.tsx#L186-L422)
-- [useWorkflowJobsAttention.ts:51-71](file://frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
-- [queryEndpointDefaults.ts:1-22](file://frontend/lib/queryEndpointDefaults.ts#L1-L22)
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
-- [constants.ts:1-27](file://frontend/lib/constants.ts#L1-L27)
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
+- [useAuth.tsx:88-183](frontend/hooks/useAuth.tsx#L88-L183)
+- [useNotifications.tsx:186-422](frontend/hooks/useNotifications.tsx#L186-L422)
+- [useWorkflowJobsAttention.ts:51-71](frontend/hooks/useWorkflowJobsAttention.ts#L51-L71)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
+- [queryEndpointDefaults.ts:1-22](frontend/lib/queryEndpointDefaults.ts#L1-L22)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
+- [constants.ts:1-27](frontend/lib/constants.ts#L1-L27)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
 
 ## Performance Considerations
 - TanStack Query defaults:
@@ -399,10 +399,10 @@ Recommendations:
 - Use invalidateQueries strategically after mutations
 
 **Section sources**
-- [AppProviders.tsx:11-23](file://frontend/components/providers/AppProviders.tsx#L11-L23)
-- [queryEndpointDefaults.ts:1-22](file://frontend/lib/queryEndpointDefaults.ts#L1-L22)
-- [useNotifications.tsx:203-229](file://frontend/hooks/useNotifications.tsx#L203-L229)
-- [useWorkflowJobsAttention.ts:57-61](file://frontend/hooks/useWorkflowJobsAttention.ts#L57-L61)
+- [AppProviders.tsx:11-23](frontend/components/providers/AppProviders.tsx#L11-L23)
+- [queryEndpointDefaults.ts:1-22](frontend/lib/queryEndpointDefaults.ts#L1-L22)
+- [useNotifications.tsx:203-229](frontend/hooks/useNotifications.tsx#L203-L229)
+- [useWorkflowJobsAttention.ts:57-61](frontend/hooks/useWorkflowJobsAttention.ts#L57-L61)
 
 ## Troubleshooting Guide
 Common issues and remedies:
@@ -421,11 +421,11 @@ Debugging tips:
 - Use refetchOrThrow to await refetch and inspect result.error/result.data after mutations
 
 **Section sources**
-- [api.ts:251-286](file://frontend/lib/api.ts#L251-L286)
-- [useAuth.tsx:48-86](file://frontend/hooks/useAuth.tsx#L48-L86)
-- [useNotifications.tsx:231-297](file://frontend/hooks/useNotifications.tsx#L231-L297)
-- [useNotifications.tsx:299-351](file://frontend/hooks/useNotifications.tsx#L299-L351)
-- [refetchOrThrow.ts:1-10](file://frontend/lib/refetchOrThrow.ts#L1-L10)
+- [api.ts:251-286](frontend/lib/api.ts#L251-L286)
+- [useAuth.tsx:48-86](frontend/hooks/useAuth.tsx#L48-L86)
+- [useNotifications.tsx:231-297](frontend/hooks/useNotifications.tsx#L231-L297)
+- [useNotifications.tsx:299-351](frontend/hooks/useNotifications.tsx#L299-L351)
+- [refetchOrThrow.ts:1-10](frontend/lib/refetchOrThrow.ts#L1-L10)
 
 ## Conclusion
 WheelSense employs a clean separation of concerns:
@@ -444,11 +444,11 @@ This design yields responsive UIs, predictable state updates, and maintainable p
 - These are exposed via typed wrappers in api.ts and consumed by useAuth and useNotifications
 
 **Section sources**
-- [api.ts:342-1092](file://frontend/lib/api.ts#L342-L1092)
+- [api.ts:342-1092](frontend/lib/api.ts#L342-L1092)
 
 ### Types Used in State and Transforms
 - User, Alert, CareTask, CareWorkflowJob, RoleMessage, and related models are defined in types.ts and transformed into Notification objects in useNotifications
 
 **Section sources**
-- [types.ts:12-26](file://frontend/lib/types.ts#L12-L26)
-- [useNotifications.tsx:102-184](file://frontend/hooks/useNotifications.tsx#L102-L184)
+- [types.ts:12-26](frontend/lib/types.ts#L12-L26)
+- [useNotifications.tsx:102-184](frontend/hooks/useNotifications.tsx#L102-L184)

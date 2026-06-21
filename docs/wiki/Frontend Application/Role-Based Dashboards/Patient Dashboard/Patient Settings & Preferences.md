@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [frontend/app/account/page.tsx](file://frontend/app/account/page.tsx)
-- [frontend/app/patient/settings/page.tsx](file://frontend/app/patient/settings/page.tsx)
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/lib/i18n.tsx](file://frontend/lib/i18n.tsx)
-- [frontend/components/LanguageSwitcher.tsx](file://frontend/components/LanguageSwitcher.tsx)
-- [frontend/components/TopBar.tsx](file://frontend/components/TopBar.tsx)
-- [frontend/lib/alertSound.ts](file://frontend/lib/alertSound.ts)
-- [frontend/components/NotificationDrawer.tsx](file://frontend/components/NotificationDrawer.tsx)
-- [server/AGENTS.md](file://server/AGENTS.md)
+- [frontend/app/account/page.tsx](frontend/app/account/page.tsx)
+- [frontend/app/patient/settings/page.tsx](frontend/app/patient/settings/page.tsx)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/lib/i18n.tsx](frontend/lib/i18n.tsx)
+- [frontend/components/LanguageSwitcher.tsx](frontend/components/LanguageSwitcher.tsx)
+- [frontend/components/TopBar.tsx](frontend/components/TopBar.tsx)
+- [frontend/lib/alertSound.ts](frontend/lib/alertSound.ts)
+- [frontend/components/NotificationDrawer.tsx](frontend/components/NotificationDrawer.tsx)
+- [server/AGENTS.md](server/AGENTS.md)
 </cite>
 
 ## Table of Contents
@@ -63,26 +63,26 @@ Notifications --> API
 ```
 
 **Diagram sources**
-- [frontend/app/patient/settings/page.tsx:1-7](file://frontend/app/patient/settings/page.tsx#L1-L7)
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/app/patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
-- [frontend/components/patient/PatientMySensors.tsx:47-259](file://frontend/components/patient/PatientMySensors.tsx#L47-L259)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/app/patient/settings/page.tsx:1-7](frontend/app/patient/settings/page.tsx#L1-L7)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/app/patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
+- [frontend/components/patient/PatientMySensors.tsx:47-259](frontend/components/patient/PatientMySensors.tsx#L47-L259)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
 
 **Section sources**
-- [frontend/app/patient/settings/page.tsx:1-7](file://frontend/app/patient/settings/page.tsx#L1-L7)
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/app/patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
-- [frontend/components/patient/PatientMySensors.tsx:47-259](file://frontend/components/patient/PatientMySensors.tsx#L47-L259)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/app/patient/settings/page.tsx:1-7](frontend/app/patient/settings/page.tsx#L1-L7)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/app/patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
+- [frontend/components/patient/PatientMySensors.tsx:47-259](frontend/components/patient/PatientMySensors.tsx#L47-L259)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
 
 ## Core Components
 - Canonical Account Settings: The account page exposes canonical fields for every role, including username, email, phone, profile photo, and password changes. It also surfaces linked identities (e.g., linked patient record) and supports profile updates and avatar management.
@@ -92,14 +92,14 @@ Notifications --> API
 - Sensor Preference Management: The “My Sensors” panel lists active device assignments for the patient and displays real-time metrics per device type. While explicit “preferences” for sensor visibility are not exposed in the UI, the panel’s active assignment list and metric rendering reflect the current sensor configuration.
 
 **Section sources**
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/app/patient/settings/page.tsx:1-7](file://frontend/app/patient/settings/page.tsx#L1-L7)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
-- [frontend/components/patient/PatientMySensors.tsx:47-259](file://frontend/components/patient/PatientMySensors.tsx#L47-L259)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/app/patient/settings/page.tsx:1-7](frontend/app/patient/settings/page.tsx#L1-L7)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/components/patient/PatientMySensors.tsx:47-259](frontend/components/patient/PatientMySensors.tsx#L47-L259)
 
 ## Architecture Overview
 The Patient Settings and Preferences architecture centers on a shared account surface and localized preference engines:
@@ -129,12 +129,12 @@ I18N-->>P : UI text updated
 ```
 
 **Diagram sources**
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
 
 ## Detailed Component Analysis
 
@@ -164,10 +164,10 @@ AP-->>P : Confirmation messages
 ```
 
 **Diagram sources**
-- [frontend/app/account/page.tsx:140-417](file://frontend/app/account/page.tsx#L140-L417)
+- [frontend/app/account/page.tsx:140-417](frontend/app/account/page.tsx#L140-L417)
 
 **Section sources**
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
 
 ### Notification Preferences
 - Alert sound control: Toggled in the top bar; persisted locally and applied immediately.
@@ -185,13 +185,13 @@ Enable --> End
 ```
 
 **Diagram sources**
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:16-24](file://frontend/lib/alertSound.ts#L16-L24)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:16-24](frontend/lib/alertSound.ts#L16-L24)
 
 **Section sources**
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
 
 ### Language Settings
 - Mechanism: A language switcher toggles between English and Thai and updates the i18n context.
@@ -208,12 +208,12 @@ I18N-->>P : UI text updated to new locale
 ```
 
 **Diagram sources**
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
-- [frontend/lib/i18n.tsx:16-18](file://frontend/lib/i18n.tsx#L16-L18)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/lib/i18n.tsx:16-18](frontend/lib/i18n.tsx#L16-L18)
 
 **Section sources**
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
 
 ### Sensor Preference Management
 - Purpose: Allow patients to review and understand their active sensor setup and recent metrics.
@@ -239,11 +239,11 @@ end
 ```
 
 **Diagram sources**
-- [frontend/components/patient/PatientMySensors.tsx:83-113](file://frontend/components/patient/PatientMySensors.tsx#L83-L113)
-- [frontend/components/patient/PatientMySensors.tsx:103-113](file://frontend/components/patient/PatientMySensors.tsx#L103-L113)
+- [frontend/components/patient/PatientMySensors.tsx:83-113](frontend/components/patient/PatientMySensors.tsx#L83-L113)
+- [frontend/components/patient/PatientMySensors.tsx:103-113](frontend/components/patient/PatientMySensors.tsx#L103-L113)
 
 **Section sources**
-- [frontend/components/patient/PatientMySensors.tsx:47-259](file://frontend/components/patient/PatientMySensors.tsx#L47-L259)
+- [frontend/components/patient/PatientMySensors.tsx:47-259](frontend/components/patient/PatientMySensors.tsx#L47-L259)
 
 ### Account Settings Integration with Patient Records
 - The account page surfaces a “Linked Patient” identity when applicable, ensuring patients can see how their user account relates to their clinical record.
@@ -257,12 +257,12 @@ Account --> UI["Unified Identity Display"]
 ```
 
 **Diagram sources**
-- [frontend/app/account/page.tsx:480-483](file://frontend/app/account/page.tsx#L480-L483)
-- [frontend/app/patient/page.tsx:55-65](file://frontend/app/patient/page.tsx#L55-L65)
+- [frontend/app/account/page.tsx:480-483](frontend/app/account/page.tsx#L480-L483)
+- [frontend/app/patient/page.tsx:55-65](frontend/app/patient/page.tsx#L55-L65)
 
 **Section sources**
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/app/patient/page.tsx:1-200](file://frontend/app/patient/page.tsx#L1-L200)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/app/patient/page.tsx:1-200](frontend/app/patient/page.tsx#L1-L200)
 
 ### Privacy Settings and Communication Preferences
 - Notification read/unread state and filtering in the notification drawer provide a privacy-like control by allowing users to manage awareness and focus.
@@ -270,9 +270,9 @@ Account --> UI["Unified Identity Display"]
 - Alert sound behavior can be muted to reduce auditory interruptions, aligning with accessibility preferences.
 
 **Section sources**
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
 
 ## Dependency Analysis
 - Shared account surface reduces duplication and ensures consistent editing of canonical fields across roles.
@@ -290,24 +290,24 @@ MySensors --> API
 ```
 
 **Diagram sources**
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/app/patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
-- [frontend/components/patient/PatientMySensors.tsx:47-259](file://frontend/components/patient/PatientMySensors.tsx#L47-L259)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/app/patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
+- [frontend/components/patient/PatientMySensors.tsx:47-259](frontend/components/patient/PatientMySensors.tsx#L47-L259)
 
 **Section sources**
-- [frontend/app/account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [frontend/components/TopBar.tsx:132-158](file://frontend/components/TopBar.tsx#L132-L158)
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
-- [frontend/components/LanguageSwitcher.tsx:1-28](file://frontend/components/LanguageSwitcher.tsx#L1-L28)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/app/patient/page.tsx:1-455](file://frontend/app/patient/page.tsx#L1-L455)
-- [frontend/components/patient/PatientMySensors.tsx:47-259](file://frontend/components/patient/PatientMySensors.tsx#L47-L259)
+- [frontend/app/account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [frontend/components/TopBar.tsx:132-158](frontend/components/TopBar.tsx#L132-L158)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/components/LanguageSwitcher.tsx:1-28](frontend/components/LanguageSwitcher.tsx#L1-L28)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/app/patient/page.tsx:1-455](frontend/app/patient/page.tsx#L1-L455)
+- [frontend/components/patient/PatientMySensors.tsx:47-259](frontend/components/patient/PatientMySensors.tsx#L47-L259)
 
 ## Performance Considerations
 - Local preference engines (alert sound and locale) avoid network requests for UI behavior changes, improving perceived responsiveness.
@@ -330,10 +330,10 @@ MySensors --> API
   - Confirm the platform allows the provided URL scheme.
 
 **Section sources**
-- [frontend/lib/alertSound.ts:1-48](file://frontend/lib/alertSound.ts#L1-L48)
-- [frontend/components/NotificationDrawer.tsx:85-214](file://frontend/components/NotificationDrawer.tsx#L85-L214)
-- [frontend/lib/i18n.tsx:1-200](file://frontend/lib/i18n.tsx#L1-L200)
-- [frontend/app/account/page.tsx:207-314](file://frontend/app/account/page.tsx#L207-L314)
+- [frontend/lib/alertSound.ts:1-48](frontend/lib/alertSound.ts#L1-L48)
+- [frontend/components/NotificationDrawer.tsx:85-214](frontend/components/NotificationDrawer.tsx#L85-L214)
+- [frontend/lib/i18n.tsx:1-200](frontend/lib/i18n.tsx#L1-L200)
+- [frontend/app/account/page.tsx:207-314](frontend/app/account/page.tsx#L207-L314)
 
 ## Conclusion
 The Patient Settings and Preferences interface leverages a shared account surface and local preference engines to deliver a streamlined, responsive experience. Notification controls and language settings are immediately effective, while sensor visibility is driven by active assignments and device capabilities. The integration with patient records ensures a coherent identity across roles, and the overall design emphasizes zero-friction interactions for patients with mobility challenges.

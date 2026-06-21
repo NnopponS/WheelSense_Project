@@ -2,13 +2,13 @@
 
 <cite>
 **Referenced Files in This Document**
-- [intent.py](file://server/app/agent_runtime/intent.py)
-- [language_bridge.py](file://server/app/agent_runtime/language_bridge.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [AGENTS.md](file://server/AGENTS.md)
-- [config.py](file://server/app/config.py)
-- [test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
-- [test_agent_runtime_extended.py](file://server/tests/test_agent_runtime_extended.py)
+- [intent.py](server/app/agent_runtime/intent.py)
+- [language_bridge.py](server/app/agent_runtime/language_bridge.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [AGENTS.md](server/AGENTS.md)
+- [config.py](server/app/config.py)
+- [test_agent_runtime.py](server/tests/test_agent_runtime.py)
+- [test_agent_runtime_extended.py](server/tests/test_agent_runtime_extended.py)
 </cite>
 
 ## Table of Contents
@@ -67,15 +67,15 @@ G --> D
 ```
 
 **Diagram sources**
-- [intent.py:347-878](file://server/app/agent_runtime/intent.py#L347-L878)
-- [language_bridge.py:38-124](file://server/app/agent_runtime/language_bridge.py#L38-L124)
-- [service.py:202-321](file://server/app/agent_runtime/service.py#L202-L321)
-- [config.py:79-91](file://server/app/config.py#L79-L91)
+- [intent.py:347-878](server/app/agent_runtime/intent.py#L347-L878)
+- [language_bridge.py:38-124](server/app/agent_runtime/language_bridge.py#L38-L124)
+- [service.py:202-321](server/app/agent_runtime/service.py#L202-L321)
+- [config.py:79-91](server/app/config.py#L79-L91)
 
 **Section sources**
-- [intent.py:1-1024](file://server/app/agent_runtime/intent.py#L1-L1024)
-- [service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
-- [AGENTS.md:420-425](file://server/AGENTS.md#L420-L425)
+- [intent.py:1-1024](server/app/agent_runtime/intent.py#L1-L1024)
+- [service.py:1-561](server/app/agent_runtime/service.py#L1-L561)
+- [AGENTS.md:420-425](server/AGENTS.md#L420-L425)
 
 ## Core Components
 - IntentClassifier: Builds regex patterns, performs classification, extracts entities, and constructs execution plans.
@@ -91,9 +91,9 @@ Key capabilities:
 - Permission and risk metadata attached to each intent
 
 **Section sources**
-- [intent.py:347-878](file://server/app/agent_runtime/intent.py#L347-L878)
-- [service.py:202-321](file://server/app/agent_runtime/service.py#L202-L321)
-- [language_bridge.py:38-124](file://server/app/agent_runtime/language_bridge.py#L38-L124)
+- [intent.py:347-878](server/app/agent_runtime/intent.py#L347-L878)
+- [service.py:202-321](server/app/agent_runtime/service.py#L202-L321)
+- [language_bridge.py:38-124](server/app/agent_runtime/language_bridge.py#L38-L124)
 
 ## Architecture Overview
 The intent classification pipeline operates in stages:
@@ -129,13 +129,13 @@ end
 ```
 
 **Diagram sources**
-- [service.py:202-321](file://server/app/agent_runtime/service.py#L202-L321)
-- [intent.py:719-878](file://server/app/agent_runtime/intent.py#L719-L878)
-- [language_bridge.py:38-124](file://server/app/agent_runtime/language_bridge.py#L38-L124)
+- [service.py:202-321](server/app/agent_runtime/service.py#L202-L321)
+- [intent.py:719-878](server/app/agent_runtime/intent.py#L719-L878)
+- [language_bridge.py:38-124](server/app/agent_runtime/language_bridge.py#L38-L124)
 
 **Section sources**
-- [AGENTS.md:420-425](file://server/AGENTS.md#L420-L425)
-- [service.py:202-321](file://server/app/agent_runtime/service.py#L202-L321)
+- [AGENTS.md:420-425](server/AGENTS.md#L420-L425)
+- [service.py:202-321](server/app/agent_runtime/service.py#L202-L321)
 
 ## Pattern Catalog
 The pattern library organizes regex patterns by intent category and playbook. Each pattern includes metadata for tool selection, argument extraction, and permission/risk requirements.
@@ -159,8 +159,8 @@ Representative patterns include:
 - System health queries: system status and platform status patterns
 
 **Section sources**
-- [intent.py:357-564](file://server/app/agent_runtime/intent.py#L357-L564)
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:357-564](server/app/agent_runtime/intent.py#L357-L564)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
 
 ## Pattern Matching Syntax and Extraction
 The classifier uses Python regex with case-insensitive matching and named extraction groups. Extraction mechanisms include:
@@ -178,8 +178,8 @@ Extraction examples:
 - Text queries: Extracts free-text from "where is John" or "list rooms"
 
 **Section sources**
-- [intent.py:626-648](file://server/app/agent_runtime/intent.py#L626-L648)
-- [intent.py:806-851](file://server/app/agent_runtime/intent.py#L806-L851)
+- [intent.py:626-648](server/app/agent_runtime/intent.py#L626-L648)
+- [intent.py:806-851](server/app/agent_runtime/intent.py#L806-L851)
 
 ## Context-Aware Matching Strategies
 The system maintains conversation context to enable context-aware matching:
@@ -203,10 +203,10 @@ The system maintains conversation context to enable context-aware matching:
   - Page-scoped context: Seed patient context when opening patient pages
 
 **Section sources**
-- [intent.py:77-107](file://server/app/agent_runtime/intent.py#L77-L107)
-- [intent.py:271-320](file://server/app/agent_runtime/intent.py#L271-L320)
-- [service.py:69-120](file://server/app/agent_runtime/service.py#L69-L120)
-- [AGENTS.md:422-424](file://server/AGENTS.md#L422-L424)
+- [intent.py:77-107](server/app/agent_runtime/intent.py#L77-L107)
+- [intent.py:271-320](server/app/agent_runtime/intent.py#L271-L320)
+- [service.py:69-120](server/app/agent_runtime/service.py#L69-L120)
+- [AGENTS.md:422-424](server/AGENTS.md#L422-L424)
 
 ## Entity Extraction Patterns
 The classifier extracts entities and attaches them to intents for downstream processing:
@@ -224,8 +224,8 @@ The classifier extracts entities and attaches them to intents for downstream pro
   - Used for confirmation requirements and execution gating
 
 **Section sources**
-- [intent.py:806-851](file://server/app/agent_runtime/intent.py#L806-L851)
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:806-851](server/app/agent_runtime/intent.py#L806-L851)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
 
 ## Multi-Language Support
 The system supports Thai and English through:
@@ -243,9 +243,9 @@ The system supports Thai and English through:
   - Threshold-based semantic matching for fallback
 
 **Section sources**
-- [intent.py:111-188](file://server/app/agent_runtime/intent.py#L111-L188)
-- [language_bridge.py:38-124](file://server/app/agent_runtime/language_bridge.py#L38-L124)
-- [AGENTS.md:420-425](file://server/AGENTS.md#L420-L425)
+- [intent.py:111-188](server/app/agent_runtime/intent.py#L111-L188)
+- [language_bridge.py:38-124](server/app/agent_runtime/language_bridge.py#L38-L124)
+- [AGENTS.md:420-425](server/AGENTS.md#L420-L425)
 
 ## Pattern Metadata and Classification
 Each pattern includes metadata for classification and execution:
@@ -267,9 +267,9 @@ Each pattern includes metadata for classification and execution:
   - Thresholds for immediate semantic execution
 
 **Section sources**
-- [intent.py:16-45](file://server/app/agent_runtime/intent.py#L16-L45)
-- [intent.py:111-188](file://server/app/agent_runtime/intent.py#L111-L188)
-- [service.py:61-66](file://server/app/agent_runtime/service.py#L61-L66)
+- [intent.py:16-45](server/app/agent_runtime/intent.py#L16-L45)
+- [intent.py:111-188](server/app/agent_runtime/intent.py#L111-L188)
+- [service.py:61-66](server/app/agent_runtime/service.py#L61-L66)
 
 ## Performance Considerations
 - Regex-first classification ensures high precision and low latency for common patterns
@@ -287,8 +287,8 @@ Optimization techniques:
 - Apply confidence thresholds to avoid low-quality matches
 
 **Section sources**
-- [intent.py:566-624](file://server/app/agent_runtime/intent.py#L566-L624)
-- [service.py:281-310](file://server/app/agent_runtime/service.py#L281-L310)
+- [intent.py:566-624](server/app/agent_runtime/intent.py#L566-L624)
+- [service.py:281-310](server/app/agent_runtime/service.py#L281-L310)
 
 ## Fallback Mechanisms
 The system implements layered fallback strategies:
@@ -305,9 +305,9 @@ Fallback behavior:
 - Conversation fast-path for obvious greetings/thanks
 
 **Section sources**
-- [intent.py:853-878](file://server/app/agent_runtime/intent.py#L853-L878)
-- [language_bridge.py:38-124](file://server/app/agent_runtime/language_bridge.py#L38-L124)
-- [service.py:400-419](file://server/app/agent_runtime/service.py#L400-L419)
+- [intent.py:853-878](server/app/agent_runtime/intent.py#L853-L878)
+- [language_bridge.py:38-124](server/app/agent_runtime/language_bridge.py#L38-L124)
+- [service.py:400-419](server/app/agent_runtime/service.py#L400-L419)
 
 ## Practical Usage Examples
 Common usage patterns validated by tests:
@@ -335,8 +335,8 @@ Common usage patterns validated by tests:
   - "My schedule" → list_workflow_schedules (immediate)
 
 **Section sources**
-- [test_agent_runtime.py:80-280](file://server/tests/test_agent_runtime.py#L80-L280)
-- [test_agent_runtime_extended.py:264-292](file://server/tests/test_agent_runtime_extended.py#L264-L292)
+- [test_agent_runtime.py:80-280](server/tests/test_agent_runtime.py#L80-L280)
+- [test_agent_runtime_extended.py:264-292](server/tests/test_agent_runtime_extended.py#L264-L292)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -363,8 +363,8 @@ Diagnostic tips:
 - Validate MCP tool availability and authentication
 
 **Section sources**
-- [test_agent_runtime.py:540-576](file://server/tests/test_agent_runtime.py#L540-L576)
-- [service.py:400-419](file://server/app/agent_runtime/service.py#L400-L419)
+- [test_agent_runtime.py:540-576](server/tests/test_agent_runtime.py#L540-L576)
+- [service.py:400-419](server/app/agent_runtime/service.py#L400-L419)
 
 ## Conclusion
 The WheelSense intent classification regex pattern library provides a robust, multilingual solution for natural language processing across patient management, clinical triage, device control, workflow operations, and system health queries. By combining high-precision regex patterns with optional semantic matching and LLM normalization, the system achieves reliable intent recognition while maintaining performance and security through strict permission and risk controls.

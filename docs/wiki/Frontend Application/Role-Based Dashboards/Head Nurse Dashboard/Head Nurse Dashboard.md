@@ -2,28 +2,28 @@
 
 <cite>
 **Referenced Files in This Document**
-- [layout.tsx](file://frontend/app/head-nurse/layout.tsx)
-- [page.tsx](file://frontend/app/head-nurse/page.tsx)
-- [alerts/page.tsx](file://frontend/app/head-nurse/alerts/page.tsx)
-- [floorplans/page.tsx](file://frontend/app/head-nurse/floorplans/page.tsx)
-- [monitoring/page.tsx](file://frontend/app/head-nurse/monitoring/page.tsx)
-- [reports/page.tsx](file://frontend/app/head-nurse/reports/page.tsx)
-- [HeadNurseStaffMemberSheet.tsx](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [routes.ts](file://frontend/lib/routes.ts)
-- [sidebarConfig.ts](file://frontend/lib/sidebarConfig.ts)
-- [workflowTaskBoard.ts](file://frontend/lib/workflowTaskBoard.ts)
-- [workflowJobs.ts](file://frontend/lib/workflowJobs.ts)
-- [workflowMessaging.ts](file://frontend/lib/workflowMessaging.ts)
-- [workflow.ts](file://server/app/api/endpoints/workflow.py)
-- [task_management.py](file://server/app/api/endpoints/task_management.py)
-- [floorplans.py](file://server/app/api/endpoints/floorplans.py)
-- [patients.py](file://server/app/api/endpoints/patients.py)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
-- [ward_summary.py](file://server/app/api/endpoints/ward_summary.py)
+- [layout.tsx](frontend/app/head-nurse/layout.tsx)
+- [page.tsx](frontend/app/head-nurse/page.tsx)
+- [alerts/page.tsx](frontend/app/head-nurse/alerts/page.tsx)
+- [floorplans/page.tsx](frontend/app/head-nurse/floorplans/page.tsx)
+- [monitoring/page.tsx](frontend/app/head-nurse/monitoring/page.tsx)
+- [reports/page.tsx](frontend/app/head-nurse/reports/page.tsx)
+- [HeadNurseStaffMemberSheet.tsx](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [routes.ts](frontend/lib/routes.ts)
+- [sidebarConfig.ts](frontend/lib/sidebarConfig.ts)
+- [workflowTaskBoard.ts](frontend/lib/workflowTaskBoard.ts)
+- [workflowJobs.ts](frontend/lib/workflowJobs.ts)
+- [workflowMessaging.ts](frontend/lib/workflowMessaging.ts)
+- [workflow.ts](server/app/api/endpoints/workflow.py)
+- [task_management.py](server/app/api/endpoints/task_management.py)
+- [floorplans.py](server/app/api/endpoints/floorplans.py)
+- [patients.py](server/app/api/endpoints/patients.py)
+- [alerts.py](server/app/api/endpoints/alerts.py)
+- [ward_summary.py](server/app/api/endpoints/ward_summary.py)
 </cite>
 
 ## Table of Contents
@@ -72,20 +72,20 @@ Dashboard --> StaffSheet
 ```
 
 **Diagram sources**
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [page.tsx:1-595](file://frontend/app/head-nurse/page.tsx#L1-L595)
-- [alerts/page.tsx:1-324](file://frontend/app/head-nurse/alerts/page.tsx#L1-L324)
-- [floorplans/page.tsx:1-26](file://frontend/app/head-nurse/floorplans/page.tsx#L1-L26)
-- [monitoring/page.tsx:1-6](file://frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
-- [reports/page.tsx:1-6](file://frontend/app/head-nurse/reports/page.tsx#L1-L6)
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [HeadNurseStaffMemberSheet.tsx:1-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L1-L514)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [page.tsx:1-595](frontend/app/head-nurse/page.tsx#L1-L595)
+- [alerts/page.tsx:1-324](frontend/app/head-nurse/alerts/page.tsx#L1-L324)
+- [floorplans/page.tsx:1-26](frontend/app/head-nurse/floorplans/page.tsx#L1-L26)
+- [monitoring/page.tsx:1-6](frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
+- [reports/page.tsx:1-6](frontend/app/head-nurse/reports/page.tsx#L1-L6)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [HeadNurseStaffMemberSheet.tsx:1-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L1-L514)
 
 **Section sources**
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [page.tsx:1-595](file://frontend/app/head-nurse/page.tsx#L1-L595)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [page.tsx:1-595](frontend/app/head-nurse/page.tsx#L1-L595)
 
 ## Core Components
 This section outlines the primary building blocks of the Head Nurse Dashboard and their responsibilities:
@@ -105,10 +105,10 @@ Implementation highlights:
 - Alerts page provides filtering, search, and inline actions to acknowledge or resolve alerts.
 
 **Section sources**
-- [page.tsx:58-595](file://frontend/app/head-nurse/page.tsx#L58-L595)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [alerts/page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
-- [floorplans/page.tsx:7-26](file://frontend/app/head-nurse/floorplans/page.tsx#L7-L26)
+- [page.tsx:58-595](frontend/app/head-nurse/page.tsx#L58-L595)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [alerts/page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [floorplans/page.tsx:7-26](frontend/app/head-nurse/floorplans/page.tsx#L7-L26)
 
 ## Architecture Overview
 The Head Nurse Dashboard follows a layered architecture:
@@ -149,16 +149,16 @@ ApiClient --> WardEndpoint
 ```
 
 **Diagram sources**
-- [page.tsx:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
-- [alerts/page.tsx:58-67](file://frontend/app/head-nurse/alerts/page.tsx#L58-L67)
-- [floorplans/page.tsx](file://frontend/app/head-nurse/floorplans/page.tsx#L3)
-- [HeadNurseStaffMemberSheet.tsx:264-280](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L264-L280)
-- [api.ts](file://frontend/lib/api.ts)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [task_management.py](file://server/app/api/endpoints/task_management.py)
-- [floorplans.py](file://server/app/api/endpoints/floorplans.py)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
-- [ward_summary.py](file://server/app/api/endpoints/ward_summary.py)
+- [page.tsx:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
+- [alerts/page.tsx:58-67](frontend/app/head-nurse/alerts/page.tsx#L58-L67)
+- [floorplans/page.tsx](frontend/app/head-nurse/floorplans/page.tsx#L3)
+- [HeadNurseStaffMemberSheet.tsx:264-280](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L264-L280)
+- [api.ts](frontend/lib/api.ts)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [task_management.py](server/app/api/endpoints/task_management.py)
+- [floorplans.py](server/app/api/endpoints/floorplans.py)
+- [alerts.py](server/app/api/endpoints/alerts.py)
+- [ward_summary.py](server/app/api/endpoints/ward_summary.py)
 
 ## Detailed Component Analysis
 
@@ -195,12 +195,12 @@ RenderCards --> End(["Dashboard Ready"])
 ```
 
 **Diagram sources**
-- [page.tsx:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
-- [page.tsx:107-214](file://frontend/app/head-nurse/page.tsx#L107-L214)
+- [page.tsx:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
+- [page.tsx:107-214](frontend/app/head-nurse/page.tsx#L107-L214)
 
 **Section sources**
-- [page.tsx:264-340](file://frontend/app/head-nurse/page.tsx#L264-L340)
-- [page.tsx:107-214](file://frontend/app/head-nurse/page.tsx#L107-L214)
+- [page.tsx:264-340](frontend/app/head-nurse/page.tsx#L264-L340)
+- [page.tsx:107-214](frontend/app/head-nurse/page.tsx#L107-L214)
 
 ### Floorplan Monitoring
 The dashboard integrates a floorplan panel for real-time ward monitoring. The floorplan page delegates to a role-aware viewer that displays presence and roles across the facility.
@@ -220,14 +220,14 @@ Dashboard-->>User : Ward overview with presence
 ```
 
 **Diagram sources**
-- [page.tsx](file://frontend/app/head-nurse/page.tsx#L344)
-- [floorplans/page.tsx](file://frontend/app/head-nurse/floorplans/page.tsx#L3)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [page.tsx](frontend/app/head-nurse/page.tsx#L344)
+- [floorplans/page.tsx](frontend/app/head-nurse/floorplans/page.tsx#L3)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
 
 **Section sources**
-- [page.tsx:343-390](file://frontend/app/head-nurse/page.tsx#L343-L390)
-- [floorplans/page.tsx:7-26](file://frontend/app/head-nurse/floorplans/page.tsx#L7-L26)
+- [page.tsx:343-390](frontend/app/head-nurse/page.tsx#L343-L390)
+- [floorplans/page.tsx:7-26](frontend/app/head-nurse/floorplans/page.tsx#L7-L26)
 
 ### Alerts Management
 The alerts page provides a searchable and filterable table of alerts with inline actions to acknowledge or resolve. It supports highlighting specific alerts via URL parameters and integrates with the alert row highlight hook for visual emphasis.
@@ -253,12 +253,12 @@ Table-->>User : Updated table with highlight
 ```
 
 **Diagram sources**
-- [alerts/page.tsx:58-104](file://frontend/app/head-nurse/alerts/page.tsx#L58-L104)
-- [alerts/page.tsx:136-236](file://frontend/app/head-nurse/alerts/page.tsx#L136-L236)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
+- [alerts/page.tsx:58-104](frontend/app/head-nurse/alerts/page.tsx#L58-L104)
+- [alerts/page.tsx:136-236](frontend/app/head-nurse/alerts/page.tsx#L136-L236)
+- [alerts.py](server/app/api/endpoints/alerts.py)
 
 **Section sources**
-- [alerts/page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [alerts/page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
 
 ### Staff Member Sheet
 The staff member sheet provides a comprehensive view of a selected staff member’s assigned tasks, schedules, and shift checklist progress. It includes:
@@ -289,13 +289,13 @@ Sheet-->>User : Render Tasks, Schedules, Checklist & Template Editor
 ```
 
 **Diagram sources**
-- [HeadNurseStaffMemberSheet.tsx:264-280](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L264-L280)
-- [HeadNurseStaffMemberSheet.tsx:500-505](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L500-L505)
-- [task_management.py](file://server/app/api/endpoints/task_management.py)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
+- [HeadNurseStaffMemberSheet.tsx:264-280](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L264-L280)
+- [HeadNurseStaffMemberSheet.tsx:500-505](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L500-L505)
+- [task_management.py](server/app/api/endpoints/task_management.py)
+- [workflow.py](server/app/api/endpoints/workflow.py)
 
 **Section sources**
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
 
 ### Task Orchestration Components
 The Head Nurse Dashboard integrates with workflow task management and job orchestration systems. While dedicated task pages are not present in the current frontend structure, the dashboard leverages workflow endpoints for tasks, schedules, directives, and timeline events. These components enable head nurses to:
@@ -318,13 +318,13 @@ Dashboard --> Alerts
 ```
 
 **Diagram sources**
-- [page.tsx:85-104](file://frontend/app/head-nurse/page.tsx#L85-L104)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [task_management.py](file://server/app/api/endpoints/task_management.py)
-- [alerts.py](file://server/app/api/endpoints/alerts.py)
+- [page.tsx:85-104](frontend/app/head-nurse/page.tsx#L85-L104)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [task_management.py](server/app/api/endpoints/task_management.py)
+- [alerts.py](server/app/api/endpoints/alerts.py)
 
 **Section sources**
-- [page.tsx:85-104](file://frontend/app/head-nurse/page.tsx#L85-L104)
+- [page.tsx:85-104](frontend/app/head-nurse/page.tsx#L85-L104)
 
 ### Reporting Tools
 Reporting is accessed via a redirect from the reports page to the workflow reports tab. This centralizes reporting capabilities within the workflow domain while maintaining a clean navigation surface for the head nurse.
@@ -336,10 +336,10 @@ Redirect --> WorkflowReports["Workflow Reports Tab"]
 ```
 
 **Diagram sources**
-- [reports/page.tsx:1-6](file://frontend/app/head-nurse/reports/page.tsx#L1-L6)
+- [reports/page.tsx:1-6](frontend/app/head-nurse/reports/page.tsx#L1-L6)
 
 **Section sources**
-- [reports/page.tsx:1-6](file://frontend/app/head-nurse/reports/page.tsx#L1-L6)
+- [reports/page.tsx:1-6](frontend/app/head-nurse/reports/page.tsx#L1-L6)
 
 ## Dependency Analysis
 The Head Nurse Dashboard depends on:
@@ -360,15 +360,15 @@ API --> Endpoints["Server Endpoints"]
 ```
 
 **Diagram sources**
-- [RoleShell.tsx](file://frontend/components/RoleShell.tsx)
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [page.tsx:1-595](file://frontend/app/head-nurse/page.tsx#L1-L595)
-- [api.ts](file://frontend/lib/api.ts)
+- [RoleShell.tsx](frontend/components/RoleShell.tsx)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [page.tsx:1-595](frontend/app/head-nurse/page.tsx#L1-L595)
+- [api.ts](frontend/lib/api.ts)
 
 **Section sources**
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [page.tsx:1-595](file://frontend/app/head-nurse/page.tsx#L1-L595)
-- [api.ts](file://frontend/lib/api.ts)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [page.tsx:1-595](frontend/app/head-nurse/page.tsx#L1-L595)
+- [api.ts](frontend/lib/api.ts)
 
 ## Performance Considerations
 - Efficient data fetching: Queries are scoped to specific dashboard sections with appropriate refetch intervals for live data like alerts and timeline events.
@@ -384,9 +384,9 @@ Common issues and resolutions:
 - Task completion failures: Review mutation error handling and retry logic; confirm task ownership and status transitions.
 
 **Section sources**
-- [alerts/page.tsx:94-104](file://frontend/app/head-nurse/alerts/page.tsx#L94-L104)
-- [HeadNurseStaffMemberSheet.tsx:71-101](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L71-L101)
-- [page.tsx:72-73](file://frontend/app/head-nurse/page.tsx#L72-L73)
+- [alerts/page.tsx:94-104](frontend/app/head-nurse/alerts/page.tsx#L94-L104)
+- [HeadNurseStaffMemberSheet.tsx:71-101](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L71-L101)
+- [page.tsx:72-73](frontend/app/head-nurse/page.tsx#L72-L73)
 
 ## Conclusion
 The Head Nurse Dashboard consolidates ward supervision, staff coordination, patient monitoring, and task orchestration into a cohesive interface. Through real-time dashboards, floorplan monitoring, staff sheets, and integrated alert management, head nurses can efficiently oversee daily operations and make informed decisions. The modular component architecture and robust data layer ensure scalability and maintainability as the platform evolves.
@@ -401,11 +401,11 @@ The Head Nurse Dashboard consolidates ward supervision, staff coordination, pati
 - Reports: Redirect to workflow reports tab for clinical reporting.
 
 **Section sources**
-- [page.tsx:244-261](file://frontend/app/head-nurse/page.tsx#L244-L261)
-- [alerts/page.tsx:254-290](file://frontend/app/head-nurse/alerts/page.tsx#L254-L290)
-- [floorplans/page.tsx:10-23](file://frontend/app/head-nurse/floorplans/page.tsx#L10-L23)
-- [monitoring/page.tsx:1-6](file://frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
-- [reports/page.tsx:1-6](file://frontend/app/head-nurse/reports/page.tsx#L1-L6)
+- [page.tsx:244-261](frontend/app/head-nurse/page.tsx#L244-L261)
+- [alerts/page.tsx:254-290](frontend/app/head-nurse/alerts/page.tsx#L254-L290)
+- [floorplans/page.tsx:10-23](frontend/app/head-nurse/floorplans/page.tsx#L10-L23)
+- [monitoring/page.tsx:1-6](frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
+- [reports/page.tsx:1-6](frontend/app/head-nurse/reports/page.tsx#L1-L6)
 
 ### Team Management Features
 - On-duty staff strip: Compact preview of current coverage with role badges.
@@ -413,8 +413,8 @@ The Head Nurse Dashboard consolidates ward supervision, staff coordination, pati
 - Checklist templates: User-specific editable templates with validation and persistence.
 
 **Section sources**
-- [page.tsx:391-452](file://frontend/app/head-nurse/page.tsx#L391-L452)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [page.tsx:391-452](frontend/app/head-nurse/page.tsx#L391-L452)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
 
 ### Clinical Workflow Oversight Tools
 - Priority alerts and tasks grids: Sort by severity and due date for timely interventions.
@@ -422,8 +422,8 @@ The Head Nurse Dashboard consolidates ward supervision, staff coordination, pati
 - Ward summary: Consolidated metrics for quick situational assessment.
 
 **Section sources**
-- [page.tsx:454-591](file://frontend/app/head-nurse/page.tsx#L454-L591)
-- [page.tsx:100-104](file://frontend/app/head-nurse/page.tsx#L100-L104)
+- [page.tsx:454-591](frontend/app/head-nurse/page.tsx#L454-L591)
+- [page.tsx:100-104](frontend/app/head-nurse/page.tsx#L100-L104)
 
 ### Head Nurse Workflows
 - Managing ward operations:
@@ -440,7 +440,7 @@ The Head Nurse Dashboard consolidates ward supervision, staff coordination, pati
   - Use the reports redirect to access workflow reports for performance and compliance tracking.
 
 **Section sources**
-- [page.tsx:226-595](file://frontend/app/head-nurse/page.tsx#L226-L595)
-- [alerts/page.tsx:48-324](file://frontend/app/head-nurse/alerts/page.tsx#L48-L324)
-- [HeadNurseStaffMemberSheet.tsx:253-514](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
-- [reports/page.tsx:1-6](file://frontend/app/head-nurse/reports/page.tsx#L1-L6)
+- [page.tsx:226-595](frontend/app/head-nurse/page.tsx#L226-L595)
+- [alerts/page.tsx:48-324](frontend/app/head-nurse/alerts/page.tsx#L48-L324)
+- [HeadNurseStaffMemberSheet.tsx:253-514](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx#L253-L514)
+- [reports/page.tsx:1-6](frontend/app/head-nurse/reports/page.tsx#L1-L6)

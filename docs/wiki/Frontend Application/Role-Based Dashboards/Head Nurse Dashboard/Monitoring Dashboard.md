@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/head-nurse/monitoring/page.tsx)
-- [layout.tsx](file://frontend/app/head-nurse/layout.tsx)
-- [WardOverviewGrid.tsx](file://frontend/components/dashboard/WardOverviewGrid.tsx)
-- [TaskChecklistCard.tsx](file://frontend/components/dashboard/TaskChecklistCard.tsx)
-- [RoomDetailPopup.tsx](file://frontend/components/dashboard/RoomDetailPopup.tsx)
-- [RoomSubCard.tsx](file://frontend/components/dashboard/RoomSubCard.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [monitoringWorkspace.ts](file://frontend/lib/monitoringWorkspace.ts)
-- [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
-- [RoomDetailDrawer.tsx](file://frontend/components/admin/monitoring/RoomDetailDrawer.tsx)
-- [types.ts](file://frontend/lib/types.ts)
-- [api.ts](file://frontend/lib/api.ts)
+- [page.tsx](frontend/app/head-nurse/monitoring/page.tsx)
+- [layout.tsx](frontend/app/head-nurse/layout.tsx)
+- [WardOverviewGrid.tsx](frontend/components/dashboard/WardOverviewGrid.tsx)
+- [TaskChecklistCard.tsx](frontend/components/dashboard/TaskChecklistCard.tsx)
+- [RoomDetailPopup.tsx](frontend/components/dashboard/RoomDetailPopup.tsx)
+- [RoomSubCard.tsx](frontend/components/dashboard/RoomSubCard.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [monitoringWorkspace.ts](frontend/lib/monitoringWorkspace.ts)
+- [FloorMapWorkspace.tsx](frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
+- [RoomDetailDrawer.tsx](frontend/components/admin/monitoring/RoomDetailDrawer.tsx)
+- [types.ts](frontend/lib/types.ts)
+- [api.ts](frontend/lib/api.ts)
 </cite>
 
 ## Table of Contents
@@ -72,21 +72,21 @@ FMW --> MWU
 ```
 
 **Diagram sources**
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [page.tsx:1-6](file://frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
-- [RoomDetailDrawer.tsx:1-88](file://frontend/components/admin/monitoring/RoomDetailDrawer.tsx#L1-L88)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [page.tsx:1-6](frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [RoomDetailDrawer.tsx:1-88](frontend/components/admin/monitoring/RoomDetailDrawer.tsx#L1-L88)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 **Section sources**
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [page.tsx:1-6](file://frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [page.tsx:1-6](frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
 
 ## Core Components
 - Ward Overview Grid: Provides a high-level overview of rooms with occupancy, alerts, and filtering by floor and status. Supports grid and compact view modes and opens a room detail popup.
@@ -97,12 +97,12 @@ FMW --> MWU
 - Monitoring Workspace Utilities: Define URL query contracts and helpers for facility/floor/room/view navigation and legacy tab redirection.
 
 **Section sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 ## Architecture Overview
 The monitoring dashboard integrates role-aware floorplan visualization, real-time presence data, and curated widgets for ward operations and workflow metrics. The workspace utilities standardize navigation across facilities, floors, rooms, and view modes. The admin monitoring workspace complements the role viewer with editing capabilities for floor layouts and device assignments.
@@ -130,13 +130,13 @@ W-->>U : Occupancy, alerts, filters
 ```
 
 **Diagram sources**
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [page.tsx:1-6](file://frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [monitoringWorkspace.ts:32-84](file://frontend/lib/monitoringWorkspace.ts#L32-L84)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [page.tsx:1-6](frontend/app/head-nurse/monitoring/page.tsx#L1-L6)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [monitoringWorkspace.ts:32-84](frontend/lib/monitoringWorkspace.ts#L32-L84)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 ## Detailed Component Analysis
 
@@ -158,15 +158,15 @@ Popup --> End(["Done"])
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:58-112](file://frontend/components/dashboard/WardOverviewGrid.tsx#L58-L112)
-- [WardOverviewGrid.tsx:221-265](file://frontend/components/dashboard/WardOverviewGrid.tsx#L221-L265)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [WardOverviewGrid.tsx:58-112](frontend/components/dashboard/WardOverviewGrid.tsx#L58-L112)
+- [WardOverviewGrid.tsx:221-265](frontend/components/dashboard/WardOverviewGrid.tsx#L221-L265)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
 
 **Section sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
 
 ### Task Checklist Card
 The Task Checklist Card presents assigned care tasks with priority and due-date indicators, completion progress, and expandable views. It supports inline completion toggles and navigation to task details.
@@ -186,10 +186,10 @@ Callbacks --> End(["Done"])
 ```
 
 **Diagram sources**
-- [TaskChecklistCard.tsx:76-118](file://frontend/components/dashboard/TaskChecklistCard.tsx#L76-L118)
+- [TaskChecklistCard.tsx:76-118](frontend/components/dashboard/TaskChecklistCard.tsx#L76-L118)
 
 **Section sources**
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
 
 ### Room Detail Popup
 The Room Detail Popup consolidates room statistics, patient lists, device status, and quick actions. It surfaces alert counts and provides navigation to monitoring and alerts for the selected room.
@@ -210,11 +210,11 @@ P-->>U : Redirect to route
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:257-265](file://frontend/components/dashboard/WardOverviewGrid.tsx#L257-L265)
-- [RoomDetailPopup.tsx:53-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L53-L276)
+- [WardOverviewGrid.tsx:257-265](frontend/components/dashboard/WardOverviewGrid.tsx#L257-L265)
+- [RoomDetailPopup.tsx:53-276](frontend/components/dashboard/RoomDetailPopup.tsx#L53-L276)
 
 **Section sources**
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
 
 ### Dashboard Floorplan Panel and Floorplan Role Viewer
 The Dashboard Floorplan Panel embeds a role-aware floorplan viewer that renders room chips with presence and alert indicators. It integrates with the monitoring workspace utilities to parse and apply facility/floor/room/view parameters.
@@ -242,14 +242,14 @@ FloorplanRoleViewer --> monitoringWorkspace : "parses query"
 ```
 
 **Diagram sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [monitoringWorkspace.ts:32-145](file://frontend/lib/monitoringWorkspace.ts#L32-L145)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [monitoringWorkspace.ts:32-145](frontend/lib/monitoringWorkspace.ts#L32-L145)
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 ### Admin Monitoring Workspace Integration
 The admin monitoring workspace provides advanced editing capabilities for floor layouts, device assignments, and room provisioning. It leverages the same monitoring workspace utilities for URL-driven navigation and maintains consistency with the role viewer.
@@ -269,13 +269,13 @@ FMW-->>U : Editable floor map and room properties
 ```
 
 **Diagram sources**
-- [FloorMapWorkspace.tsx:77-250](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L250)
-- [monitoringWorkspace.ts:86-138](file://frontend/lib/monitoringWorkspace.ts#L86-L138)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [FloorMapWorkspace.tsx:77-250](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L250)
+- [monitoringWorkspace.ts:86-138](frontend/lib/monitoringWorkspace.ts#L86-L138)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 **Section sources**
-- [FloorMapWorkspace.tsx:1-734](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [FloorMapWorkspace.tsx:1-734](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L1-L734)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
 
 ## Dependency Analysis
 The dashboard components depend on:
@@ -302,26 +302,26 @@ L --> FRV
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorMapWorkspace.tsx:77-250](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L250)
-- [monitoringWorkspace.ts:32-138](file://frontend/lib/monitoringWorkspace.ts#L32-L138)
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorMapWorkspace.tsx:77-250](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L250)
+- [monitoringWorkspace.ts:32-138](frontend/lib/monitoringWorkspace.ts#L32-L138)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 **Section sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [FloorMapWorkspace.tsx:77-250](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L250)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [layout.tsx:1-12](file://frontend/app/head-nurse/layout.tsx#L1-L12)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [FloorMapWorkspace.tsx:77-250](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L77-L250)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [layout.tsx:1-12](frontend/app/head-nurse/layout.tsx#L1-L12)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)
 
 ## Performance Considerations
 - Polling and caching: Presence and device queries use polling intervals and stale times to balance freshness and performance. Adjust intervals based on facility size and alert urgency.
@@ -339,10 +339,10 @@ Common issues and resolutions:
 - Device or room provisioning failures: Confirm device assignments and room mappings; re-save layout and retry.
 
 **Section sources**
-- [WardOverviewGrid.tsx:155-219](file://frontend/components/dashboard/WardOverviewGrid.tsx#L155-L219)
-- [FloorplanRoleViewer.tsx:682-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L682-L702)
-- [monitoringWorkspace.ts:52-84](file://frontend/lib/monitoringWorkspace.ts#L52-L84)
-- [FloorMapWorkspace.tsx:355-441](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
+- [WardOverviewGrid.tsx:155-219](frontend/components/dashboard/WardOverviewGrid.tsx#L155-L219)
+- [FloorplanRoleViewer.tsx:682-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L682-L702)
+- [monitoringWorkspace.ts:52-84](frontend/lib/monitoringWorkspace.ts#L52-L84)
+- [FloorMapWorkspace.tsx:355-441](frontend/components/admin/monitoring/FloorMapWorkspace.tsx#L355-L441)
 
 ## Conclusion
 The Head Nurse Monitoring Dashboard combines a high-level ward overview with real-time floorplan insights and actionable task management. Its modular components, robust workspace utilities, and integration with analytics and alert systems enable efficient oversight of ward operations, patient status, and workflow metrics.
@@ -357,9 +357,9 @@ The Head Nurse Monitoring Dashboard combines a high-level ward overview with rea
 - Floorplan inspection workflow: Choose view mode, inspect room chips, review presence and alerts, and capture snapshots when available.
 
 **Section sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
 
 ### Dashboard Customization
 - View modes: Switch between grid and compact room views for different density preferences.
@@ -367,8 +367,8 @@ The Head Nurse Monitoring Dashboard combines a high-level ward overview with rea
 - Navigation: Use monitoring workspace utilities to construct URLs for deep linking to facilities, floors, rooms, and view modes.
 
 **Section sources**
-- [WardOverviewGrid.tsx:155-219](file://frontend/components/dashboard/WardOverviewGrid.tsx#L155-L219)
-- [monitoringWorkspace.ts:86-138](file://frontend/lib/monitoringWorkspace.ts#L86-L138)
+- [WardOverviewGrid.tsx:155-219](frontend/components/dashboard/WardOverviewGrid.tsx#L155-L219)
+- [monitoringWorkspace.ts:86-138](frontend/lib/monitoringWorkspace.ts#L86-L138)
 
 ### Integration with Analytics and External Systems
 - Presence and telemetry: Floorplan viewer consumes presence and device telemetry to reflect live room status and alerts.
@@ -376,6 +376,6 @@ The Head Nurse Monitoring Dashboard combines a high-level ward overview with rea
 - Data contracts: Types and API client define standardized contracts for rooms, devices, and analytics summaries.
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:567-800](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
-- [types.ts:92-200](file://frontend/lib/types.ts#L92-L200)
-- [api.ts:1-200](file://frontend/lib/api.ts#L1-L200)
+- [FloorplanRoleViewer.tsx:567-800](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L800)
+- [types.ts:92-200](frontend/lib/types.ts#L92-L200)
+- [api.ts:1-200](frontend/lib/api.ts#L1-L200)

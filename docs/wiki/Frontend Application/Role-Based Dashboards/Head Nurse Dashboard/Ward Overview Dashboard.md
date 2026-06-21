@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [HeadNurseDashboardPage](file://frontend/app/head-nurse/page.tsx)
-- [DashboardFloorplanPanel](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [WardOverviewGrid](file://frontend/components/dashboard/WardOverviewGrid.tsx)
-- [RoomSubCard](file://frontend/components/dashboard/RoomSubCard.tsx)
-- [RoomDetailPopup](file://frontend/components/dashboard/RoomDetailPopup.tsx)
-- [KPIStatCard](file://frontend/components/dashboard/KPIStatCard.tsx)
-- [HeadNurseStaffMemberSheet](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
-- [FloorplanRoleViewer](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [WardTimelineEmbed](file://frontend/components/timeline/WardTimelineEmbed.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [HeadNurseDashboardPage](frontend/app/head-nurse/page.tsx)
+- [DashboardFloorplanPanel](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [WardOverviewGrid](frontend/components/dashboard/WardOverviewGrid.tsx)
+- [RoomSubCard](frontend/components/dashboard/RoomSubCard.tsx)
+- [RoomDetailPopup](frontend/components/dashboard/RoomDetailPopup.tsx)
+- [KPIStatCard](frontend/components/dashboard/KPIStatCard.tsx)
+- [HeadNurseStaffMemberSheet](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
+- [FloorplanRoleViewer](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [WardTimelineEmbed](frontend/components/timeline/WardTimelineEmbed.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [types.ts](frontend/lib/types.ts)
 </cite>
 
 ## Table of Contents
@@ -78,16 +78,16 @@ API --> Types
 ```
 
 **Diagram sources**
-- [HeadNurseDashboardPage:58-595](file://frontend/app/head-nurse/page.tsx#L58-L595)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [WardOverviewGrid:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [HeadNurseStaffMemberSheet](file://frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
-- [WardTimelineEmbed](file://frontend/components/timeline/WardTimelineEmbed.tsx)
-- [api.ts](file://frontend/lib/api.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [HeadNurseDashboardPage:58-595](frontend/app/head-nurse/page.tsx#L58-L595)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [WardOverviewGrid:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [HeadNurseStaffMemberSheet](frontend/components/head-nurse/HeadNurseStaffMemberSheet.tsx)
+- [WardTimelineEmbed](frontend/components/timeline/WardTimelineEmbed.tsx)
+- [api.ts](frontend/lib/api.ts)
+- [types.ts](frontend/lib/types.ts)
 
 **Section sources**
-- [HeadNurseDashboardPage:58-595](file://frontend/app/head-nurse/page.tsx#L58-L595)
+- [HeadNurseDashboardPage:58-595](frontend/app/head-nurse/page.tsx#L58-L595)
 
 ## Core Components
 The dashboard comprises several reusable components that handle specific aspects of the interface:
@@ -99,11 +99,11 @@ The dashboard comprises several reusable components that handle specific aspects
 - DashboardFloorplanPanel: Wrapper around the floorplan viewer for dashboard-specific configuration
 
 **Section sources**
-- [KPIStatCard:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [RoomSubCard:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [RoomDetailPopup:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
-- [WardOverviewGrid:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [KPIStatCard:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [RoomSubCard:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [RoomDetailPopup:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [WardOverviewGrid:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ## Architecture Overview
 The dashboard follows a reactive architecture pattern:
@@ -137,10 +137,10 @@ Note over Query,API : Background polling<br/>Alerts : 15s<br/>Timeline : 30s
 ```
 
 **Diagram sources**
-- [HeadNurseDashboardPage:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
+- [HeadNurseDashboardPage:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
 
 **Section sources**
-- [HeadNurseDashboardPage:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
+- [HeadNurseDashboardPage:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
 
 ## Detailed Component Analysis
 
@@ -170,10 +170,10 @@ Refresh --> FetchData
 ```
 
 **Diagram sources**
-- [HeadNurseDashboardPage:107-214](file://frontend/app/head-nurse/page.tsx#L107-L214)
+- [HeadNurseDashboardPage:107-214](frontend/app/head-nurse/page.tsx#L107-L214)
 
 **Section sources**
-- [HeadNurseDashboardPage:58-595](file://frontend/app/head-nurse/page.tsx#L58-L595)
+- [HeadNurseDashboardPage:58-595](frontend/app/head-nurse/page.tsx#L58-L595)
 
 ### Dashboard Cards Implementation
 The dashboard features four primary KPI cards that display ward statistics:
@@ -216,10 +216,10 @@ WardStatsCard --> TaskProcessing : "uses"
 ```
 
 **Diagram sources**
-- [HeadNurseDashboardPage:139-205](file://frontend/app/head-nurse/page.tsx#L139-L205)
+- [HeadNurseDashboardPage:139-205](frontend/app/head-nurse/page.tsx#L139-L205)
 
 **Section sources**
-- [HeadNurseDashboardPage:264-340](file://frontend/app/head-nurse/page.tsx#L264-L340)
+- [HeadNurseDashboardPage:264-340](frontend/app/head-nurse/page.tsx#L264-L340)
 
 ### Floorplan Visualization Panel
 The floorplan panel provides real-time patient location and room occupancy visualization through an integrated floorplan viewer.
@@ -245,11 +245,11 @@ Panel-->>Dashboard : Display visualization
 ```
 
 **Diagram sources**
-- [DashboardFloorplanPanel:13-28](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L28)
-- [FloorplanRoleViewer](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [DashboardFloorplanPanel:13-28](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L28)
+- [FloorplanRoleViewer](frontend/components/floorplan/FloorplanRoleViewer.tsx)
 
 **Section sources**
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ### Staff On-Duty Display
 The staff display component provides a compact view of currently on-duty personnel with role-based identification and quick access to the full staff roster.
@@ -261,7 +261,7 @@ Features:
 - Responsive layout with preview and full views
 
 **Section sources**
-- [HeadNurseDashboardPage:346-452](file://frontend/app/head-nurse/page.tsx#L346-L452)
+- [HeadNurseDashboardPage:346-452](frontend/app/head-nurse/page.tsx#L346-L452)
 
 ### Priority Alerts and Tasks Grid
 The priority alerts and tasks sections present critical incidents and workflow items requiring immediate attention.
@@ -291,10 +291,10 @@ LimitTasks --> RenderTasks["Render Task Cards"]
 ```
 
 **Diagram sources**
-- [HeadNurseDashboardPage:177-205](file://frontend/app/head-nurse/page.tsx#L177-L205)
+- [HeadNurseDashboardPage:177-205](frontend/app/head-nurse/page.tsx#L177-L205)
 
 **Section sources**
-- [HeadNurseDashboardPage:454-591](file://frontend/app/head-nurse/page.tsx#L454-L591)
+- [HeadNurseDashboardPage:454-591](frontend/app/head-nurse/page.tsx#L454-L591)
 
 ### Ward Overview Grid
 The Ward Overview Grid provides a comprehensive room-level view with filtering, sorting, and occupancy visualization capabilities.
@@ -338,11 +338,11 @@ WardOverviewGrid --> RoomWithPatients : "manages"
 ```
 
 **Diagram sources**
-- [WardOverviewGrid:37-91](file://frontend/components/dashboard/WardOverviewGrid.tsx#L37-L91)
-- [RoomSubCard:22-58](file://frontend/components/dashboard/RoomSubCard.tsx#L22-L58)
+- [WardOverviewGrid:37-91](frontend/components/dashboard/WardOverviewGrid.tsx#L37-L91)
+- [RoomSubCard:22-58](frontend/components/dashboard/RoomSubCard.tsx#L22-L58)
 
 **Section sources**
-- [WardOverviewGrid:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [WardOverviewGrid:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
 
 ### Room Detail Popup
 The Room Detail Popup provides comprehensive information about selected rooms, including patient lists, device status, and quick action buttons.
@@ -354,7 +354,7 @@ Capabilities:
 - Responsive modal design with scrollable content
 
 **Section sources**
-- [RoomDetailPopup:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [RoomDetailPopup:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
 
 ## Dependency Analysis
 The dashboard exhibits clear separation of concerns with well-defined dependencies:
@@ -404,19 +404,19 @@ RoomPopup --> UI
 ```
 
 **Diagram sources**
-- [HeadNurseDashboardPage:1-50](file://frontend/app/head-nurse/page.tsx#L1-L50)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [WardOverviewGrid:1-30](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L30)
-- [RoomSubCard:1-30](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L30)
-- [RoomDetailPopup:1-30](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L30)
-- [KPIStatCard:1-35](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L35)
-- [api.ts](file://frontend/lib/api.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [HeadNurseDashboardPage:1-50](frontend/app/head-nurse/page.tsx#L1-L50)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [WardOverviewGrid:1-30](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L30)
+- [RoomSubCard:1-30](frontend/components/dashboard/RoomSubCard.tsx#L1-L30)
+- [RoomDetailPopup:1-30](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L30)
+- [KPIStatCard:1-35](frontend/components/dashboard/KPIStatCard.tsx#L1-L35)
+- [api.ts](frontend/lib/api.ts)
+- [types.ts](frontend/lib/types.ts)
 
 **Section sources**
-- [HeadNurseDashboardPage:1-50](file://frontend/app/head-nurse/page.tsx#L1-L50)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [WardOverviewGrid:1-30](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L30)
+- [HeadNurseDashboardPage:1-50](frontend/app/head-nurse/page.tsx#L1-L50)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [WardOverviewGrid:1-30](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L30)
 
 ## Performance Considerations
 The dashboard implements several performance optimization strategies:
@@ -452,8 +452,8 @@ Common issues and solutions:
 - Monitor error boundaries and fallback states
 
 **Section sources**
-- [HeadNurseDashboardPage:64-104](file://frontend/app/head-nurse/page.tsx#L64-L104)
-- [api.ts](file://frontend/lib/api.ts)
+- [HeadNurseDashboardPage:64-104](frontend/app/head-nurse/page.tsx#L64-L104)
+- [api.ts](frontend/lib/api.ts)
 
 ## Conclusion
 The Head Nurse Ward Overview Dashboard provides a comprehensive, real-time view of ward operations through a well-architected combination of visualization panels, interactive grids, and priority-focused workflows. Its modular design enables maintainability and extensibility while the reactive architecture ensures responsive user experiences. The dashboard successfully balances information density with usability, providing essential insights for effective ward management.

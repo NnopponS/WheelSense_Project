@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [WardOverviewGrid.tsx](file://frontend/components/dashboard/WardOverviewGrid.tsx)
-- [RoomDetailPopup.tsx](file://frontend/components/dashboard/RoomDetailPopup.tsx)
-- [TaskChecklistCard.tsx](file://frontend/components/dashboard/TaskChecklistCard.tsx)
-- [KPIStatCard.tsx](file://frontend/components/dashboard/KPIStatCard.tsx)
-- [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [RoomSubCard.tsx](file://frontend/components/dashboard/RoomSubCard.tsx)
-- [FloorplanRoleViewer.tsx](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [monitoringWorkspace.ts](file://frontend/lib/monitoringWorkspace.ts)
-- [task-scope-types.ts](file://frontend/lib/api/task-scope-types.ts)
-- [types.ts](file://frontend/lib/types.ts)
-- [floorplanLayout.ts](file://frontend/lib/floorplanLayout.ts)
-- [page.tsx](file://frontend/app/head-nurse/monitoring/page.tsx)
+- [WardOverviewGrid.tsx](frontend/components/dashboard/WardOverviewGrid.tsx)
+- [RoomDetailPopup.tsx](frontend/components/dashboard/RoomDetailPopup.tsx)
+- [TaskChecklistCard.tsx](frontend/components/dashboard/TaskChecklistCard.tsx)
+- [KPIStatCard.tsx](frontend/components/dashboard/KPIStatCard.tsx)
+- [DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [RoomSubCard.tsx](frontend/components/dashboard/RoomSubCard.tsx)
+- [FloorplanRoleViewer.tsx](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [monitoringWorkspace.ts](frontend/lib/monitoringWorkspace.ts)
+- [task-scope-types.ts](frontend/lib/api/task-scope-types.ts)
+- [types.ts](frontend/lib/types.ts)
+- [floorplanLayout.ts](frontend/lib/floorplanLayout.ts)
+- [page.tsx](frontend/app/head-nurse/monitoring/page.tsx)
 </cite>
 
 ## Table of Contents
@@ -65,30 +65,30 @@ TCL --> TST
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [task-scope-types.ts:1-406](file://frontend/lib/api/task-scope-types.ts#L1-L406)
-- [types.ts:1-482](file://frontend/lib/types.ts#L1-L482)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [task-scope-types.ts:1-406](frontend/lib/api/task-scope-types.ts#L1-L406)
+- [types.ts:1-482](frontend/lib/types.ts#L1-L482)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
 
 **Section sources**
-- [WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [RoomDetailPopup.tsx:1-276](file://frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
-- [TaskChecklistCard.tsx:1-261](file://frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
-- [KPIStatCard.tsx:1-104](file://frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
-- [DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [RoomSubCard.tsx:1-138](file://frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
-- [FloorplanRoleViewer.tsx:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [task-scope-types.ts:1-406](file://frontend/lib/api/task-scope-types.ts#L1-L406)
-- [types.ts:1-482](file://frontend/lib/types.ts#L1-L482)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
+- [WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [RoomDetailPopup.tsx:1-276](frontend/components/dashboard/RoomDetailPopup.tsx#L1-L276)
+- [TaskChecklistCard.tsx:1-261](frontend/components/dashboard/TaskChecklistCard.tsx#L1-L261)
+- [KPIStatCard.tsx:1-104](frontend/components/dashboard/KPIStatCard.tsx#L1-L104)
+- [DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [RoomSubCard.tsx:1-138](frontend/components/dashboard/RoomSubCard.tsx#L1-L138)
+- [FloorplanRoleViewer.tsx:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [task-scope-types.ts:1-406](frontend/lib/api/task-scope-types.ts#L1-L406)
+- [types.ts:1-482](frontend/lib/types.ts#L1-L482)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
 
 ## Core Components
 - WardOverviewGrid: Renders an overview grid of rooms with filtering, sorting, occupancy stats, and a detail popup on selection.
@@ -99,12 +99,12 @@ TCL --> TST
 - RoomSubCard: A lightweight room tile used inside WardOverviewGrid.
 
 **Section sources**
-- [WardOverviewGrid.tsx:27-112](file://frontend/components/dashboard/WardOverviewGrid.tsx#L27-L112)
-- [RoomDetailPopup.tsx:32-60](file://frontend/components/dashboard/RoomDetailPopup.tsx#L32-L60)
-- [TaskChecklistCard.tsx:24-83](file://frontend/components/dashboard/TaskChecklistCard.tsx#L24-L83)
-- [KPIStatCard.tsx:8-44](file://frontend/components/dashboard/KPIStatCard.tsx#L8-L44)
-- [DashboardFloorplanPanel.tsx:5-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L29)
-- [RoomSubCard.tsx:9-28](file://frontend/components/dashboard/RoomSubCard.tsx#L9-L28)
+- [WardOverviewGrid.tsx:27-112](frontend/components/dashboard/WardOverviewGrid.tsx#L27-L112)
+- [RoomDetailPopup.tsx:32-60](frontend/components/dashboard/RoomDetailPopup.tsx#L32-L60)
+- [TaskChecklistCard.tsx:24-83](frontend/components/dashboard/TaskChecklistCard.tsx#L24-L83)
+- [KPIStatCard.tsx:8-44](frontend/components/dashboard/KPIStatCard.tsx#L8-L44)
+- [DashboardFloorplanPanel.tsx:5-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L29)
+- [RoomSubCard.tsx:9-28](frontend/components/dashboard/RoomSubCard.tsx#L9-L28)
 
 ## Architecture Overview
 The dashboard integrates React components with TanStack Query for real-time data fetching and caching. FloorplanRoleViewer orchestrates facility/floor selection, layout retrieval, and live presence feeds. Monitoring workspace utilities standardize URL parameters for facility, floor, room, and view mode.
@@ -129,10 +129,10 @@ FRV-->>User : Render floorplan/list with room meta
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:114-118](file://frontend/components/dashboard/WardOverviewGrid.tsx#L114-L118)
-- [RoomDetailPopup.tsx:147-187](file://frontend/components/dashboard/RoomDetailPopup.tsx#L147-L187)
-- [DashboardFloorplanPanel.tsx:13-28](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L28)
-- [FloorplanRoleViewer.tsx:596-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
+- [WardOverviewGrid.tsx:114-118](frontend/components/dashboard/WardOverviewGrid.tsx#L114-L118)
+- [RoomDetailPopup.tsx:147-187](frontend/components/dashboard/RoomDetailPopup.tsx#L147-L187)
+- [DashboardFloorplanPanel.tsx:13-28](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L28)
+- [FloorplanRoleViewer.tsx:596-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
 
 ## Detailed Component Analysis
 
@@ -170,14 +170,14 @@ OnClick --> |No| End([Idle])
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:49-91](file://frontend/components/dashboard/WardOverviewGrid.tsx#L49-L91)
-- [WardOverviewGrid.tsx:94-112](file://frontend/components/dashboard/WardOverviewGrid.tsx#L94-L112)
-- [WardOverviewGrid.tsx:240-255](file://frontend/components/dashboard/WardOverviewGrid.tsx#L240-L255)
+- [WardOverviewGrid.tsx:49-91](frontend/components/dashboard/WardOverviewGrid.tsx#L49-L91)
+- [WardOverviewGrid.tsx:94-112](frontend/components/dashboard/WardOverviewGrid.tsx#L94-L112)
+- [WardOverviewGrid.tsx:240-255](frontend/components/dashboard/WardOverviewGrid.tsx#L240-L255)
 
 **Section sources**
-- [WardOverviewGrid.tsx:27-112](file://frontend/components/dashboard/WardOverviewGrid.tsx#L27-L112)
-- [WardOverviewGrid.tsx:114-118](file://frontend/components/dashboard/WardOverviewGrid.tsx#L114-L118)
-- [WardOverviewGrid.tsx:240-265](file://frontend/components/dashboard/WardOverviewGrid.tsx#L240-L265)
+- [WardOverviewGrid.tsx:27-112](frontend/components/dashboard/WardOverviewGrid.tsx#L27-L112)
+- [WardOverviewGrid.tsx:114-118](frontend/components/dashboard/WardOverviewGrid.tsx#L114-L118)
+- [WardOverviewGrid.tsx:240-265](frontend/components/dashboard/WardOverviewGrid.tsx#L240-L265)
 
 ### RoomDetailPopup
 - Purpose: Modal panel displaying room quick stats, patient list, device status, and action buttons.
@@ -209,16 +209,16 @@ Popup-->>Grid : onClose() on close
 ```
 
 **Diagram sources**
-- [RoomDetailPopup.tsx:53-60](file://frontend/components/dashboard/RoomDetailPopup.tsx#L53-L60)
-- [RoomDetailPopup.tsx:147-187](file://frontend/components/dashboard/RoomDetailPopup.tsx#L147-L187)
-- [RoomDetailPopup.tsx:257-269](file://frontend/components/dashboard/RoomDetailPopup.tsx#L257-L269)
+- [RoomDetailPopup.tsx:53-60](frontend/components/dashboard/RoomDetailPopup.tsx#L53-L60)
+- [RoomDetailPopup.tsx:147-187](frontend/components/dashboard/RoomDetailPopup.tsx#L147-L187)
+- [RoomDetailPopup.tsx:257-269](frontend/components/dashboard/RoomDetailPopup.tsx#L257-L269)
 
 **Section sources**
-- [RoomDetailPopup.tsx:32-60](file://frontend/components/dashboard/RoomDetailPopup.tsx#L32-L60)
-- [RoomDetailPopup.tsx:106-127](file://frontend/components/dashboard/RoomDetailPopup.tsx#L106-L127)
-- [RoomDetailPopup.tsx:131-195](file://frontend/components/dashboard/RoomDetailPopup.tsx#L131-L195)
-- [RoomDetailPopup.tsx:197-249](file://frontend/components/dashboard/RoomDetailPopup.tsx#L197-L249)
-- [RoomDetailPopup.tsx:251-271](file://frontend/components/dashboard/RoomDetailPopup.tsx#L251-L271)
+- [RoomDetailPopup.tsx:32-60](frontend/components/dashboard/RoomDetailPopup.tsx#L32-L60)
+- [RoomDetailPopup.tsx:106-127](frontend/components/dashboard/RoomDetailPopup.tsx#L106-L127)
+- [RoomDetailPopup.tsx:131-195](frontend/components/dashboard/RoomDetailPopup.tsx#L131-L195)
+- [RoomDetailPopup.tsx:197-249](frontend/components/dashboard/RoomDetailPopup.tsx#L197-L249)
+- [RoomDetailPopup.tsx:251-271](frontend/components/dashboard/RoomDetailPopup.tsx#L251-L271)
 
 ### TaskChecklistCard
 - Purpose: Displays a prioritized and due-date-aware task list with completion toggles and expand/collapse.
@@ -254,14 +254,14 @@ CallCallbacks --> End([Idle])
 ```
 
 **Diagram sources**
-- [TaskChecklistCard.tsx:76-118](file://frontend/components/dashboard/TaskChecklistCard.tsx#L76-L118)
-- [TaskChecklistCard.tsx:154-233](file://frontend/components/dashboard/TaskChecklistCard.tsx#L154-L233)
+- [TaskChecklistCard.tsx:76-118](frontend/components/dashboard/TaskChecklistCard.tsx#L76-L118)
+- [TaskChecklistCard.tsx:154-233](frontend/components/dashboard/TaskChecklistCard.tsx#L154-L233)
 
 **Section sources**
-- [TaskChecklistCard.tsx:24-83](file://frontend/components/dashboard/TaskChecklistCard.tsx#L24-L83)
-- [TaskChecklistCard.tsx:47-74](file://frontend/components/dashboard/TaskChecklistCard.tsx#L47-L74)
-- [TaskChecklistCard.tsx:100-118](file://frontend/components/dashboard/TaskChecklistCard.tsx#L100-L118)
-- [TaskChecklistCard.tsx:154-233](file://frontend/components/dashboard/TaskChecklistCard.tsx#L154-L233)
+- [TaskChecklistCard.tsx:24-83](frontend/components/dashboard/TaskChecklistCard.tsx#L24-L83)
+- [TaskChecklistCard.tsx:47-74](frontend/components/dashboard/TaskChecklistCard.tsx#L47-L74)
+- [TaskChecklistCard.tsx:100-118](frontend/components/dashboard/TaskChecklistCard.tsx#L100-L118)
+- [TaskChecklistCard.tsx:154-233](frontend/components/dashboard/TaskChecklistCard.tsx#L154-L233)
 
 ### KPIStatCard
 - Purpose: A reusable card for KPI metrics with optional trend and status coloring.
@@ -290,11 +290,11 @@ class KPIStatCard {
 ```
 
 **Diagram sources**
-- [KPIStatCard.tsx:8-44](file://frontend/components/dashboard/KPIStatCard.tsx#L8-L44)
+- [KPIStatCard.tsx:8-44](frontend/components/dashboard/KPIStatCard.tsx#L8-L44)
 
 **Section sources**
-- [KPIStatCard.tsx:8-44](file://frontend/components/dashboard/KPIStatCard.tsx#L8-L44)
-- [KPIStatCard.tsx:47-102](file://frontend/components/dashboard/KPIStatCard.tsx#L47-L102)
+- [KPIStatCard.tsx:8-44](frontend/components/dashboard/KPIStatCard.tsx#L8-L44)
+- [KPIStatCard.tsx:47-102](frontend/components/dashboard/KPIStatCard.tsx#L47-L102)
 
 ### DashboardFloorplanPanel and FloorplanRoleViewer
 - DashboardFloorplanPanel: Thin wrapper exposing FloorplanRoleViewer with initial facility/floor/room parameters.
@@ -326,15 +326,15 @@ Viewer-->>Panel : Rendered floorplan/list + inspector
 ```
 
 **Diagram sources**
-- [DashboardFloorplanPanel.tsx:13-28](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L28)
-- [FloorplanRoleViewer.tsx:567-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
-- [monitoringWorkspace.ts:33-42](file://frontend/lib/monitoringWorkspace.ts#L33-L42)
+- [DashboardFloorplanPanel.tsx:13-28](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L13-L28)
+- [FloorplanRoleViewer.tsx:567-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
+- [monitoringWorkspace.ts:33-42](frontend/lib/monitoringWorkspace.ts#L33-L42)
 
 **Section sources**
-- [DashboardFloorplanPanel.tsx:5-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L29)
-- [FloorplanRoleViewer.tsx:567-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
-- [monitoringWorkspace.ts:33-42](file://frontend/lib/monitoringWorkspace.ts#L33-L42)
-- [floorplanLayout.ts:55-72](file://frontend/lib/floorplanLayout.ts#L55-L72)
+- [DashboardFloorplanPanel.tsx:5-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L29)
+- [FloorplanRoleViewer.tsx:567-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L567-L702)
+- [monitoringWorkspace.ts:33-42](frontend/lib/monitoringWorkspace.ts#L33-L42)
+- [floorplanLayout.ts:55-72](frontend/lib/floorplanLayout.ts#L55-L72)
 
 ## Dependency Analysis
 - WardOverviewGrid depends on RoomSubCard and RoomDetailPopup for rendering and interactions.
@@ -356,24 +356,24 @@ FRV --> TYP["types"]
 ```
 
 **Diagram sources**
-- [WardOverviewGrid.tsx:11-12](file://frontend/components/dashboard/WardOverviewGrid.tsx#L11-L12)
-- [RoomDetailPopup.tsx:30](file://frontend/components/dashboard/RoomDetailPopup.tsx#L30)
-- [TaskChecklistCard.tsx:22](file://frontend/components/dashboard/TaskChecklistCard.tsx#L22)
-- [FloorplanRoleViewer.tsx:36-40](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L36-L40)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [task-scope-types.ts:21-47](file://frontend/lib/api/task-scope-types.ts#L21-L47)
-- [types.ts:209-224](file://frontend/lib/types.ts#L209-L224)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
+- [WardOverviewGrid.tsx:11-12](frontend/components/dashboard/WardOverviewGrid.tsx#L11-L12)
+- [RoomDetailPopup.tsx:30](frontend/components/dashboard/RoomDetailPopup.tsx#L30)
+- [TaskChecklistCard.tsx:22](frontend/components/dashboard/TaskChecklistCard.tsx#L22)
+- [FloorplanRoleViewer.tsx:36-40](frontend/components/floorplan/FloorplanRoleViewer.tsx#L36-L40)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [task-scope-types.ts:21-47](frontend/lib/api/task-scope-types.ts#L21-L47)
+- [types.ts:209-224](frontend/lib/types.ts#L209-L224)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
 
 **Section sources**
-- [WardOverviewGrid.tsx:11-12](file://frontend/components/dashboard/WardOverviewGrid.tsx#L11-L12)
-- [RoomDetailPopup.tsx:30](file://frontend/components/dashboard/RoomDetailPopup.tsx#L30)
-- [TaskChecklistCard.tsx:22](file://frontend/components/dashboard/TaskChecklistCard.tsx#L22)
-- [FloorplanRoleViewer.tsx:36-40](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L36-L40)
-- [monitoringWorkspace.ts:1-146](file://frontend/lib/monitoringWorkspace.ts#L1-L146)
-- [task-scope-types.ts:21-47](file://frontend/lib/api/task-scope-types.ts#L21-L47)
-- [types.ts:209-224](file://frontend/lib/types.ts#L209-L224)
-- [floorplanLayout.ts:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
+- [WardOverviewGrid.tsx:11-12](frontend/components/dashboard/WardOverviewGrid.tsx#L11-L12)
+- [RoomDetailPopup.tsx:30](frontend/components/dashboard/RoomDetailPopup.tsx#L30)
+- [TaskChecklistCard.tsx:22](frontend/components/dashboard/TaskChecklistCard.tsx#L22)
+- [FloorplanRoleViewer.tsx:36-40](frontend/components/floorplan/FloorplanRoleViewer.tsx#L36-L40)
+- [monitoringWorkspace.ts:1-146](frontend/lib/monitoringWorkspace.ts#L1-L146)
+- [task-scope-types.ts:21-47](frontend/lib/api/task-scope-types.ts#L21-L47)
+- [types.ts:209-224](frontend/lib/types.ts#L209-L224)
+- [floorplanLayout.ts:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
 
 ## Performance Considerations
 - Memoization:
@@ -410,10 +410,10 @@ FRV --> TYP["types"]
   - Validate monitoring workspace query parsing and URL building utilities.
 
 **Section sources**
-- [WardOverviewGrid.tsx:159-219](file://frontend/components/dashboard/WardOverviewGrid.tsx#L159-L219)
-- [TaskChecklistCard.tsx:100-118](file://frontend/components/dashboard/TaskChecklistCard.tsx#L100-L118)
-- [FloorplanRoleViewer.tsx:695-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L695-L702)
-- [monitoringWorkspace.ts:33-42](file://frontend/lib/monitoringWorkspace.ts#L33-L42)
+- [WardOverviewGrid.tsx:159-219](frontend/components/dashboard/WardOverviewGrid.tsx#L159-L219)
+- [TaskChecklistCard.tsx:100-118](frontend/components/dashboard/TaskChecklistCard.tsx#L100-L118)
+- [FloorplanRoleViewer.tsx:695-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L695-L702)
+- [monitoringWorkspace.ts:33-42](frontend/lib/monitoringWorkspace.ts#L33-L42)
 
 ## Conclusion
 The WheelSense dashboard components form a cohesive, real-time monitoring system. WardOverviewGrid and RoomDetailPopup provide efficient room-centric views with filtering and navigation. TaskChecklistCard offers actionable insights into care tasks. KPIStatCard standardizes KPI presentation. FloorplanRoleViewer integrates floorplan visualization with live presence and device telemetry, leveraging TanStack Query for robust data management. Together, these components support responsive, accessible, and performant dashboards across roles.
@@ -458,11 +458,11 @@ The WheelSense dashboard components form a cohesive, real-time monitoring system
   - initialRoomName?: string|null
 
 **Section sources**
-- [WardOverviewGrid.tsx:27-42](file://frontend/components/dashboard/WardOverviewGrid.tsx#L27-L42)
-- [RoomDetailPopup.tsx:32-60](file://frontend/components/dashboard/RoomDetailPopup.tsx#L32-L60)
-- [TaskChecklistCard.tsx:24-83](file://frontend/components/dashboard/TaskChecklistCard.tsx#L24-L83)
-- [KPIStatCard.tsx:8-20](file://frontend/components/dashboard/KPIStatCard.tsx#L8-L20)
-- [DashboardFloorplanPanel.tsx:5-11](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L11)
+- [WardOverviewGrid.tsx:27-42](frontend/components/dashboard/WardOverviewGrid.tsx#L27-L42)
+- [RoomDetailPopup.tsx:32-60](frontend/components/dashboard/RoomDetailPopup.tsx#L32-L60)
+- [TaskChecklistCard.tsx:24-83](frontend/components/dashboard/TaskChecklistCard.tsx#L24-L83)
+- [KPIStatCard.tsx:8-20](frontend/components/dashboard/KPIStatCard.tsx#L8-L20)
+- [DashboardFloorplanPanel.tsx:5-11](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L11)
 
 ### Real-time Data Binding and Analytics Integration
 - TanStack Query manages polling, caching, and refetch on window focus/reconnect for presence and device data.
@@ -470,5 +470,5 @@ The WheelSense dashboard components form a cohesive, real-time monitoring system
 - Analytics summaries (alerts, vitals averages, ward summary) are exposed via backend endpoints and can be integrated into dashboard widgets.
 
 **Section sources**
-- [FloorplanRoleViewer.tsx:596-702](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
-- [monitoringWorkspace.ts:33-42](file://frontend/lib/monitoringWorkspace.ts#L33-L42)
+- [FloorplanRoleViewer.tsx:596-702](frontend/components/floorplan/FloorplanRoleViewer.tsx#L596-L702)
+- [monitoringWorkspace.ts:33-42](frontend/lib/monitoringWorkspace.ts#L33-L42)

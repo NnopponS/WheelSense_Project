@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [AddPatientModal.tsx](file://frontend/components/admin/patients/AddPatientModal.tsx)
-- [PatientEditorModal.tsx](file://frontend/components/admin/patients/PatientEditorModal.tsx)
-- [AdminPatientsQuickFind.tsx](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx)
-- [PatientsDataTable.tsx](file://frontend/components/admin/patients/PatientsDataTable.tsx)
-- [AdminPatientsPage.tsx](file://frontend/app/admin/patients/page.tsx)
-- [PatientDetailPage.tsx](file://frontend/app/admin/patients/[id]/page.tsx)
-- [PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [WardTimelineEmbed.tsx](file://frontend/components/timeline/WardTimelineEmbed.tsx)
-- [patientFormParse.ts](file://frontend/lib/patientFormParse.ts)
-- [types.ts](file://frontend/lib/types.ts)
+- [AddPatientModal.tsx](frontend/components/admin/patients/AddPatientModal.tsx)
+- [PatientEditorModal.tsx](frontend/components/admin/patients/PatientEditorModal.tsx)
+- [AdminPatientsQuickFind.tsx](frontend/components/admin/patients/AdminPatientsQuickFind.tsx)
+- [PatientsDataTable.tsx](frontend/components/admin/patients/PatientsDataTable.tsx)
+- [AdminPatientsPage.tsx](frontend/app/admin/patients/page.tsx)
+- [PatientDetailPage.tsx](frontend/app/admin/patients/[id]/page.tsx)
+- [PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [WardTimelineEmbed.tsx](frontend/components/timeline/WardTimelineEmbed.tsx)
+- [patientFormParse.ts](frontend/lib/patientFormParse.ts)
+- [types.ts](frontend/lib/types.ts)
 </cite>
 
 ## Table of Contents
@@ -69,28 +69,28 @@ Timeline --> Types
 ```
 
 **Diagram sources**
-- [AdminPatientsPage.tsx:116-742](file://frontend/app/admin/patients/page.tsx#L116-L742)
-- [PatientDetailPage.tsx:141-1426](file://frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
-- [AdminPatientsQuickFind.tsx:19-110](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
-- [AddPatientModal.tsx:51-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
-- [PatientEditorModal.tsx:245-911](file://frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
-- [PatientsDataTable.tsx:60-282](file://frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
-- [PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
+- [AdminPatientsPage.tsx:116-742](frontend/app/admin/patients/page.tsx#L116-L742)
+- [PatientDetailPage.tsx:141-1426](frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
+- [AdminPatientsQuickFind.tsx:19-110](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
+- [AddPatientModal.tsx:51-543](frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
+- [PatientEditorModal.tsx:245-911](frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
+- [PatientsDataTable.tsx:60-282](frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
+- [PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
 
 **Section sources**
-- [AdminPatientsPage.tsx:116-742](file://frontend/app/admin/patients/page.tsx#L116-L742)
-- [PatientDetailPage.tsx:141-1426](file://frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
-- [AdminPatientsQuickFind.tsx:19-110](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
-- [AddPatientModal.tsx:51-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
-- [PatientEditorModal.tsx:245-911](file://frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
-- [PatientsDataTable.tsx:60-282](file://frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
-- [PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
+- [AdminPatientsPage.tsx:116-742](frontend/app/admin/patients/page.tsx#L116-L742)
+- [PatientDetailPage.tsx:141-1426](frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
+- [AdminPatientsQuickFind.tsx:19-110](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
+- [AddPatientModal.tsx:51-543](frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
+- [PatientEditorModal.tsx:245-911](frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
+- [PatientsDataTable.tsx:60-282](frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
+- [PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
 
 ## Core Components
 - AddPatientModal: Full-featured patient registration form with identity, demographics, medical history, surgeries, medications, emergency contact, and notes. Uses Zod validation and React Hook Form with field arrays for dynamic rows.
@@ -103,14 +103,14 @@ Timeline --> Types
 - WardTimelineEmbed: Ward-level timeline aggregation with filtering by patient and source, plus calendar/agenda views.
 
 **Section sources**
-- [AddPatientModal.tsx:51-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
-- [PatientEditorModal.tsx:245-911](file://frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
-- [AdminPatientsQuickFind.tsx:19-110](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
-- [PatientsDataTable.tsx:60-282](file://frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
-- [AdminPatientsPage.tsx:116-742](file://frontend/app/admin/patients/page.tsx#L116-L742)
-- [PatientDetailPage.tsx:141-1426](file://frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
-- [PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [AddPatientModal.tsx:51-543](frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
+- [PatientEditorModal.tsx:245-911](frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
+- [AdminPatientsQuickFind.tsx:19-110](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
+- [PatientsDataTable.tsx:60-282](frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
+- [AdminPatientsPage.tsx:116-742](frontend/app/admin/patients/page.tsx#L116-L742)
+- [PatientDetailPage.tsx:141-1426](frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
+- [PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
 
 ## Architecture Overview
 The system follows a layered pattern:
@@ -145,12 +145,12 @@ Page->>API : Invalidate queries and refresh data
 ```
 
 **Diagram sources**
-- [AdminPatientsPage.tsx:134-187](file://frontend/app/admin/patients/page.tsx#L134-L187)
-- [PatientsDataTable.tsx:74-84](file://frontend/components/admin/patients/PatientsDataTable.tsx#L74-L84)
-- [AdminPatientsQuickFind.tsx:31-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L31-L38)
-- [AddPatientModal.tsx:97-130](file://frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
-- [PatientEditorModal.tsx:480-549](file://frontend/components/admin/patients/PatientEditorModal.tsx#L480-L549)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
+- [AdminPatientsPage.tsx:134-187](frontend/app/admin/patients/page.tsx#L134-L187)
+- [PatientsDataTable.tsx:74-84](frontend/components/admin/patients/PatientsDataTable.tsx#L74-L84)
+- [AdminPatientsQuickFind.tsx:31-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L31-L38)
+- [AddPatientModal.tsx:97-130](frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
+- [PatientEditorModal.tsx:480-549](frontend/components/admin/patients/PatientEditorModal.tsx#L480-L549)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
 
 ## Detailed Component Analysis
 
@@ -174,12 +174,12 @@ Modal-->>Admin : Close and navigate to detail
 ```
 
 **Diagram sources**
-- [AddPatientModal.tsx:97-130](file://frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
+- [AddPatientModal.tsx:97-130](frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
 
 **Section sources**
-- [AddPatientModal.tsx:51-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
+- [AddPatientModal.tsx:51-543](frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
 
 ### PatientEditorModal: Profile Editing and Room Assignment
 - Purpose: Edit patient profile, manage emergency contact, and link/manage portal accounts.
@@ -203,11 +203,11 @@ Editor-->>Admin : Close and invalidate queries
 ```
 
 **Diagram sources**
-- [PatientEditorModal.tsx:299-549](file://frontend/components/admin/patients/PatientEditorModal.tsx#L299-L549)
+- [PatientEditorModal.tsx:299-549](frontend/components/admin/patients/PatientEditorModal.tsx#L299-L549)
 
 **Section sources**
-- [PatientEditorModal.tsx:245-911](file://frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
+- [PatientEditorModal.tsx:245-911](frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
 
 ### AdminPatientsQuickFind: Quick Find Capabilities
 - Purpose: Provide instant search over patients with live suggestions and quick navigation.
@@ -223,10 +223,10 @@ Select --> Navigate["Navigate to patient detail"]
 ```
 
 **Diagram sources**
-- [AdminPatientsQuickFind.tsx:24-38](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L24-L38)
+- [AdminPatientsQuickFind.tsx:24-38](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L24-L38)
 
 **Section sources**
-- [AdminPatientsQuickFind.tsx:19-110](file://frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
+- [AdminPatientsQuickFind.tsx:19-110](frontend/components/admin/patients/AdminPatientsQuickFind.tsx#L19-L110)
 
 ### PatientsDataTable: Search, Filtering, and Room Assignment Tracking
 - Purpose: Present a paginated, sortable table of patients with search and filter controls.
@@ -242,10 +242,10 @@ Paginate --> Render["Render table rows"]
 ```
 
 **Diagram sources**
-- [PatientsDataTable.tsx:74-195](file://frontend/components/admin/patients/PatientsDataTable.tsx#L74-L195)
+- [PatientsDataTable.tsx:74-195](frontend/components/admin/patients/PatientsDataTable.tsx#L74-L195)
 
 **Section sources**
-- [PatientsDataTable.tsx:60-282](file://frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
+- [PatientsDataTable.tsx:60-282](frontend/components/admin/patients/PatientsDataTable.tsx#L60-L282)
 
 ### AdminPatientsPage: Dashboard, Stats, and Rosters
 - Purpose: Admin overview with summary cards, quick filters, search, and tabs for patient roster and upcoming routines.
@@ -261,10 +261,10 @@ Roster --> Routines["Routines Tab"]
 ```
 
 **Diagram sources**
-- [AdminPatientsPage.tsx:456-677](file://frontend/app/admin/patients/page.tsx#L456-L677)
+- [AdminPatientsPage.tsx:456-677](frontend/app/admin/patients/page.tsx#L456-L677)
 
 **Section sources**
-- [AdminPatientsPage.tsx:116-742](file://frontend/app/admin/patients/page.tsx#L116-L742)
+- [AdminPatientsPage.tsx:116-742](frontend/app/admin/patients/page.tsx#L116-L742)
 
 ### PatientDetailPage: Comprehensive Profile and Care Coordination
 - Purpose: Single-patient view with editable sections, vitals, alerts, timeline, devices, and integrated scheduling.
@@ -287,12 +287,12 @@ Detail-->>Admin : Refresh data and show success
 ```
 
 **Diagram sources**
-- [PatientDetailPage.tsx:210-262](file://frontend/app/admin/patients/[id]/page.tsx#L210-L262)
-- [PatientDetailPage.tsx:431-543](file://frontend/app/admin/patients/[id]/page.tsx#L431-L543)
+- [PatientDetailPage.tsx:210-262](frontend/app/admin/patients/[id]/page.tsx#L210-L262)
+- [PatientDetailPage.tsx:431-543](frontend/app/admin/patients/[id]/page.tsx#L431-L543)
 
 **Section sources**
-- [PatientDetailPage.tsx:141-1426](file://frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
+- [PatientDetailPage.tsx:141-1426](frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
 
 ### PatientCareRoadmap: Care Pathway Coordination
 - Purpose: Visualize care pathway across past, current, and upcoming activities for a patient.
@@ -307,11 +307,11 @@ Group --> Render["Render cards with status and location"]
 ```
 
 **Diagram sources**
-- [PatientCareRoadmap.tsx:68-132](file://frontend/components/patient/PatientCareRoadmap.tsx#L68-L132)
+- [PatientCareRoadmap.tsx:68-132](frontend/components/patient/PatientCareRoadmap.tsx#L68-L132)
 
 **Section sources**
-- [PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
+- [PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
 
 ### WardTimelineEmbed: Ward-Level Timeline Integration
 - Purpose: Aggregate timeline events across the ward with filtering by patient/source.
@@ -327,11 +327,11 @@ Stats --> UI["Render calendar + agenda + filters"]
 ```
 
 **Diagram sources**
-- [WardTimelineEmbed.tsx:37-96](file://frontend/components/timeline/WardTimelineEmbed.tsx#L37-L96)
+- [WardTimelineEmbed.tsx:37-96](frontend/components/timeline/WardTimelineEmbed.tsx#L37-L96)
 
 **Section sources**
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
-- [types.ts:309-321](file://frontend/lib/types.ts#L309-L321)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [types.ts:309-321](frontend/lib/types.ts#L309-L321)
 
 ## Dependency Analysis
 - Form Parsing: Free-form list fields are split using a unified parser to normalize entries for storage.
@@ -357,22 +357,22 @@ Query --> Timeline
 ```
 
 **Diagram sources**
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
-- [AddPatientModal.tsx:51-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
-- [PatientEditorModal.tsx:245-911](file://frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
-- [PatientDetailPage.tsx:141-1426](file://frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
-- [PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
+- [AddPatientModal.tsx:51-543](frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
+- [PatientEditorModal.tsx:245-911](frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
+- [PatientDetailPage.tsx:141-1426](frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
+- [PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
 
 **Section sources**
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
-- [types.ts:54-90](file://frontend/lib/types.ts#L54-L90)
-- [AddPatientModal.tsx:51-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
-- [PatientEditorModal.tsx:245-911](file://frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
-- [PatientDetailPage.tsx:141-1426](file://frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
-- [PatientCareRoadmap.tsx:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [WardTimelineEmbed.tsx:30-225](file://frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
+- [types.ts:54-90](frontend/lib/types.ts#L54-L90)
+- [AddPatientModal.tsx:51-543](frontend/components/admin/patients/AddPatientModal.tsx#L51-L543)
+- [PatientEditorModal.tsx:245-911](frontend/components/admin/patients/PatientEditorModal.tsx#L245-L911)
+- [PatientDetailPage.tsx:141-1426](frontend/app/admin/patients/[id]/page.tsx#L141-L1426)
+- [PatientCareRoadmap.tsx:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [WardTimelineEmbed.tsx:30-225](frontend/components/timeline/WardTimelineEmbed.tsx#L30-L225)
 
 ## Performance Considerations
 - Query Caching: Use appropriate stale times and polling intervals for real-time dashboards while avoiding excessive network load.
@@ -389,9 +389,9 @@ Query --> Timeline
 - Timeline/Alerts Not Updating: Confirm query keys and manual invalidation after edits; refresh intervals may delay updates.
 
 **Section sources**
-- [AddPatientModal.tsx:113-130](file://frontend/components/admin/patients/AddPatientModal.tsx#L113-L130)
-- [PatientEditorModal.tsx:544-549](file://frontend/components/admin/patients/PatientEditorModal.tsx#L544-L549)
-- [PatientDetailPage.tsx:536-543](file://frontend/app/admin/patients/[id]/page.tsx#L536-L543)
+- [AddPatientModal.tsx:113-130](frontend/components/admin/patients/AddPatientModal.tsx#L113-L130)
+- [PatientEditorModal.tsx:544-549](frontend/components/admin/patients/PatientEditorModal.tsx#L544-L549)
+- [PatientDetailPage.tsx:536-543](frontend/app/admin/patients/[id]/page.tsx#L536-L543)
 
 ## Conclusion
 The Patient Registry Management system provides a robust, validated, and integrated solution for managing patient records in the Admin Dashboard. It balances ease-of-use with strong data integrity through schema-driven forms, modular modals, and reactive data flows. Administrators can onboard patients, maintain accurate profiles, coordinate care across departments, and track timelines—all with responsive UIs and clear validation feedback.

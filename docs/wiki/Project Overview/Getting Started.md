@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [frontend/README.md](file://frontend/README.md)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [server/docker-compose.core.yml](file://server/docker-compose.core.yml)
-- [server/docker-compose.sim.yml](file://server/docker-compose.sim.yml)
-- [server/mosquitto.conf](file://server/mosquitto.conf)
-- [server/.env.example](file://server/.env.example)
-- [server/requirements.txt](file://server/requirements.txt)
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [server/alembic.ini](file://server/alembic.ini)
-- [server/scripts/start-sim.sh](file://server/scripts/start-sim.sh)
-- [server/scripts/start-prod.sh](file://server/scripts/start-prod.sh)
-- [frontend/Dockerfile](file://frontend/Dockerfile)
-- [frontend/package.json](file://frontend/package.json)
+- [README.md](README.md)
+- [frontend/README.md](frontend/README.md)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [server/docker-compose.core.yml](server/docker-compose.core.yml)
+- [server/docker-compose.sim.yml](server/docker-compose.sim.yml)
+- [server/mosquitto.conf](server/mosquitto.conf)
+- [server/.env.example](server/.env.example)
+- [server/requirements.txt](server/requirements.txt)
+- [server/pyproject.toml](server/pyproject.toml)
+- [server/alembic.ini](server/alembic.ini)
+- [server/scripts/start-sim.sh](server/scripts/start-sim.sh)
+- [server/scripts/start-prod.sh](server/scripts/start-prod.sh)
+- [frontend/Dockerfile](frontend/Dockerfile)
+- [frontend/package.json](frontend/package.json)
 </cite>
 
 ## Table of Contents
@@ -75,7 +75,7 @@ AG --> |"Workflows + Memory"| S
 ```
 
 **Section sources**
-- [README.md:14-24](file://README.md#L14-L24)
+- [README.md:14-24](README.md#L14-L24)
 
 ## Core Components
 - Backend (server)
@@ -93,8 +93,8 @@ AG --> |"Workflows + Memory"| S
   - ADRs, plans, and workflow memory for context and evolution
 
 **Section sources**
-- [README.md:7-12](file://README.md#L7-L12)
-- [frontend/README.md:1-23](file://frontend/README.md#L1-L23)
+- [README.md:7-12](README.md#L7-L12)
+- [frontend/README.md:1-23](frontend/README.md#L1-L23)
 
 ## Architecture Overview
 The platform runs as a containerized stack with the backend and frontend communicating via a reverse proxy. MQTT is used for telemetry ingestion, and PostgreSQL stores domain data. The agent runtime provides AI tool routing and chat action orchestration.
@@ -117,12 +117,12 @@ BE --> HA
 ```
 
 **Diagram sources**
-- [server/docker-compose.core.yml:5-143](file://server/docker-compose.core.yml#L5-L143)
-- [frontend/README.md:44](file://frontend/README.md#L44)
+- [server/docker-compose.core.yml:5-143](server/docker-compose.core.yml#L5-L143)
+- [frontend/README.md:44](frontend/README.md#L44)
 
 **Section sources**
-- [server/docker-compose.core.yml:5-143](file://server/docker-compose.core.yml#L5-L143)
-- [frontend/README.md:41-51](file://frontend/README.md#L41-L51)
+- [server/docker-compose.core.yml:5-143](server/docker-compose.core.yml#L5-L143)
+- [frontend/README.md:41-51](frontend/README.md#L41-L51)
 
 ## Detailed Component Analysis
 
@@ -152,13 +152,13 @@ FixDeps --> DBReady
 ```
 
 **Diagram sources**
-- [README.md:25-44](file://README.md#L25-L44)
-- [server/docker-compose.core.yml:15-19](file://server/docker-compose.core.yml#L15-L19)
+- [README.md:25-44](README.md#L25-L44)
+- [server/docker-compose.core.yml:15-19](server/docker-compose.core.yml#L15-L19)
 
 **Section sources**
-- [README.md:25-44](file://README.md#L25-L44)
-- [server/docker-compose.core.yml:5-143](file://server/docker-compose.core.yml#L5-L143)
-- [server/alembic.ini:63](file://server/alembic.ini#L63)
+- [README.md:25-44](README.md#L25-L44)
+- [server/docker-compose.core.yml:5-143](server/docker-compose.core.yml#L5-L143)
+- [server/alembic.ini:63](server/alembic.ini#L63)
 
 ### Frontend Setup (Next.js)
 - Prerequisites
@@ -178,12 +178,12 @@ FEVerify --> DoneFE(["Done"])
 ```
 
 **Diagram sources**
-- [frontend/README.md:330-339](file://frontend/README.md#L330-L339)
-- [frontend/package.json:5-12](file://frontend/package.json#L5-L12)
+- [frontend/README.md:330-339](frontend/README.md#L330-L339)
+- [frontend/package.json:5-12](frontend/package.json#L5-L12)
 
 **Section sources**
-- [frontend/README.md:330-339](file://frontend/README.md#L330-L339)
-- [frontend/package.json:5-12](file://frontend/package.json#L5-L12)
+- [frontend/README.md:330-339](frontend/README.md#L330-L339)
+- [frontend/package.json:5-12](frontend/package.json#L5-L12)
 
 ### Database Initialization (Alembic)
 - After bringing up the database service, run migrations to create tables
@@ -202,12 +202,12 @@ Alembic-->>Dev : Migration complete
 ```
 
 **Diagram sources**
-- [README.md:33](file://README.md#L33)
-- [server/alembic.ini:63](file://server/alembic.ini#L63)
+- [README.md:33](README.md#L33)
+- [server/alembic.ini:63](server/alembic.ini#L63)
 
 **Section sources**
-- [README.md:33](file://README.md#L33)
-- [server/alembic.ini:63](file://server/alembic.ini#L63)
+- [README.md:33](README.md#L33)
+- [server/alembic.ini:63](server/alembic.ini#L63)
 
 ### MQTT Broker Configuration
 - Mosquitto is configured in the Compose stack and exposed on port 1883
@@ -224,11 +224,11 @@ Log --> Dev
 ```
 
 **Diagram sources**
-- [server/mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
+- [server/mosquitto.conf:1-7](server/mosquitto.conf#L1-L7)
 
 **Section sources**
-- [server/mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
-- [server/docker-compose.core.yml:6-19](file://server/docker-compose.core.yml#L6-L19)
+- [server/mosquitto.conf:1-7](server/mosquitto.conf#L1-L7)
+- [server/docker-compose.core.yml:6-19](server/docker-compose.core.yml#L6-L19)
 
 ### Optional Synthetic MQTT Simulator
 - The simulator profile spins up a pre-populated demo environment with staff, rooms, and patients
@@ -248,13 +248,13 @@ Services-->>Dev : Services ready (ports 3000, 8000, 8010, 8123)
 ```
 
 **Diagram sources**
-- [server/scripts/start-sim.sh:1-134](file://server/scripts/start-sim.sh#L1-L134)
-- [server/docker-compose.sim.yml:1-9](file://server/docker-compose.sim.yml#L1-L9)
+- [server/scripts/start-sim.sh:1-134](server/scripts/start-sim.sh#L1-L134)
+- [server/docker-compose.sim.yml:1-9](server/docker-compose.sim.yml#L1-L9)
 
 **Section sources**
-- [README.md:44](file://README.md#L44)
-- [server/scripts/start-sim.sh:1-134](file://server/scripts/start-sim.sh#L1-L134)
-- [server/docker-compose.sim.yml:1-9](file://server/docker-compose.sim.yml#L1-L9)
+- [README.md:44](README.md#L44)
+- [server/scripts/start-sim.sh:1-134](server/scripts/start-sim.sh#L1-L134)
+- [server/docker-compose.sim.yml:1-9](server/docker-compose.sim.yml#L1-L9)
 
 ### Environment Variables and Initial Admin Account
 - Copy .env.example to .env and adjust settings as needed
@@ -274,11 +274,11 @@ Admin --> Ready["Login with admin credentials"]
 ```
 
 **Diagram sources**
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
 
 **Section sources**
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
-- [server/docker-compose.core.yml:47-51](file://server/docker-compose.core.yml#L47-L51)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
+- [server/docker-compose.core.yml:47-51](server/docker-compose.core.yml#L47-L51)
 
 ## Dependency Analysis
 - Backend dependencies are declared in requirements.txt and enforced by pyproject.toml (linting)
@@ -295,16 +295,16 @@ BD["server/Dockerfile"] --> BE
 ```
 
 **Diagram sources**
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [frontend/Dockerfile:1-31](frontend/Dockerfile#L1-L31)
 
 **Section sources**
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [frontend/Dockerfile:1-31](frontend/Dockerfile#L1-L31)
 
 ## Performance Considerations
 - Use the simulator stack for rapid iteration during development
@@ -337,10 +337,10 @@ Verification steps:
   - Use the simulator start script and confirm all services are up
 
 **Section sources**
-- [server/scripts/start-prod.sh:69-75](file://server/scripts/start-prod.sh#L69-L75)
-- [server/scripts/start-sim.sh:70-88](file://server/scripts/start-sim.sh#L70-L88)
-- [README.md:33](file://README.md#L33)
-- [frontend/README.md:44](file://frontend/README.md#L44)
+- [server/scripts/start-prod.sh:69-75](server/scripts/start-prod.sh#L69-L75)
+- [server/scripts/start-sim.sh:70-88](server/scripts/start-sim.sh#L70-L88)
+- [README.md:33](README.md#L33)
+- [frontend/README.md:44](frontend/README.md#L44)
 
 ## Conclusion
 You now have the essential steps to install and run the WheelSense Platform locally. Start with the backend services and database, then bring up the frontend. Optionally enable the synthetic MQTT simulator for a pre-populated demo environment. Use the verification steps to confirm everything is working, and consult the troubleshooting section if needed.
@@ -363,7 +363,7 @@ You now have the essential steps to install and run the WheelSense Platform loca
   - npm run dev
 
 **Section sources**
-- [README.md:25-54](file://README.md#L25-L54)
+- [README.md:25-54](README.md#L25-L54)
 
 ### Environment Variable Reference
 - WHEELSENSE_ENV: simulation or production
@@ -377,4 +377,4 @@ You now have the essential steps to install and run the WheelSense Platform loca
 - COMPOSE_FILE: override default Compose file
 
 **Section sources**
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
+- [server/.env.example:1-33](server/.env.example#L1-L33)

@@ -2,14 +2,14 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ThemeToggle.tsx](file://frontend/components/theme/ThemeToggle.tsx)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [globals.css](file://frontend/app/globals.css)
-- [ErrorBoundary.tsx](file://frontend/components/ui/ErrorBoundary.tsx)
-- [ErrorBoundary.module.css](file://frontend/components/ui/ErrorBoundary.module.css)
-- [package.json](file://frontend/package.json)
-- [postcss.config.mjs](file://frontend/postcss.config.mjs)
-- [next.config.ts](file://frontend/next.config.ts)
+- [ThemeToggle.tsx](frontend/components/theme/ThemeToggle.tsx)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [globals.css](frontend/app/globals.css)
+- [ErrorBoundary.tsx](frontend/components/ui/ErrorBoundary.tsx)
+- [ErrorBoundary.module.css](frontend/components/ui/ErrorBoundary.module.css)
+- [package.json](frontend/package.json)
+- [postcss.config.mjs](frontend/postcss.config.mjs)
+- [next.config.ts](frontend/next.config.ts)
 </cite>
 
 ## Table of Contents
@@ -52,20 +52,20 @@ EB --> EBCSS
 ```
 
 **Diagram sources**
-- [globals.css:1-326](file://frontend/app/globals.css#L1-L326)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
-- [AppProviders.tsx:10-41](file://frontend/components/providers/AppProviders.tsx#L10-L41)
-- [ThemeToggle.tsx:8-37](file://frontend/components/theme/ThemeToggle.tsx#L8-L37)
-- [ErrorBoundary.tsx:16-51](file://frontend/components/ui/ErrorBoundary.tsx#L16-L51)
-- [ErrorBoundary.module.css:1-38](file://frontend/components/ui/ErrorBoundary.module.css#L1-L38)
+- [globals.css:1-326](frontend/app/globals.css#L1-L326)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
+- [AppProviders.tsx:10-41](frontend/components/providers/AppProviders.tsx#L10-L41)
+- [ThemeToggle.tsx:8-37](frontend/components/theme/ThemeToggle.tsx#L8-L37)
+- [ErrorBoundary.tsx:16-51](frontend/components/ui/ErrorBoundary.tsx#L16-L51)
+- [ErrorBoundary.module.css:1-38](frontend/components/ui/ErrorBoundary.module.css#L1-L38)
 
 **Section sources**
-- [globals.css:1-326](file://frontend/app/globals.css#L1-L326)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
-- [AppProviders.tsx:10-41](file://frontend/components/providers/AppProviders.tsx#L10-L41)
-- [ThemeToggle.tsx:8-37](file://frontend/components/theme/ThemeToggle.tsx#L8-L37)
-- [ErrorBoundary.tsx:16-51](file://frontend/components/ui/ErrorBoundary.tsx#L16-L51)
-- [ErrorBoundary.module.css:1-38](file://frontend/components/ui/ErrorBoundary.module.css#L1-L38)
+- [globals.css:1-326](frontend/app/globals.css#L1-L326)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
+- [AppProviders.tsx:10-41](frontend/components/providers/AppProviders.tsx#L10-L41)
+- [ThemeToggle.tsx:8-37](frontend/components/theme/ThemeToggle.tsx#L8-L37)
+- [ErrorBoundary.tsx:16-51](frontend/components/ui/ErrorBoundary.tsx#L16-L51)
+- [ErrorBoundary.module.css:1-38](frontend/components/ui/ErrorBoundary.module.css#L1-L38)
 
 ## Core Components
 - ThemeToggle: A client-side UI component that switches between light and dark themes using a theme-aware hook and renders appropriate icons.
@@ -74,10 +74,10 @@ EB --> EBCSS
 - ErrorBoundary: A React class component that catches rendering errors and displays a friendly fallback UI.
 
 **Section sources**
-- [ThemeToggle.tsx:8-37](file://frontend/components/theme/ThemeToggle.tsx#L8-L37)
-- [AppProviders.tsx:10-41](file://frontend/components/providers/AppProviders.tsx#L10-L41)
-- [globals.css:4-139](file://frontend/app/globals.css#L4-L139)
-- [ErrorBoundary.tsx:16-51](file://frontend/components/ui/ErrorBoundary.tsx#L16-L51)
+- [ThemeToggle.tsx:8-37](frontend/components/theme/ThemeToggle.tsx#L8-L37)
+- [AppProviders.tsx:10-41](frontend/components/providers/AppProviders.tsx#L10-L41)
+- [globals.css:4-139](frontend/app/globals.css#L4-L139)
+- [ErrorBoundary.tsx:16-51](frontend/components/ui/ErrorBoundary.tsx#L16-L51)
 
 ## Architecture Overview
 The theme system combines CSS custom properties, a theme provider, and a toggle component. Tailwind v4 is integrated via a PostCSS plugin. The error boundary ensures graceful degradation when components fail.
@@ -95,9 +95,9 @@ DOM-->>U : UI updates with new theme
 ```
 
 **Diagram sources**
-- [ThemeToggle.tsx:26-36](file://frontend/components/theme/ThemeToggle.tsx#L26-L36)
-- [AppProviders.tsx:26-31](file://frontend/components/providers/AppProviders.tsx#L26-L31)
-- [globals.css:44-78](file://frontend/app/globals.css#L44-L78)
+- [ThemeToggle.tsx:26-36](frontend/components/theme/ThemeToggle.tsx#L26-L36)
+- [AppProviders.tsx:26-31](frontend/components/providers/AppProviders.tsx#L26-L31)
+- [globals.css:44-78](frontend/app/globals.css#L44-L78)
 
 ## Detailed Component Analysis
 
@@ -123,10 +123,10 @@ Click --> End(["Theme updated"])
 ```
 
 **Diagram sources**
-- [ThemeToggle.tsx:10-36](file://frontend/components/theme/ThemeToggle.tsx#L10-L36)
+- [ThemeToggle.tsx:10-36](frontend/components/theme/ThemeToggle.tsx#L10-L36)
 
 **Section sources**
-- [ThemeToggle.tsx:8-37](file://frontend/components/theme/ThemeToggle.tsx#L8-L37)
+- [ThemeToggle.tsx:8-37](frontend/components/theme/ThemeToggle.tsx#L8-L37)
 
 ### Theme Provider and System Integration
 - Provider: ThemeProvider wraps the app and manages theme persistence and system preference.
@@ -151,12 +151,12 @@ TP->>Root : Update class attribute
 ```
 
 **Diagram sources**
-- [AppProviders.tsx:26-31](file://frontend/components/providers/AppProviders.tsx#L26-L31)
-- [ThemeToggle.tsx:9-9](file://frontend/components/theme/ThemeToggle.tsx#L9-L9)
+- [AppProviders.tsx:26-31](frontend/components/providers/AppProviders.tsx#L26-L31)
+- [ThemeToggle.tsx:9-9](frontend/components/theme/ThemeToggle.tsx#L9-L9)
 
 **Section sources**
-- [AppProviders.tsx:10-41](file://frontend/components/providers/AppProviders.tsx#L10-L41)
-- [ThemeToggle.tsx:8-37](file://frontend/components/theme/ThemeToggle.tsx#L8-L37)
+- [AppProviders.tsx:10-41](frontend/components/providers/AppProviders.tsx#L10-L41)
+- [ThemeToggle.tsx:8-37](frontend/components/theme/ThemeToggle.tsx#L8-L37)
 
 ### Global CSS Variables and Tailwind Integration
 - Design Tokens:
@@ -178,13 +178,13 @@ PostCSS["postcss.config.mjs"] --> TW
 ```
 
 **Diagram sources**
-- [globals.css:4-78](file://frontend/app/globals.css#L4-L78)
-- [globals.css:80-139](file://frontend/app/globals.css#L80-L139)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
+- [globals.css:4-78](frontend/app/globals.css#L4-L78)
+- [globals.css:80-139](frontend/app/globals.css#L80-L139)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
 
 **Section sources**
-- [globals.css:4-139](file://frontend/app/globals.css#L4-L139)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
+- [globals.css:4-139](frontend/app/globals.css#L4-L139)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
 
 ### Error Boundary Component
 - Purpose: Gracefully handle rendering errors in subtrees.
@@ -209,12 +209,12 @@ EB-->>Child : Resume rendering
 ```
 
 **Diagram sources**
-- [ErrorBoundary.tsx:22-49](file://frontend/components/ui/ErrorBoundary.tsx#L22-L49)
-- [ErrorBoundary.module.css:1-38](file://frontend/components/ui/ErrorBoundary.module.css#L1-L38)
+- [ErrorBoundary.tsx:22-49](frontend/components/ui/ErrorBoundary.tsx#L22-L49)
+- [ErrorBoundary.module.css:1-38](frontend/components/ui/ErrorBoundary.module.css#L1-L38)
 
 **Section sources**
-- [ErrorBoundary.tsx:16-51](file://frontend/components/ui/ErrorBoundary.tsx#L16-L51)
-- [ErrorBoundary.module.css:1-38](file://frontend/components/ui/ErrorBoundary.module.css#L1-L38)
+- [ErrorBoundary.tsx:16-51](frontend/components/ui/ErrorBoundary.tsx#L16-L51)
+- [ErrorBoundary.module.css:1-38](frontend/components/ui/ErrorBoundary.module.css#L1-L38)
 
 ## Dependency Analysis
 - ThemeToggle depends on:
@@ -243,18 +243,18 @@ PC["postcss.config.mjs"] --> TW
 ```
 
 **Diagram sources**
-- [ThemeToggle.tsx:3-6](file://frontend/components/theme/ThemeToggle.tsx#L3-L6)
-- [AppProviders.tsx:3-8](file://frontend/components/providers/AppProviders.tsx#L3-L8)
-- [ErrorBoundary.tsx:4-5](file://frontend/components/ui/ErrorBoundary.tsx#L4-L5)
-- [globals.css:1-2](file://frontend/app/globals.css#L1-L2)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
+- [ThemeToggle.tsx:3-6](frontend/components/theme/ThemeToggle.tsx#L3-L6)
+- [AppProviders.tsx:3-8](frontend/components/providers/AppProviders.tsx#L3-L8)
+- [ErrorBoundary.tsx:4-5](frontend/components/ui/ErrorBoundary.tsx#L4-L5)
+- [globals.css:1-2](frontend/app/globals.css#L1-L2)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
 
 **Section sources**
-- [ThemeToggle.tsx:3-6](file://frontend/components/theme/ThemeToggle.tsx#L3-L6)
-- [AppProviders.tsx:3-8](file://frontend/components/providers/AppProviders.tsx#L3-L8)
-- [ErrorBoundary.tsx:4-5](file://frontend/components/ui/ErrorBoundary.tsx#L4-L5)
-- [globals.css:1-2](file://frontend/app/globals.css#L1-L2)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
+- [ThemeToggle.tsx:3-6](frontend/components/theme/ThemeToggle.tsx#L3-L6)
+- [AppProviders.tsx:3-8](frontend/components/providers/AppProviders.tsx#L3-L8)
+- [ErrorBoundary.tsx:4-5](frontend/components/ui/ErrorBoundary.tsx#L4-L5)
+- [globals.css:1-2](frontend/app/globals.css#L1-L2)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
 
 ## Performance Considerations
 - Hydration stability:
@@ -268,9 +268,9 @@ PC["postcss.config.mjs"] --> TW
   - Limit error propagation and reduce re-renders by isolating failing components.
 
 **Section sources**
-- [AppProviders.tsx:30-30](file://frontend/components/providers/AppProviders.tsx#L30-L30)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
-- [next.config.ts:5-5](file://frontend/next.config.ts#L5-L5)
+- [AppProviders.tsx:30-30](frontend/components/providers/AppProviders.tsx#L30-L30)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
+- [next.config.ts:5-5](frontend/next.config.ts#L5-L5)
 
 ## Troubleshooting Guide
 - Theme does not switch:
@@ -287,10 +287,10 @@ PC["postcss.config.mjs"] --> TW
   - Maintain sufficient color contrast against backgrounds and ensure focus indicators are visible.
 
 **Section sources**
-- [AppProviders.tsx:26-31](file://frontend/components/providers/AppProviders.tsx#L26-L31)
-- [ThemeToggle.tsx:10-14](file://frontend/components/theme/ThemeToggle.tsx#L10-L14)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
-- [ErrorBoundary.tsx:22-28](file://frontend/components/ui/ErrorBoundary.tsx#L22-L28)
+- [AppProviders.tsx:26-31](frontend/components/providers/AppProviders.tsx#L26-L31)
+- [ThemeToggle.tsx:10-14](frontend/components/theme/ThemeToggle.tsx#L10-L14)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
+- [ErrorBoundary.tsx:22-28](frontend/components/ui/ErrorBoundary.tsx#L22-L28)
 
 ## Conclusion
 The WheelSense Platform employs a clean, maintainable theme system centered on CSS custom properties, a robust theme provider, and a minimal toggle component. Tailwind v4 integration streamlines utility classes while preserving design token consistency. The error boundary ensures graceful degradation. Together, these components deliver a scalable, accessible, and performant styling architecture suitable for healthcare environments requiring reliable UI experiences.

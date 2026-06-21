@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [auth.py](file://server/app/mcp/auth.py)
-- [context.py](file://server/app/mcp/context.py)
-- [server.py](file://server/app/mcp/server.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [mcp_auth.py](file://server/app/api/endpoints/mcp_auth.py)
-- [mcp_tokens.py](file://server/app/models/mcp_tokens.py)
-- [token_crypto.py](file://server/app/core/token_crypto.py)
-- [security.py](file://server/app/core/security.py)
-- [main.py](file://server/app/main.py)
-- [schemas/mcp_auth.py](file://server/app/schemas/mcp_auth.py)
+- [auth.py](server/app/mcp/auth.py)
+- [context.py](server/app/mcp/context.py)
+- [server.py](server/app/mcp/server.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [mcp_auth.py](server/app/api/endpoints/mcp_auth.py)
+- [mcp_tokens.py](server/app/models/mcp_tokens.py)
+- [token_crypto.py](server/app/core/token_crypto.py)
+- [security.py](server/app/core/security.py)
+- [main.py](server/app/main.py)
+- [schemas/mcp_auth.py](server/app/schemas/mcp_auth.py)
 </cite>
 
 ## Table of Contents
@@ -67,28 +67,28 @@ TOKENS --> CRYPTO
 ```
 
 **Diagram sources**
-- [main.py:116-123](file://server/app/main.py#L116-L123)
-- [auth.py:145-157](file://server/app/mcp/auth.py#L145-L157)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [schemas/mcp_auth.py:54-123](file://server/app/schemas/mcp_auth.py#L54-L123)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [mcp_auth.py:93-178](file://server/app/api/endpoints/mcp_auth.py#L93-L178)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
-- [token_crypto.py:12-25](file://server/app/core/token_crypto.py#L12-L25)
+- [main.py:116-123](server/app/main.py#L116-L123)
+- [auth.py:145-157](server/app/mcp/auth.py#L145-L157)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [schemas/mcp_auth.py:54-123](server/app/schemas/mcp_auth.py#L54-L123)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth.py:93-178](server/app/api/endpoints/mcp_auth.py#L93-L178)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
+- [token_crypto.py:12-25](server/app/core/token_crypto.py#L12-L25)
 
 **Section sources**
-- [main.py:116-123](file://server/app/main.py#L116-L123)
-- [auth.py:145-157](file://server/app/mcp/auth.py#L145-L157)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [schemas/mcp_auth.py:54-123](file://server/app/schemas/mcp_auth.py#L54-L123)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [mcp_auth.py:93-178](file://server/app/api/endpoints/mcp_auth.py#L93-L178)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
-- [token_crypto.py:12-25](file://server/app/core/token_crypto.py#L12-L25)
+- [main.py:116-123](server/app/main.py#L116-L123)
+- [auth.py:145-157](server/app/mcp/auth.py#L145-L157)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [schemas/mcp_auth.py:54-123](server/app/schemas/mcp_auth.py#L54-L123)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth.py:93-178](server/app/api/endpoints/mcp_auth.py#L93-L178)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
+- [token_crypto.py:12-25](server/app/core/token_crypto.py#L12-L25)
 
 ## Core Components
 - McpAuthMiddleware: Validates origin, Bearer tokens, resolves user/session, validates MCP token lifecycles, computes effective scopes, and injects McpActorContext into the request lifecycle.
@@ -98,11 +98,11 @@ TOKENS --> CRYPTO
 - Token cryptography: Securely stores secrets at rest using a Fernet-derived key derived from the SECRET_KEY.
 
 **Section sources**
-- [auth.py:16-142](file://server/app/mcp/auth.py#L16-L142)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
-- [mcp_auth.py:93-178](file://server/app/api/endpoints/mcp_auth.py#L93-L178)
-- [dependencies.py:123-128](file://server/app/api/dependencies.py#L123-L128)
-- [token_crypto.py:12-25](file://server/app/core/token_crypto.py#L12-L25)
+- [auth.py:16-142](server/app/mcp/auth.py#L16-L142)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
+- [mcp_auth.py:93-178](server/app/api/endpoints/mcp_auth.py#L93-L178)
+- [dependencies.py:123-128](server/app/api/dependencies.py#L123-L128)
+- [token_crypto.py:12-25](server/app/core/token_crypto.py#L12-L25)
 
 ## Architecture Overview
 The MCP server is mounted under /mcp and protected by an authentication middleware that:
@@ -140,14 +140,14 @@ MCP-->>Client : "MCP response"
 ```
 
 **Diagram sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [context.py:24-37](file://server/app/mcp/context.py#L24-L37)
-- [mcp_tokens.py:59-84](file://server/app/models/mcp_tokens.py#L59-L84)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [context.py:24-37](server/app/mcp/context.py#L24-L37)
+- [mcp_tokens.py:59-84](server/app/models/mcp_tokens.py#L59-L84)
 
 **Section sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
 
 ## Detailed Component Analysis
 
@@ -185,14 +185,14 @@ Handler --> End(["Response"])
 ```
 
 **Diagram sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [mcp_tokens.py:59-84](file://server/app/models/mcp_tokens.py#L59-L84)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [mcp_tokens.py:59-84](server/app/models/mcp_tokens.py#L59-L84)
 
 **Section sources**
-- [auth.py:16-142](file://server/app/mcp/auth.py#L16-L142)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
+- [auth.py:16-142](server/app/mcp/auth.py#L16-L142)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
 
 ### Actor Context Management
 - McpActorContext: Immutable snapshot of the authenticated actor’s identity and permissions.
@@ -223,10 +223,10 @@ ContextVar <.. actor_scope : "stores current context"
 ```
 
 **Diagram sources**
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 **Section sources**
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 ### Scope-Based Authorization and Workspace Scoping
 - Role-to-scope mapping: Canonical MCP scopes are defined per role.
@@ -243,13 +243,13 @@ Check -- Yes --> Continue["Proceed with workspace-scoped query"]
 ```
 
 **Diagram sources**
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [dependencies.py:123-128](file://server/app/api/dependencies.py#L123-L128)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [dependencies.py:123-128](server/app/api/dependencies.py#L123-L128)
 
 **Section sources**
-- [schemas/mcp_auth.py:54-123](file://server/app/schemas/mcp_auth.py#L54-L123)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [dependencies.py:123-128](file://server/app/api/dependencies.py#L123-L128)
+- [schemas/mcp_auth.py:54-123](server/app/schemas/mcp_auth.py#L54-L123)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [dependencies.py:123-128](server/app/api/dependencies.py#L123-L128)
 
 ### MCP Token Lifecycle and Issuance
 - Endpoint: POST /api/mcp/token creates a short-lived MCP token bound to the current AuthSession.
@@ -274,29 +274,29 @@ API-->>Client : "MCPTokenWithSecret (token only returned once)"
 ```
 
 **Diagram sources**
-- [mcp_auth.py:93-178](file://server/app/api/endpoints/mcp_auth.py#L93-L178)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
+- [mcp_auth.py:93-178](server/app/api/endpoints/mcp_auth.py#L93-L178)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
 
 **Section sources**
-- [mcp_auth.py:93-178](file://server/app/api/endpoints/mcp_auth.py#L93-L178)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
+- [mcp_auth.py:93-178](server/app/api/endpoints/mcp_auth.py#L93-L178)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
 
 ### Token Crypto Utilities
 - Fernet-based encryption/decryption for secrets at rest, keyed from SECRET_KEY.
 - Used to protect sensitive MCP token secrets when persisted.
 
 **Section sources**
-- [token_crypto.py:12-25](file://server/app/core/token_crypto.py#L12-L25)
+- [token_crypto.py:12-25](server/app/core/token_crypto.py#L12-L25)
 
 ### FastAPI Integration and OAuth Discovery
 - Mounts MCP server under /mcp when enabled.
 - Exposes OAuth protected resource metadata endpoint for MCP, listing supported scopes and authorization servers.
 
 **Section sources**
-- [main.py:116-123](file://server/app/main.py#L116-L123)
-- [main.py:89-114](file://server/app/main.py#L89-L114)
+- [main.py:116-123](server/app/main.py#L116-L123)
+- [main.py:89-114](server/app/main.py#L89-L114)
 
 ## Dependency Analysis
 The MCP auth stack depends on:
@@ -317,18 +317,18 @@ HANDLERS --> DEPS
 ```
 
 **Diagram sources**
-- [auth.py:10-13](file://server/app/mcp/auth.py#L10-L13)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [context.py:24-37](file://server/app/mcp/context.py#L24-L37)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [schemas/mcp_auth.py:54-123](file://server/app/schemas/mcp_auth.py#L54-L123)
+- [auth.py:10-13](server/app/mcp/auth.py#L10-L13)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [context.py:24-37](server/app/mcp/context.py#L24-L37)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [schemas/mcp_auth.py:54-123](server/app/schemas/mcp_auth.py#L54-L123)
 
 **Section sources**
-- [auth.py:10-13](file://server/app/mcp/auth.py#L10-L13)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [context.py:24-37](file://server/app/mcp/context.py#L24-L37)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [schemas/mcp_auth.py:54-123](file://server/app/schemas/mcp_auth.py#L54-L123)
+- [auth.py:10-13](server/app/mcp/auth.py#L10-L13)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [context.py:24-37](server/app/mcp/context.py#L24-L37)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [schemas/mcp_auth.py:54-123](server/app/schemas/mcp_auth.py#L54-L123)
 
 ## Performance Considerations
 - Middleware performs minimal synchronous work; most cost is JWT decode and DB lookups.
@@ -350,9 +350,9 @@ Operational tips:
 - Use POST /api/mcp/tokens/revoke-all to bulk revoke active tokens for rotation.
 
 **Section sources**
-- [auth.py:36-111](file://server/app/mcp/auth.py#L36-L111)
-- [mcp_auth.py:229-265](file://server/app/api/endpoints/mcp_auth.py#L229-L265)
-- [mcp_auth.py:181-226](file://server/app/api/endpoints/mcp_auth.py#L181-L226)
+- [auth.py:36-111](server/app/mcp/auth.py#L36-L111)
+- [mcp_auth.py:229-265](server/app/api/endpoints/mcp_auth.py#L229-L265)
+- [mcp_auth.py:181-226](server/app/api/endpoints/mcp_auth.py#L181-L226)
 
 ## Conclusion
 The MCP authentication and authorization system combines JWT-based session validation, MCP-specific token issuance and revocation, and strict scope enforcement. Actor context ensures consistent workspace scoping and role-based visibility across handlers. The design leverages FastAPI dependencies and contextvars for clean, testable flows while maintaining strong security boundaries.

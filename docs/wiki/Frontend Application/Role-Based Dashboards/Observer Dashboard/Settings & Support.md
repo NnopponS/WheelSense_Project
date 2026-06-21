@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [observer/settings/page.tsx](file://frontend/app/observer/settings/page.tsx)
-- [observer/support/page.tsx](file://frontend/app/observer/support/page.tsx)
-- [account/page.tsx](file://frontend/app/account/page.tsx)
-- [support/ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [admin/settings/page.tsx](file://frontend/app/admin/settings/page.tsx)
-- [api/endpoints/support.py](file://server/app/api/endpoints/support.py)
-- [models/support.py](file://server/app/models/support.py)
-- [schemas/support.py](file://server/app/schemas/support.py)
-- [lib/i18n.tsx](file://frontend/lib/i18n.tsx)
+- [observer/settings/page.tsx](frontend/app/observer/settings/page.tsx)
+- [observer/support/page.tsx](frontend/app/observer/support/page.tsx)
+- [account/page.tsx](frontend/app/account/page.tsx)
+- [support/ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [admin/settings/page.tsx](frontend/app/admin/settings/page.tsx)
+- [api/endpoints/support.py](server/app/api/endpoints/support.py)
+- [models/support.py](server/app/models/support.py)
+- [schemas/support.py](server/app/schemas/support.py)
+- [lib/i18n.tsx](frontend/lib/i18n.tsx)
 </cite>
 
 ## Table of Contents
@@ -62,24 +62,24 @@ I18N -. "labels & placeholders" .- RIF
 ```
 
 **Diagram sources**
-- [observer/settings/page.tsx:1-6](file://frontend/app/observer/settings/page.tsx#L1-L6)
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [support/ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [api/endpoints/support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [models/support.py:1-98](file://server/app/models/support.py#L1-L98)
-- [schemas/support.py:1-76](file://server/app/schemas/support.py#L1-L76)
-- [lib/i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [observer/settings/page.tsx:1-6](frontend/app/observer/settings/page.tsx#L1-L6)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [support/ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [api/endpoints/support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [models/support.py:1-98](server/app/models/support.py#L1-L98)
+- [schemas/support.py:1-76](server/app/schemas/support.py#L1-L76)
+- [lib/i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 **Section sources**
-- [observer/settings/page.tsx:1-6](file://frontend/app/observer/settings/page.tsx#L1-L6)
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [account/page.tsx:1-810](file://frontend/app/account/page.tsx#L1-L810)
-- [support/ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [api/endpoints/support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [models/support.py:1-98](file://server/app/models/support.py#L1-L98)
-- [schemas/support.py:1-76](file://server/app/schemas/support.py#L1-L76)
-- [lib/i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [observer/settings/page.tsx:1-6](frontend/app/observer/settings/page.tsx#L1-L6)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [account/page.tsx:1-810](frontend/app/account/page.tsx#L1-L810)
+- [support/ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [api/endpoints/support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [models/support.py:1-98](server/app/models/support.py#L1-L98)
+- [schemas/support.py:1-76](server/app/schemas/support.py#L1-L76)
+- [lib/i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 ## Core Components
 - Observer Settings Redirect: Routes the Observer role to the unified Account page for profile and preferences.
@@ -92,10 +92,10 @@ Examples of usage:
 - Submitting a support ticket via the form posts to the backend and returns a success state with ticket metadata.
 
 **Section sources**
-- [observer/settings/page.tsx:1-6](file://frontend/app/observer/settings/page.tsx#L1-L6)
-- [account/page.tsx:93-765](file://frontend/app/account/page.tsx#L93-L765)
-- [support/ReportIssueForm.tsx:37-201](file://frontend/components/support/ReportIssueForm.tsx#L37-L201)
-- [api/endpoints/support.py:62-170](file://server/app/api/endpoints/support.py#L62-L170)
+- [observer/settings/page.tsx:1-6](frontend/app/observer/settings/page.tsx#L1-L6)
+- [account/page.tsx:93-765](frontend/app/account/page.tsx#L93-L765)
+- [support/ReportIssueForm.tsx:37-201](frontend/components/support/ReportIssueForm.tsx#L37-L201)
+- [api/endpoints/support.py:62-170](server/app/api/endpoints/support.py#L62-L170)
 
 ## Architecture Overview
 The Observer Support flow integrates frontend validation and internationalization with backend persistence and response modeling.
@@ -120,10 +120,10 @@ F-->>U : Show success and next steps
 ```
 
 **Diagram sources**
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [support/ReportIssueForm.tsx:37-87](file://frontend/components/support/ReportIssueForm.tsx#L37-L87)
-- [api/endpoints/support.py:89-98](file://server/app/api/endpoints/support.py#L89-L98)
-- [models/support.py:10-98](file://server/app/models/support.py#L10-L98)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [support/ReportIssueForm.tsx:37-87](frontend/components/support/ReportIssueForm.tsx#L37-L87)
+- [api/endpoints/support.py:89-98](server/app/api/endpoints/support.py#L89-L98)
+- [models/support.py:10-98](server/app/models/support.py#L10-L98)
 
 ## Detailed Component Analysis
 
@@ -139,10 +139,10 @@ Redirect --> End(["User sees Account page"])
 ```
 
 **Diagram sources**
-- [observer/settings/page.tsx:3-5](file://frontend/app/observer/settings/page.tsx#L3-L5)
+- [observer/settings/page.tsx:3-5](frontend/app/observer/settings/page.tsx#L3-L5)
 
 **Section sources**
-- [observer/settings/page.tsx:1-6](file://frontend/app/observer/settings/page.tsx#L1-L6)
+- [observer/settings/page.tsx:1-6](frontend/app/observer/settings/page.tsx#L1-L6)
 
 ### Account Page: User Preferences and Security
 - Profile editing: Username, email, phone; optional staff profile fields when linked.
@@ -165,11 +165,11 @@ SavePwd --> Refresh
 ```
 
 **Diagram sources**
-- [account/page.tsx:140-417](file://frontend/app/account/page.tsx#L140-L417)
+- [account/page.tsx:140-417](frontend/app/account/page.tsx#L140-L417)
 
 **Section sources**
-- [account/page.tsx:93-765](file://frontend/app/account/page.tsx#L93-L765)
-- [lib/i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [account/page.tsx:93-765](frontend/app/account/page.tsx#L93-L765)
+- [lib/i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 ### Support Form: Ticket Submission
 - Fields: Title (min length), description, category (bug/general/device), priority (low/normal/high/critical).
@@ -188,11 +188,11 @@ Submit --> |Error| ShowApiErr["Show API error message"]
 ```
 
 **Diagram sources**
-- [support/ReportIssueForm.tsx:45-87](file://frontend/components/support/ReportIssueForm.tsx#L45-L87)
+- [support/ReportIssueForm.tsx:45-87](frontend/components/support/ReportIssueForm.tsx#L45-L87)
 
 **Section sources**
-- [support/ReportIssueForm.tsx:37-201](file://frontend/components/support/ReportIssueForm.tsx#L37-L201)
-- [lib/i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
+- [support/ReportIssueForm.tsx:37-201](frontend/components/support/ReportIssueForm.tsx#L37-L201)
+- [lib/i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
 
 ### Backend Support API and Data Model
 - Endpoints:
@@ -251,19 +251,19 @@ SUPPORT_TICKET ||--o{ SUPPORT_TICKET_ATTACHMENT : "has attachments"
 ```
 
 **Diagram sources**
-- [models/support.py:10-98](file://server/app/models/support.py#L10-L98)
+- [models/support.py:10-98](server/app/models/support.py#L10-L98)
 
 **Section sources**
-- [api/endpoints/support.py:62-170](file://server/app/api/endpoints/support.py#L62-L170)
-- [models/support.py:10-98](file://server/app/models/support.py#L10-L98)
-- [schemas/support.py:10-76](file://server/app/schemas/support.py#L10-L76)
+- [api/endpoints/support.py:62-170](server/app/api/endpoints/support.py#L62-L170)
+- [models/support.py:10-98](server/app/models/support.py#L10-L98)
+- [schemas/support.py:10-76](server/app/schemas/support.py#L10-L76)
 
 ### Admin Settings Surface
 - Admin Settings page uses a client component wrapper with a suspense fallback while loading.
 - Intended to host administrative configuration panels (e.g., AI settings, server settings) referenced elsewhere in the frontend.
 
 **Section sources**
-- [admin/settings/page.tsx:1-19](file://frontend/app/admin/settings/page.tsx#L1-L19)
+- [admin/settings/page.tsx:1-19](frontend/app/admin/settings/page.tsx#L1-L19)
 
 ## Dependency Analysis
 - Frontend dependencies:
@@ -293,16 +293,16 @@ API_SUP --> SCHEMAS["schemas/support.py"]
 ```
 
 **Diagram sources**
-- [observer/support/page.tsx:1-6](file://frontend/app/observer/support/page.tsx#L1-L6)
-- [support/ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [lib/i18n.tsx:1-800](file://frontend/lib/i18n.tsx#L1-L800)
-- [api/endpoints/support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
-- [models/support.py:1-98](file://server/app/models/support.py#L1-L98)
-- [schemas/support.py:1-76](file://server/app/schemas/support.py#L1-L76)
+- [observer/support/page.tsx:1-6](frontend/app/observer/support/page.tsx#L1-L6)
+- [support/ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [lib/i18n.tsx:1-800](frontend/lib/i18n.tsx#L1-L800)
+- [api/endpoints/support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
+- [models/support.py:1-98](server/app/models/support.py#L1-L98)
+- [schemas/support.py:1-76](server/app/schemas/support.py#L1-L76)
 
 **Section sources**
-- [support/ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [api/endpoints/support.py:1-170](file://server/app/api/endpoints/support.py#L1-L170)
+- [support/ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [api/endpoints/support.py:1-170](server/app/api/endpoints/support.py#L1-L170)
 
 ## Performance Considerations
 - Form validation occurs client-side with Zod to reduce unnecessary network requests.
@@ -324,9 +324,9 @@ Common issues and resolutions:
   - Confirm the new password matches the confirmation field.
 
 **Section sources**
-- [support/ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
-- [account/page.tsx:207-314](file://frontend/app/account/page.tsx#L207-L314)
-- [account/page.tsx:389-417](file://frontend/app/account/page.tsx#L389-L417)
+- [support/ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [account/page.tsx:207-314](frontend/app/account/page.tsx#L207-L314)
+- [account/page.tsx:389-417](frontend/app/account/page.tsx#L389-L417)
 
 ## Conclusion
 The Observer Settings and Support interfaces integrate a streamlined settings surface and a robust support ticketing system. Users can manage preferences centrally and submit tickets with validation and internationalization support. The backend provides a clear contract for listing, creating, updating, and attaching files to tickets, ensuring maintainable and scalable operations.

@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [server.py](file://server/app/mcp/server.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [context.py](file://server/app/mcp/context.py)
-- [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
-- [conversation_fastpath.py](file://server/app/agent_runtime/conversation_fastpath.py)
-- [mcp_auth.py](file://server/app/api/endpoints/mcp_auth.py)
-- [mcp_tokens.py](file://server/app/models/mcp_tokens.py)
-- [mcp_auth_schemas.py](file://server/app/schemas/mcp_auth.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
+- [server.py](server/app/mcp/server.py)
+- [auth.py](server/app/mcp/auth.py)
+- [context.py](server/app/mcp/context.py)
+- [llm_tool_router.py](server/app/agent_runtime/llm_tool_router.py)
+- [conversation_fastpath.py](server/app/agent_runtime/conversation_fastpath.py)
+- [mcp_auth.py](server/app/api/endpoints/mcp_auth.py)
+- [mcp_tokens.py](server/app/models/mcp_tokens.py)
+- [mcp_auth_schemas.py](server/app/schemas/mcp_auth.py)
+- [dependencies.py](server/app/api/dependencies.py)
 </cite>
 
 ## Table of Contents
@@ -66,26 +66,26 @@ B --> I
 ```
 
 **Diagram sources**
-- [server.py:110-280](file://server/app/mcp/server.py#L110-L280)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [mcp_auth.py:93-339](file://server/app/api/endpoints/mcp_auth.py#L93-L339)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [mcp_auth_schemas.py:15-212](file://server/app/schemas/mcp_auth.py#L15-L212)
-- [dependencies.py:58-129](file://server/app/api/dependencies.py#L58-L129)
+- [server.py:110-280](server/app/mcp/server.py#L110-L280)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [mcp_auth.py:93-339](server/app/api/endpoints/mcp_auth.py#L93-L339)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth_schemas.py:15-212](server/app/schemas/mcp_auth.py#L15-L212)
+- [dependencies.py:58-129](server/app/api/dependencies.py#L58-L129)
 
 **Section sources**
-- [server.py:110-280](file://server/app/mcp/server.py#L110-L280)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
-- [mcp_auth.py:93-339](file://server/app/api/endpoints/mcp_auth.py#L93-L339)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [mcp_auth_schemas.py:15-212](file://server/app/schemas/mcp_auth.py#L15-L212)
-- [dependencies.py:58-129](file://server/app/api/dependencies.py#L58-L129)
+- [server.py:110-280](server/app/mcp/server.py#L110-L280)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [mcp_auth.py:93-339](server/app/api/endpoints/mcp_auth.py#L93-L339)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth_schemas.py:15-212](server/app/schemas/mcp_auth.py#L15-L212)
+- [dependencies.py:58-129](server/app/api/dependencies.py#L58-L129)
 
 ## Core Components
 - MCP Server: registers MCP resources, prompts, and tools; enforces scope checks per operation; exposes typed tool outputs and annotations
@@ -96,13 +96,13 @@ B --> I
 - Conversation Fastpath: detects small talk and avoids planning overhead
 
 **Section sources**
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [mcp_auth.py:93-179](file://server/app/api/endpoints/mcp_auth.py#L93-L179)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [llm_tool_router.py:37-52](file://server/app/agent_runtime/llm_tool_router.py#L37-L52)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [mcp_auth.py:93-179](server/app/api/endpoints/mcp_auth.py#L93-L179)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [llm_tool_router.py:37-52](server/app/agent_runtime/llm_tool_router.py#L37-L52)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 ## Architecture Overview
 The MCP runtime integrates with the WheelSense backend via a FastMCP server, protected by an authentication middleware that validates tokens and enforces scope-based authorization. Tools and prompts are registered centrally and invoked with strict permission checks. The LLM tool router augments natural-language turns with MCP tool calls while preserving safety and transparency.
@@ -124,9 +124,9 @@ MCP-->>Client : "Resource/Prompt/Tool response"
 ```
 
 **Diagram sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [context.py:24-38](file://server/app/mcp/context.py#L24-L38)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [context.py:24-38](server/app/mcp/context.py#L24-L38)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
 
 ## Detailed Component Analysis
 
@@ -151,14 +151,14 @@ RaisePerm --> End
 ```
 
 **Diagram sources**
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [server.py:135-161](file://server/app/mcp/server.py#L135-L161)
-- [server.py:366-385](file://server/app/mcp/server.py#L366-L385)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [server.py:135-161](server/app/mcp/server.py#L135-L161)
+- [server.py:366-385](server/app/mcp/server.py#L366-L385)
 
 **Section sources**
-- [server.py:179-281](file://server/app/mcp/server.py#L179-L281)
-- [server.py:283-706](file://server/app/mcp/server.py#L283-L706)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
+- [server.py:179-281](server/app/mcp/server.py#L179-L281)
+- [server.py:283-706](server/app/mcp/server.py#L283-L706)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
 
 ### Authentication and Scope-Based Authorization
 The MCP auth middleware:
@@ -189,15 +189,15 @@ MW-->>Client : "Dispatch to app"
 ```
 
 **Diagram sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [mcp_auth.py:155-165](file://server/app/api/endpoints/mcp_auth.py#L155-L165)
-- [mcp_tokens.py:59-84](file://server/app/models/mcp_tokens.py#L59-L84)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [mcp_auth.py:155-165](server/app/api/endpoints/mcp_auth.py#L155-L165)
+- [mcp_tokens.py:59-84](server/app/models/mcp_tokens.py#L59-L84)
 
 **Section sources**
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [mcp_auth.py:93-179](file://server/app/api/endpoints/mcp_auth.py#L93-L179)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [dependencies.py:123-129](file://server/app/api/dependencies.py#L123-L129)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [mcp_auth.py:93-179](server/app/api/endpoints/mcp_auth.py#L93-L179)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [dependencies.py:123-129](server/app/api/dependencies.py#L123-L129)
 
 ### MCP Context System
 Actor context encapsulates:
@@ -225,10 +225,10 @@ McpActorContext <.. ActorScope : "managed by"
 ```
 
 **Diagram sources**
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
 
 **Section sources**
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
 
 ### LLM Tool Router for Secure Tool Execution
 The router:
@@ -262,12 +262,12 @@ O --> P
 ```
 
 **Diagram sources**
-- [llm_tool_router.py:84-92](file://server/app/agent_runtime/llm_tool_router.py#L84-L92)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [llm_tool_router.py:84-92](server/app/agent_runtime/llm_tool_router.py#L84-L92)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
 
 **Section sources**
-- [llm_tool_router.py:37-52](file://server/app/agent_runtime/llm_tool_router.py#L37-L52)
-- [llm_tool_router.py:173-366](file://server/app/agent_runtime/llm_tool_router.py#L173-L366)
+- [llm_tool_router.py:37-52](server/app/agent_runtime/llm_tool_router.py#L37-L52)
+- [llm_tool_router.py:173-366](server/app/agent_runtime/llm_tool_router.py#L173-L366)
 
 ### MCP Context System for Workspace Scoping and Roles
 The MCP server enforces workspace scoping and role-based access:
@@ -285,14 +285,14 @@ Q --> O["Return Scoped Results"]
 ```
 
 **Diagram sources**
-- [server.py:327-335](file://server/app/mcp/server.py#L327-L335)
-- [server.py:366-385](file://server/app/mcp/server.py#L366-L385)
-- [server.py:521-544](file://server/app/mcp/server.py#L521-L544)
+- [server.py:327-335](server/app/mcp/server.py#L327-L335)
+- [server.py:366-385](server/app/mcp/server.py#L366-L385)
+- [server.py:521-544](server/app/mcp/server.py#L521-L544)
 
 **Section sources**
-- [server.py:327-335](file://server/app/mcp/server.py#L327-L335)
-- [server.py:366-385](file://server/app/mcp/server.py#L366-L385)
-- [server.py:521-544](file://server/app/mcp/server.py#L521-L544)
+- [server.py:327-335](server/app/mcp/server.py#L327-L335)
+- [server.py:366-385](server/app/mcp/server.py#L366-L385)
+- [server.py:521-544](server/app/mcp/server.py#L521-L544)
 
 ### Tool Registry and Metadata
 The MCP server maintains a registry of workspace tools. Each tool:
@@ -317,10 +317,10 @@ ToolRegistry --> MCPTool : "stores"
 ```
 
 **Diagram sources**
-- [server.py:283-706](file://server/app/mcp/server.py#L283-L706)
+- [server.py:283-706](server/app/mcp/server.py#L283-L706)
 
 **Section sources**
-- [server.py:283-706](file://server/app/mcp/server.py#L283-L706)
+- [server.py:283-706](server/app/mcp/server.py#L283-L706)
 
 ### Conversation Fastpath Handling
 The fastpath heuristic:
@@ -342,10 +342,10 @@ F --> |No| C
 ```
 
 **Diagram sources**
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 **Section sources**
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 ### MCP Token Management
 Endpoints for MCP tokens:
@@ -374,16 +374,16 @@ API-->>Admin : "Return token + secret once"
 ```
 
 **Diagram sources**
-- [mcp_auth.py:93-179](file://server/app/api/endpoints/mcp_auth.py#L93-L179)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth.py:93-179](server/app/api/endpoints/mcp_auth.py#L93-L179)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
 
 **Section sources**
-- [mcp_auth.py:93-179](file://server/app/api/endpoints/mcp_auth.py#L93-L179)
-- [mcp_auth.py:181-226](file://server/app/api/endpoints/mcp_auth.py#L181-L226)
-- [mcp_auth.py:229-265](file://server/app/api/endpoints/mcp_auth.py#L229-L265)
-- [mcp_auth.py:268-305](file://server/app/api/endpoints/mcp_auth.py#L268-L305)
-- [mcp_auth.py:308-339](file://server/app/api/endpoints/mcp_auth.py#L308-L339)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth.py:93-179](server/app/api/endpoints/mcp_auth.py#L93-L179)
+- [mcp_auth.py:181-226](server/app/api/endpoints/mcp_auth.py#L181-L226)
+- [mcp_auth.py:229-265](server/app/api/endpoints/mcp_auth.py#L229-L265)
+- [mcp_auth.py:268-305](server/app/api/endpoints/mcp_auth.py#L268-L305)
+- [mcp_auth.py:308-339](server/app/api/endpoints/mcp_auth.py#L308-L339)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
 
 ### Practical Examples
 
@@ -427,23 +427,23 @@ F["conversation_fastpath.py"] -.-> R
 ```
 
 **Diagram sources**
-- [server.py:19-105](file://server/app/mcp/server.py#L19-L105)
-- [dependencies.py:58-129](file://server/app/api/dependencies.py#L58-L129)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [mcp_auth_schemas.py:15-212](file://server/app/schemas/mcp_auth.py#L15-L212)
-- [llm_tool_router.py:16-32](file://server/app/agent_runtime/llm_tool_router.py#L16-L32)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [server.py:19-105](server/app/mcp/server.py#L19-L105)
+- [dependencies.py:58-129](server/app/api/dependencies.py#L58-L129)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth_schemas.py:15-212](server/app/schemas/mcp_auth.py#L15-L212)
+- [llm_tool_router.py:16-32](server/app/agent_runtime/llm_tool_router.py#L16-L32)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 **Section sources**
-- [server.py:19-105](file://server/app/mcp/server.py#L19-L105)
-- [dependencies.py:58-129](file://server/app/api/dependencies.py#L58-L129)
-- [auth.py:16-157](file://server/app/mcp/auth.py#L16-L157)
-- [mcp_tokens.py:10-84](file://server/app/models/mcp_tokens.py#L10-L84)
-- [mcp_auth_schemas.py:15-212](file://server/app/schemas/mcp_auth.py#L15-L212)
-- [llm_tool_router.py:16-32](file://server/app/agent_runtime/llm_tool_router.py#L16-L32)
-- [conversation_fastpath.py:32-45](file://server/app/agent_runtime/conversation_fastpath.py#L32-L45)
+- [server.py:19-105](server/app/mcp/server.py#L19-L105)
+- [dependencies.py:58-129](server/app/api/dependencies.py#L58-L129)
+- [auth.py:16-157](server/app/mcp/auth.py#L16-L157)
+- [mcp_tokens.py:10-84](server/app/models/mcp_tokens.py#L10-L84)
+- [mcp_auth_schemas.py:15-212](server/app/schemas/mcp_auth.py#L15-L212)
+- [llm_tool_router.py:16-32](server/app/agent_runtime/llm_tool_router.py#L16-L32)
+- [conversation_fastpath.py:32-45](server/app/agent_runtime/conversation_fastpath.py#L32-L45)
 
 ## Performance Considerations
 - Keep MCP tools focused and scoped to minimize database round trips
@@ -475,9 +475,9 @@ Common issues and resolutions:
   - Use the fastpath detection to confirm whether planning was skipped
 
 **Section sources**
-- [auth.py:30-142](file://server/app/mcp/auth.py#L30-L142)
-- [server.py:113-128](file://server/app/mcp/server.py#L113-L128)
-- [context.py:33-38](file://server/app/mcp/context.py#L33-L38)
+- [auth.py:30-142](server/app/mcp/auth.py#L30-L142)
+- [server.py:113-128](server/app/mcp/server.py#L113-L128)
+- [context.py:33-38](server/app/mcp/context.py#L33-L38)
 
 ## Conclusion
 The WheelSense MCP integration provides a secure, role-aware runtime for AI tools. It enforces scope-based authorization, offers robust authentication with MCP tokens, and includes an LLM router that balances automation with safety. The MCP context system ensures workspace scoping and role alignment, while the fastpath optimizes conversational flows. Together, these components enable reliable, auditable AI interactions across clinical and administrative domains.
@@ -499,4 +499,4 @@ The WheelSense MCP integration provides a secure, role-aware runtime for AI tool
 - workspace.read
 
 **Section sources**
-- [mcp_auth_schemas.py:15-52](file://server/app/schemas/mcp_auth.py#L15-L52)
+- [mcp_auth_schemas.py:15-52](server/app/schemas/mcp_auth.py#L15-L52)

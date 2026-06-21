@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [base.py](file://server/app/services/base.py)
-- [__init__.py](file://server/app/services/__init__.py)
-- [patient.py](file://server/app/services/patient.py)
-- [vitals.py](file://server/app/services/vitals.py)
-- [workflow.py](file://server/app/services/workflow.py)
-- [device_management.py](file://server/app/services/device_management.py)
-- [homeassistant.py](file://server/app/services/homeassistant.py)
-- [agent_runtime_client.py](file://server/app/services/agent_runtime_client.py)
-- [analytics.py](file://server/app/services/analytics.py)
-- [main.py](file://server/app/main.py)
+- [base.py](server/app/services/base.py)
+- [__init__.py](server/app/services/__init__.py)
+- [patient.py](server/app/services/patient.py)
+- [vitals.py](server/app/services/vitals.py)
+- [workflow.py](server/app/services/workflow.py)
+- [device_management.py](server/app/services/device_management.py)
+- [homeassistant.py](server/app/services/homeassistant.py)
+- [agent_runtime_client.py](server/app/services/agent_runtime_client.py)
+- [analytics.py](server/app/services/analytics.py)
+- [main.py](server/app/main.py)
 </cite>
 
 ## Table of Contents
@@ -57,17 +57,17 @@ AnalyticsSvc --> Base
 ```
 
 **Diagram sources**
-- [base.py:13-90](file://server/app/services/base.py#L13-L90)
-- [patient.py:80-165](file://server/app/services/patient.py#L80-L165)
-- [vitals.py:12-46](file://server/app/services/vitals.py#L12-L46)
-- [workflow.py:424-800](file://server/app/services/workflow.py#L424-L800)
-- [device_management.py:597-800](file://server/app/services/device_management.py#L597-L800)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [agent_runtime_client.py:23-65](file://server/app/services/agent_runtime_client.py#L23-L65)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [base.py:13-90](server/app/services/base.py#L13-L90)
+- [patient.py:80-165](server/app/services/patient.py#L80-L165)
+- [vitals.py:12-46](server/app/services/vitals.py#L12-L46)
+- [workflow.py:424-800](server/app/services/workflow.py#L424-L800)
+- [device_management.py:597-800](server/app/services/device_management.py#L597-L800)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [agent_runtime_client.py:23-65](server/app/services/agent_runtime_client.py#L23-L65)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 **Section sources**
-- [__init__.py:1-19](file://server/app/services/__init__.py#L1-L19)
+- [__init__.py:1-19](server/app/services/__init__.py#L1-L19)
 
 ## Core Components
 - Base service class: Provides generic CRUD operations with workspace scoping and safe update semantics.
@@ -81,8 +81,8 @@ Key characteristics:
 - Cross-service collaboration via service instances and shared models/schemas.
 
 **Section sources**
-- [base.py:13-90](file://server/app/services/base.py#L13-L90)
-- [__init__.py:1-19](file://server/app/services/__init__.py#L1-L19)
+- [base.py:13-90](server/app/services/base.py#L13-L90)
+- [__init__.py:1-19](server/app/services/__init__.py#L1-L19)
 
 ## Architecture Overview
 The service layer sits between FastAPI endpoints and the persistence layer. Endpoints receive requests, validate inputs, enforce authorization, and invoke services. Services encapsulate business logic, coordinate with other services, and manage transactions. External systems are integrated via dedicated clients.
@@ -127,10 +127,10 @@ class CRUDBase {
 ```
 
 **Diagram sources**
-- [base.py:13-90](file://server/app/services/base.py#L13-L90)
+- [base.py:13-90](server/app/services/base.py#L13-L90)
 
 **Section sources**
-- [base.py:13-90](file://server/app/services/base.py#L13-L90)
+- [base.py:13-90](server/app/services/base.py#L13-L90)
 
 ### Patient Service
 The patient service extends the base service and adds domain-specific operations:
@@ -154,10 +154,10 @@ PS-->>API : Assignment
 ```
 
 **Diagram sources**
-- [patient.py:94-142](file://server/app/services/patient.py#L94-L142)
+- [patient.py:94-142](server/app/services/patient.py#L94-L142)
 
 **Section sources**
-- [patient.py:80-165](file://server/app/services/patient.py#L80-L165)
+- [patient.py:80-165](server/app/services/patient.py#L80-L165)
 
 ### Vitals Services
 Vitals services provide recent readings retrieval per patient with workspace scoping.
@@ -172,10 +172,10 @@ Exec --> Return(["Return list"])
 ```
 
 **Diagram sources**
-- [vitals.py:13-26](file://server/app/services/vitals.py#L13-L26)
+- [vitals.py:13-26](server/app/services/vitals.py#L13-L26)
 
 **Section sources**
-- [vitals.py:12-46](file://server/app/services/vitals.py#L12-L46)
+- [vitals.py:12-46](server/app/services/vitals.py#L12-L46)
 
 ### Workflow Services
 Workflow services implement role-based visibility, target validation, audit trail logging, and cross-service messaging. They enforce:
@@ -199,12 +199,12 @@ TS-->>API : Task
 ```
 
 **Diagram sources**
-- [workflow.py:629-656](file://server/app/services/workflow.py#L629-L656)
-- [workflow.py:460-470](file://server/app/services/workflow.py#L460-L470)
-- [workflow.py:604-617](file://server/app/services/workflow.py#L604-L617)
+- [workflow.py:629-656](server/app/services/workflow.py#L629-L656)
+- [workflow.py:460-470](server/app/services/workflow.py#L460-L470)
+- [workflow.py:604-617](server/app/services/workflow.py#L604-L617)
 
 **Section sources**
-- [workflow.py:424-800](file://server/app/services/workflow.py#L424-L800)
+- [workflow.py:424-800](server/app/services/workflow.py#L424-L800)
 
 ### Device Management Services
 Device management orchestrates registry operations, MQTT auto-registration, BLE node merging, and cleanup. It integrates with external systems and enforces workspace scoping.
@@ -221,12 +221,12 @@ G --> H["Publish config if node"]
 ```
 
 **Diagram sources**
-- [device_management.py:162-213](file://server/app/services/device_management.py#L162-L213)
-- [device_management.py:216-269](file://server/app/services/device_management.py#L216-L269)
-- [device_management.py:306-387](file://server/app/services/device_management.py#L306-L387)
+- [device_management.py:162-213](server/app/services/device_management.py#L162-L213)
+- [device_management.py:216-269](server/app/services/device_management.py#L216-L269)
+- [device_management.py:306-387](server/app/services/device_management.py#L306-L387)
 
 **Section sources**
-- [device_management.py:597-800](file://server/app/services/device_management.py#L597-L800)
+- [device_management.py:597-800](server/app/services/device_management.py#L597-L800)
 
 ### Analytics Service
 Analytics service computes summaries and averages scoped to a workspace.
@@ -241,10 +241,10 @@ class AnalyticsService {
 ```
 
 **Diagram sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 **Section sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 ### External Integrations
 - Home Assistant client: Stateless client to query entity states and call services.
@@ -262,11 +262,11 @@ HA-->>Svc : State or None
 ```
 
 **Diagram sources**
-- [homeassistant.py:20-40](file://server/app/services/homeassistant.py#L20-L40)
+- [homeassistant.py:20-40](server/app/services/homeassistant.py#L20-L40)
 
 **Section sources**
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [agent_runtime_client.py:23-65](file://server/app/services/agent_runtime_client.py#L23-L65)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [agent_runtime_client.py:23-65](server/app/services/agent_runtime_client.py#L23-L65)
 
 ## Dependency Analysis
 - Cohesion: Each service module focuses on a single domain (patients, vitals, workflow, devices, analytics).
@@ -287,17 +287,17 @@ Analytics["AnalyticsService"] --> Base
 ```
 
 **Diagram sources**
-- [base.py:13-90](file://server/app/services/base.py#L13-L90)
-- [patient.py:80-165](file://server/app/services/patient.py#L80-L165)
-- [vitals.py:12-46](file://server/app/services/vitals.py#L12-L46)
-- [workflow.py:364-423](file://server/app/services/workflow.py#L364-L423)
-- [device_management.py:597-800](file://server/app/services/device_management.py#L597-L800)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [agent_runtime_client.py:23-65](file://server/app/services/agent_runtime_client.py#L23-L65)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [base.py:13-90](server/app/services/base.py#L13-L90)
+- [patient.py:80-165](server/app/services/patient.py#L80-L165)
+- [vitals.py:12-46](server/app/services/vitals.py#L12-L46)
+- [workflow.py:364-423](server/app/services/workflow.py#L364-L423)
+- [device_management.py:597-800](server/app/services/device_management.py#L597-L800)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [agent_runtime_client.py:23-65](server/app/services/agent_runtime_client.py#L23-L65)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 **Section sources**
-- [__init__.py:1-19](file://server/app/services/__init__.py#L1-L19)
+- [__init__.py:1-19](server/app/services/__init__.py#L1-L19)
 
 ## Performance Considerations
 - Workspace scoping: All queries include workspace_id filters; ensure appropriate indexes exist on workspace_id and foreign keys.
@@ -316,9 +316,9 @@ Common issues and resolutions:
 - External integration failures: Check tokens/URLs and network connectivity; logs capture warnings and errors.
 
 **Section sources**
-- [base.py:58-60](file://server/app/services/base.py#L58-L60)
-- [device_management.py:199-204](file://server/app/services/device_management.py#L199-L204)
-- [homeassistant.py:22-40](file://server/app/services/homeassistant.py#L22-L40)
+- [base.py:58-60](server/app/services/base.py#L58-L60)
+- [device_management.py:199-204](server/app/services/device_management.py#L199-L204)
+- [homeassistant.py:22-40](server/app/services/homeassistant.py#L22-L40)
 
 ## Conclusion
 The WheelSense service layer follows a clean separation of concerns with a robust base service class enforcing workspace scoping and safe updates. Domain services encapsulate business logic and coordinate through explicit cross-service calls. External integrations are isolated in dedicated clients. The architecture supports scalability, maintainability, and secure, workspace-aware operations across devices, workflows, and analytics.

@@ -2,21 +2,21 @@
 
 <cite>
 **Referenced Files in This Document**
-- [devices.py](file://server/app/api/endpoints/devices.py)
-- [devices.py](file://server/app/schemas/devices.py)
-- [device_management.py](file://server/app/services/device_management.py)
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [homeassistant.py](file://server/app/api/endpoints/homeassistant.py)
-- [homeassistant.py](file://server/app/services/homeassistant.py)
-- [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
-- [test_mqtt_phase4.py](file://server/tests/test_mqtt_phase4.py)
-- [test_system_flows.py](file://server/tests/e2e/test_system_flows.py)
-- [test_patient.py](file://server/tests/test_services/test_patient.py)
-- [localization_setup.py](file://server/app/services/localization_setup.py)
-- [MCP-README.md](file://docs/MCP-README.md)
-- [server.py](file://server/app/mcp/server.py)
-- [page.tsx](file://frontend/app/admin/devices/page.tsx)
-- [PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
+- [devices.py](server/app/api/endpoints/devices.py)
+- [devices.py](server/app/schemas/devices.py)
+- [device_management.py](server/app/services/device_management.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [homeassistant.py](server/app/api/endpoints/homeassistant.py)
+- [homeassistant.py](server/app/services/homeassistant.py)
+- [TELEMETRY_CONTRACT.md](firmware/TELEMETRY_CONTRACT.md)
+- [test_mqtt_phase4.py](server/tests/test_mqtt_phase4.py)
+- [test_system_flows.py](server/tests/e2e/test_system_flows.py)
+- [test_patient.py](server/tests/test_services/test_patient.py)
+- [localization_setup.py](server/app/services/localization_setup.py)
+- [MCP-README.md](docs/MCP-README.md)
+- [server.py](server/app/mcp/server.py)
+- [page.tsx](frontend/app/admin/devices/page.tsx)
+- [PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
 </cite>
 
 ## Table of Contents
@@ -74,22 +74,22 @@ HA_API --> HA_SVC
 ```
 
 **Diagram sources**
-- [devices.py:186-221](file://server/app/api/endpoints/devices.py#L186-L221)
-- [device_management.py:162-200](file://server/app/services/device_management.py#L162-L200)
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [homeassistant.py:65-82](file://server/app/api/endpoints/homeassistant.py#L65-L82)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [page.tsx:315-332](file://frontend/app/admin/devices/page.tsx#L315-L332)
-- [PatientMySensors.tsx:1-45](file://frontend/components/patient/PatientMySensors.tsx#L1-L45)
+- [devices.py:186-221](server/app/api/endpoints/devices.py#L186-L221)
+- [device_management.py:162-200](server/app/services/device_management.py#L162-L200)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [homeassistant.py:65-82](server/app/api/endpoints/homeassistant.py#L65-L82)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [page.tsx:315-332](frontend/app/admin/devices/page.tsx#L315-L332)
+- [PatientMySensors.tsx:1-45](frontend/components/patient/PatientMySensors.tsx#L1-L45)
 
 **Section sources**
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [homeassistant.py:65-82](file://server/app/api/endpoints/homeassistant.py#L65-L82)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [page.tsx:315-332](file://frontend/app/admin/devices/page.tsx#L315-L332)
-- [PatientMySensors.tsx:1-45](file://frontend/components/patient/PatientMySensors.tsx#L1-L45)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [device_management.py:127-200](server/app/services/device_management.py#L127-L200)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [homeassistant.py:65-82](server/app/api/endpoints/homeassistant.py#L65-L82)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [page.tsx:315-332](frontend/app/admin/devices/page.tsx#L315-L332)
+- [PatientMySensors.tsx:1-45](frontend/components/patient/PatientMySensors.tsx#L1-L45)
 
 ## Core Components
 - Device Registry and Lifecycle
@@ -112,13 +112,13 @@ HA_API --> HA_SVC
   - Patient device metrics and assignments
 
 **Section sources**
-- [devices.py:186-221](file://server/app/api/endpoints/devices.py#L186-L221)
-- [devices.py:125-133](file://server/app/api/endpoints/devices.py#L125-L133)
-- [devices.py:136-144](file://server/app/api/endpoints/devices.py#L136-L144)
-- [device_management.py:963-999](file://server/app/services/device_management.py#L963-L999)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [localization_setup.py:527-557](file://server/app/services/localization_setup.py#L527-L557)
-- [homeassistant.py:187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
+- [devices.py:186-221](server/app/api/endpoints/devices.py#L186-L221)
+- [devices.py:125-133](server/app/api/endpoints/devices.py#L125-L133)
+- [devices.py:136-144](server/app/api/endpoints/devices.py#L136-L144)
+- [device_management.py:963-999](server/app/services/device_management.py#L963-L999)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [localization_setup.py:527-557](server/app/services/localization_setup.py#L527-L557)
+- [homeassistant.py:187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
 
 ## Architecture Overview
 The system ingests device telemetry over MQTT, persists it to the database, triggers alerts, predicts room locations, and publishes real-time updates. Administrators can manage devices and issue commands. Home Assistant integration enables room control actions scoped to users’ roles and rooms.
@@ -143,11 +143,11 @@ API->>HA : Control room smart devices (scoped)
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [device_management.py:162-200](file://server/app/services/device_management.py#L162-L200)
-- [devices.py:90-123](file://server/app/api/endpoints/devices.py#L90-L123)
-- [homeassistant.py:187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [device_management.py:162-200](server/app/services/device_management.py#L162-L200)
+- [devices.py:90-123](server/app/api/endpoints/devices.py#L90-L123)
+- [homeassistant.py:187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
 
 ## Detailed Component Analysis
 
@@ -175,15 +175,15 @@ Log --> Done(["Device Ready"])
 ```
 
 **Diagram sources**
-- [devices.py:186-202](file://server/app/api/endpoints/devices.py#L186-L202)
-- [device_management.py:162-200](file://server/app/services/device_management.py#L162-L200)
+- [devices.py:186-202](server/app/api/endpoints/devices.py#L186-L202)
+- [device_management.py:162-200](server/app/services/device_management.py#L162-L200)
 
 **Section sources**
-- [devices.py:186-221](file://server/app/api/endpoints/devices.py#L186-L221)
-- [devices.py:63-88](file://server/app/api/endpoints/devices.py#L63-L88)
-- [devices.py:125-133](file://server/app/api/endpoints/devices.py#L125-L133)
-- [devices.py:136-144](file://server/app/api/endpoints/devices.py#L136-L144)
-- [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
+- [devices.py:186-221](server/app/api/endpoints/devices.py#L186-L221)
+- [devices.py:63-88](server/app/api/endpoints/devices.py#L63-L88)
+- [devices.py:125-133](server/app/api/endpoints/devices.py#L125-L133)
+- [devices.py:136-144](server/app/api/endpoints/devices.py#L136-L144)
+- [device_management.py:127-200](server/app/services/device_management.py#L127-L200)
 
 ### Device-Patient Assignment
 - Active Assignment Enforcement
@@ -204,13 +204,13 @@ Commit --> AEnd(["Assignment Updated"])
 ```
 
 **Diagram sources**
-- [patient.py:111-141](file://server/tests/test_services/test_patient.py#L111-L141)
-- [devices.py:294-313](file://server/app/api/endpoints/devices.py#L294-L313)
+- [patient.py:111-141](server/tests/test_services/test_patient.py#L111-L141)
+- [devices.py:294-313](server/app/api/endpoints/devices.py#L294-L313)
 
 **Section sources**
-- [patient.py:111-141](file://server/tests/test_services/test_patient.py#L111-L141)
-- [devices.py:294-313](file://server/app/api/endpoints/devices.py#L294-L313)
-- [devices.py:146-184](file://server/app/api/endpoints/devices.py#L146-L184)
+- [patient.py:111-141](server/tests/test_services/test_patient.py#L111-L141)
+- [devices.py:294-313](server/app/api/endpoints/devices.py#L294-L313)
+- [devices.py:146-184](server/app/api/endpoints/devices.py#L146-L184)
 
 ### Telemetry Processing Pipeline
 - MQTT Ingestion
@@ -242,14 +242,14 @@ H->>Pub : Publish vitals if available
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:100-125](server/app/mqtt_handler.py#L100-L125)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
 
 **Section sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [TELEMETRY_CONTRACT.md:7-34](file://firmware/TELEMETRY_CONTRACT.md#L7-L34)
-- [test_mqtt_phase4.py:261-333](file://server/tests/test_mqtt_phase4.py#L261-L333)
-- [test_system_flows.py:10-86](file://server/tests/e2e/test_system_flows.py#L10-L86)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [TELEMETRY_CONTRACT.md:7-34](firmware/TELEMETRY_CONTRACT.md#L7-L34)
+- [test_mqtt_phase4.py:261-333](server/tests/test_mqtt_phase4.py#L261-L333)
+- [test_system_flows.py:10-86](server/tests/e2e/test_system_flows.py#L10-L86)
 
 ### Localization Algorithms (RSSI-based Room Positioning)
 - Room Prediction
@@ -273,12 +273,12 @@ Save --> End
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:253-276](file://server/app/mqtt_handler.py#L253-L276)
-- [localization_setup.py:527-557](file://server/app/services/localization_setup.py#L527-L557)
+- [mqtt_handler.py:253-276](server/app/mqtt_handler.py#L253-L276)
+- [localization_setup.py:527-557](server/app/services/localization_setup.py#L527-L557)
 
 **Section sources**
-- [mqtt_handler.py:253-276](file://server/app/mqtt_handler.py#L253-L276)
-- [localization_setup.py:527-557](file://server/app/services/localization_setup.py#L527-L557)
+- [mqtt_handler.py:253-276](server/app/mqtt_handler.py#L253-L276)
+- [localization_setup.py:527-557](server/app/services/localization_setup.py#L527-L557)
 
 ### Device Command Execution System
 - Command Dispatch
@@ -304,14 +304,14 @@ S->>S : Update DeviceCommandDispatch
 ```
 
 **Diagram sources**
-- [devices.py:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
-- [devices.py:265-310](file://server/app/api/endpoints/devices.py#L265-L310)
-- [mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
+- [devices.py:241-263](server/app/api/endpoints/devices.py#L241-L263)
+- [devices.py:265-310](server/app/api/endpoints/devices.py#L265-L310)
+- [mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
 
 **Section sources**
-- [devices.py:241-263](file://server/app/api/endpoints/devices.py#L241-L263)
-- [devices.py:265-310](file://server/app/api/endpoints/devices.py#L265-L310)
-- [mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
+- [devices.py:241-263](server/app/api/endpoints/devices.py#L241-L263)
+- [devices.py:265-310](server/app/api/endpoints/devices.py#L265-L310)
+- [mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
 
 ### Smart Device Control via Home Assistant Integration
 - Device Discovery and Mapping
@@ -338,15 +338,15 @@ API-->>User : HAResponse
 ```
 
 **Diagram sources**
-- [homeassistant.py:187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
-- [homeassistant.py:42-73](file://server/app/services/homeassistant.py#L42-L73)
-- [server.py:687-706](file://server/app/mcp/server.py#L687-L706)
+- [homeassistant.py:187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
+- [homeassistant.py:42-73](server/app/services/homeassistant.py#L42-L73)
+- [server.py:687-706](server/app/mcp/server.py#L687-L706)
 
 **Section sources**
-- [homeassistant.py:65-82](file://server/app/api/endpoints/homeassistant.py#L65-L82)
-- [homeassistant.py:187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [server.py:687-706](file://server/app/mcp/server.py#L687-L706)
+- [homeassistant.py:65-82](server/app/api/endpoints/homeassistant.py#L65-L82)
+- [homeassistant.py:187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [server.py:687-706](server/app/mcp/server.py#L687-L706)
 
 ### Device Provisioning, Firmware Updates, and Security
 - Provisioning
@@ -360,10 +360,10 @@ API-->>User : HAResponse
   - Patient access to devices limited to assigned devices or room-scoped devices
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md:32-34](file://firmware/TELEMETRY_CONTRACT.md#L32-L34)
-- [device_management.py:50-68](file://server/app/services/device_management.py#L50-L68)
-- [devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
-- [devices.py:72-81](file://server/app/api/endpoints/devices.py#L72-L81)
+- [TELEMETRY_CONTRACT.md:32-34](firmware/TELEMETRY_CONTRACT.md#L32-L34)
+- [device_management.py:50-68](server/app/services/device_management.py#L50-L68)
+- [devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
+- [devices.py:72-81](server/app/api/endpoints/devices.py#L72-L81)
 
 ### Device Activity Tracking, Status Monitoring, and Health Reporting
 - Activity Logging
@@ -375,10 +375,10 @@ API-->>User : HAResponse
   - Admin dashboard surfaces device health and recent activity
 
 **Section sources**
-- [devices.py:53-61](file://server/app/api/endpoints/devices.py#L53-L61)
-- [devices.py:204-221](file://server/app/api/endpoints/devices.py#L204-L221)
-- [mqtt_handler.py:458-482](file://server/app/mqtt_handler.py#L458-L482)
-- [page.tsx:315-332](file://frontend/app/admin/devices/page.tsx#L315-L332)
+- [devices.py:53-61](server/app/api/endpoints/devices.py#L53-L61)
+- [devices.py:204-221](server/app/api/endpoints/devices.py#L204-L221)
+- [mqtt_handler.py:458-482](server/app/mqtt_handler.py#L458-L482)
+- [page.tsx:315-332](frontend/app/admin/devices/page.tsx#L315-L332)
 
 ## Dependency Analysis
 The device management system exhibits clear separation of concerns:
@@ -399,20 +399,20 @@ FE_Patient["Frontend: Patient My Sensors"] --> API_Dev
 ```
 
 **Diagram sources**
-- [devices.py:1-38](file://server/app/api/endpoints/devices.py#L1-L38)
-- [device_management.py:1-50](file://server/app/services/device_management.py#L1-L50)
-- [mqtt_handler.py:1-48](file://server/app/mqtt_handler.py#L1-L48)
-- [homeassistant.py:1-25](file://server/app/api/endpoints/homeassistant.py#L1-L25)
-- [homeassistant.py:1-20](file://server/app/services/homeassistant.py#L1-L20)
-- [page.tsx:315-332](file://frontend/app/admin/devices/page.tsx#L315-L332)
-- [PatientMySensors.tsx:1-45](file://frontend/components/patient/PatientMySensors.tsx#L1-L45)
+- [devices.py:1-38](server/app/api/endpoints/devices.py#L1-L38)
+- [device_management.py:1-50](server/app/services/device_management.py#L1-L50)
+- [mqtt_handler.py:1-48](server/app/mqtt_handler.py#L1-L48)
+- [homeassistant.py:1-25](server/app/api/endpoints/homeassistant.py#L1-L25)
+- [homeassistant.py:1-20](server/app/services/homeassistant.py#L1-L20)
+- [page.tsx:315-332](frontend/app/admin/devices/page.tsx#L315-L332)
+- [PatientMySensors.tsx:1-45](frontend/components/patient/PatientMySensors.tsx#L1-L45)
 
 **Section sources**
-- [devices.py:1-38](file://server/app/api/endpoints/devices.py#L1-L38)
-- [device_management.py:1-50](file://server/app/services/device_management.py#L1-L50)
-- [mqtt_handler.py:1-48](file://server/app/mqtt_handler.py#L1-L48)
-- [homeassistant.py:1-25](file://server/app/api/endpoints/homeassistant.py#L1-L25)
-- [homeassistant.py:1-20](file://server/app/services/homeassistant.py#L1-L20)
+- [devices.py:1-38](server/app/api/endpoints/devices.py#L1-L38)
+- [device_management.py:1-50](server/app/services/device_management.py#L1-L50)
+- [mqtt_handler.py:1-48](server/app/mqtt_handler.py#L1-L48)
+- [homeassistant.py:1-25](server/app/api/endpoints/homeassistant.py#L1-L25)
+- [homeassistant.py:1-20](server/app/services/homeassistant.py#L1-L20)
 
 ## Performance Considerations
 - Asynchronous I/O
@@ -445,11 +445,11 @@ FE_Patient["Frontend: Patient My Sensors"] --> API_Dev
   - Confirm device subscribes to ack topic and responds with proper ack payload
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md:32-34](file://firmware/TELEMETRY_CONTRACT.md#L32-L34)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [test_mqtt_phase4.py:261-333](file://server/tests/test_mqtt_phase4.py#L261-L333)
-- [homeassistant.py:11-76](file://server/app/services/homeassistant.py#L11-L76)
-- [homeassistant.py:187-223](file://server/app/api/endpoints/homeassistant.py#L187-L223)
+- [TELEMETRY_CONTRACT.md:32-34](firmware/TELEMETRY_CONTRACT.md#L32-L34)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [test_mqtt_phase4.py:261-333](server/tests/test_mqtt_phase4.py#L261-L333)
+- [homeassistant.py:11-76](server/app/services/homeassistant.py#L11-L76)
+- [homeassistant.py:187-223](server/app/api/endpoints/homeassistant.py#L187-L223)
 
 ## Conclusion
 The WheelSense Platform provides a robust device management ecosystem with secure, role-scoped access, comprehensive telemetry ingestion, intelligent localization, and integrated control capabilities. The modular architecture supports extensibility for custom devices and workflows, while built-in safeguards ensure reliability and safety in healthcare environments.
@@ -473,6 +473,6 @@ The WheelSense Platform provides a robust device management ecosystem with secur
   - Integrate alerting and localization rules for new sensors or actuators
 
 **Section sources**
-- [TELEMETRY_CONTRACT.md:7-34](file://firmware/TELEMETRY_CONTRACT.md#L7-L34)
-- [devices.py:10-17](file://server/app/schemas/devices.py#L10-L17)
-- [MCP-README.md](file://docs/MCP-README.md)
+- [TELEMETRY_CONTRACT.md:7-34](firmware/TELEMETRY_CONTRACT.md#L7-L34)
+- [devices.py:10-17](server/app/schemas/devices.py#L10-L17)
+- [MCP-README.md](docs/MCP-README.md)

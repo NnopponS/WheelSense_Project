@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [Observer Patients Page](file://frontend/app/observer/patients/page.tsx)
-- [Observer Patient Detail Page](file://frontend/app/observer/patients/[id]/page.tsx)
-- [Patient List Component](file://frontend/components/shared/PatientList.tsx)
-- [Patient My Sensors Component](file://frontend/components/patient/PatientMySensors.tsx)
-- [Patient Care Roadmap Component](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [Workflow Message Detail Dialog](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx)
-- [API Client](file://frontend/lib/api.ts)
-- [Patients Endpoint](file://server/app/api/endpoints/patients.py)
-- [Patient Models](file://server/app/models/patients.py)
-- [Care Workflow Jobs Service](file://server/app/services/care_workflow_jobs.py)
-- [Workflow Schemas](file://server/app/schemas/workflow.py)
+- [Observer Patients Page](frontend/app/observer/patients/page.tsx)
+- [Observer Patient Detail Page](frontend/app/observer/patients/[id]/page.tsx)
+- [Patient List Component](frontend/components/shared/PatientList.tsx)
+- [Patient My Sensors Component](frontend/components/patient/PatientMySensors.tsx)
+- [Patient Care Roadmap Component](frontend/components/patient/PatientCareRoadmap.tsx)
+- [Workflow Message Detail Dialog](frontend/components/messaging/WorkflowMessageDetailDialog.tsx)
+- [API Client](frontend/lib/api.ts)
+- [Patients Endpoint](server/app/api/endpoints/patients.py)
+- [Patient Models](server/app/models/patients.py)
+- [Care Workflow Jobs Service](server/app/services/care_workflow_jobs.py)
+- [Workflow Schemas](server/app/schemas/workflow.py)
 </cite>
 
 ## Table of Contents
@@ -68,30 +68,30 @@ OPD --> WS
 ```
 
 **Diagram sources**
-- [Observer Patients Page:31-257](file://frontend/app/observer/patients/page.tsx#L31-L257)
-- [Observer Patient Detail Page:118-824](file://frontend/app/observer/patients/[id]/page.tsx#L118-L824)
-- [Patient List Component:64-246](file://frontend/components/shared/PatientList.tsx#L64-L246)
-- [Patient My Sensors Component:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
-- [Patient Care Roadmap Component:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [Workflow Message Detail Dialog:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
-- [API Client:342-824](file://frontend/lib/api.ts#L342-L824)
-- [Patients Endpoint:90-124](file://server/app/api/endpoints/patients.py#L90-L124)
-- [Patient Models:24-148](file://server/app/models/patients.py#L24-L148)
-- [Care Workflow Jobs Service:237-301](file://server/app/services/care_workflow_jobs.py#L237-L301)
-- [Workflow Schemas:63-123](file://server/app/schemas/workflow.py#L63-L123)
+- [Observer Patients Page:31-257](frontend/app/observer/patients/page.tsx#L31-L257)
+- [Observer Patient Detail Page:118-824](frontend/app/observer/patients/[id]/page.tsx#L118-L824)
+- [Patient List Component:64-246](frontend/components/shared/PatientList.tsx#L64-L246)
+- [Patient My Sensors Component:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [Patient Care Roadmap Component:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [Workflow Message Detail Dialog:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [API Client:342-824](frontend/lib/api.ts#L342-L824)
+- [Patients Endpoint:90-124](server/app/api/endpoints/patients.py#L90-L124)
+- [Patient Models:24-148](server/app/models/patients.py#L24-L148)
+- [Care Workflow Jobs Service:237-301](server/app/services/care_workflow_jobs.py#L237-L301)
+- [Workflow Schemas:63-123](server/app/schemas/workflow.py#L63-L123)
 
 **Section sources**
-- [Observer Patients Page:31-257](file://frontend/app/observer/patients/page.tsx#L31-L257)
-- [Observer Patient Detail Page:118-824](file://frontend/app/observer/patients/[id]/page.tsx#L118-L824)
-- [Patient List Component:64-246](file://frontend/components/shared/PatientList.tsx#L64-L246)
-- [Patient My Sensors Component:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
-- [Patient Care Roadmap Component:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [Workflow Message Detail Dialog:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
-- [API Client:342-824](file://frontend/lib/api.ts#L342-L824)
-- [Patients Endpoint:90-124](file://server/app/api/endpoints/patients.py#L90-L124)
-- [Patient Models:24-148](file://server/app/models/patients.py#L24-L148)
-- [Care Workflow Jobs Service:237-301](file://server/app/services/care_workflow_jobs.py#L237-L301)
-- [Workflow Schemas:63-123](file://server/app/schemas/workflow.py#L63-L123)
+- [Observer Patients Page:31-257](frontend/app/observer/patients/page.tsx#L31-L257)
+- [Observer Patient Detail Page:118-824](frontend/app/observer/patients/[id]/page.tsx#L118-L824)
+- [Patient List Component:64-246](frontend/components/shared/PatientList.tsx#L64-L246)
+- [Patient My Sensors Component:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [Patient Care Roadmap Component:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [Workflow Message Detail Dialog:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [API Client:342-824](frontend/lib/api.ts#L342-L824)
+- [Patients Endpoint:90-124](server/app/api/endpoints/patients.py#L90-L124)
+- [Patient Models:24-148](server/app/models/patients.py#L24-L148)
+- [Care Workflow Jobs Service:237-301](server/app/services/care_workflow_jobs.py#L237-L301)
+- [Workflow Schemas:63-123](server/app/schemas/workflow.py#L63-L123)
 
 ## Core Components
 - Observer Patients Listing: Provides a searchable, filterable grid of assigned patients with care level badges, room info, open tasks, unread messages, and recent handovers. Includes quick actions to open patient detail.
@@ -102,12 +102,12 @@ OPD --> WS
 - Messaging and Handover Workflows: Enables sending role-targeted messages and submitting handover notes with visibility controls.
 
 **Section sources**
-- [Observer Patients Page:66-257](file://frontend/app/observer/patients/page.tsx#L66-L257)
-- [Observer Patient Detail Page:118-824](file://frontend/app/observer/patients/[id]/page.tsx#L118-L824)
-- [Patient List Component:64-246](file://frontend/components/shared/PatientList.tsx#L64-L246)
-- [Patient My Sensors Component:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
-- [Patient Care Roadmap Component:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [Workflow Message Detail Dialog:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [Observer Patients Page:66-257](frontend/app/observer/patients/page.tsx#L66-L257)
+- [Observer Patient Detail Page:118-824](frontend/app/observer/patients/[id]/page.tsx#L118-L824)
+- [Patient List Component:64-246](frontend/components/shared/PatientList.tsx#L64-L246)
+- [Patient My Sensors Component:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [Patient Care Roadmap Component:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [Workflow Message Detail Dialog:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
 
 ## Architecture Overview
 The Observer Patient Management interface follows a layered architecture:
@@ -142,11 +142,11 @@ API-->>Obs : Render vitals table
 ```
 
 **Diagram sources**
-- [Observer Patients Page:70-88](file://frontend/app/observer/patients/page.tsx#L70-L88)
-- [Observer Patient Detail Page:134-174](file://frontend/app/observer/patients/[id]/page.tsx#L134-L174)
-- [API Client:454-463](file://frontend/lib/api.ts#L454-L463)
-- [Patients Endpoint:90-124](file://server/app/api/endpoints/patients.py#L90-L124)
-- [Patient Models:24-83](file://server/app/models/patients.py#L24-L83)
+- [Observer Patients Page:70-88](frontend/app/observer/patients/page.tsx#L70-L88)
+- [Observer Patient Detail Page:134-174](frontend/app/observer/patients/[id]/page.tsx#L134-L174)
+- [API Client:454-463](frontend/lib/api.ts#L454-L463)
+- [Patients Endpoint:90-124](server/app/api/endpoints/patients.py#L90-L124)
+- [Patient Models:24-83](server/app/models/patients.py#L24-L83)
 
 ## Detailed Component Analysis
 
@@ -173,10 +173,10 @@ Table --> End(["Interactive Patient Grid"])
 ```
 
 **Diagram sources**
-- [Observer Patients Page:66-257](file://frontend/app/observer/patients/page.tsx#L66-L257)
+- [Observer Patients Page:66-257](frontend/app/observer/patients/page.tsx#L66-L257)
 
 **Section sources**
-- [Observer Patients Page:66-257](file://frontend/app/observer/patients/page.tsx#L66-L257)
+- [Observer Patients Page:66-257](frontend/app/observer/patients/page.tsx#L66-L257)
 
 ### Observer Patient Detail
 - Purpose: Single-pane view for observations, messages, handovers, vitals, tasks, timeline, and messages.
@@ -212,14 +212,14 @@ API-->>Obs : Invalidate queries + show success
 ```
 
 **Diagram sources**
-- [Observer Patient Detail Page:176-238](file://frontend/app/observer/patients/[id]/page.tsx#L176-L238)
-- [API Client:541-545](file://frontend/lib/api.ts#L541-L545)
-- [API Client:719-735](file://frontend/lib/api.ts#L719-L735)
-- [API Client:728-735](file://frontend/lib/api.ts#L728-L735)
+- [Observer Patient Detail Page:176-238](frontend/app/observer/patients/[id]/page.tsx#L176-L238)
+- [API Client:541-545](frontend/lib/api.ts#L541-L545)
+- [API Client:719-735](frontend/lib/api.ts#L719-L735)
+- [API Client:728-735](frontend/lib/api.ts#L728-L735)
 
 **Section sources**
-- [Observer Patient Detail Page:118-824](file://frontend/app/observer/patients/[id]/page.tsx#L118-L824)
-- [Workflow Message Detail Dialog:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [Observer Patient Detail Page:118-824](frontend/app/observer/patients/[id]/page.tsx#L118-L824)
+- [Workflow Message Detail Dialog:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
 
 ### Patient Monitoring Integration
 - Purpose: Display real-time sensor metrics and vitals for a patient.
@@ -250,12 +250,12 @@ PatientMySensors --> DeviceDetail : "renders metrics"
 ```
 
 **Diagram sources**
-- [Patient My Sensors Component:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [Patient My Sensors Component:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
 
 **Section sources**
-- [Patient My Sensors Component:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
-- [API Client:547-550](file://frontend/lib/api.ts#L547-L550)
-- [API Client:617-618](file://frontend/lib/api.ts#L617-L618)
+- [Patient My Sensors Component:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [API Client:547-550](frontend/lib/api.ts#L547-L550)
+- [API Client:617-618](frontend/lib/api.ts#L617-L618)
 
 ### Care Roadmap and Workflow Coordination
 - Purpose: Provide a chronological view of past, current, and upcoming care activities for a patient.
@@ -277,12 +277,12 @@ Next --> Render
 ```
 
 **Diagram sources**
-- [Patient Care Roadmap Component:65-132](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L132)
+- [Patient Care Roadmap Component:65-132](frontend/components/patient/PatientCareRoadmap.tsx#L65-L132)
 
 **Section sources**
-- [Patient Care Roadmap Component:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [API Client:765-775](file://frontend/lib/api.ts#L765-L775)
-- [API Client:649-654](file://frontend/lib/api.ts#L649-L654)
+- [Patient Care Roadmap Component:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [API Client:765-775](frontend/lib/api.ts#L765-L775)
+- [API Client:649-654](frontend/lib/api.ts#L649-L654)
 
 ### Messaging and Handover Workflows
 - Purpose: Enable secure, role-targeted communication and structured handovers.
@@ -309,17 +309,17 @@ API-->>Obs : Invalidate queries
 ```
 
 **Diagram sources**
-- [Observer Patient Detail Page:164-174](file://frontend/app/observer/patients/[id]/page.tsx#L164-L174)
-- [Observer Patient Detail Page:252-262](file://frontend/app/observer/patients/[id]/page.tsx#L252-L262)
-- [Observer Patient Detail Page:219-238](file://frontend/app/observer/patients/[id]/page.tsx#L219-L238)
-- [Care Workflow Jobs Service:237-301](file://server/app/services/care_workflow_jobs.py#L237-L301)
-- [Workflow Schemas:198-218](file://server/app/schemas/workflow.py#L198-L218)
+- [Observer Patient Detail Page:164-174](frontend/app/observer/patients/[id]/page.tsx#L164-L174)
+- [Observer Patient Detail Page:252-262](frontend/app/observer/patients/[id]/page.tsx#L252-L262)
+- [Observer Patient Detail Page:219-238](frontend/app/observer/patients/[id]/page.tsx#L219-L238)
+- [Care Workflow Jobs Service:237-301](server/app/services/care_workflow_jobs.py#L237-L301)
+- [Workflow Schemas:198-218](server/app/schemas/workflow.py#L198-L218)
 
 **Section sources**
-- [Workflow Message Detail Dialog:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
-- [Observer Patient Detail Page:164-262](file://frontend/app/observer/patients/[id]/page.tsx#L164-L262)
-- [Care Workflow Jobs Service:237-301](file://server/app/services/care_workflow_jobs.py#L237-L301)
-- [Workflow Schemas:198-218](file://server/app/schemas/workflow.py#L198-L218)
+- [Workflow Message Detail Dialog:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [Observer Patient Detail Page:164-262](frontend/app/observer/patients/[id]/page.tsx#L164-L262)
+- [Care Workflow Jobs Service:237-301](server/app/services/care_workflow_jobs.py#L237-L301)
+- [Workflow Schemas:198-218](server/app/schemas/workflow.py#L198-L218)
 
 ### Patient Listing Interface (Shared Component)
 - Purpose: Reusable patient list with search and administrative filters.
@@ -337,10 +337,10 @@ Admin --> Results["Render filtered list"]
 ```
 
 **Diagram sources**
-- [Patient List Component:64-88](file://frontend/components/shared/PatientList.tsx#L64-L88)
+- [Patient List Component:64-88](frontend/components/shared/PatientList.tsx#L64-L88)
 
 **Section sources**
-- [Patient List Component:64-246](file://frontend/components/shared/PatientList.tsx#L64-L246)
+- [Patient List Component:64-246](frontend/components/shared/PatientList.tsx#L64-L246)
 
 ## Dependency Analysis
 - Frontend depends on the API client for all backend interactions.
@@ -362,24 +362,24 @@ OPD --> WS["Workflow Schemas"]
 ```
 
 **Diagram sources**
-- [Observer Patients Page:31-257](file://frontend/app/observer/patients/page.tsx#L31-L257)
-- [Observer Patient Detail Page:118-824](file://frontend/app/observer/patients/[id]/page.tsx#L118-L824)
-- [Patient List Component:64-246](file://frontend/components/shared/PatientList.tsx#L64-L246)
-- [Patient My Sensors Component:83-328](file://frontend/components/patient/PatientMySensors.tsx#L83-L328)
-- [Patient Care Roadmap Component:65-293](file://frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
-- [Workflow Message Detail Dialog:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
-- [API Client:342-824](file://frontend/lib/api.ts#L342-L824)
-- [Patients Endpoint:90-124](file://server/app/api/endpoints/patients.py#L90-L124)
-- [Patient Models:24-148](file://server/app/models/patients.py#L24-L148)
-- [Care Workflow Jobs Service:237-301](file://server/app/services/care_workflow_jobs.py#L237-L301)
-- [Workflow Schemas:63-123](file://server/app/schemas/workflow.py#L63-L123)
+- [Observer Patients Page:31-257](frontend/app/observer/patients/page.tsx#L31-L257)
+- [Observer Patient Detail Page:118-824](frontend/app/observer/patients/[id]/page.tsx#L118-L824)
+- [Patient List Component:64-246](frontend/components/shared/PatientList.tsx#L64-L246)
+- [Patient My Sensors Component:83-328](frontend/components/patient/PatientMySensors.tsx#L83-L328)
+- [Patient Care Roadmap Component:65-293](frontend/components/patient/PatientCareRoadmap.tsx#L65-L293)
+- [Workflow Message Detail Dialog:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [API Client:342-824](frontend/lib/api.ts#L342-L824)
+- [Patients Endpoint:90-124](server/app/api/endpoints/patients.py#L90-L124)
+- [Patient Models:24-148](server/app/models/patients.py#L24-L148)
+- [Care Workflow Jobs Service:237-301](server/app/services/care_workflow_jobs.py#L237-L301)
+- [Workflow Schemas:63-123](server/app/schemas/workflow.py#L63-L123)
 
 **Section sources**
-- [API Client:342-824](file://frontend/lib/api.ts#L342-L824)
-- [Patients Endpoint:90-124](file://server/app/api/endpoints/patients.py#L90-L124)
-- [Patient Models:24-148](file://server/app/models/patients.py#L24-L148)
-- [Care Workflow Jobs Service:237-301](file://server/app/services/care_workflow_jobs.py#L237-L301)
-- [Workflow Schemas:63-123](file://server/app/schemas/workflow.py#L63-L123)
+- [API Client:342-824](frontend/lib/api.ts#L342-L824)
+- [Patients Endpoint:90-124](server/app/api/endpoints/patients.py#L90-L124)
+- [Patient Models:24-148](server/app/models/patients.py#L24-L148)
+- [Care Workflow Jobs Service:237-301](server/app/services/care_workflow_jobs.py#L237-L301)
+- [Workflow Schemas:63-123](server/app/schemas/workflow.py#L63-L123)
 
 ## Performance Considerations
 - Client-side filtering and sorting are optimized using useMemo to avoid unnecessary recalculations in patient lists and detail tables.
@@ -396,9 +396,9 @@ Common issues and resolutions:
 - Data inconsistencies: Use query invalidation after mutations to refresh dependent views.
 
 **Section sources**
-- [API Client:209-297](file://frontend/lib/api.ts#L209-L297)
-- [Observer Patient Detail Page:87-97](file://frontend/app/observer/patients/[id]/page.tsx#L87-L97)
-- [Observer Patient Detail Page:643-654](file://frontend/app/observer/patients/[id]/page.tsx#L643-L654)
+- [API Client:209-297](frontend/lib/api.ts#L209-L297)
+- [Observer Patient Detail Page:87-97](frontend/app/observer/patients/[id]/page.tsx#L87-L97)
+- [Observer Patient Detail Page:643-654](frontend/app/observer/patients/[id]/page.tsx#L643-L654)
 
 ## Conclusion
 The Observer Patient Management interface integrates patient listing, monitoring, and care coordination into a cohesive workflow. It leverages typed APIs, reactive data fetching, and role-aware visibility to support safe, efficient care delivery. The components are modular and reusable, enabling consistent experiences across roles while maintaining strong separation of concerns between frontend and backend.

@@ -2,19 +2,19 @@
 
 <cite>
 **Referenced Files in This Document**
-- [PatientWorkflowMailbox.tsx](file://frontend/components/messaging/PatientWorkflowMailbox.tsx)
-- [StaffWorkflowMailbox.tsx](file://frontend/components/messaging/StaffWorkflowMailbox.tsx)
-- [AdminWorkflowMailbox.tsx](file://frontend/components/messaging/AdminWorkflowMailbox.tsx)
-- [WorkflowMessageAttachmentViews.tsx](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx)
-- [MessagingRecipientPicker.tsx](file://frontend/components/messaging/MessagingRecipientPicker.tsx)
-- [WorkflowMessageDetailDialog.tsx](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx)
-- [workflowMessaging.ts](file://frontend/lib/workflowMessaging.ts)
-- [api.ts](file://frontend/lib/api.ts)
-- [workflow.py](file://server/app/services/workflow.py)
-- [workflow_message_attachments.py](file://server/app/services/workflow_message_attachments.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [workflow.py](file://server/app/api/endpoints/workflow.py)
-- [test_workflow_domains.py](file://server/tests/test_workflow_domains.py)
+- [PatientWorkflowMailbox.tsx](frontend/components/messaging/PatientWorkflowMailbox.tsx)
+- [StaffWorkflowMailbox.tsx](frontend/components/messaging/StaffWorkflowMailbox.tsx)
+- [AdminWorkflowMailbox.tsx](frontend/components/messaging/AdminWorkflowMailbox.tsx)
+- [WorkflowMessageAttachmentViews.tsx](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx)
+- [MessagingRecipientPicker.tsx](frontend/components/messaging/MessagingRecipientPicker.tsx)
+- [WorkflowMessageDetailDialog.tsx](frontend/components/messaging/WorkflowMessageDetailDialog.tsx)
+- [workflowMessaging.ts](frontend/lib/workflowMessaging.ts)
+- [api.ts](frontend/lib/api.ts)
+- [workflow.py](server/app/services/workflow.py)
+- [workflow_message_attachments.py](server/app/services/workflow_message_attachments.py)
+- [workflow.py](server/app/models/workflow.py)
+- [workflow.py](server/app/api/endpoints/workflow.py)
+- [test_workflow_domains.py](server/tests/test_workflow_domains.py)
 </cite>
 
 ## Table of Contents
@@ -73,30 +73,30 @@ SVC --> MOD
 ```
 
 **Diagram sources**
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [StaffWorkflowMailbox.tsx:153-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
-- [AdminWorkflowMailbox.tsx:110-688](file://frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
-- [MessagingRecipientPicker.tsx:68-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
-- [WorkflowMessageAttachmentViews.tsx:26-142](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
-- [WorkflowMessageDetailDialog.tsx:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
-- [api.ts:881-919](file://frontend/lib/api.ts#L881-L919)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
-- [workflow.py:296-312](file://server/app/services/workflow.py#L296-L312)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [StaffWorkflowMailbox.tsx:153-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
+- [AdminWorkflowMailbox.tsx:110-688](frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
+- [MessagingRecipientPicker.tsx:68-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
+- [WorkflowMessageAttachmentViews.tsx:26-142](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
+- [WorkflowMessageDetailDialog.tsx:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [api.ts:881-919](frontend/lib/api.ts#L881-L919)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
+- [workflow.py:296-312](server/app/services/workflow.py#L296-L312)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
 
 **Section sources**
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [StaffWorkflowMailbox.tsx:153-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
-- [AdminWorkflowMailbox.tsx:110-688](file://frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
-- [WorkflowMessageAttachmentViews.tsx:26-142](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
-- [MessagingRecipientPicker.tsx:68-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
-- [WorkflowMessageDetailDialog.tsx:28-102](file://frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
-- [api.ts:881-919](file://frontend/lib/api.ts#L881-L919)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
-- [workflow.py:296-312](file://server/app/services/workflow.py#L296-L312)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [StaffWorkflowMailbox.tsx:153-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
+- [AdminWorkflowMailbox.tsx:110-688](frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
+- [WorkflowMessageAttachmentViews.tsx:26-142](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
+- [MessagingRecipientPicker.tsx:68-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
+- [WorkflowMessageDetailDialog.tsx:28-102](frontend/components/messaging/WorkflowMessageDetailDialog.tsx#L28-L102)
+- [api.ts:881-919](frontend/lib/api.ts#L881-L919)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
+- [workflow.py:296-312](server/app/services/workflow.py#L296-L312)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
 
 ## Core Components
 - Patient mailbox: lists inbox/sent threads, composes messages to staff, manages attachments, marks read, deletes messages
@@ -107,12 +107,12 @@ SVC --> MOD
 - Workflow integration: messages can be linked to workflow items (task, schedule, directive) for care-related discussions
 
 **Section sources**
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [StaffWorkflowMailbox.tsx:153-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
-- [AdminWorkflowMailbox.tsx:110-688](file://frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
-- [WorkflowMessageAttachmentViews.tsx:26-142](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
-- [MessagingRecipientPicker.tsx:68-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [StaffWorkflowMailbox.tsx:153-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
+- [AdminWorkflowMailbox.tsx:110-688](frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
+- [WorkflowMessageAttachmentViews.tsx:26-142](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
+- [MessagingRecipientPicker.tsx:68-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
 
 ## Architecture Overview
 The system uses authenticated requests with role-based access control. Messages are stored with optional attachments and can be linked to workflow items. Attachments are staged temporarily and finalized when a message is sent.
@@ -152,11 +152,11 @@ API-->>UI : refresh list/sent tab
 ```
 
 **Diagram sources**
-- [api.ts:881-919](file://frontend/lib/api.ts#L881-L919)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
-- [workflow.py:296-312](file://server/app/services/workflow.py#L296-L312)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
+- [api.ts:881-919](frontend/lib/api.ts#L881-L919)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
+- [workflow.py:296-312](server/app/services/workflow.py#L296-L312)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
 
 ## Detailed Component Analysis
 
@@ -184,14 +184,14 @@ Refresh --> View
 ```
 
 **Diagram sources**
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [workflowMessaging.ts:8-17](file://frontend/lib/workflowMessaging.ts#L8-L17)
-- [WorkflowMessageAttachmentViews.tsx:26-103](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [workflowMessaging.ts:8-17](frontend/lib/workflowMessaging.ts#L8-L17)
+- [WorkflowMessageAttachmentViews.tsx:26-103](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
 
 **Section sources**
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [workflowMessaging.ts:8-17](file://frontend/lib/workflowMessaging.ts#L8-L17)
-- [WorkflowMessageAttachmentViews.tsx:26-103](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [workflowMessaging.ts:8-17](frontend/lib/workflowMessaging.ts#L8-L17)
+- [WorkflowMessageAttachmentViews.tsx:26-103](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
 
 ### Staff Mailboxes (Head Nurse, Supervisor, Observer)
 - Role-specific compose sheets with recipient role filters and live search
@@ -229,16 +229,16 @@ API-->>Staff : refresh list
 ```
 
 **Diagram sources**
-- [StaffWorkflowMailbox.tsx:153-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
-- [MessagingRecipientPicker.tsx:68-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
-- [workflow.py:282-325](file://server/app/api/endpoints/workflow.py#L282-L325)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
+- [StaffWorkflowMailbox.tsx:153-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
+- [MessagingRecipientPicker.tsx:68-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
+- [workflow.py:282-325](server/app/api/endpoints/workflow.py#L282-L325)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
 
 **Section sources**
-- [StaffWorkflowMailbox.tsx:153-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
-- [MessagingRecipientPicker.tsx:68-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
-- [workflow.py:282-325](file://server/app/api/endpoints/workflow.py#L282-L325)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
+- [StaffWorkflowMailbox.tsx:153-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
+- [MessagingRecipientPicker.tsx:68-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
+- [workflow.py:282-325](server/app/api/endpoints/workflow.py#L282-L325)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
 
 ### Admin Mailbox
 - Comprehensive compose with role or user target selection
@@ -262,12 +262,12 @@ ARefresh --> AList
 ```
 
 **Diagram sources**
-- [AdminWorkflowMailbox.tsx:110-688](file://frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
+- [AdminWorkflowMailbox.tsx:110-688](frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
 
 **Section sources**
-- [AdminWorkflowMailbox.tsx:110-688](file://frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
+- [AdminWorkflowMailbox.tsx:110-688](frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
 
 ### Attachment System
 - Composition: choose files (JPEG, PNG, GIF, WebP, PDF), preview, remove
@@ -290,14 +290,14 @@ DB --> Download["Download via authenticated URL"]
 ```
 
 **Diagram sources**
-- [WorkflowMessageAttachmentViews.tsx:26-103](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflowMessaging.ts:3-6](file://frontend/lib/workflowMessaging.ts#L3-L6)
+- [WorkflowMessageAttachmentViews.tsx:26-103](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L103)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflowMessaging.ts:3-6](frontend/lib/workflowMessaging.ts#L3-L6)
 
 **Section sources**
-- [WorkflowMessageAttachmentViews.tsx:26-142](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflowMessaging.ts:3-6](file://frontend/lib/workflowMessaging.ts#L3-L6)
+- [WorkflowMessageAttachmentViews.tsx:26-142](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflowMessaging.ts:3-6](frontend/lib/workflowMessaging.ts#L3-L6)
 
 ### Workflow Integration
 - Messages can be associated with workflow items (task, schedule, directive)
@@ -322,12 +322,12 @@ API-->>UI : render
 ```
 
 **Diagram sources**
-- [workflow.py:546-664](file://server/app/api/endpoints/workflow.py#L546-L664)
-- [workflow.py:296-312](file://server/app/services/workflow.py#L296-L312)
+- [workflow.py:546-664](server/app/api/endpoints/workflow.py#L546-L664)
+- [workflow.py:296-312](server/app/services/workflow.py#L296-L312)
 
 **Section sources**
-- [workflow.py:546-664](file://server/app/api/endpoints/workflow.py#L546-L664)
-- [workflow.py:296-312](file://server/app/services/workflow.py#L296-L312)
+- [workflow.py:546-664](server/app/api/endpoints/workflow.py#L546-L664)
+- [workflow.py:296-312](server/app/services/workflow.py#L296-L312)
 
 ### Common Communication Scenarios
 - Symptom reporting: patient composes to assigned staff; optional photo/video attachment; read receipt
@@ -361,23 +361,23 @@ SVC --> MOD["models/workflow.py"]
 ```
 
 **Diagram sources**
-- [PatientWorkflowMailbox.tsx:71-517](file://frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
-- [StaffWorkflowMailbox.tsx:153-723](file://frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
-- [AdminWorkflowMailbox.tsx:110-688](file://frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
-- [WorkflowMessageAttachmentViews.tsx:26-142](file://frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
-- [MessagingRecipientPicker.tsx:68-155](file://frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
-- [api.ts:881-919](file://frontend/lib/api.ts#L881-L919)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
-- [workflow.py:296-312](file://server/app/services/workflow.py#L296-L312)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
+- [PatientWorkflowMailbox.tsx:71-517](frontend/components/messaging/PatientWorkflowMailbox.tsx#L71-L517)
+- [StaffWorkflowMailbox.tsx:153-723](frontend/components/messaging/StaffWorkflowMailbox.tsx#L153-L723)
+- [AdminWorkflowMailbox.tsx:110-688](frontend/components/messaging/AdminWorkflowMailbox.tsx#L110-L688)
+- [WorkflowMessageAttachmentViews.tsx:26-142](frontend/components/messaging/WorkflowMessageAttachmentViews.tsx#L26-L142)
+- [MessagingRecipientPicker.tsx:68-155](frontend/components/messaging/MessagingRecipientPicker.tsx#L68-L155)
+- [api.ts:881-919](frontend/lib/api.ts#L881-L919)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
+- [workflow.py:296-312](server/app/services/workflow.py#L296-L312)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
 
 **Section sources**
-- [api.ts:881-919](file://frontend/lib/api.ts#L881-L919)
-- [workflow.py:261-404](file://server/app/api/endpoints/workflow.py#L261-L404)
-- [workflow.py:296-312](file://server/app/services/workflow.py#L296-L312)
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflow.py:67-89](file://server/app/models/workflow.py#L67-L89)
+- [api.ts:881-919](frontend/lib/api.ts#L881-L919)
+- [workflow.py:261-404](server/app/api/endpoints/workflow.py#L261-L404)
+- [workflow.py:296-312](server/app/services/workflow.py#L296-L312)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflow.py:67-89](server/app/models/workflow.py#L67-L89)
 
 ## Performance Considerations
 - Polling intervals: mailboxes poll for new messages at short intervals to keep inboxes fresh
@@ -394,9 +394,9 @@ SVC --> MOD["models/workflow.py"]
 - Deleted messages: confirm deletion rights based on role and ownership
 
 **Section sources**
-- [workflow_message_attachments.py:52-202](file://server/app/services/workflow_message_attachments.py#L52-L202)
-- [workflow.py:315-404](file://server/app/api/endpoints/workflow.py#L315-L404)
-- [workflowMessaging.ts:8-17](file://frontend/lib/workflowMessaging.ts#L8-L17)
+- [workflow_message_attachments.py:52-202](server/app/services/workflow_message_attachments.py#L52-L202)
+- [workflow.py:315-404](server/app/api/endpoints/workflow.py#L315-L404)
+- [workflowMessaging.ts:8-17](frontend/lib/workflowMessaging.ts#L8-L17)
 
 ## Conclusion
 The Patient Messaging and Communication system provides a secure, role-aware, and workflow-integrated platform for care team collaboration. It supports threaded conversations, rich attachments, and contextual linkage to care workflows while enforcing strict privacy and security boundaries through authenticated access and workspace-scoped records.

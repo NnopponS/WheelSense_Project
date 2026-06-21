@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ReportPreviewTable.tsx](file://frontend/components/reports/ReportPreviewTable.tsx)
-- [report-utils.ts](file://frontend/components/reports/report-utils.ts)
-- [page.tsx](file://frontend/app/head-nurse/reports/page.tsx)
-- [OperationsConsole.tsx](file://frontend/components/workflow/OperationsConsole.tsx)
-- [analytics.py](file://server/app/services/analytics.py)
-- [analytics.py](file://server/app/api/endpoints/analytics.py)
-- [analytics.py](file://server/app/schemas/analytics.py)
-- [tasks.py](file://server/app/models/tasks.py)
-- [workflow.py](file://server/app/models/workflow.py)
-- [server.py](file://server/app/mcp/server.py)
-- [openapi.generated.json](file://server/openapi.generated.json)
-- [api.ts](file://frontend/lib/api.ts)
+- [ReportPreviewTable.tsx](frontend/components/reports/ReportPreviewTable.tsx)
+- [report-utils.ts](frontend/components/reports/report-utils.ts)
+- [page.tsx](frontend/app/head-nurse/reports/page.tsx)
+- [OperationsConsole.tsx](frontend/components/workflow/OperationsConsole.tsx)
+- [analytics.py](server/app/services/analytics.py)
+- [analytics.py](server/app/api/endpoints/analytics.py)
+- [analytics.py](server/app/schemas/analytics.py)
+- [tasks.py](server/app/models/tasks.py)
+- [workflow.py](server/app/models/workflow.py)
+- [server.py](server/app/mcp/server.py)
+- [openapi.generated.json](server/openapi.generated.json)
+- [api.ts](frontend/lib/api.ts)
 </cite>
 
 ## Table of Contents
@@ -74,30 +74,30 @@ OpenAPI --> API
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [page.tsx:1-6](file://frontend/app/head-nurse/reports/page.tsx#L1-L6)
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [analytics.py:1-25](file://server/app/schemas/analytics.py#L1-L25)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [tasks.py:1-123](file://server/app/models/tasks.py#L1-L123)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [openapi.generated.json:4780-4872](file://server/openapi.generated.json#L4780-L4872)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [page.tsx:1-6](frontend/app/head-nurse/reports/page.tsx#L1-L6)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [analytics.py:1-25](server/app/schemas/analytics.py#L1-L25)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [tasks.py:1-123](server/app/models/tasks.py#L1-L123)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [openapi.generated.json:4780-4872](server/openapi.generated.json#L4780-L4872)
 
 **Section sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [page.tsx:1-6](file://frontend/app/head-nurse/reports/page.tsx#L1-L6)
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [analytics.py:1-25](file://server/app/schemas/analytics.py#L1-L25)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [tasks.py:1-123](file://server/app/models/tasks.py#L1-L123)
-- [workflow.py:1-197](file://server/app/models/workflow.py#L1-L197)
-- [openapi.generated.json:4780-4872](file://server/openapi.generated.json#L4780-L4872)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [page.tsx:1-6](frontend/app/head-nurse/reports/page.tsx#L1-L6)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [analytics.py:1-25](server/app/schemas/analytics.py#L1-L25)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [tasks.py:1-123](server/app/models/tasks.py#L1-L123)
+- [workflow.py:1-197](server/app/models/workflow.py#L1-L197)
+- [openapi.generated.json:4780-4872](server/openapi.generated.json#L4780-L4872)
 
 ## Core Components
 - ReportPreviewTable: renders a responsive, scrollable table with optional caption and empty state
@@ -110,14 +110,14 @@ OpenAPI --> API
 - Workflow Audit Trail: events for workflow audit report template
 
 **Section sources**
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [tasks.py:83-123](file://server/app/models/tasks.py#L83-L123)
-- [workflow.py:180-197](file://server/app/models/workflow.py#L180-L197)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [tasks.py:83-123](server/app/models/tasks.py#L83-L123)
+- [workflow.py:180-197](server/app/models/workflow.py#L180-L197)
 
 ## Architecture Overview
 The system integrates frontend report builders with backend analytics services and models. Users configure report templates and time windows, the frontend builds a view with metrics and a preview table, and actions export CSV or print. Backend endpoints expose analytics, while MCP tools aggregate workspace-level insights for AI/agents.
@@ -145,11 +145,11 @@ UI->>Utils : Build CSV and trigger download
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
 
 ## Detailed Component Analysis
 
@@ -178,14 +178,14 @@ Print --> End
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
 
 **Section sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
 
 ### Report Utilities: Data Aggregation, Filtering, and Export
 - Types: ReportCell, ReportRow, ReportColumn
@@ -205,10 +205,10 @@ F --> G["Trigger download"]
 ```
 
 **Diagram sources**
-- [report-utils.ts:11-52](file://frontend/components/reports/report-utils.ts#L11-L52)
+- [report-utils.ts:11-52](frontend/components/reports/report-utils.ts#L11-L52)
 
 **Section sources**
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
 
 ### Analytics Services and Endpoints
 - Endpoints:
@@ -248,13 +248,13 @@ AnalyticsService --> WardSummaryOut
 ```
 
 **Diagram sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [analytics.py:8-25](file://server/app/schemas/analytics.py#L8-L25)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [analytics.py:8-25](server/app/schemas/analytics.py#L8-L25)
 
 **Section sources**
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [analytics.py:1-25](file://server/app/schemas/analytics.py#L1-L25)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [analytics.py:1-25](server/app/schemas/analytics.py#L1-L25)
 
 ### Integration with MCP and AI Agents
 - MCP Tool: get_workspace_analytics aggregates alert summary, vitals averages, and ward summary for a given hours window
@@ -276,12 +276,12 @@ MCP-->>Agent : Structured analytics payload
 ```
 
 **Diagram sources**
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
 
 **Section sources**
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
 
 ### Report Templates and Workflows
 - Templates supported in the console:
@@ -308,11 +308,11 @@ T5["Workflow Audit"] --> AE["Audit Events"]
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:571-761](file://frontend/components/workflow/OperationsConsole.tsx#L571-L761)
+- [OperationsConsole.tsx:571-761](frontend/components/workflow/OperationsConsole.tsx#L571-L761)
 
 **Section sources**
-- [OperationsConsole.tsx:571-761](file://frontend/components/workflow/OperationsConsole.tsx#L571-L761)
-- [api.ts:1084-1088](file://frontend/lib/api.ts#L1084-L1088)
+- [OperationsConsole.tsx:571-761](frontend/components/workflow/OperationsConsole.tsx#L571-L761)
+- [api.ts:1084-1088](frontend/lib/api.ts#L1084-L1088)
 
 ### Task Reports and Custom Report Creation
 - Task model includes a JSON-based report template schema for structured forms
@@ -358,10 +358,10 @@ TASK ||--o{ TASK_REPORT : "has"
 ```
 
 **Diagram sources**
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
 
 **Section sources**
-- [tasks.py:22-123](file://server/app/models/tasks.py#L22-L123)
+- [tasks.py:22-123](server/app/models/tasks.py#L22-L123)
 
 ### Audit Trail for Trend Analysis
 - AuditTrailEvent model captures domain, action, entity, and timestamps
@@ -385,10 +385,10 @@ datetime created_at
 ```
 
 **Diagram sources**
-- [workflow.py:180-197](file://server/app/models/workflow.py#L180-L197)
+- [workflow.py:180-197](server/app/models/workflow.py#L180-L197)
 
 **Section sources**
-- [workflow.py:180-197](file://server/app/models/workflow.py#L180-L197)
+- [workflow.py:180-197](server/app/models/workflow.py#L180-L197)
 
 ## Dependency Analysis
 - Frontend depends on:
@@ -412,22 +412,22 @@ BE_MCP["MCP Tool"] --> BE_SERVICE
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [openapi.generated.json:4780-4872](file://server/openapi.generated.json#L4780-L4872)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [openapi.generated.json:4780-4872](server/openapi.generated.json#L4780-L4872)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 **Section sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [openapi.generated.json:4780-4872](file://server/openapi.generated.json#L4780-L4872)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [analytics.py:1-49](server/app/api/endpoints/analytics.py#L1-L49)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [openapi.generated.json:4780-4872](server/openapi.generated.json#L4780-L4872)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 ## Performance Considerations
 - Time window selection impacts query cost; prefer narrower windows for frequent previews
@@ -449,10 +449,10 @@ BE_MCP["MCP Tool"] --> BE_SERVICE
   - Ensure workspace.read scope and valid hours parameter
 
 **Section sources**
-- [report-utils.ts:33-52](file://frontend/components/reports/report-utils.ts#L33-L52)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [analytics.py:17-49](file://server/app/api/endpoints/analytics.py#L17-L49)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [report-utils.ts:33-52](frontend/components/reports/report-utils.ts#L33-L52)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [analytics.py:17-49](server/app/api/endpoints/analytics.py#L17-L49)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 ## Conclusion
 The Head Nurse Reports & Analytics system provides a flexible, role-aware interface for generating and reviewing clinical reports. It combines customizable templates, time-bound analytics, and export capabilities with backend services that aggregate alerts, vitals, and ward statistics. Integrations with MCP and workflow models enable AI-assisted insights and audit-driven reporting, while task report schemas support custom, structured submissions.
@@ -470,13 +470,13 @@ The Head Nurse Reports & Analytics system provides a flexible, role-aware interf
 - Reference task report models for data persistence and retrieval
 
 **Section sources**
-- [tasks.py:64-71](file://server/app/models/tasks.py#L64-L71)
-- [tasks.py:83-123](file://server/app/models/tasks.py#L83-L123)
+- [tasks.py:64-71](server/app/models/tasks.py#L64-L71)
+- [tasks.py:83-123](server/app/models/tasks.py#L83-L123)
 
 ### Integration with External Systems
 - CSV export endpoints exist for routine logs and patient routines; similar patterns can be extended for custom reports
 - Use the MCP tool to surface analytics to external agents or AI systems
 
 **Section sources**
-- [api.ts:1084-1088](file://frontend/lib/api.ts#L1084-L1088)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [api.ts:1084-1088](frontend/lib/api.ts#L1084-L1088)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)

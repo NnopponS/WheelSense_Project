@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [security.py](file://server/app/core/security.py)
-- [auth.py](file://server/app/api/endpoints/auth.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [users.py](file://server/app/api/endpoints/users.py)
-- [workspaces.py](file://server/app/api/endpoints/workspaces.py)
-- [auth.py](file://server/app/services/auth.py)
-- [users.py](file://server/app/models/users.py)
-- [core.py](file://server/app/models/core.py)
-- [auth.py](file://server/app/mcp/auth.py)
-- [config.py](file://server/app/config.py)
-- [test_mcp_auth_extended.py](file://server/tests/test_mcp_auth_extended.py)
-- [test_mcp_policy.py](file://server/tests/test_mcp_policy.py)
-- [test_api.py](file://server/tests/test_api.py)
-- [0005-camera-photo-only-internet-independent.md](file://docs/adr/0005-camera-photo-only-internet-independent.md)
+- [security.py](server/app/core/security.py)
+- [auth.py](server/app/api/endpoints/auth.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [users.py](server/app/api/endpoints/users.py)
+- [workspaces.py](server/app/api/endpoints/workspaces.py)
+- [auth.py](server/app/services/auth.py)
+- [users.py](server/app/models/users.py)
+- [core.py](server/app/models/core.py)
+- [auth.py](server/app/mcp/auth.py)
+- [config.py](server/app/config.py)
+- [test_mcp_auth_extended.py](server/tests/test_mcp_auth_extended.py)
+- [test_mcp_policy.py](server/tests/test_mcp_policy.py)
+- [test_api.py](server/tests/test_api.py)
+- [0005-camera-photo-only-internet-independent.md](docs/adr/0005-camera-photo-only-internet-independent.md)
 </cite>
 
 ## Table of Contents
@@ -85,30 +85,30 @@ T3 --> AUTH_EP
 ```
 
 **Diagram sources**
-- [config.py:12-151](file://server/app/config.py#L12-L151)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [auth.py:1-269](file://server/app/api/endpoints/auth.py#L1-L269)
-- [dependencies.py:1-402](file://server/app/api/dependencies.py#L1-L402)
-- [auth.py:1-688](file://server/app/services/auth.py#L1-L688)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [auth.py:1-190](file://server/app/mcp/auth.py#L1-L190)
-- [test_mcp_auth_extended.py:280-388](file://server/tests/test_mcp_auth_extended.py#L280-L388)
-- [test_mcp_policy.py:119-165](file://server/tests/test_mcp_policy.py#L119-L165)
-- [test_api.py:186-264](file://server/tests/test_api.py#L186-L264)
+- [config.py:12-151](server/app/config.py#L12-L151)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [auth.py:1-269](server/app/api/endpoints/auth.py#L1-L269)
+- [dependencies.py:1-402](server/app/api/dependencies.py#L1-L402)
+- [auth.py:1-688](server/app/services/auth.py#L1-L688)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [auth.py:1-190](server/app/mcp/auth.py#L1-L190)
+- [test_mcp_auth_extended.py:280-388](server/tests/test_mcp_auth_extended.py#L280-L388)
+- [test_mcp_policy.py:119-165](server/tests/test_mcp_policy.py#L119-L165)
+- [test_api.py:186-264](server/tests/test_api.py#L186-L264)
 
 **Section sources**
-- [config.py:12-151](file://server/app/config.py#L12-L151)
-- [security.py:1-56](file://server/app/core/security.py#L1-L56)
-- [auth.py:1-269](file://server/app/api/endpoints/auth.py#L1-L269)
-- [dependencies.py:1-402](file://server/app/api/dependencies.py#L1-L402)
-- [auth.py:1-688](file://server/app/services/auth.py#L1-L688)
-- [users.py:1-92](file://server/app/models/users.py#L1-L92)
-- [core.py:1-124](file://server/app/models/core.py#L1-L124)
-- [auth.py:1-190](file://server/app/mcp/auth.py#L1-L190)
-- [test_mcp_auth_extended.py:280-388](file://server/tests/test_mcp_auth_extended.py#L280-L388)
-- [test_mcp_policy.py:119-165](file://server/tests/test_mcp_policy.py#L119-L165)
-- [test_api.py:186-264](file://server/tests/test_api.py#L186-L264)
+- [config.py:12-151](server/app/config.py#L12-L151)
+- [security.py:1-56](server/app/core/security.py#L1-L56)
+- [auth.py:1-269](server/app/api/endpoints/auth.py#L1-L269)
+- [dependencies.py:1-402](server/app/api/dependencies.py#L1-L402)
+- [auth.py:1-688](server/app/services/auth.py#L1-L688)
+- [users.py:1-92](server/app/models/users.py#L1-L92)
+- [core.py:1-124](server/app/models/core.py#L1-L124)
+- [auth.py:1-190](server/app/mcp/auth.py#L1-L190)
+- [test_mcp_auth_extended.py:280-388](server/tests/test_mcp_auth_extended.py#L280-L388)
+- [test_mcp_policy.py:119-165](server/tests/test_mcp_policy.py#L119-L165)
+- [test_api.py:186-264](server/tests/test_api.py#L186-L264)
 
 ## Core Components
 - JWT creation and verification, password hashing, and runtime security checks
@@ -120,12 +120,12 @@ T3 --> AUTH_EP
 - User and profile administration with workspace-aware validation and linkage
 
 **Section sources**
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
-- [auth.py:57-205](file://server/app/api/endpoints/auth.py#L57-L205)
-- [dependencies.py:123-311](file://server/app/api/dependencies.py#L123-L311)
-- [users.py:9-92](file://server/app/models/users.py#L9-L92)
-- [auth.py:16-143](file://server/app/mcp/auth.py#L16-L143)
-- [auth.py:458-688](file://server/app/services/auth.py#L458-L688)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
+- [auth.py:57-205](server/app/api/endpoints/auth.py#L57-L205)
+- [dependencies.py:123-311](server/app/api/dependencies.py#L123-L311)
+- [users.py:9-92](server/app/models/users.py#L9-L92)
+- [auth.py:16-143](server/app/mcp/auth.py#L16-L143)
+- [auth.py:458-688](server/app/services/auth.py#L458-L688)
 
 ## Architecture Overview
 The system enforces authentication and authorization across REST and MCP channels:
@@ -155,11 +155,11 @@ API-->>Client : {authenticated, user}
 ```
 
 **Diagram sources**
-- [auth.py:57-95](file://server/app/api/endpoints/auth.py#L57-L95)
-- [auth.py:575-626](file://server/app/services/auth.py#L575-L626)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [users.py:59-92](file://server/app/models/users.py#L59-L92)
-- [config.py:47-50](file://server/app/config.py#L47-L50)
+- [auth.py:57-95](server/app/api/endpoints/auth.py#L57-L95)
+- [auth.py:575-626](server/app/services/auth.py#L575-L626)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [users.py:59-92](server/app/models/users.py#L59-L92)
+- [config.py:47-50](server/app/config.py#L47-L50)
 
 ## Detailed Component Analysis
 
@@ -185,14 +185,14 @@ IssueToken --> ReturnToken["Return {access_token, session_id}"]
 ```
 
 **Diagram sources**
-- [auth.py:575-626](file://server/app/services/auth.py#L575-L626)
-- [security.py:43-56](file://server/app/core/security.py#L43-L56)
-- [config.py:13-19](file://server/app/config.py#L13-L19)
+- [auth.py:575-626](server/app/services/auth.py#L575-L626)
+- [security.py:43-56](server/app/core/security.py#L43-L56)
+- [config.py:13-19](server/app/config.py#L13-L19)
 
 **Section sources**
-- [security.py:13-56](file://server/app/core/security.py#L13-L56)
-- [auth.py:575-626](file://server/app/services/auth.py#L575-L626)
-- [auth.py:57-72](file://server/app/api/endpoints/auth.py#L57-L72)
+- [security.py:13-56](server/app/core/security.py#L13-L56)
+- [auth.py:575-626](server/app/services/auth.py#L575-L626)
+- [auth.py:57-72](server/app/api/endpoints/auth.py#L57-L72)
 
 ### Session Management and Revocation
 - Sessions are stored in a dedicated table with workspace/user binding, timestamps, IP/user-agent, and revocation flag.
@@ -220,14 +220,14 @@ API-->>Client : 204 No Content
 ```
 
 **Diagram sources**
-- [auth.py:160-204](file://server/app/api/endpoints/auth.py#L160-L204)
-- [auth.py:527-573](file://server/app/services/auth.py#L527-L573)
-- [users.py:59-92](file://server/app/models/users.py#L59-L92)
+- [auth.py:160-204](server/app/api/endpoints/auth.py#L160-L204)
+- [auth.py:527-573](server/app/services/auth.py#L527-L573)
+- [users.py:59-92](server/app/models/users.py#L59-L92)
 
 **Section sources**
-- [auth.py:160-204](file://server/app/api/endpoints/auth.py#L160-L204)
-- [auth.py:527-573](file://server/app/services/auth.py#L527-L573)
-- [users.py:59-92](file://server/app/models/users.py#L59-L92)
+- [auth.py:160-204](server/app/api/endpoints/auth.py#L160-L204)
+- [auth.py:527-573](server/app/services/auth.py#L527-L573)
+- [users.py:59-92](server/app/models/users.py#L59-L92)
 
 ### Role-Based Access Control (RBAC) and Workspace Scoping
 - Roles: admin, head_nurse, supervisor, observer, patient.
@@ -265,13 +265,13 @@ User "1" --> "many" AuthSession : "has"
 ```
 
 **Diagram sources**
-- [users.py:9-92](file://server/app/models/users.py#L9-L92)
+- [users.py:9-92](server/app/models/users.py#L9-L92)
 
 **Section sources**
-- [dependencies.py:171-311](file://server/app/api/dependencies.py#L171-L311)
-- [users.py:9-92](file://server/app/models/users.py#L9-L92)
-- [workspaces.py:15-57](file://server/app/api/endpoints/workspaces.py#L15-L57)
-- [test_mcp_policy.py:119-165](file://server/tests/test_mcp_policy.py#L119-L165)
+- [dependencies.py:171-311](server/app/api/dependencies.py#L171-L311)
+- [users.py:9-92](server/app/models/users.py#L9-L92)
+- [workspaces.py:15-57](server/app/api/endpoints/workspaces.py#L15-L57)
+- [test_mcp_policy.py:119-165](server/tests/test_mcp_policy.py#L119-L165)
 
 ### Authorization Patterns and Request Validation
 - Global dependency resolves current user from JWT, validates session existence/expiry/revocation, and attaches token scopes to the request context.
@@ -294,14 +294,14 @@ Attach --> Next["Proceed to handler"]
 ```
 
 **Diagram sources**
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [auth.py:75-95](file://server/app/api/endpoints/auth.py#L75-L95)
-- [test_api.py:186-264](file://server/tests/test_api.py#L186-L264)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [auth.py:75-95](server/app/api/endpoints/auth.py#L75-L95)
+- [test_api.py:186-264](server/tests/test_api.py#L186-L264)
 
 **Section sources**
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [auth.py:75-95](file://server/app/api/endpoints/auth.py#L75-L95)
-- [test_api.py:186-264](file://server/tests/test_api.py#L186-L264)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [auth.py:75-95](server/app/api/endpoints/auth.py#L75-L95)
+- [test_api.py:186-264](server/tests/test_api.py#L186-L264)
 
 ### MCP Authorization Middleware
 - Validates Origin header against configured allowed origins; optionally requires Origin presence.
@@ -327,14 +327,14 @@ MW-->>Client : invoke downstream app with actor context
 ```
 
 **Diagram sources**
-- [auth.py:16-143](file://server/app/mcp/auth.py#L16-L143)
-- [dependencies.py:123-128](file://server/app/api/dependencies.py#L123-L128)
-- [test_mcp_auth_extended.py:280-388](file://server/tests/test_mcp_auth_extended.py#L280-L388)
+- [auth.py:16-143](server/app/mcp/auth.py#L16-L143)
+- [dependencies.py:123-128](server/app/api/dependencies.py#L123-L128)
+- [test_mcp_auth_extended.py:280-388](server/tests/test_mcp_auth_extended.py#L280-L388)
 
 **Section sources**
-- [auth.py:16-143](file://server/app/mcp/auth.py#L16-L143)
-- [dependencies.py:123-128](file://server/app/api/dependencies.py#L123-L128)
-- [test_mcp_auth_extended.py:280-388](file://server/tests/test_mcp_auth_extended.py#L280-L388)
+- [auth.py:16-143](server/app/mcp/auth.py#L16-L143)
+- [dependencies.py:123-128](server/app/api/dependencies.py#L123-L128)
+- [test_mcp_auth_extended.py:280-388](server/tests/test_mcp_auth_extended.py#L280-L388)
 
 ### User Management and Profile Administration
 - Create, read, update, and soft-delete users within a workspace.
@@ -362,14 +362,14 @@ Soft --> Done
 ```
 
 **Diagram sources**
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
-- [auth.py:42-118](file://server/app/services/auth.py#L42-L118)
-- [auth.py:345-427](file://server/app/services/auth.py#L345-L427)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
+- [auth.py:42-118](server/app/services/auth.py#L42-L118)
+- [auth.py:345-427](server/app/services/auth.py#L345-L427)
 
 **Section sources**
-- [users.py:23-99](file://server/app/api/endpoints/users.py#L23-L99)
-- [auth.py:42-118](file://server/app/services/auth.py#L42-L118)
-- [auth.py:345-427](file://server/app/services/auth.py#L345-L427)
+- [users.py:23-99](server/app/api/endpoints/users.py#L23-L99)
+- [auth.py:42-118](server/app/services/auth.py#L42-L118)
+- [auth.py:345-427](server/app/services/auth.py#L345-L427)
 
 ### Workspace Scoping and Permission Management
 - Workspaces define isolated environments; users and sessions are bound to a workspace.
@@ -388,14 +388,14 @@ Allowed --> |Yes| Handler["Execute handler"]
 ```
 
 **Diagram sources**
-- [dependencies.py:139-150](file://server/app/api/dependencies.py#L139-L150)
-- [workspaces.py:15-57](file://server/app/api/endpoints/workspaces.py#L15-L57)
-- [test_mcp_policy.py:119-165](file://server/tests/test_mcp_policy.py#L119-L165)
+- [dependencies.py:139-150](server/app/api/dependencies.py#L139-L150)
+- [workspaces.py:15-57](server/app/api/endpoints/workspaces.py#L15-L57)
+- [test_mcp_policy.py:119-165](server/tests/test_mcp_policy.py#L119-L165)
 
 **Section sources**
-- [dependencies.py:139-150](file://server/app/api/dependencies.py#L139-L150)
-- [workspaces.py:15-57](file://server/app/api/endpoints/workspaces.py#L15-L57)
-- [test_mcp_policy.py:119-165](file://server/tests/test_mcp_policy.py#L119-L165)
+- [dependencies.py:139-150](server/app/api/dependencies.py#L139-L150)
+- [workspaces.py:15-57](server/app/api/endpoints/workspaces.py#L15-L57)
+- [test_mcp_policy.py:119-165](server/tests/test_mcp_policy.py#L119-L165)
 
 ### Device Communication Security and Audit Logging
 - Device telemetry ingestion supports automatic registration and merging of BLE and camera identities; MQTT security mitigations include TLS and credentials.
@@ -424,13 +424,13 @@ CreateUser --> Activity
 ```
 
 **Diagram sources**
-- [core.py:46-84](file://server/app/models/core.py#L46-L84)
-- [auth.py:2475-2495](file://server/app/mcp/server.py#L2475-L2495)
+- [core.py:46-84](server/app/models/core.py#L46-L84)
+- [auth.py:2475-2495](server/app/mcp/server.py#L2475-L2495)
 
 **Section sources**
-- [core.py:46-84](file://server/app/models/core.py#L46-L84)
-- [0005-camera-photo-only-internet-independent.md:58-61](file://docs/adr/0005-camera-photo-only-internet-independent.md#L58-L61)
-- [auth.py:2475-2495](file://server/app/mcp/server.py#L2475-L2495)
+- [core.py:46-84](server/app/models/core.py#L46-L84)
+- [0005-camera-photo-only-internet-independent.md:58-61](docs/adr/0005-camera-photo-only-internet-independent.md#L58-L61)
+- [auth.py:2475-2495](server/app/mcp/server.py#L2475-L2495)
 
 ## Dependency Analysis
 - Configuration drives cryptographic algorithms, token TTL, and MCP origin policies.
@@ -451,24 +451,24 @@ MCP_AUTH --> AUTH_SVC
 ```
 
 **Diagram sources**
-- [config.py:47-77](file://server/app/config.py#L47-L77)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
-- [auth.py:57-95](file://server/app/api/endpoints/auth.py#L57-L95)
-- [auth.py:575-626](file://server/app/services/auth.py#L575-L626)
-- [users.py:59-92](file://server/app/models/users.py#L59-L92)
-- [core.py:18-124](file://server/app/models/core.py#L18-L124)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [auth.py:16-143](file://server/app/mcp/auth.py#L16-L143)
+- [config.py:47-77](server/app/config.py#L47-L77)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
+- [auth.py:57-95](server/app/api/endpoints/auth.py#L57-L95)
+- [auth.py:575-626](server/app/services/auth.py#L575-L626)
+- [users.py:59-92](server/app/models/users.py#L59-L92)
+- [core.py:18-124](server/app/models/core.py#L18-L124)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [auth.py:16-143](server/app/mcp/auth.py#L16-L143)
 
 **Section sources**
-- [config.py:47-77](file://server/app/config.py#L47-L77)
-- [security.py:21-41](file://server/app/core/security.py#L21-L41)
-- [auth.py:57-95](file://server/app/api/endpoints/auth.py#L57-L95)
-- [auth.py:575-626](file://server/app/services/auth.py#L575-L626)
-- [users.py:59-92](file://server/app/models/users.py#L59-L92)
-- [core.py:18-124](file://server/app/models/core.py#L18-L124)
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [auth.py:16-143](file://server/app/mcp/auth.py#L16-L143)
+- [config.py:47-77](server/app/config.py#L47-L77)
+- [security.py:21-41](server/app/core/security.py#L21-L41)
+- [auth.py:57-95](server/app/api/endpoints/auth.py#L57-L95)
+- [auth.py:575-626](server/app/services/auth.py#L575-L626)
+- [users.py:59-92](server/app/models/users.py#L59-L92)
+- [core.py:18-124](server/app/models/core.py#L18-L124)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [auth.py:16-143](server/app/mcp/auth.py#L16-L143)
 
 ## Performance Considerations
 - JWT decoding and bcrypt verification are lightweight; session validation adds a single database lookup per request.
@@ -488,10 +488,10 @@ Common issues and resolutions:
 - Workspace mismatch: Ensure the user and session share the same workspace.
 
 **Section sources**
-- [test_api.py:219-241](file://server/tests/test_api.py#L219-L241)
-- [test_mcp_auth_extended.py:280-388](file://server/tests/test_mcp_auth_extended.py#L280-L388)
-- [dependencies.py:98-120](file://server/app/api/dependencies.py#L98-L120)
-- [auth.py:37-66](file://server/app/mcp/auth.py#L37-L66)
+- [test_api.py:219-241](server/tests/test_api.py#L219-L241)
+- [test_mcp_auth_extended.py:280-388](server/tests/test_mcp_auth_extended.py#L280-L388)
+- [dependencies.py:98-120](server/app/api/dependencies.py#L98-L120)
+- [auth.py:37-66](server/app/mcp/auth.py#L37-L66)
 
 ## Conclusion
 WheelSense implements a robust, workspace-scoped RBAC system with JWT-based authentication, bcrypt password hashing, and server-tracked sessions supporting fine-grained scope control. The MCP middleware extends these protections to external clients with origin validation and token-scoped authorization. Comprehensive tests validate policy coverage and session/session-token lifecycles. Operational safeguards include secure secret key enforcement, audit trails for device operations, and strict role-gated administrative actions.
@@ -516,7 +516,7 @@ WheelSense implements a robust, workspace-scoped RBAC system with JWT-based auth
   - List active sessions and revoke any session by ID; current session can be terminated via logout.
 
 **Section sources**
-- [auth.py:2475-2495](file://server/app/mcp/server.py#L2475-L2495)
-- [dependencies.py:370-401](file://server/app/api/dependencies.py#L370-L401)
-- [auth.py:160-204](file://server/app/api/endpoints/auth.py#L160-L204)
-- [workspaces.py:15-57](file://server/app/api/endpoints/workspaces.py#L15-L57)
+- [auth.py:2475-2495](server/app/mcp/server.py#L2475-L2495)
+- [dependencies.py:370-401](server/app/api/dependencies.py#L370-L401)
+- [auth.py:160-204](server/app/api/endpoints/auth.py#L160-L204)
+- [workspaces.py:15-57](server/app/api/endpoints/workspaces.py#L15-L57)

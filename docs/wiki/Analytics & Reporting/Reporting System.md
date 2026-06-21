@@ -2,18 +2,18 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ReportPreviewTable.tsx](file://frontend/components/reports/ReportPreviewTable.tsx)
-- [report-utils.ts](file://frontend/components/reports/report-utils.ts)
-- [OperationsConsole.tsx](file://frontend/components/workflow/OperationsConsole.tsx)
-- [TaskDetailModal.tsx](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx)
-- [CreateTaskDialog.tsx](file://frontend/components/head-nurse/tasks/CreateTaskDialog.tsx)
-- [analytics.py](file://server/app/services/analytics.py)
-- [server.py](file://server/app/mcp/server.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [permissions.ts](file://frontend/lib/permissions.ts)
-- [z1a2_add_subtask_report_fields.py](file://server/alembic/versions/z1a2_add_subtask_report_fields.py)
-- [task_management.py](file://server/app/models/task_management.py)
-- [task_management.py (endpoint)](file://server/app/api/endpoints/task_management.py)
+- [ReportPreviewTable.tsx](frontend/components/reports/ReportPreviewTable.tsx)
+- [report-utils.ts](frontend/components/reports/report-utils.ts)
+- [OperationsConsole.tsx](frontend/components/workflow/OperationsConsole.tsx)
+- [TaskDetailModal.tsx](frontend/components/head-nurse/tasks/TaskDetailModal.tsx)
+- [CreateTaskDialog.tsx](frontend/components/head-nurse/tasks/CreateTaskDialog.tsx)
+- [analytics.py](server/app/services/analytics.py)
+- [server.py](server/app/mcp/server.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [permissions.ts](frontend/lib/permissions.ts)
+- [z1a2_add_subtask_report_fields.py](server/alembic/versions/z1a2_add_subtask_report_fields.py)
+- [task_management.py](server/app/models/task_management.py)
+- [task_management.py (endpoint)](server/app/api/endpoints/task_management.py)
 </cite>
 
 ## Table of Contents
@@ -67,28 +67,28 @@ CREATEDIALOG --> CONSOLE
 ```
 
 **Diagram sources**
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [TaskDetailModal.tsx:813-1021](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
-- [CreateTaskDialog.tsx:366-390](file://frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [task_management.py (endpoint):594-608](file://server/app/api/endpoints/task_management.py#L594-L608)
-- [task_management.py:93-128](file://server/app/models/task_management.py#L93-L128)
-- [z1a2_add_subtask_report_fields.py:22-41](file://server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [TaskDetailModal.tsx:813-1021](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
+- [CreateTaskDialog.tsx:366-390](frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [task_management.py (endpoint):594-608](server/app/api/endpoints/task_management.py#L594-L608)
+- [task_management.py:93-128](server/app/models/task_management.py#L93-L128)
+- [z1a2_add_subtask_report_fields.py:22-41](server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
 
 **Section sources**
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [TaskDetailModal.tsx:813-1021](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
-- [CreateTaskDialog.tsx:366-390](file://frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [task_management.py (endpoint):594-608](file://server/app/api/endpoints/task_management.py#L594-L608)
-- [task_management.py:93-128](file://server/app/models/task_management.py#L93-L128)
-- [z1a2_add_subtask_report_fields.py:22-41](file://server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [TaskDetailModal.tsx:813-1021](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
+- [CreateTaskDialog.tsx:366-390](frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [task_management.py (endpoint):594-608](server/app/api/endpoints/task_management.py#L594-L608)
+- [task_management.py:93-128](server/app/models/task_management.py#L93-L128)
+- [z1a2_add_subtask_report_fields.py:22-41](server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
 
 ## Core Components
 - ReportPreviewTable: Renders a responsive, formatted table for report previews with optional captions and empty-state messaging.
@@ -100,13 +100,13 @@ CREATEDIALOG --> CONSOLE
 - Database Schema: Adds report_text and report_images to routine task logs for custom report storage.
 
 **Section sources**
-- [ReportPreviewTable.tsx:14-66](file://frontend/components/reports/ReportPreviewTable.tsx#L14-L66)
-- [report-utils.ts:11-52](file://frontend/components/reports/report-utils.ts#L11-L52)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [task_management.py (endpoint):594-608](file://server/app/api/endpoints/task_management.py#L594-L608)
-- [z1a2_add_subtask_report_fields.py:22-41](file://server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
+- [ReportPreviewTable.tsx:14-66](frontend/components/reports/ReportPreviewTable.tsx#L14-L66)
+- [report-utils.ts:11-52](frontend/components/reports/report-utils.ts#L11-L52)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [task_management.py (endpoint):594-608](server/app/api/endpoints/task_management.py#L594-L608)
+- [z1a2_add_subtask_report_fields.py:22-41](server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
 
 ## Architecture Overview
 The reporting pipeline integrates frontend UI, analytics computation, and backend export endpoints. Users configure report parameters in the Operations Console, which requests analytics data from backend services or MCP tools. The frontend renders a preview table and supports CSV export and printing. For task-based reporting, routine logs can store custom report content persisted in the database.
@@ -130,10 +130,10 @@ F-->>U : "downloadTextFile(...) triggers CSV download"
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [report-utils.ts:21-44](file://frontend/components/reports/report-utils.ts#L21-L44)
-- [analytics.py:44-67](file://server/app/services/analytics.py#L44-L67)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [report-utils.ts:21-44](frontend/components/reports/report-utils.ts#L21-L44)
+- [analytics.py:44-67](server/app/services/analytics.py#L44-L67)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 ## Detailed Component Analysis
 
@@ -157,10 +157,10 @@ EmptyCell --> End(["Done"])
 ```
 
 **Diagram sources**
-- [ReportPreviewTable.tsx:42-59](file://frontend/components/reports/ReportPreviewTable.tsx#L42-L59)
+- [ReportPreviewTable.tsx:42-59](frontend/components/reports/ReportPreviewTable.tsx#L42-L59)
 
 **Section sources**
-- [ReportPreviewTable.tsx:14-66](file://frontend/components/reports/ReportPreviewTable.tsx#L14-L66)
+- [ReportPreviewTable.tsx:14-66](frontend/components/reports/ReportPreviewTable.tsx#L14-L66)
 
 ### Report Utilities
 - Data Types: Defines ReportCell, ReportRow, and ReportColumn for consistent typing across the system.
@@ -180,10 +180,10 @@ E --> F["Return CSV string"]
 ```
 
 **Diagram sources**
-- [report-utils.ts:21-31](file://frontend/components/reports/report-utils.ts#L21-L31)
+- [report-utils.ts:21-31](frontend/components/reports/report-utils.ts#L21-L31)
 
 **Section sources**
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
 
 ### Operations Console Reports Tab
 - Controls:
@@ -214,12 +214,12 @@ U-->>U : "downloadTextFile(name, csv, 'text/csv')"
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
-- [ReportPreviewTable.tsx:22-66](file://frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
+- [ReportPreviewTable.tsx:22-66](frontend/components/reports/ReportPreviewTable.tsx#L22-L66)
 
 **Section sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
 
 ### Task-Based Reporting and Custom Report Fields
 - Custom Report Creation:
@@ -242,16 +242,16 @@ Export --> Done(["Delivered to stakeholders"])
 ```
 
 **Diagram sources**
-- [CreateTaskDialog.tsx:366-390](file://frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
-- [TaskDetailModal.tsx:813-1021](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
-- [z1a2_add_subtask_report_fields.py:22-41](file://server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
-- [task_management.py (endpoint):594-608](file://server/app/api/endpoints/task_management.py#L594-L608)
+- [CreateTaskDialog.tsx:366-390](frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
+- [TaskDetailModal.tsx:813-1021](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
+- [z1a2_add_subtask_report_fields.py:22-41](server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
+- [task_management.py (endpoint):594-608](server/app/api/endpoints/task_management.py#L594-L608)
 
 **Section sources**
-- [CreateTaskDialog.tsx:366-390](file://frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
-- [TaskDetailModal.tsx:813-1021](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
-- [z1a2_add_subtask_report_fields.py:22-41](file://server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
-- [task_management.py (endpoint):594-608](file://server/app/api/endpoints/task_management.py#L594-L608)
+- [CreateTaskDialog.tsx:366-390](frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
+- [TaskDetailModal.tsx:813-1021](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
+- [z1a2_add_subtask_report_fields.py:22-41](server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
+- [task_management.py (endpoint):594-608](server/app/api/endpoints/task_management.py#L594-L608)
 
 ### Analytics Integration and Real-Time Data
 - AnalyticsService computes:
@@ -275,12 +275,12 @@ AnalyticsService <.. MCP_Tool : "data source"
 ```
 
 **Diagram sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 **Section sources**
-- [analytics.py:16-91](file://server/app/services/analytics.py#L16-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
+- [analytics.py:16-91](server/app/services/analytics.py#L16-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
 
 ## Dependency Analysis
 - Frontend dependencies:
@@ -307,24 +307,24 @@ BACK_PERMS["dependencies.py"] --> MCP
 ```
 
 **Diagram sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [task_management.py (endpoint):594-608](file://server/app/api/endpoints/task_management.py#L594-L608)
-- [permissions.ts:26-93](file://frontend/lib/permissions.ts#L26-L93)
-- [dependencies.py:200-311](file://server/app/api/dependencies.py#L200-L311)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [task_management.py (endpoint):594-608](server/app/api/endpoints/task_management.py#L594-L608)
+- [permissions.ts:26-93](frontend/lib/permissions.ts#L26-L93)
+- [dependencies.py:200-311](server/app/api/dependencies.py#L200-L311)
 
 **Section sources**
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
-- [ReportPreviewTable.tsx:1-67](file://frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
-- [report-utils.ts:1-53](file://frontend/components/reports/report-utils.ts#L1-L53)
-- [analytics.py:1-91](file://server/app/services/analytics.py#L1-L91)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [task_management.py (endpoint):594-608](file://server/app/api/endpoints/task_management.py#L594-L608)
-- [permissions.ts:26-93](file://frontend/lib/permissions.ts#L26-L93)
-- [dependencies.py:200-311](file://server/app/api/dependencies.py#L200-L311)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [ReportPreviewTable.tsx:1-67](frontend/components/reports/ReportPreviewTable.tsx#L1-L67)
+- [report-utils.ts:1-53](frontend/components/reports/report-utils.ts#L1-L53)
+- [analytics.py:1-91](server/app/services/analytics.py#L1-L91)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [task_management.py (endpoint):594-608](server/app/api/endpoints/task_management.py#L594-L608)
+- [permissions.ts:26-93](frontend/lib/permissions.ts#L26-L93)
+- [dependencies.py:200-311](server/app/api/dependencies.py#L200-L311)
 
 ## Performance Considerations
 - Large Dataset Handling:
@@ -360,10 +360,10 @@ BACK_PERMS["dependencies.py"] --> MCP
   - Verify export endpoints are accessible to the requesting role.
 
 **Section sources**
-- [report-utils.ts:21-52](file://frontend/components/reports/report-utils.ts#L21-L52)
-- [permissions.ts:26-93](file://frontend/lib/permissions.ts#L26-L93)
-- [dependencies.py:200-311](file://server/app/api/dependencies.py#L200-L311)
-- [z1a2_add_subtask_report_fields.py:22-41](file://server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
+- [report-utils.ts:21-52](frontend/components/reports/report-utils.ts#L21-L52)
+- [permissions.ts:26-93](frontend/lib/permissions.ts#L26-L93)
+- [dependencies.py:200-311](server/app/api/dependencies.py#L200-L311)
+- [z1a2_add_subtask_report_fields.py:22-41](server/alembic/versions/z1a2_add_subtask_report_fields.py#L22-L41)
 
 ## Conclusion
 The WheelSense reporting system combines a flexible frontend preview and export pipeline with robust backend analytics and persistence. Users can configure templates, customize parameters, and export reports in CSV format. Security is enforced through role-based capabilities and MCP scopes. Task-based reporting enables custom fields and persistent storage for logs. Integrations with analytics services and MCP tools provide dynamic, real-time insights suitable for operational dashboards and automated delivery.
@@ -390,7 +390,7 @@ The WheelSense reporting system combines a flexible frontend preview and export 
   - Render in ReportPreviewTable and export as needed.
 
 **Section sources**
-- [CreateTaskDialog.tsx:366-390](file://frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
-- [TaskDetailModal.tsx:813-1021](file://frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
-- [server.py:1159-1197](file://server/app/mcp/server.py#L1159-L1197)
-- [OperationsConsole.tsx:2450-2556](file://frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)
+- [CreateTaskDialog.tsx:366-390](frontend/components/head-nurse/tasks/CreateTaskDialog.tsx#L366-L390)
+- [TaskDetailModal.tsx:813-1021](frontend/components/head-nurse/tasks/TaskDetailModal.tsx#L813-L1021)
+- [server.py:1159-1197](server/app/mcp/server.py#L1159-L1197)
+- [OperationsConsole.tsx:2450-2556](frontend/components/workflow/OperationsConsole.tsx#L2450-L2556)

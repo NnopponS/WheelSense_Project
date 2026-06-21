@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [chat_actions.py](file://server/app/models/chat_actions.py)
-- [chat_actions.py](file://server/app/schemas/chat_actions.py)
-- [chat_actions.py](file://server/app/api/endpoints/chat_actions.py)
-- [ai_chat.py](file://server/app/services/ai_chat.py)
-- [service.py](file://server/app/agent_runtime/service.py)
-- [agent_runtime.py](file://server/app/schemas/agent_runtime.py)
-- [agent_runtime_client.py](file://server/app/services/agent_runtime_client.py)
-- [context.py](file://server/app/mcp/context.py)
-- [server.py](file://server/app/mcp/server.py)
-- [ExecutionStepList.tsx](file://frontend/components/ai/ExecutionStepList.tsx)
-- [AIChatPopup.tsx](file://frontend/components/ai/AIChatPopup.tsx)
+- [chat_actions.py](server/app/models/chat_actions.py)
+- [chat_actions.py](server/app/schemas/chat_actions.py)
+- [chat_actions.py](server/app/api/endpoints/chat_actions.py)
+- [ai_chat.py](server/app/services/ai_chat.py)
+- [service.py](server/app/agent_runtime/service.py)
+- [agent_runtime.py](server/app/schemas/agent_runtime.py)
+- [agent_runtime_client.py](server/app/services/agent_runtime_client.py)
+- [context.py](server/app/mcp/context.py)
+- [server.py](server/app/mcp/server.py)
+- [ExecutionStepList.tsx](frontend/components/ai/ExecutionStepList.tsx)
+- [AIChatPopup.tsx](frontend/components/ai/AIChatPopup.tsx)
 </cite>
 
 ## Table of Contents
@@ -61,15 +61,15 @@ MCP_SRV --> DB
 ```
 
 **Diagram sources**
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1359](file://server/app/services/ai_chat.py#L1234-L1359)
-- [agent_runtime_client.py:48-64](file://server/app/services/agent_runtime_client.py#L48-L64)
-- [service.py:533-560](file://server/app/agent_runtime/service.py#L533-L560)
-- [server.py:1-800](file://server/app/mcp/server.py#L1-L800)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1359](server/app/services/ai_chat.py#L1234-L1359)
+- [agent_runtime_client.py:48-64](server/app/services/agent_runtime_client.py#L48-L64)
+- [service.py:533-560](server/app/agent_runtime/service.py#L533-L560)
+- [server.py:1-800](server/app/mcp/server.py#L1-L800)
 
 **Section sources**
-- [chat_actions.py:93-106](file://server/app/api/endpoints/chat_actions.py#L93-L106)
-- [ai_chat.py:1126-1137](file://server/app/services/ai_chat.py#L1126-L1137)
+- [chat_actions.py:93-106](server/app/api/endpoints/chat_actions.py#L93-L106)
+- [ai_chat.py:1126-1137](server/app/services/ai_chat.py#L1126-L1137)
 
 ## Core Components
 - ChatAction persistence and schema define the lifecycle of a proposed action, including status, tool metadata, and execution results.
@@ -79,11 +79,11 @@ MCP_SRV --> DB
 - Frontend ExecutionStepList renders real-time progress and completion status.
 
 **Section sources**
-- [chat_actions.py:11-62](file://server/app/models/chat_actions.py#L11-L62)
-- [chat_actions.py:17-102](file://server/app/schemas/chat_actions.py#L17-L102)
-- [agent_runtime.py:10-57](file://server/app/schemas/agent_runtime.py#L10-L57)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [chat_actions.py:11-62](server/app/models/chat_actions.py#L11-L62)
+- [chat_actions.py:17-102](server/app/schemas/chat_actions.py#L17-L102)
+- [agent_runtime.py:10-57](server/app/schemas/agent_runtime.py#L10-L57)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 ## Architecture Overview
 The execution stage follows a strict flow:
@@ -119,11 +119,11 @@ API-->>FE : ChatActionExecuteOut
 ```
 
 **Diagram sources**
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1359](file://server/app/services/ai_chat.py#L1234-L1359)
-- [agent_runtime_client.py:48-64](file://server/app/services/agent_runtime_client.py#L48-L64)
-- [service.py:533-560](file://server/app/agent_runtime/service.py#L533-L560)
-- [server.py:1-800](file://server/app/mcp/server.py#L1-L800)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1359](server/app/services/ai_chat.py#L1234-L1359)
+- [agent_runtime_client.py:48-64](server/app/services/agent_runtime_client.py#L48-L64)
+- [service.py:533-560](server/app/agent_runtime/service.py#L533-L560)
+- [server.py:1-800](server/app/mcp/server.py#L1-L800)
 
 ## Detailed Component Analysis
 
@@ -159,12 +159,12 @@ Noop --> End
 ```
 
 **Diagram sources**
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1359](file://server/app/services/ai_chat.py#L1234-L1359)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1359](server/app/services/ai_chat.py#L1234-L1359)
 
 **Section sources**
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1359](file://server/app/services/ai_chat.py#L1234-L1359)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1359](server/app/services/ai_chat.py#L1234-L1359)
 
 ### Agent Runtime Execution Engine
 - agent_runtime_client.execute_plan posts the ExecutionPlan to the internal agent endpoint and returns AgentRuntimeExecuteResponse.
@@ -191,17 +191,17 @@ AS-->>AR : AgentRuntimeExecuteResponse(message, execution_result)
 ```
 
 **Diagram sources**
-- [agent_runtime_client.py:48-64](file://server/app/services/agent_runtime_client.py#L48-L64)
-- [service.py:533-560](file://server/app/agent_runtime/service.py#L533-L560)
-- [service.py:122-146](file://server/app/agent_runtime/service.py#L122-L146)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
-- [server.py:1-800](file://server/app/mcp/server.py#L1-L800)
+- [agent_runtime_client.py:48-64](server/app/services/agent_runtime_client.py#L48-L64)
+- [service.py:533-560](server/app/agent_runtime/service.py#L533-L560)
+- [service.py:122-146](server/app/agent_runtime/service.py#L122-L146)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
+- [server.py:1-800](server/app/mcp/server.py#L1-L800)
 
 **Section sources**
-- [agent_runtime_client.py:48-64](file://server/app/services/agent_runtime_client.py#L48-L64)
-- [service.py:533-560](file://server/app/agent_runtime/service.py#L533-L560)
-- [service.py:122-146](file://server/app/agent_runtime/service.py#L122-L146)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
+- [agent_runtime_client.py:48-64](server/app/services/agent_runtime_client.py#L48-L64)
+- [service.py:533-560](server/app/agent_runtime/service.py#L533-L560)
+- [service.py:122-146](server/app/agent_runtime/service.py#L122-L146)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
 
 ### MCP Tool Invocation and Actor Context Validation
 - execute_workspace_tool enforces:
@@ -220,13 +220,13 @@ D --> F["Return tool result"]
 ```
 
 **Diagram sources**
-- [server.py:113-129](file://server/app/mcp/server.py#L113-L129)
-- [server.py:1-800](file://server/app/mcp/server.py#L1-L800)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
+- [server.py:113-129](server/app/mcp/server.py#L113-L129)
+- [server.py:1-800](server/app/mcp/server.py#L1-L800)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
 
 **Section sources**
-- [server.py:113-129](file://server/app/mcp/server.py#L113-L129)
-- [context.py:8-38](file://server/app/mcp/context.py#L8-L38)
+- [server.py:113-129](server/app/mcp/server.py#L113-L129)
+- [context.py:8-38](server/app/mcp/context.py#L8-L38)
 
 ### Execution Step List Interface and Progress Monitoring
 - Frontend maintains execution state: executing flag, currentStepIndex, completedSteps, failedSteps, stepResults, executionFinished.
@@ -251,12 +251,12 @@ Loop --> |No| Finish["executing=false, executionFinished=true"]
 ```
 
 **Diagram sources**
-- [AIChatPopup.tsx:122-129](file://frontend/components/ai/AIChatPopup.tsx#L122-L129)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [AIChatPopup.tsx:122-129](frontend/components/ai/AIChatPopup.tsx#L122-L129)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 **Section sources**
-- [AIChatPopup.tsx:622-647](file://frontend/components/ai/AIChatPopup.tsx#L622-L647)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [AIChatPopup.tsx:622-647](frontend/components/ai/AIChatPopup.tsx#L622-L647)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 ### Tool Result Formatting, Payload Extraction, and Response Generation
 - ai_chat.execute_chat_action persists execution_result as-is for mcp_tool and mcp_plan actions.
@@ -264,8 +264,8 @@ Loop --> |No| Finish["executing=false, executionFinished=true"]
 - _build_execution_message chooses a message based on action.type and execution_result.message; otherwise defaults to a success message.
 
 **Section sources**
-- [ai_chat.py:1234-1359](file://server/app/services/ai_chat.py#L1234-L1359)
-- [chat_actions.py:84-91](file://server/app/api/endpoints/chat_actions.py#L84-L91)
+- [ai_chat.py:1234-1359](server/app/services/ai_chat.py#L1234-L1359)
+- [chat_actions.py:84-91](server/app/api/endpoints/chat_actions.py#L84-L91)
 
 ### Practical Execution Workflows
 - Single tool execution (mcp_tool):
@@ -278,8 +278,8 @@ Loop --> |No| Finish["executing=false, executionFinished=true"]
   - Execute validates each step’s tool allowlist and executes the plan; results are persisted.
 
 **Section sources**
-- [ai_chat.py:1254-1339](file://server/app/services/ai_chat.py#L1254-L1339)
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1254-1339](server/app/services/ai_chat.py#L1254-L1339)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
 
 ### Error Recovery Mechanisms and Audit Trail
 - On execution failure:
@@ -292,11 +292,11 @@ Loop --> |No| Finish["executing=false, executionFinished=true"]
   - "execute_failed" for failures.
 
 **Section sources**
-- [ai_chat.py:1284-1304](file://server/app/services/ai_chat.py#L1284-L1304)
-- [ai_chat.py:1291-1300](file://server/app/services/ai_chat.py#L1291-L1300)
-- [ai_chat.py:1317-1337](file://server/app/services/ai_chat.py#L1317-L1337)
-- [ai_chat.py:1324-1333](file://server/app/services/ai_chat.py#L1324-L1333)
-- [ai_chat.py:1347-1356](file://server/app/services/ai_chat.py#L1347-L1356)
+- [ai_chat.py:1284-1304](server/app/services/ai_chat.py#L1284-L1304)
+- [ai_chat.py:1291-1300](server/app/services/ai_chat.py#L1291-L1300)
+- [ai_chat.py:1317-1337](server/app/services/ai_chat.py#L1317-L1337)
+- [ai_chat.py:1324-1333](server/app/services/ai_chat.py#L1324-L1333)
+- [ai_chat.py:1347-1356](server/app/services/ai_chat.py#L1347-L1356)
 
 ### Final Response Generation and System State Updates
 - The API endpoint returns ChatActionExecuteOut with action, execution_result, message, and reply.
@@ -304,8 +304,8 @@ Loop --> |No| Finish["executing=false, executionFinished=true"]
 - The ChatAction is updated with executed_by_user_id, executed_at, cleared error_message, and persisted execution_result.
 
 **Section sources**
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1341-1359](file://server/app/services/ai_chat.py#L1341-L1359)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1341-1359](server/app/services/ai_chat.py#L1341-L1359)
 
 ## Dependency Analysis
 - Chat Actions API depends on ai_chat service for validation, execution, and persistence.
@@ -328,20 +328,20 @@ FE["ExecutionStepList"] --> API
 ```
 
 **Diagram sources**
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1359](file://server/app/services/ai_chat.py#L1234-L1359)
-- [agent_runtime_client.py:48-64](file://server/app/services/agent_runtime_client.py#L48-L64)
-- [service.py:533-560](file://server/app/agent_runtime/service.py#L533-L560)
-- [server.py:1-800](file://server/app/mcp/server.py#L1-L800)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1359](server/app/services/ai_chat.py#L1234-L1359)
+- [agent_runtime_client.py:48-64](server/app/services/agent_runtime_client.py#L48-L64)
+- [service.py:533-560](server/app/agent_runtime/service.py#L533-L560)
+- [server.py:1-800](server/app/mcp/server.py#L1-L800)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 **Section sources**
-- [chat_actions.py:261-299](file://server/app/api/endpoints/chat_actions.py#L261-L299)
-- [ai_chat.py:1234-1359](file://server/app/services/ai_chat.py#L1234-L1359)
-- [agent_runtime_client.py:48-64](file://server/app/services/agent_runtime_client.py#L48-L64)
-- [service.py:533-560](file://server/app/agent_runtime/service.py#L533-L560)
-- [server.py:1-800](file://server/app/mcp/server.py#L1-L800)
-- [ExecutionStepList.tsx:218-294](file://frontend/components/ai/ExecutionStepList.tsx#L218-L294)
+- [chat_actions.py:261-299](server/app/api/endpoints/chat_actions.py#L261-L299)
+- [ai_chat.py:1234-1359](server/app/services/ai_chat.py#L1234-L1359)
+- [agent_runtime_client.py:48-64](server/app/services/agent_runtime_client.py#L48-L64)
+- [service.py:533-560](server/app/agent_runtime/service.py#L533-L560)
+- [server.py:1-800](server/app/mcp/server.py#L1-L800)
+- [ExecutionStepList.tsx:218-294](frontend/components/ai/ExecutionStepList.tsx#L218-L294)
 
 ## Performance Considerations
 - Plan execution loops sequentially; long-running tools will proportionally increase total execution time.
@@ -364,10 +364,10 @@ Common issues and resolutions:
   - Ensure actor_access_token is present in request headers or derived from auth dependency.
 
 **Section sources**
-- [ai_chat.py:1247-1249](file://server/app/services/ai_chat.py#L1247-L1249)
-- [ai_chat.py:1307-1308](file://server/app/services/ai_chat.py#L1307-L1308)
-- [ai_chat.py:1284-1304](file://server/app/services/ai_chat.py#L1284-L1304)
-- [ai_chat.py:1317-1337](file://server/app/services/ai_chat.py#L1317-L1337)
+- [ai_chat.py:1247-1249](server/app/services/ai_chat.py#L1247-L1249)
+- [ai_chat.py:1307-1308](server/app/services/ai_chat.py#L1307-L1308)
+- [ai_chat.py:1284-1304](server/app/services/ai_chat.py#L1284-L1304)
+- [ai_chat.py:1317-1337](server/app/services/ai_chat.py#L1317-L1337)
 
 ## Conclusion
 The execution stage ensures secure, workspace-scoped MCP tool invocation with robust validation, clear progress tracking, and comprehensive audit logging. The backend orchestrates plan execution and result persistence, while the frontend provides real-time feedback on step-by-step progress. Error handling and audit trails enable reliable recovery and traceability for all execution outcomes.

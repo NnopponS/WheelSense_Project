@@ -2,10 +2,10 @@
 
 <cite>
 **Referenced Files in This Document**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
 </cite>
 
 ## Table of Contents
@@ -41,16 +41,16 @@ Page --> RQI
 ```
 
 **Diagram sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
 
 **Section sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
 
 ## Core Components
 - PatientCareRoadmap: Displays care schedules and tasks grouped into Past, Now, and Next columns, with room locations and status badges.
@@ -60,10 +60,10 @@ Page --> RQI
 - Quick Links Grid: Four quick-access tiles linking to schedule, room controls, messaging, and services.
 
 **Section sources**
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
 
 ## Architecture Overview
 The dashboard follows a client-side React pattern with TanStack Query for data fetching and caching. It organizes UI into cohesive sections and uses a tabbed layout for navigation. Emergency actions are handled via mutations with pending-state safeguards.
@@ -84,9 +84,9 @@ P->>P : Submit alert via API
 ```
 
 **Diagram sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
 
 ## Detailed Component Analysis
 
@@ -119,10 +119,10 @@ Render --> End(["Done"])
 ```
 
 **Diagram sources**
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
 
 **Section sources**
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
 
 ### PatientMySensors
 Purpose:
@@ -150,10 +150,10 @@ MS-->>U : Show device cards with metrics and battery
 ```
 
 **Diagram sources**
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
 
 **Section sources**
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
 
 ### Room Location Display
 Purpose:
@@ -167,8 +167,8 @@ Integration:
 - Used by the dashboard header to show the current room location prominently.
 
 **Section sources**
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
 
 ### Emergency Assistance Buttons
 Purpose:
@@ -197,10 +197,10 @@ P-->>U : Enable buttons again
 ```
 
 **Diagram sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
 
 **Section sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
 
 ### Quick Links Grid
 Purpose:
@@ -211,7 +211,7 @@ Key behaviors:
 - Each tile links to its destination page.
 
 **Section sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
 
 ## Dependency Analysis
 The dashboard composes multiple modules and components with clear boundaries:
@@ -231,16 +231,16 @@ MS --> API
 ```
 
 **Diagram sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
 
 **Section sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
 
 ## Performance Considerations
 - Efficient data fetching: Queries are scoped to patient context and use caching keys to avoid redundant requests.
@@ -266,10 +266,10 @@ Common issues and resolutions:
   - Ensure the grid is rendered under the overview tab and responsive breakpoints are met.
 
 **Section sources**
-- [frontend/app/patient/page.tsx](file://frontend/app/patient/page.tsx)
-- [frontend/components/patient/PatientCareRoadmap.tsx](file://frontend/components/patient/PatientCareRoadmap.tsx)
-- [frontend/components/patient/PatientMySensors.tsx](file://frontend/components/patient/PatientMySensors.tsx)
-- [frontend/lib/patientRoomQuickInfo.ts](file://frontend/lib/patientRoomQuickInfo.ts)
+- [frontend/app/patient/page.tsx](frontend/app/patient/page.tsx)
+- [frontend/components/patient/PatientCareRoadmap.tsx](frontend/components/patient/PatientCareRoadmap.tsx)
+- [frontend/components/patient/PatientMySensors.tsx](frontend/components/patient/PatientMySensors.tsx)
+- [frontend/lib/patientRoomQuickInfo.ts](frontend/lib/patientRoomQuickInfo.ts)
 
 ## Conclusion
 The Patient Overview Dashboard integrates care roadmap, device sensor monitoring, room location, emergency assistance, and quick access links into a cohesive, mobile-first interface. Its modular design, robust data fetching, and safety mechanisms ensure reliability and usability for patients.

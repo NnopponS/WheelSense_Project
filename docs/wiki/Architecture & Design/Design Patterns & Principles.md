@@ -2,22 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [main.py](file://server/app/main.py)
-- [config.py](file://server/app/config.py)
-- [router.py](file://server/app/api/router.py)
-- [dependencies.py](file://server/app/api/dependencies.py)
-- [session.py](file://server/app/db/session.py)
-- [base.py](file://server/app/models/base.py)
-- [base.py](file://server/app/services/base.py)
-- [__init__.py](file://server/app/services/__init__.py)
-- [service_requests.py](file://server/app/services/service_requests.py)
-- [device_management.py](file://server/app/services/device_management.py)
-- [context.py](file://server/app/mcp/context.py)
-- [AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [auth-store.ts](file://frontend/lib/stores/auth-store.ts)
-- [useAuth.tsx](file://frontend/hooks/useAuth.tsx)
-- [0007-tdd-service-layer-architecture.md](file://docs/adr/0007-tdd-service-layer-architecture.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [main.py](server/app/main.py)
+- [config.py](server/app/config.py)
+- [router.py](server/app/api/router.py)
+- [dependencies.py](server/app/api/dependencies.py)
+- [session.py](server/app/db/session.py)
+- [base.py](server/app/models/base.py)
+- [base.py](server/app/services/base.py)
+- [__init__.py](server/app/services/__init__.py)
+- [service_requests.py](server/app/services/service_requests.py)
+- [device_management.py](server/app/services/device_management.py)
+- [context.py](server/app/mcp/context.py)
+- [AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [auth-store.ts](frontend/lib/stores/auth-store.ts)
+- [useAuth.tsx](frontend/hooks/useAuth.tsx)
+- [0007-tdd-service-layer-architecture.md](docs/adr/0007-tdd-service-layer-architecture.md)
 </cite>
 
 ## Table of Contents
@@ -70,16 +70,16 @@ API --> SVC
 ```
 
 **Diagram sources**
-- [main.py:68-86](file://server/app/main.py#L68-L86)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
+- [main.py:68-86](server/app/main.py#L68-L86)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
 
 **Section sources**
-- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
-- [main.py:68-86](file://server/app/main.py#L68-L86)
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
+- [ARCHITECTURE.md:3-21](ARCHITECTURE.md#L3-L21)
+- [main.py:68-86](server/app/main.py#L68-L86)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
 
 ## Core Components
 - Layered architecture separates presentation, business logic, persistence, and infrastructure concerns.
@@ -91,11 +91,11 @@ API --> SVC
 - Event-driven communication: MQTT topics for telemetry, camera frames, and device commands; MCP for AI tool orchestration.
 
 **Section sources**
-- [ARCHITECTURE.md:23-139](file://ARCHITECTURE.md#L23-L139)
-- [base.py:13-89](file://server/app/services/base.py#L13-L89)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
-- [service_requests.py:56-88](file://server/app/services/service_requests.py#L56-L88)
+- [ARCHITECTURE.md:23-139](ARCHITECTURE.md#L23-L139)
+- [base.py:13-89](server/app/services/base.py#L13-L89)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
+- [service_requests.py:56-88](server/app/services/service_requests.py#L56-L88)
 
 ## Architecture Overview
 The system follows a layered, event-driven design with strong separation of concerns and explicit multi-tenancy and RBAC enforcement.
@@ -132,12 +132,12 @@ MCP --> SVC
 ```
 
 **Diagram sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [main.py:26-66](file://server/app/main.py#L26-L66)
-- [base.py:13-89](file://server/app/services/base.py#L13-L89)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [main.py:26-66](server/app/main.py#L26-L66)
+- [base.py:13-89](server/app/services/base.py#L13-L89)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 ## Detailed Component Analysis
 
@@ -157,16 +157,16 @@ DB --> Resp(["Response"])
 ```
 
 **Diagram sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [base.py:13-89](file://server/app/services/base.py#L13-L89)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [base.py:13-89](server/app/services/base.py#L13-L89)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
 
 **Section sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [base.py:13-89](file://server/app/services/base.py#L13-L89)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [base.py:13-89](server/app/services/base.py#L13-L89)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
 
 ### Microservices Approach
 - FastAPI service: Centralized API with modular routers and dependency injection.
@@ -191,15 +191,15 @@ API-->>Client : Response
 ```
 
 **Diagram sources**
-- [main.py:26-66](file://server/app/main.py#L26-L66)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [service_requests.py:56-88](file://server/app/services/service_requests.py#L56-L88)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
+- [main.py:26-66](server/app/main.py#L26-L66)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [service_requests.py:56-88](server/app/services/service_requests.py#L56-L88)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
 
 **Section sources**
-- [main.py:26-66](file://server/app/main.py#L26-L66)
-- [config.py:78-90](file://server/app/config.py#L78-L90)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [main.py:26-66](server/app/main.py#L26-L66)
+- [config.py:78-90](server/app/config.py#L78-L90)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 ### Repository Pattern and Service Layer Implementation
 - Generic CRUD base: Provides get/get_multi/create/update/delete with workspace enforcement and typed Pydantic schemas.
@@ -223,13 +223,13 @@ CRUDBase <.. ServiceModule : "used by"
 ```
 
 **Diagram sources**
-- [base.py:13-89](file://server/app/services/base.py#L13-L89)
-- [service_requests.py:56-88](file://server/app/services/service_requests.py#L56-L88)
+- [base.py:13-89](server/app/services/base.py#L13-L89)
+- [service_requests.py:56-88](server/app/services/service_requests.py#L56-L88)
 
 **Section sources**
-- [base.py:13-89](file://server/app/services/base.py#L13-L89)
-- [__init__.py:1-18](file://server/app/services/__init__.py#L1-L18)
-- [0007-tdd-service-layer-architecture.md:11-27](file://docs/adr/0007-tdd-service-layer-architecture.md#L11-L27)
+- [base.py:13-89](server/app/services/base.py#L13-L89)
+- [__init__.py:1-18](server/app/services/__init__.py#L1-L18)
+- [0007-tdd-service-layer-architecture.md:11-27](docs/adr/0007-tdd-service-layer-architecture.md#L11-L27)
 
 ### Dependency Injection and Transaction Management
 - Database sessions: FastAPI dependency yields an async SQLAlchemy session from a shared factory.
@@ -248,13 +248,13 @@ ROLLBACK --> END
 ```
 
 **Diagram sources**
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
-- [service_requests.py:84-88](file://server/app/services/service_requests.py#L84-L88)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
+- [service_requests.py:84-88](server/app/services/service_requests.py#L84-L88)
 
 **Section sources**
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
-- [service_requests.py:56-88](file://server/app/services/service_requests.py#L56-L88)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
+- [service_requests.py:56-88](server/app/services/service_requests.py#L56-L88)
 
 ### Business Logic Organization
 - Endpoint delegation: All endpoints depend on current user and delegate to services.
@@ -276,12 +276,12 @@ API-->>FE : 200 OK
 ```
 
 **Diagram sources**
-- [device_management.py:1329-1342](file://server/app/services/device_management.py#L1329-L1342)
-- [router.py:27-28](file://server/app/api/router.py#L27-L28)
+- [device_management.py:1329-1342](server/app/services/device_management.py#L1329-L1342)
+- [router.py:27-28](server/app/api/router.py#L27-L28)
 
 **Section sources**
-- [router.py:27-28](file://server/app/api/router.py#L27-L28)
-- [device_management.py:1329-1342](file://server/app/services/device_management.py#L1329-L1342)
+- [router.py:27-28](server/app/api/router.py#L27-L28)
+- [device_management.py:1329-1342](server/app/services/device_management.py#L1329-L1342)
 
 ### Design Principles: Workspace-Based Multi-Tenancy
 - All models and CRUD operations enforce workspace_id scoping.
@@ -289,8 +289,8 @@ API-->>FE : 200 OK
 - Device registry and telemetry ingestion honor workspace boundaries.
 
 **Section sources**
-- [base.py:17-25](file://server/app/services/base.py#L17-L25)
-- [dependencies.py:139-156](file://server/app/api/dependencies.py#L139-L156)
+- [base.py:17-25](server/app/services/base.py#L17-L25)
+- [dependencies.py:139-156](server/app/api/dependencies.py#L139-L156)
 
 ### Design Principles: Role-Based Access Control (RBAC)
 - Roles and capabilities are defined centrally; effective token scopes are computed from role and requested scopes.
@@ -298,8 +298,8 @@ API-->>FE : 200 OK
 - Dedicated role groups govern who can manage users, patients, devices, and facilities.
 
 **Section sources**
-- [dependencies.py:171-311](file://server/app/api/dependencies.py#L171-L311)
-- [dependencies.py:313-402](file://server/app/api/dependencies.py#L313-L402)
+- [dependencies.py:171-311](server/app/api/dependencies.py#L171-L311)
+- [dependencies.py:313-402](server/app/api/dependencies.py#L313-L402)
 
 ### Design Principles: Event-Driven Communication
 - MQTT ingestion: Dedicated background task handles telemetry, camera frames, and device acknowledgments.
@@ -307,10 +307,10 @@ API-->>FE : 200 OK
 - Frontend state: TanStack Query manages caching and refetching; Zustand stores lightweight UI state.
 
 **Section sources**
-- [main.py:43-61](file://server/app/main.py#L43-L61)
-- [ARCHITECTURE.md:23-139](file://ARCHITECTURE.md#L23-L139)
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
+- [main.py:43-61](server/app/main.py#L43-L61)
+- [ARCHITECTURE.md:23-139](ARCHITECTURE.md#L23-L139)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
 
 ### Provider Pattern for State Management
 - TanStack Query provider: Centralized caching and refetching configuration.
@@ -330,14 +330,14 @@ Store --> Pages
 ```
 
 **Diagram sources**
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [useAuth.tsx:88-97](file://frontend/hooks/useAuth.tsx#L88-L97)
-- [auth-store.ts:22-38](file://frontend/lib/stores/auth-store.ts#L22-L38)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [useAuth.tsx:88-97](frontend/hooks/useAuth.tsx#L88-L97)
+- [auth-store.ts:22-38](frontend/lib/stores/auth-store.ts#L22-L38)
 
 **Section sources**
-- [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
-- [useAuth.tsx:88-97](file://frontend/hooks/useAuth.tsx#L88-L97)
-- [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
+- [AppProviders.tsx:10-42](frontend/components/providers/AppProviders.tsx#L10-L42)
+- [useAuth.tsx:88-97](frontend/hooks/useAuth.tsx#L88-L97)
+- [auth-store.ts:1-38](frontend/lib/stores/auth-store.ts#L1-L38)
 
 ## Dependency Analysis
 The backend exhibits low coupling and high cohesion:
@@ -356,15 +356,15 @@ API --> MCP["server/app/mcp/*"]
 ```
 
 **Diagram sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
-- [main.py:43-61](file://server/app/main.py#L43-L61)
-- [context.py:8-37](file://server/app/mcp/context.py#L8-L37)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
+- [main.py:43-61](server/app/main.py#L43-L61)
+- [context.py:8-37](server/app/mcp/context.py#L8-L37)
 
 **Section sources**
-- [router.py:16-154](file://server/app/api/router.py#L16-L154)
-- [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
-- [session.py:52-55](file://server/app/db/session.py#L52-L55)
+- [router.py:16-154](server/app/api/router.py#L16-L154)
+- [dependencies.py:25-120](server/app/api/dependencies.py#L25-L120)
+- [session.py:52-55](server/app/db/session.py#L52-L55)
 
 ## Performance Considerations
 - Asynchronous database sessions reduce blocking and improve throughput.
@@ -381,9 +381,9 @@ API --> MCP["server/app/mcp/*"]
 - MCP context errors: Validate actor context initialization and scope enforcement.
 
 **Section sources**
-- [dependencies.py:58-120](file://server/app/api/dependencies.py#L58-L120)
-- [base.py:58-81](file://server/app/services/base.py#L58-L81)
-- [context.py:33-37](file://server/app/mcp/context.py#L33-L37)
+- [dependencies.py:58-120](server/app/api/dependencies.py#L58-L120)
+- [base.py:58-81](server/app/services/base.py#L58-L81)
+- [context.py:33-37](server/app/mcp/context.py#L33-L37)
 
 ## Conclusion
 The WheelSense platform employs a clean, layered architecture with a strong service layer, robust RBAC, and workspace-based multi-tenancy. The repository pattern via a generic CRUD base, combined with dependency injection and transaction management, ensures maintainable and testable business logic. Event-driven communication through MQTT and MCP complements the REST API, while frontend state management leverages TanStack Query and Zustand for scalability and usability.

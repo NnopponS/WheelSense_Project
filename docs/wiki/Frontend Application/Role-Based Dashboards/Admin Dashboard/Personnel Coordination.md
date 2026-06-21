@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [personnel page](file://frontend/app/admin/personnel/page.tsx)
-- [caregiver detail page](file://frontend/app/admin/caregivers/[id]/page.tsx)
-- [caregiver card grid](file://frontend/components/admin/caregivers/CaregiverCardGrid.tsx)
-- [caregiver detail pane](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
-- [staff routine and calendar panel](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
-- [add caregiver modal](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx)
-- [edit caregiver modal](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx)
-- [calendar view](file://frontend/components/calendar/CalendarView.tsx)
-- [agenda view](file://frontend/components/calendar/AgendaView.tsx)
-- [schedule form](file://frontend/components/calendar/ScheduleForm.tsx)
-- [schedule event mapper](file://frontend/components/calendar/scheduleEventMapper.ts)
+- [personnel page](frontend/app/admin/personnel/page.tsx)
+- [caregiver detail page](frontend/app/admin/caregivers/[id]/page.tsx)
+- [caregiver card grid](frontend/components/admin/caregivers/CaregiverCardGrid.tsx)
+- [caregiver detail pane](frontend/components/admin/caregivers/CaregiverDetailPane.tsx)
+- [staff routine and calendar panel](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx)
+- [add caregiver modal](frontend/components/admin/caregivers/AddCaregiverModal.tsx)
+- [edit caregiver modal](frontend/components/admin/caregivers/EditCaregiverModal.tsx)
+- [calendar view](frontend/components/calendar/CalendarView.tsx)
+- [agenda view](frontend/components/calendar/AgendaView.tsx)
+- [schedule form](frontend/components/calendar/ScheduleForm.tsx)
+- [schedule event mapper](frontend/components/calendar/scheduleEventMapper.ts)
 </cite>
 
 ## Table of Contents
@@ -68,19 +68,19 @@ D --> F
 ```
 
 **Diagram sources**
-- [personnel page:1-916](file://frontend/app/admin/personnel/page.tsx#L1-L916)
-- [caregiver detail page:1-124](file://frontend/app/admin/caregivers/[id]/page.tsx#L1-L124)
-- [caregiver card grid:1-64](file://frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
-- [staff routine and calendar panel:1-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [schedule event mapper:1-60](file://frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
+- [personnel page:1-916](frontend/app/admin/personnel/page.tsx#L1-L916)
+- [caregiver detail page:1-124](frontend/app/admin/caregivers/[id]/page.tsx#L1-L124)
+- [caregiver card grid:1-64](frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [staff routine and calendar panel:1-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [schedule event mapper:1-60](frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
 
 **Section sources**
-- [personnel page:1-916](file://frontend/app/admin/personnel/page.tsx#L1-L916)
-- [caregiver detail page:1-124](file://frontend/app/admin/caregivers/[id]/page.tsx#L1-L124)
+- [personnel page:1-916](frontend/app/admin/personnel/page.tsx#L1-L916)
+- [caregiver detail page:1-124](frontend/app/admin/caregivers/[id]/page.tsx#L1-L124)
 
 ## Core Components
 - Admin Personnel Page: Provides unified views for staff, patients, and accounts with filtering, searching, and quick actions.
@@ -91,15 +91,15 @@ D --> F
 - Add/Edit Caregiver Modals: Forms for creating and updating caregiver profiles with roles, departments, specialties, and contact info.
 
 **Section sources**
-- [personnel page:1-916](file://frontend/app/admin/personnel/page.tsx#L1-L916)
-- [caregiver card grid:1-64](file://frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
-- [staff routine and calendar panel:1-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [add caregiver modal:1-294](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
-- [edit caregiver modal:1-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
+- [personnel page:1-916](frontend/app/admin/personnel/page.tsx#L1-L916)
+- [caregiver card grid:1-64](frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [staff routine and calendar panel:1-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [add caregiver modal:1-294](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
+- [edit caregiver modal:1-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
 
 ## Architecture Overview
 The Personnel Coordination feature follows a layered pattern:
@@ -127,12 +127,12 @@ Routine-->>Detail : Updated calendar/routines
 ```
 
 **Diagram sources**
-- [personnel page:1-916](file://frontend/app/admin/personnel/page.tsx#L1-L916)
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
-- [staff routine and calendar panel:1-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [personnel page:1-916](frontend/app/admin/personnel/page.tsx#L1-L916)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [staff routine and calendar panel:1-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
 
 ## Detailed Component Analysis
 
@@ -155,10 +155,10 @@ Actions --> Dialogs["Add Staff/Patient dialogs"]
 ```
 
 **Diagram sources**
-- [personnel page:1-916](file://frontend/app/admin/personnel/page.tsx#L1-L916)
+- [personnel page:1-916](frontend/app/admin/personnel/page.tsx#L1-L916)
 
 **Section sources**
-- [personnel page:1-916](file://frontend/app/admin/personnel/page.tsx#L1-L916)
+- [personnel page:1-916](frontend/app/admin/personnel/page.tsx#L1-L916)
 
 ### Caregiver Card Grid
 - Purpose: Present caregivers in a responsive grid with avatar initials, role, and linked account count.
@@ -192,10 +192,10 @@ CaregiverCardGrid --> User : "counts links"
 ```
 
 **Diagram sources**
-- [caregiver card grid:1-64](file://frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
+- [caregiver card grid:1-64](frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
 
 **Section sources**
-- [caregiver card grid:1-64](file://frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
+- [caregiver card grid:1-64](frontend/components/admin/caregivers/CaregiverCardGrid.tsx#L1-L64)
 
 ### Caregiver Detail Pane
 - Purpose: Single-pane view for comprehensive caregiver management including profile, patient access, zones, shifts, contacts, and linked accounts.
@@ -231,10 +231,10 @@ Detail->>API : POST/PATCH/DELETE /caregivers/ : id/shifts
 ```
 
 **Diagram sources**
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
 
 **Section sources**
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
 
 ### Staff Routine and Calendar Panel
 - Purpose: Display staff routines and integrate with calendar for schedule management.
@@ -264,18 +264,18 @@ Form-->>Schedules : Invalidate and refetch
 ```
 
 **Diagram sources**
-- [staff routine and calendar panel:1-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [schedule event mapper:1-60](file://frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
+- [staff routine and calendar panel:1-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [schedule event mapper:1-60](frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
 
 **Section sources**
-- [staff routine and calendar panel:1-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [schedule event mapper:1-60](file://frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
+- [staff routine and calendar panel:1-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [schedule event mapper:1-60](frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
 
 ### Calendar Integration Components
 - Calendar View: Month/week/day modes with navigation, event rendering, and click handlers.
@@ -313,16 +313,16 @@ ScheduleEventMapper --> CalendarView : "converts schedules"
 ```
 
 **Diagram sources**
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [schedule event mapper:1-60](file://frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [schedule event mapper:1-60](frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
 
 **Section sources**
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [schedule event mapper:1-60](file://frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [schedule event mapper:1-60](frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
 
 ### Caregiver Management Modals
 - Add Caregiver Modal: Create caregiver records with optional linked login credentials.
@@ -344,12 +344,12 @@ Edit-->>Admin : Close and refresh
 ```
 
 **Diagram sources**
-- [add caregiver modal:1-294](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
-- [edit caregiver modal:1-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
+- [add caregiver modal:1-294](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
+- [edit caregiver modal:1-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
 
 **Section sources**
-- [add caregiver modal:1-294](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
-- [edit caregiver modal:1-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
+- [add caregiver modal:1-294](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
+- [edit caregiver modal:1-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
 
 ## Dependency Analysis
 - Data fetching: TanStack Query manages caching, stale times, and polling for caregivers, patients, rooms, schedules, and checklist data.
@@ -373,19 +373,19 @@ Detail --> Edit["Edit Caregiver Modal"]
 ```
 
 **Diagram sources**
-- [personnel page:1-916](file://frontend/app/admin/personnel/page.tsx#L1-L916)
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
-- [staff routine and calendar panel:1-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
-- [calendar view:1-496](file://frontend/components/calendar/CalendarView.tsx#L1-L496)
-- [agenda view:1-233](file://frontend/components/calendar/AgendaView.tsx#L1-L233)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [schedule event mapper:1-60](file://frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
-- [add caregiver modal:1-294](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
-- [edit caregiver modal:1-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
+- [personnel page:1-916](frontend/app/admin/personnel/page.tsx#L1-L916)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [staff routine and calendar panel:1-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
+- [calendar view:1-496](frontend/components/calendar/CalendarView.tsx#L1-L496)
+- [agenda view:1-233](frontend/components/calendar/AgendaView.tsx#L1-L233)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [schedule event mapper:1-60](frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
+- [add caregiver modal:1-294](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
+- [edit caregiver modal:1-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
 
 **Section sources**
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
-- [staff routine and calendar panel:1-314](file://frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [staff routine and calendar panel:1-314](frontend/components/admin/caregivers/StaffRoutineAndCalendarPanel.tsx#L1-L314)
 
 ## Performance Considerations
 - Query caching and polling: Queries use stale times and polling intervals to balance freshness and performance.
@@ -403,10 +403,10 @@ Common issues and resolutions:
 - Data sync: Use refetch callbacks to refresh dependent queries after mutations.
 
 **Section sources**
-- [caregiver detail pane:1-2004](file://frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
-- [schedule form:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [add caregiver modal:1-294](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
-- [edit caregiver modal:1-466](file://frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
+- [caregiver detail pane:1-2004](frontend/components/admin/caregivers/CaregiverDetailPane.tsx#L1-L2004)
+- [schedule form:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [add caregiver modal:1-294](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
+- [edit caregiver modal:1-466](frontend/components/admin/caregivers/EditCaregiverModal.tsx#L1-L466)
 
 ## Conclusion
 The Personnel Coordination module provides a comprehensive, permission-aware system for managing staff, assigning caregivers to zones and patients, coordinating schedules, and integrating with a flexible calendar. The modular component architecture enables maintainability and scalability, while shared calendar components promote consistency across the application.

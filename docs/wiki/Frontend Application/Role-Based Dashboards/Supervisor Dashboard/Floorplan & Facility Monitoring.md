@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [SupervisorFloorplansPage](file://frontend/app/supervisor/floorplans/page.tsx)
-- [DashboardFloorplanPanel](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [FloorplanRoleViewer](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
-- [floorplanLayout](file://frontend/lib/floorplanLayout.ts)
-- [floorplanRoomResolve](file://frontend/lib/floorplanRoomResolve.ts)
-- [ARCHITECTURE.md](file://ARCHITECTURE.md)
-- [floorplans.py (models)](file://server/app/models/floorplans.py)
-- [floorplans.py (service)](file://server/app/services/floorplans.py)
-- [floorplans.py (endpoint)](file://server/app/api/endpoints/floorplans.py)
+- [SupervisorFloorplansPage](frontend/app/supervisor/floorplans/page.tsx)
+- [DashboardFloorplanPanel](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [FloorplanRoleViewer](frontend/components/floorplan/FloorplanRoleViewer.tsx)
+- [floorplanLayout](frontend/lib/floorplanLayout.ts)
+- [floorplanRoomResolve](frontend/lib/floorplanRoomResolve.ts)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [floorplans.py (models)](server/app/models/floorplans.py)
+- [floorplans.py (service)](server/app/services/floorplans.py)
+- [floorplans.py (endpoint)](server/app/api/endpoints/floorplans.py)
 </cite>
 
 ## Table of Contents
@@ -59,24 +59,24 @@ H --> G
 ```
 
 **Diagram sources**
-- [SupervisorFloorplansPage:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplanLayout:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplans.py (models):1-48](file://server/app/models/floorplans.py#L1-L48)
-- [floorplans.py (service):1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans.py (endpoint):1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
+- [SupervisorFloorplansPage:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplanLayout:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplans.py (models):1-48](server/app/models/floorplans.py#L1-L48)
+- [floorplans.py (service):1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans.py (endpoint):1-242](server/app/api/endpoints/floorplans.py#L1-L242)
 
 **Section sources**
-- [SupervisorFloorplansPage:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplanLayout:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplans.py (models):1-48](file://server/app/models/floorplans.py#L1-L48)
-- [floorplans.py (service):1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans.py (endpoint):1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
+- [SupervisorFloorplansPage:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplanLayout:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplans.py (models):1-48](server/app/models/floorplans.py#L1-L48)
+- [floorplans.py (service):1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans.py (endpoint):1-242](server/app/api/endpoints/floorplans.py#L1-L242)
 
 ## Core Components
 - Supervisor floorplan page: Renders the supervisor’s floorplan view with live occupancy and emergency readiness.
@@ -89,14 +89,14 @@ H --> G
 - Backend endpoints: Expose floorplan operations, presence, and room capture.
 
 **Section sources**
-- [SupervisorFloorplansPage:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplanLayout:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplans.py (models):1-48](file://server/app/models/floorplans.py#L1-L48)
-- [floorplans.py (service):1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans.py (endpoint):1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
+- [SupervisorFloorplansPage:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplanLayout:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplans.py (models):1-48](server/app/models/floorplans.py#L1-L48)
+- [floorplans.py (service):1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans.py (endpoint):1-242](server/app/api/endpoints/floorplans.py#L1-L242)
 
 ## Architecture Overview
 The supervisor floorplan monitoring architecture integrates frontend visualization with backend presence computation and device orchestration.
@@ -140,14 +140,14 @@ EP4 --> LAYOUT_SVC
 ```
 
 **Diagram sources**
-- [SupervisorFloorplansPage:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplanLayout:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplans.py (service):1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans.py (models):1-48](file://server/app/models/floorplans.py#L1-L48)
-- [floorplans.py (endpoint):1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
+- [SupervisorFloorplansPage:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplanLayout:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplans.py (service):1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans.py (models):1-48](server/app/models/floorplans.py#L1-L48)
+- [floorplans.py (endpoint):1-242](server/app/api/endpoints/floorplans.py#L1-L242)
 
 ## Detailed Component Analysis
 
@@ -156,14 +156,14 @@ EP4 --> LAYOUT_SVC
 - Behavior: Uses the role viewer to render a floorplan canvas with presence and a room inspector.
 
 **Section sources**
-- [SupervisorFloorplansPage:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [SupervisorFloorplansPage:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
 
 ### Dashboard Floorplan Panel
 - Purpose: Embeds a floorplan viewer in dashboards with optional presence rendering and initial scope selection.
 - Behavior: Delegates to the role viewer with configurable props for facility, floor, and room.
 
 **Section sources**
-- [DashboardFloorplanPanel:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [DashboardFloorplanPanel:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ### Floorplan Role Viewer
 - Purpose: Central component for facility/floor selection, layout retrieval, room population, presence computation, and room inspection.
@@ -206,12 +206,12 @@ V-->>U : Render floorplan with room chips and inspector
 ```
 
 **Diagram sources**
-- [SupervisorFloorplansPage:1-26](file://frontend/app/supervisor/floorplans/page.tsx#L1-L26)
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplans.py (endpoint):135-177](file://server/app/api/endpoints/floorplans.py#L135-L177)
+- [SupervisorFloorplansPage:1-26](frontend/app/supervisor/floorplans/page.tsx#L1-L26)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplans.py (endpoint):135-177](server/app/api/endpoints/floorplans.py#L135-L177)
 
 **Section sources**
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
 
 ### Floorplan Layout Library
 - Purpose: Normalize saved layout coordinates and bootstrap rooms from database when no layout exists.
@@ -221,7 +221,7 @@ V-->>U : Render floorplan with room chips and inspector
   - Bootstrap grid placement for rooms when layout is empty.
 
 **Section sources**
-- [floorplanLayout:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanLayout:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
 
 ### Room Resolution Library
 - Purpose: Align layout labels to database room rows to ensure presence maps to the correct rooms.
@@ -231,7 +231,7 @@ V-->>U : Render floorplan with room chips and inspector
   - Stable ID normalization to canonical room IDs.
 
 **Section sources**
-- [floorplanRoomResolve:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplanRoomResolve:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
 
 ### Backend Presence Service
 - Purpose: Build a presence payload combining room assignments, predictions, alerts, smart devices, and camera snapshots.
@@ -262,10 +262,10 @@ Rooms --> Output(["Presence payload"])
 ```
 
 **Diagram sources**
-- [floorplans.py (service):42-506](file://server/app/services/floorplans.py#L42-L506)
+- [floorplans.py (service):42-506](server/app/services/floorplans.py#L42-L506)
 
 **Section sources**
-- [floorplans.py (service):1-613](file://server/app/services/floorplans.py#L1-L613)
+- [floorplans.py (service):1-613](server/app/services/floorplans.py#L1-L613)
 
 ### Backend Models
 - Purpose: Persist floorplan assets and layouts.
@@ -274,7 +274,7 @@ Rooms --> Output(["Presence payload"])
   - FloorplanLayout: Interactive layout JSON scoped to facility/floor.
 
 **Section sources**
-- [floorplans.py (models):1-48](file://server/app/models/floorplans.py#L1-L48)
+- [floorplans.py (models):1-48](server/app/models/floorplans.py#L1-L48)
 
 ### Backend Endpoints
 - Purpose: Expose floorplan operations and monitoring APIs.
@@ -285,7 +285,7 @@ Rooms --> Output(["Presence payload"])
   - POST /api/floorplans/rooms/{room_id}/capture: Request a camera snapshot for a room.
 
 **Section sources**
-- [floorplans.py (endpoint):135-242](file://server/app/api/endpoints/floorplans.py#L135-L242)
+- [floorplans.py (endpoint):135-242](server/app/api/endpoints/floorplans.py#L135-L242)
 
 ## Dependency Analysis
 - Frontend role viewer depends on:
@@ -309,17 +309,17 @@ ENDPOINTS --> LAYOUT_SVC
 ```
 
 **Diagram sources**
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplanLayout:1-103](file://frontend/lib/floorplanLayout.ts#L1-L103)
-- [floorplanRoomResolve:1-108](file://frontend/lib/floorplanRoomResolve.ts#L1-L108)
-- [floorplans.py (service):1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans.py (models):1-48](file://server/app/models/floorplans.py#L1-L48)
-- [floorplans.py (endpoint):1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplanLayout:1-103](frontend/lib/floorplanLayout.ts#L1-L103)
+- [floorplanRoomResolve:1-108](frontend/lib/floorplanRoomResolve.ts#L1-L108)
+- [floorplans.py (service):1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans.py (models):1-48](server/app/models/floorplans.py#L1-L48)
+- [floorplans.py (endpoint):1-242](server/app/api/endpoints/floorplans.py#L1-L242)
 
 **Section sources**
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplans.py (service):1-613](file://server/app/services/floorplans.py#L1-L613)
-- [floorplans.py (endpoint):1-242](file://server/app/api/endpoints/floorplans.py#L1-L242)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplans.py (service):1-613](server/app/services/floorplans.py#L1-L613)
+- [floorplans.py (endpoint):1-242](server/app/api/endpoints/floorplans.py#L1-L242)
 
 ## Performance Considerations
 - Polling intervals: Presence is polled at a short interval to keep the UI responsive while minimizing backend load.
@@ -342,9 +342,9 @@ ENDPOINTS --> LAYOUT_SVC
   - Each device can be assigned to at most one room; fix duplicates before saving layout.
 
 **Section sources**
-- [FloorplanRoleViewer:1-1143](file://frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
-- [floorplans.py (endpoint):180-200](file://server/app/api/endpoints/floorplans.py#L180-L200)
-- [floorplans.py (endpoint):202-242](file://server/app/api/endpoints/floorplans.py#L202-L242)
+- [FloorplanRoleViewer:1-1143](frontend/components/floorplan/FloorplanRoleViewer.tsx#L1-L1143)
+- [floorplans.py (endpoint):180-200](server/app/api/endpoints/floorplans.py#L180-L200)
+- [floorplans.py (endpoint):202-242](server/app/api/endpoints/floorplans.py#L202-L242)
 
 ## Conclusion
 The Floorplan & Facility Monitoring feature provides supervisors with a unified, real-time view of facility zones. The frontend role viewer integrates layout, presence, and telemetry to deliver spatial awareness, while the backend services and endpoints ensure accurate, access-aware, and timely data. The design supports robust workflows for oversight, occupancy tracking, resource allocation, and safety monitoring.

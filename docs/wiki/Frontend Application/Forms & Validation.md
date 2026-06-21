@@ -2,13 +2,13 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ScheduleForm.tsx](file://frontend/components/calendar/ScheduleForm.tsx)
-- [scheduleEventMapper.ts](file://frontend/components/calendar/scheduleEventMapper.ts)
-- [AddCaregiverModal.tsx](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx)
-- [AddPatientModal.tsx](file://frontend/components/admin/patients/AddPatientModal.tsx)
-- [ReportIssueForm.tsx](file://frontend/components/support/ReportIssueForm.tsx)
-- [patientFormParse.ts](file://frontend/lib/patientFormParse.ts)
-- [utils.ts](file://frontend/lib/utils.ts)
+- [ScheduleForm.tsx](frontend/components/calendar/ScheduleForm.tsx)
+- [scheduleEventMapper.ts](frontend/components/calendar/scheduleEventMapper.ts)
+- [AddCaregiverModal.tsx](frontend/components/admin/caregivers/AddCaregiverModal.tsx)
+- [AddPatientModal.tsx](frontend/components/admin/patients/AddPatientModal.tsx)
+- [ReportIssueForm.tsx](frontend/components/support/ReportIssueForm.tsx)
+- [patientFormParse.ts](frontend/lib/patientFormParse.ts)
+- [utils.ts](frontend/lib/utils.ts)
 </cite>
 
 ## Table of Contents
@@ -58,21 +58,21 @@ RIF --> UT
 ```
 
 **Diagram sources**
-- [ScheduleForm.tsx:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [scheduleEventMapper.ts:1-60](file://frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
-- [AddCaregiverModal.tsx:1-294](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
-- [AddPatientModal.tsx:1-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L1-L543)
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [patientFormParse.ts:1-12](file://frontend/lib/patientFormParse.ts#L1-L12)
-- [utils.ts:1-7](file://frontend/lib/utils.ts#L1-L7)
+- [ScheduleForm.tsx:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [scheduleEventMapper.ts:1-60](frontend/components/calendar/scheduleEventMapper.ts#L1-L60)
+- [AddCaregiverModal.tsx:1-294](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
+- [AddPatientModal.tsx:1-543](frontend/components/admin/patients/AddPatientModal.tsx#L1-L543)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [patientFormParse.ts:1-12](frontend/lib/patientFormParse.ts#L1-L12)
+- [utils.ts:1-7](frontend/lib/utils.ts#L1-L7)
 
 **Section sources**
-- [ScheduleForm.tsx:1-587](file://frontend/components/calendar/ScheduleForm.tsx#L1-L587)
-- [AddCaregiverModal.tsx:1-294](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
-- [AddPatientModal.tsx:1-543](file://frontend/components/admin/patients/AddPatientModal.tsx#L1-L543)
-- [ReportIssueForm.tsx:1-201](file://frontend/components/support/ReportIssueForm.tsx#L1-L201)
-- [patientFormParse.ts:1-12](file://frontend/lib/patientFormParse.ts#L1-L12)
-- [utils.ts:1-7](file://frontend/lib/utils.ts#L1-L7)
+- [ScheduleForm.tsx:1-587](frontend/components/calendar/ScheduleForm.tsx#L1-L587)
+- [AddCaregiverModal.tsx:1-294](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L294)
+- [AddPatientModal.tsx:1-543](frontend/components/admin/patients/AddPatientModal.tsx#L1-L543)
+- [ReportIssueForm.tsx:1-201](frontend/components/support/ReportIssueForm.tsx#L1-L201)
+- [patientFormParse.ts:1-12](frontend/lib/patientFormParse.ts#L1-L12)
+- [utils.ts:1-7](frontend/lib/utils.ts#L1-L7)
 
 ## Core Components
 - Controlled components: All inputs are controlled via react-hook-form’s useForm and Controller, ensuring centralized state and deterministic validation.
@@ -84,10 +84,10 @@ RIF --> UT
 - Input sanitization: Zod trim and min/max constraints; free-text lists are parsed and normalized.
 
 **Section sources**
-- [ScheduleForm.tsx:57-81](file://frontend/components/calendar/ScheduleForm.tsx#L57-L81)
-- [AddPatientModal.tsx:61-64](file://frontend/components/admin/patients/AddPatientModal.tsx#L61-L64)
-- [ReportIssueForm.tsx:56-64](file://frontend/components/support/ReportIssueForm.tsx#L56-L64)
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
+- [ScheduleForm.tsx:57-81](frontend/components/calendar/ScheduleForm.tsx#L57-L81)
+- [AddPatientModal.tsx:61-64](frontend/components/admin/patients/AddPatientModal.tsx#L61-L64)
+- [ReportIssueForm.tsx:56-64](frontend/components/support/ReportIssueForm.tsx#L56-L64)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
 
 ## Architecture Overview
 The forms follow a consistent pattern:
@@ -118,9 +118,9 @@ F-->>U : Show success/error + update UI
 ```
 
 **Diagram sources**
-- [ScheduleForm.tsx:179-248](file://frontend/components/calendar/ScheduleForm.tsx#L179-L248)
-- [AddPatientModal.tsx:97-130](file://frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [ScheduleForm.tsx:179-248](frontend/components/calendar/ScheduleForm.tsx#L179-L248)
+- [AddPatientModal.tsx:97-130](frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
 
 ## Detailed Component Analysis
 
@@ -153,14 +153,14 @@ Update --> Done
 ```
 
 **Diagram sources**
-- [ScheduleForm.tsx:116-136](file://frontend/components/calendar/ScheduleForm.tsx#L116-L136)
-- [ScheduleForm.tsx:179-248](file://frontend/components/calendar/ScheduleForm.tsx#L179-L248)
+- [ScheduleForm.tsx:116-136](frontend/components/calendar/ScheduleForm.tsx#L116-L136)
+- [ScheduleForm.tsx:179-248](frontend/components/calendar/ScheduleForm.tsx#L179-L248)
 
 **Section sources**
-- [ScheduleForm.tsx:57-81](file://frontend/components/calendar/ScheduleForm.tsx#L57-L81)
-- [ScheduleForm.tsx:116-136](file://frontend/components/calendar/ScheduleForm.tsx#L116-L136)
-- [ScheduleForm.tsx:179-248](file://frontend/components/calendar/ScheduleForm.tsx#L179-L248)
-- [ScheduleForm.tsx:255-564](file://frontend/components/calendar/ScheduleForm.tsx#L255-L564)
+- [ScheduleForm.tsx:57-81](frontend/components/calendar/ScheduleForm.tsx#L57-L81)
+- [ScheduleForm.tsx:116-136](frontend/components/calendar/ScheduleForm.tsx#L116-L136)
+- [ScheduleForm.tsx:179-248](frontend/components/calendar/ScheduleForm.tsx#L179-L248)
+- [ScheduleForm.tsx:255-564](frontend/components/calendar/ScheduleForm.tsx#L255-L564)
 
 ### Calendar Event Mapping Utilities
 - Purpose: Convert backend schedule records into calendar events for rendering.
@@ -174,10 +174,10 @@ C --> D["CalendarEvent[]"]
 ```
 
 **Diagram sources**
-- [scheduleEventMapper.ts:16-51](file://frontend/components/calendar/scheduleEventMapper.ts#L16-L51)
+- [scheduleEventMapper.ts:16-51](frontend/components/calendar/scheduleEventMapper.ts#L16-L51)
 
 **Section sources**
-- [scheduleEventMapper.ts:16-51](file://frontend/components/calendar/scheduleEventMapper.ts#L16-L51)
+- [scheduleEventMapper.ts:16-51](frontend/components/calendar/scheduleEventMapper.ts#L16-L51)
 
 ### Administrative Caregiver Registration Form
 - Purpose: Add a new caregiver and optionally create a login account.
@@ -204,11 +204,11 @@ M-->>U : Close dialog or show error
 ```
 
 **Diagram sources**
-- [AddCaregiverModal.tsx:52-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
+- [AddCaregiverModal.tsx:52-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
 
 **Section sources**
-- [AddCaregiverModal.tsx:35-50](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L35-L50)
-- [AddCaregiverModal.tsx:52-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
+- [AddCaregiverModal.tsx:35-50](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L35-L50)
+- [AddCaregiverModal.tsx:52-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L52-L93)
 
 ### Patient Registration Form
 - Purpose: Comprehensive patient intake with identity, physical metrics, medical history, surgeries, medications, emergency contact, and notes.
@@ -233,13 +233,13 @@ SkipEC --> Success
 ```
 
 **Diagram sources**
-- [AddPatientModal.tsx:61-64](file://frontend/components/admin/patients/AddPatientModal.tsx#L61-L64)
-- [AddPatientModal.tsx:97-130](file://frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
+- [AddPatientModal.tsx:61-64](frontend/components/admin/patients/AddPatientModal.tsx#L61-L64)
+- [AddPatientModal.tsx:97-130](frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
 
 **Section sources**
-- [AddPatientModal.tsx:61-64](file://frontend/components/admin/patients/AddPatientModal.tsx#L61-L64)
-- [AddPatientModal.tsx:97-130](file://frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
-- [AddPatientModal.tsx:132-450](file://frontend/components/admin/patients/AddPatientModal.tsx#L132-L450)
+- [AddPatientModal.tsx:61-64](frontend/components/admin/patients/AddPatientModal.tsx#L61-L64)
+- [AddPatientModal.tsx:97-130](frontend/components/admin/patients/AddPatientModal.tsx#L97-L130)
+- [AddPatientModal.tsx:132-450](frontend/components/admin/patients/AddPatientModal.tsx#L132-L450)
 
 ### Support Issue Reporting Form
 - Purpose: Report bugs/general/device issues with category and priority.
@@ -259,11 +259,11 @@ F-->>U : Show success card + reset form
 ```
 
 **Diagram sources**
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
 
 **Section sources**
-- [ReportIssueForm.tsx:45-54](file://frontend/components/support/ReportIssueForm.tsx#L45-L54)
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [ReportIssueForm.tsx:45-54](frontend/components/support/ReportIssueForm.tsx#L45-L54)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
 
 ### Custom Parsing and Data Transformation Utilities
 - Free-text list parsing: Splits comma, semicolon, or newline-separated lists; trims and filters empty entries.
@@ -279,11 +279,11 @@ Filter --> Out["string[]"]
 ```
 
 **Diagram sources**
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
 
 **Section sources**
-- [patientFormParse.ts:5-11](file://frontend/lib/patientFormParse.ts#L5-L11)
-- [utils.ts:4-6](file://frontend/lib/utils.ts#L4-L6)
+- [patientFormParse.ts:5-11](frontend/lib/patientFormParse.ts#L5-L11)
+- [utils.ts:4-6](frontend/lib/utils.ts#L4-L6)
 
 ## Dependency Analysis
 - Validation stack: Zod + @hookform/resolvers
@@ -312,18 +312,18 @@ Utils --> RIF["ReportIssueForm.tsx"]
 ```
 
 **Diagram sources**
-- [ScheduleForm.tsx:3-31](file://frontend/components/calendar/ScheduleForm.tsx#L3-L31)
-- [AddPatientModal.tsx:1-22](file://frontend/components/admin/patients/AddPatientModal.tsx#L1-L22)
-- [AddCaregiverModal.tsx:1-7](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L7)
-- [ReportIssueForm.tsx:1-15](file://frontend/components/support/ReportIssueForm.tsx#L1-L15)
-- [utils.ts:1-7](file://frontend/lib/utils.ts#L1-L7)
+- [ScheduleForm.tsx:3-31](frontend/components/calendar/ScheduleForm.tsx#L3-L31)
+- [AddPatientModal.tsx:1-22](frontend/components/admin/patients/AddPatientModal.tsx#L1-L22)
+- [AddCaregiverModal.tsx:1-7](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L7)
+- [ReportIssueForm.tsx:1-15](frontend/components/support/ReportIssueForm.tsx#L1-L15)
+- [utils.ts:1-7](frontend/lib/utils.ts#L1-L7)
 
 **Section sources**
-- [ScheduleForm.tsx:3-31](file://frontend/components/calendar/ScheduleForm.tsx#L3-L31)
-- [AddPatientModal.tsx:1-22](file://frontend/components/admin/patients/AddPatientModal.tsx#L1-L22)
-- [AddCaregiverModal.tsx:1-7](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L7)
-- [ReportIssueForm.tsx:1-15](file://frontend/components/support/ReportIssueForm.tsx#L1-L15)
-- [utils.ts:1-7](file://frontend/lib/utils.ts#L1-L7)
+- [ScheduleForm.tsx:3-31](frontend/components/calendar/ScheduleForm.tsx#L3-L31)
+- [AddPatientModal.tsx:1-22](frontend/components/admin/patients/AddPatientModal.tsx#L1-L22)
+- [AddCaregiverModal.tsx:1-7](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L1-L7)
+- [ReportIssueForm.tsx:1-15](frontend/components/support/ReportIssueForm.tsx#L1-L15)
+- [utils.ts:1-7](frontend/lib/utils.ts#L1-L7)
 
 ## Performance Considerations
 - Memoization: defaultValues and schema are memoized to avoid unnecessary re-renders.
@@ -349,10 +349,10 @@ Utils --> RIF["ReportIssueForm.tsx"]
   - Buttons are disabled during submission; avoid rapid successive clicks.
 
 **Section sources**
-- [ScheduleForm.tsx:57-81](file://frontend/components/calendar/ScheduleForm.tsx#L57-L81)
-- [ScheduleForm.tsx:222-248](file://frontend/components/calendar/ScheduleForm.tsx#L222-L248)
-- [AddCaregiverModal.tsx:81-93](file://frontend/components/admin/caregivers/AddCaregiverModal.tsx#L81-L93)
-- [ReportIssueForm.tsx:66-87](file://frontend/components/support/ReportIssueForm.tsx#L66-L87)
+- [ScheduleForm.tsx:57-81](frontend/components/calendar/ScheduleForm.tsx#L57-L81)
+- [ScheduleForm.tsx:222-248](frontend/components/calendar/ScheduleForm.tsx#L222-L248)
+- [AddCaregiverModal.tsx:81-93](frontend/components/admin/caregivers/AddCaregiverModal.tsx#L81-L93)
+- [ReportIssueForm.tsx:66-87](frontend/components/support/ReportIssueForm.tsx#L66-L87)
 
 ## Conclusion
 The WheelSense Platform employs a robust, consistent forms and validation architecture centered on Zod and react-hook-form. Controlled components, real-time validation, and clear error UX ensure reliable data entry across calendar scheduling, patient registration, administrative staff management, and support reporting. Utilities provide safe parsing and class composition, while React Query and date-fns streamline data fetching and temporal logic. The patterns documented here enable maintainable, scalable form implementations across roles and use cases.

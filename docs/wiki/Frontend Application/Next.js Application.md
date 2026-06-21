@@ -2,22 +2,22 @@
 
 <cite>
 **Referenced Files in This Document**
-- [next.config.ts](file://frontend/next.config.ts)
-- [package.json](file://frontend/package.json)
-- [tsconfig.json](file://frontend/tsconfig.json)
-- [app/layout.tsx](file://frontend/app/layout.tsx)
-- [app/globals.css](file://frontend/app/globals.css)
-- [components/providers/AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts)
-- [app/page.tsx](file://frontend/app/page.tsx)
-- [proxy.ts](file://frontend/proxy.ts)
-- [app/admin/layout.tsx](file://frontend/app/admin/layout.tsx)
-- [app/supervisor/page.tsx](file://frontend/app/supervisor/page.tsx)
-- [app/login/page.tsx](file://frontend/app/login/page.tsx)
-- [postcss.config.mjs](file://frontend/postcss.config.mjs)
-- [Dockerfile](file://frontend/Dockerfile)
-- [.dockerignore](file://frontend/.dockerignore)
-- [components/RoleShell.tsx](file://frontend/components/RoleShell.tsx)
+- [next.config.ts](frontend/next.config.ts)
+- [package.json](frontend/package.json)
+- [tsconfig.json](frontend/tsconfig.json)
+- [app/layout.tsx](frontend/app/layout.tsx)
+- [app/globals.css](frontend/app/globals.css)
+- [components/providers/AppProviders.tsx](frontend/components/providers/AppProviders.tsx)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts)
+- [app/page.tsx](frontend/app/page.tsx)
+- [proxy.ts](frontend/proxy.ts)
+- [app/admin/layout.tsx](frontend/app/admin/layout.tsx)
+- [app/supervisor/page.tsx](frontend/app/supervisor/page.tsx)
+- [app/login/page.tsx](frontend/app/login/page.tsx)
+- [postcss.config.mjs](frontend/postcss.config.mjs)
+- [Dockerfile](frontend/Dockerfile)
+- [.dockerignore](frontend/.dockerignore)
+- [components/RoleShell.tsx](frontend/components/RoleShell.tsx)
 </cite>
 
 ## Table of Contents
@@ -56,25 +56,25 @@ I["proxy.ts<br/>Middleware guards"] --> H
 ```
 
 **Diagram sources**
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
-- [components/providers/AppProviders.tsx:1-43](file://frontend/components/providers/AppProviders.tsx#L1-L43)
-- [app/globals.css:1-326](file://frontend/app/globals.css#L1-L326)
-- [app/page.tsx:1-6](file://frontend/app/page.tsx#L1-L6)
-- [app/login/page.tsx:1-251](file://frontend/app/login/page.tsx#L1-L251)
-- [app/admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [app/supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts#L1-L328)
-- [proxy.ts:1-93](file://frontend/proxy.ts#L1-L93)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
+- [components/providers/AppProviders.tsx:1-43](frontend/components/providers/AppProviders.tsx#L1-L43)
+- [app/globals.css:1-326](frontend/app/globals.css#L1-L326)
+- [app/page.tsx:1-6](frontend/app/page.tsx#L1-L6)
+- [app/login/page.tsx:1-251](frontend/app/login/page.tsx#L1-L251)
+- [app/admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [app/supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts#L1-L328)
+- [proxy.ts:1-93](frontend/proxy.ts#L1-L93)
 
 **Section sources**
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
-- [app/globals.css:1-326](file://frontend/app/globals.css#L1-L326)
-- [app/page.tsx:1-6](file://frontend/app/page.tsx#L1-L6)
-- [app/login/page.tsx:1-251](file://frontend/app/login/page.tsx#L1-L251)
-- [app/admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [app/supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts#L1-L328)
-- [proxy.ts:1-93](file://frontend/proxy.ts#L1-L93)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
+- [app/globals.css:1-326](frontend/app/globals.css#L1-L326)
+- [app/page.tsx:1-6](frontend/app/page.tsx#L1-L6)
+- [app/login/page.tsx:1-251](frontend/app/login/page.tsx#L1-L251)
+- [app/admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [app/supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts#L1-L328)
+- [proxy.ts:1-93](frontend/proxy.ts#L1-L93)
 
 ## Core Components
 - Root layout and metadata define the HTML shell and global imports.
@@ -85,12 +85,12 @@ I["proxy.ts<br/>Middleware guards"] --> H
 - Role shells wrap role-specific pages with navigation and guards.
 
 **Section sources**
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
-- [components/providers/AppProviders.tsx:1-43](file://frontend/components/providers/AppProviders.tsx#L1-L43)
-- [app/globals.css:1-326](file://frontend/app/globals.css#L1-L326)
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts#L1-L328)
-- [proxy.ts:1-93](file://frontend/proxy.ts#L1-L93)
-- [components/RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
+- [components/providers/AppProviders.tsx:1-43](frontend/components/providers/AppProviders.tsx#L1-L43)
+- [app/globals.css:1-326](frontend/app/globals.css#L1-L326)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts#L1-L328)
+- [proxy.ts:1-93](frontend/proxy.ts#L1-L93)
+- [components/RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
 
 ## Architecture Overview
 The frontend uses Next.js app directory routing with:
@@ -126,14 +126,14 @@ RL --> PAG
 ```
 
 **Diagram sources**
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
-- [components/providers/AppProviders.tsx:1-43](file://frontend/components/providers/AppProviders.tsx#L1-L43)
-- [app/globals.css:1-326](file://frontend/app/globals.css#L1-L326)
-- [proxy.ts:1-93](file://frontend/proxy.ts#L1-L93)
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts#L1-L328)
-- [app/login/page.tsx:1-251](file://frontend/app/login/page.tsx#L1-L251)
-- [app/admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [app/supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
+- [components/providers/AppProviders.tsx:1-43](frontend/components/providers/AppProviders.tsx#L1-L43)
+- [app/globals.css:1-326](frontend/app/globals.css#L1-L326)
+- [proxy.ts:1-93](frontend/proxy.ts#L1-L93)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts#L1-L328)
+- [app/login/page.tsx:1-251](frontend/app/login/page.tsx#L1-L251)
+- [app/admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [app/supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
 
 ## Detailed Component Analysis
 
@@ -144,7 +144,7 @@ RL --> PAG
 - Notes: API traffic is proxied by the API route to ensure reliable HTTP methods reach the backend.
 
 **Section sources**
-- [next.config.ts:1-30](file://frontend/next.config.ts#L1-L30)
+- [next.config.ts:1-30](frontend/next.config.ts#L1-L30)
 
 ### TypeScript Setup (tsconfig.json)
 - Strict mode enabled with no emit.
@@ -153,7 +153,7 @@ RL --> PAG
 - Incremental builds and isolated modules for fast dev feedback.
 
 **Section sources**
-- [tsconfig.json:1-35](file://frontend/tsconfig.json#L1-L35)
+- [tsconfig.json:1-35](frontend/tsconfig.json#L1-L35)
 
 ### Root Layout and Providers (app/layout.tsx, components/providers/AppProviders.tsx)
 - Root layout sets metadata, imports global CSS, and wraps children in providers.
@@ -180,12 +180,12 @@ RootLayout --> AppProviders : "wraps children"
 ```
 
 **Diagram sources**
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
-- [components/providers/AppProviders.tsx:1-43](file://frontend/components/providers/AppProviders.tsx#L1-L43)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
+- [components/providers/AppProviders.tsx:1-43](frontend/components/providers/AppProviders.tsx#L1-L43)
 
 **Section sources**
-- [app/layout.tsx:1-24](file://frontend/app/layout.tsx#L1-L24)
-- [components/providers/AppProviders.tsx:1-43](file://frontend/components/providers/AppProviders.tsx#L1-L43)
+- [app/layout.tsx:1-24](frontend/app/layout.tsx#L1-L24)
+- [components/providers/AppProviders.tsx:1-43](frontend/components/providers/AppProviders.tsx#L1-L43)
 
 ### Global Styles (app/globals.css)
 - Imports Inter font and Tailwind directives.
@@ -194,7 +194,7 @@ RootLayout --> AppProviders : "wraps children"
 - Includes reusable utility classes for cards, inputs, animations, and toasts.
 
 **Section sources**
-- [app/globals.css:1-326](file://frontend/app/globals.css#L1-L326)
+- [app/globals.css:1-326](frontend/app/globals.css#L1-L326)
 
 ### API Proxy Routing (app/api/[[...path]]/route.ts)
 - Runtime: Node.js.
@@ -222,10 +222,10 @@ R-->>C : "Proxied response"
 ```
 
 **Diagram sources**
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts#L1-L328)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts#L1-L328)
 
 **Section sources**
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts#L1-L328)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts#L1-L328)
 
 ### Middleware Guards (proxy.ts)
 - Enforces authentication and role-based access for protected routes.
@@ -251,10 +251,10 @@ Allowed --> |Yes| Pass
 ```
 
 **Diagram sources**
-- [proxy.ts:1-93](file://frontend/proxy.ts#L1-L93)
+- [proxy.ts:1-93](frontend/proxy.ts#L1-L93)
 
 **Section sources**
-- [proxy.ts:1-93](file://frontend/proxy.ts#L1-L93)
+- [proxy.ts:1-93](frontend/proxy.ts#L1-L93)
 
 ### Role Shell and Navigation (components/RoleShell.tsx)
 - Provides unified role shell with:
@@ -265,7 +265,7 @@ Allowed --> |Yes| Pass
 - Includes special-case allowance for staff to edit their own profile.
 
 **Section sources**
-- [components/RoleShell.tsx:1-102](file://frontend/components/RoleShell.tsx#L1-L102)
+- [components/RoleShell.tsx:1-102](frontend/components/RoleShell.tsx#L1-L102)
 
 ### Routing Patterns and Entry Points
 - Root page redirects to login.
@@ -282,12 +282,12 @@ Dashboard --> Tasks["/supervisor/tasks"]
 ```
 
 **Diagram sources**
-- [app/page.tsx:1-6](file://frontend/app/page.tsx#L1-L6)
-- [app/supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
+- [app/page.tsx:1-6](frontend/app/page.tsx#L1-L6)
+- [app/supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
 
 **Section sources**
-- [app/page.tsx:1-6](file://frontend/app/page.tsx#L1-L6)
-- [app/supervisor/page.tsx:1-394](file://frontend/app/supervisor/page.tsx#L1-L394)
+- [app/page.tsx:1-6](frontend/app/page.tsx#L1-L6)
+- [app/supervisor/page.tsx:1-394](frontend/app/supervisor/page.tsx#L1-L394)
 
 ### Build and Deployment Configuration
 - Build script runs Next.js build.
@@ -308,13 +308,13 @@ Runner --> Server["node server.js"]
 ```
 
 **Diagram sources**
-- [package.json:1-58](file://frontend/package.json#L1-L58)
-- [Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
+- [package.json:1-58](frontend/package.json#L1-L58)
+- [Dockerfile:1-31](frontend/Dockerfile#L1-L31)
 
 **Section sources**
-- [package.json:1-58](file://frontend/package.json#L1-L58)
-- [Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
-- [.dockerignore:1-8](file://frontend/.dockerignore#L1-L8)
+- [package.json:1-58](frontend/package.json#L1-L58)
+- [Dockerfile:1-31](frontend/Dockerfile#L1-L31)
+- [.dockerignore:1-8](frontend/.dockerignore#L1-L8)
 
 ## Dependency Analysis
 - Frontend dependencies include Next.js 16, React 19, TanStack Query, Radix UI, Tailwind, and others.
@@ -334,12 +334,12 @@ Post["postcss.config.mjs"] --> Tailwind
 ```
 
 **Diagram sources**
-- [package.json:1-58](file://frontend/package.json#L1-L58)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
+- [package.json:1-58](frontend/package.json#L1-L58)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
 
 **Section sources**
-- [package.json:1-58](file://frontend/package.json#L1-L58)
-- [postcss.config.mjs:1-8](file://frontend/postcss.config.mjs#L1-L8)
+- [package.json:1-58](frontend/package.json#L1-L58)
+- [postcss.config.mjs:1-8](frontend/postcss.config.mjs#L1-L8)
 
 ## Performance Considerations
 - React Compiler enabled in Next.js config improves component compilation performance.
@@ -365,8 +365,8 @@ Post["postcss.config.mjs"] --> Tailwind
   - Role guards redirect to the user’s role home if attempting to access another role’s path.
 
 **Section sources**
-- [app/api/[[...path]]/route.ts](file://frontend/app/api/[[...path]]/route.ts#L170-L206)
-- [proxy.ts:60-81](file://frontend/proxy.ts#L60-L81)
+- [app/api/[[...path]]/route.ts](frontend/app/api/[[...path]]/route.ts#L170-L206)
+- [proxy.ts:60-81](frontend/proxy.ts#L60-L81)
 
 ## Conclusion
 The WheelSense Platform frontend leverages Next.js 16 with a modern app directory structure, robust provider stack, and a dedicated API proxy to integrate with the backend. The standalone output mode and containerized build streamline production deployment, while middleware and role shells ensure secure, role-aware navigation. The configuration emphasizes performance, maintainability, and a consistent developer experience.
@@ -379,7 +379,7 @@ The WheelSense Platform frontend leverages Next.js 16 with a modern app director
 - Linting via ESLint and TypeScript checking are integrated into the toolchain.
 
 **Section sources**
-- [package.json:1-58](file://frontend/package.json#L1-L58)
+- [package.json:1-58](frontend/package.json#L1-L58)
 
 ### Production Deployment Notes
 - Use standalone output for minimal container images.
@@ -387,5 +387,5 @@ The WheelSense Platform frontend leverages Next.js 16 with a modern app director
 - Disable telemetry in production builds as shown in Dockerfile.
 
 **Section sources**
-- [next.config.ts:1-30](file://frontend/next.config.ts#L1-L30)
-- [Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
+- [next.config.ts:1-30](frontend/next.config.ts#L1-L30)
+- [Dockerfile:1-31](frontend/Dockerfile#L1-L31)

@@ -2,14 +2,14 @@
 
 <cite>
 **Referenced Files in This Document**
-- [page.tsx](file://frontend/app/admin/demo-control/page.tsx)
-- [DemoPanel.tsx](file://frontend/components/admin/demo-control/DemoPanel.tsx)
-- [demo_control.py](file://server/app/api/endpoints/demo_control.py)
-- [demo_control.py](file://server/app/services/demo_control.py)
-- [demo_control.py](file://server/app/schemas/demo_control.py)
-- [simulator_reset.py](file://server/app/services/simulator_reset.py)
-- [seed_demo.py](file://server/scripts/seed_demo.py)
-- [sim_controller.py](file://server/sim_controller.py)
+- [page.tsx](frontend/app/admin/demo-control/page.tsx)
+- [DemoPanel.tsx](frontend/components/admin/demo-control/DemoPanel.tsx)
+- [demo_control.py](server/app/api/endpoints/demo_control.py)
+- [demo_control.py](server/app/services/demo_control.py)
+- [demo_control.py](server/app/schemas/demo_control.py)
+- [simulator_reset.py](server/app/services/simulator_reset.py)
+- [seed_demo.py](server/scripts/seed_demo.py)
+- [sim_controller.py](server/sim_controller.py)
 </cite>
 
 ## Table of Contents
@@ -60,22 +60,22 @@ Svc_SimReset --> Sim_Controller
 ```
 
 **Diagram sources**
-- [page.tsx:1-804](file://frontend/app/admin/demo-control/page.tsx#L1-804)
-- [DemoPanel.tsx:1-52](file://frontend/components/admin/demo-control/DemoPanel.tsx#L1-52)
-- [demo_control.py:1-345](file://server/app/api/endpoints/demo_control.py#L1-345)
-- [demo_control.py:1-860](file://server/app/services/demo_control.py#L1-860)
-- [simulator_reset.py:1-228](file://server/app/services/simulator_reset.py#L1-228)
-- [seed_demo.py:1458-1549](file://server/scripts/seed_demo.py#L1458-1549)
-- [sim_controller.py:1-1472](file://server/sim_controller.py#L1-1472)
+- [page.tsx:1-804](frontend/app/admin/demo-control/page.tsx#L1-804)
+- [DemoPanel.tsx:1-52](frontend/components/admin/demo-control/DemoPanel.tsx#L1-52)
+- [demo_control.py:1-345](server/app/api/endpoints/demo_control.py#L1-345)
+- [demo_control.py:1-860](server/app/services/demo_control.py#L1-860)
+- [simulator_reset.py:1-228](server/app/services/simulator_reset.py#L1-228)
+- [seed_demo.py:1458-1549](server/scripts/seed_demo.py#L1458-1549)
+- [sim_controller.py:1-1472](server/sim_controller.py#L1-1472)
 
 **Section sources**
-- [page.tsx:1-804](file://frontend/app/admin/demo-control/page.tsx#L1-804)
-- [DemoPanel.tsx:1-52](file://frontend/components/admin/demo-control/DemoPanel.tsx#L1-52)
-- [demo_control.py:1-345](file://server/app/api/endpoints/demo_control.py#L1-345)
-- [demo_control.py:1-860](file://server/app/services/demo_control.py#L1-860)
-- [simulator_reset.py:1-228](file://server/app/services/simulator_reset.py#L1-228)
-- [seed_demo.py:1458-1549](file://server/scripts/seed_demo.py#L1458-1549)
-- [sim_controller.py:1-1472](file://server/sim_controller.py#L1-1472)
+- [page.tsx:1-804](frontend/app/admin/demo-control/page.tsx#L1-804)
+- [DemoPanel.tsx:1-52](frontend/components/admin/demo-control/DemoPanel.tsx#L1-52)
+- [demo_control.py:1-345](server/app/api/endpoints/demo_control.py#L1-345)
+- [demo_control.py:1-860](server/app/services/demo_control.py#L1-860)
+- [simulator_reset.py:1-228](server/app/services/simulator_reset.py#L1-228)
+- [seed_demo.py:1458-1549](server/scripts/seed_demo.py#L1458-1549)
+- [sim_controller.py:1-1472](server/sim_controller.py#L1-1472)
 
 ## Core Components
 - Admin Demo Control Page: Renders the main control surface with panels for alerts, simulator, actor movement, room snapshots, and workflow advancement. It fetches live data and logs actions.
@@ -85,12 +85,12 @@ Svc_SimReset --> Sim_Controller
 - Demo Data Seeder: Seeds a complete demonstration workspace with facilities, rooms, patients, devices, workflows, and sample data.
 
 **Section sources**
-- [page.tsx:82-804](file://frontend/app/admin/demo-control/page.tsx#L82-804)
-- [DemoPanel.tsx:17-52](file://frontend/components/admin/demo-control/DemoPanel.tsx#L17-52)
-- [demo_control.py:63-800](file://server/app/services/demo_control.py#L63-800)
-- [demo_control.py:47-345](file://server/app/api/endpoints/demo_control.py#L47-345)
-- [simulator_reset.py:93-228](file://server/app/services/simulator_reset.py#L93-228)
-- [seed_demo.py:1458-1549](file://server/scripts/seed_demo.py#L1458-1549)
+- [page.tsx:82-804](frontend/app/admin/demo-control/page.tsx#L82-804)
+- [DemoPanel.tsx:17-52](frontend/components/admin/demo-control/DemoPanel.tsx#L17-52)
+- [demo_control.py:63-800](server/app/services/demo_control.py#L63-800)
+- [demo_control.py:47-345](server/app/api/endpoints/demo_control.py#L47-345)
+- [simulator_reset.py:93-228](server/app/services/simulator_reset.py#L93-228)
+- [seed_demo.py:1458-1549](server/scripts/seed_demo.py#L1458-1549)
 
 ## Architecture Overview
 The Demo Environment Control follows a layered architecture:
@@ -122,11 +122,11 @@ API-->>Admin : SimulatorCommandOut
 ```
 
 **Diagram sources**
-- [page.tsx:256-263](file://frontend/app/admin/demo-control/page.tsx#L256-263)
-- [demo_control.py:56-76](file://server/app/api/endpoints/demo_control.py#L56-76)
-- [demo_control.py:308-344](file://server/app/api/endpoints/demo_control.py#L308-344)
-- [demo_control.py:1458-1507](file://server/app/services/demo_control.py#L1458-1507)
-- [sim_controller.py:783-798](file://server/sim_controller.py#L783-798)
+- [page.tsx:256-263](frontend/app/admin/demo-control/page.tsx#L256-263)
+- [demo_control.py:56-76](server/app/api/endpoints/demo_control.py#L56-76)
+- [demo_control.py:308-344](server/app/api/endpoints/demo_control.py#L308-344)
+- [demo_control.py:1458-1507](server/app/services/demo_control.py#L1458-1507)
+- [sim_controller.py:783-798](server/sim_controller.py#L783-798)
 
 ## Detailed Component Analysis
 
@@ -163,17 +163,17 @@ UpdateUI --> Actions
 ```
 
 **Diagram sources**
-- [page.tsx:87-120](file://frontend/app/admin/demo-control/page.tsx#L87-120)
-- [page.tsx:171-180](file://frontend/app/admin/demo-control/page.tsx#L171-180)
-- [page.tsx:256-263](file://frontend/app/admin/demo-control/page.tsx#L256-263)
-- [page.tsx:377-381](file://frontend/app/admin/demo-control/page.tsx#L377-381)
-- [page.tsx:425-474](file://frontend/app/admin/demo-control/page.tsx#L425-474)
-- [page.tsx:581-595](file://frontend/app/admin/demo-control/page.tsx#L581-595)
-- [page.tsx:617-627](file://frontend/app/admin/demo-control/page.tsx#L617-627)
-- [page.tsx:707-726](file://frontend/app/admin/demo-control/page.tsx#L707-726)
+- [page.tsx:87-120](frontend/app/admin/demo-control/page.tsx#L87-120)
+- [page.tsx:171-180](frontend/app/admin/demo-control/page.tsx#L171-180)
+- [page.tsx:256-263](frontend/app/admin/demo-control/page.tsx#L256-263)
+- [page.tsx:377-381](frontend/app/admin/demo-control/page.tsx#L377-381)
+- [page.tsx:425-474](frontend/app/admin/demo-control/page.tsx#L425-474)
+- [page.tsx:581-595](frontend/app/admin/demo-control/page.tsx#L581-595)
+- [page.tsx:617-627](frontend/app/admin/demo-control/page.tsx#L617-627)
+- [page.tsx:707-726](frontend/app/admin/demo-control/page.tsx#L707-726)
 
 **Section sources**
-- [page.tsx:82-804](file://frontend/app/admin/demo-control/page.tsx#L82-804)
+- [page.tsx:82-804](frontend/app/admin/demo-control/page.tsx#L82-804)
 
 ### Demo Panel Component
 The Demo Panel Component provides a consistent layout for each control group:
@@ -181,7 +181,7 @@ The Demo Panel Component provides a consistent layout for each control group:
 - Renders a bordered card with gradient header and optional footer.
 
 **Section sources**
-- [DemoPanel.tsx:17-52](file://frontend/components/admin/demo-control/DemoPanel.tsx#L17-52)
+- [DemoPanel.tsx:17-52](frontend/components/admin/demo-control/DemoPanel.tsx#L17-52)
 
 ### Demo Control Service
 The Demo Control Service implements core demo operations:
@@ -203,10 +203,10 @@ class DemoControlService {
 ```
 
 **Diagram sources**
-- [demo_control.py:63-800](file://server/app/services/demo_control.py#L63-800)
+- [demo_control.py:63-800](server/app/services/demo_control.py#L63-800)
 
 **Section sources**
-- [demo_control.py:63-800](file://server/app/services/demo_control.py#L63-800)
+- [demo_control.py:63-800](server/app/services/demo_control.py#L63-800)
 
 ### Simulator Management
 The simulator management provides:
@@ -240,18 +240,18 @@ API-->>Admin : SimulatorCommandOut
 ```
 
 **Diagram sources**
-- [demo_control.py:284-305](file://server/app/api/endpoints/demo_control.py#L284-305)
-- [demo_control.py:253-281](file://server/app/api/endpoints/demo_control.py#L253-281)
-- [demo_control.py:308-344](file://server/app/api/endpoints/demo_control.py#L308-344)
-- [simulator_reset.py:93-148](file://server/app/services/simulator_reset.py#L93-148)
-- [seed_demo.py:1408-1455](file://server/scripts/seed_demo.py#L1408-1455)
-- [sim_controller.py:600-626](file://server/sim_controller.py#L600-626)
+- [demo_control.py:284-305](server/app/api/endpoints/demo_control.py#L284-305)
+- [demo_control.py:253-281](server/app/api/endpoints/demo_control.py#L253-281)
+- [demo_control.py:308-344](server/app/api/endpoints/demo_control.py#L308-344)
+- [simulator_reset.py:93-148](server/app/services/simulator_reset.py#L93-148)
+- [seed_demo.py:1408-1455](server/scripts/seed_demo.py#L1408-1455)
+- [sim_controller.py:600-626](server/sim_controller.py#L600-626)
 
 **Section sources**
-- [demo_control.py:251-345](file://server/app/api/endpoints/demo_control.py#L251-345)
-- [simulator_reset.py:93-228](file://server/app/services/simulator_reset.py#L93-228)
-- [seed_demo.py:1408-1455](file://server/scripts/seed_demo.py#L1408-1455)
-- [sim_controller.py:600-626](file://server/sim_controller.py#L600-626)
+- [demo_control.py:251-345](server/app/api/endpoints/demo_control.py#L251-345)
+- [simulator_reset.py:93-228](server/app/services/simulator_reset.py#L93-228)
+- [seed_demo.py:1408-1455](server/scripts/seed_demo.py#L1408-1455)
+- [sim_controller.py:600-626](server/sim_controller.py#L600-626)
 
 ### Demo Data Seeding
 The demo data seeder:
@@ -261,7 +261,7 @@ The demo data seeder:
 - Provides a minimal simulator team seed for MQTT-driven simulation.
 
 **Section sources**
-- [seed_demo.py:1458-1549](file://server/scripts/seed_demo.py#L1458-1549)
+- [seed_demo.py:1458-1549](server/scripts/seed_demo.py#L1458-1549)
 
 ## Dependency Analysis
 The Demo Environment Control integrates several modules with clear separation of concerns:
@@ -282,21 +282,21 @@ Svc_Sim --> SimCtrl["sim_controller.py"]
 ```
 
 **Diagram sources**
-- [page.tsx:1-804](file://frontend/app/admin/demo-control/page.tsx#L1-804)
-- [DemoPanel.tsx:1-52](file://frontend/components/admin/demo-control/DemoPanel.tsx#L1-52)
-- [demo_control.py:1-345](file://server/app/api/endpoints/demo_control.py#L1-345)
-- [demo_control.py:1-860](file://server/app/services/demo_control.py#L1-860)
-- [simulator_reset.py:1-228](file://server/app/services/simulator_reset.py#L1-228)
-- [seed_demo.py:1458-1549](file://server/scripts/seed_demo.py#L1458-1549)
-- [sim_controller.py:1-1472](file://server/sim_controller.py#L1-1472)
+- [page.tsx:1-804](frontend/app/admin/demo-control/page.tsx#L1-804)
+- [DemoPanel.tsx:1-52](frontend/components/admin/demo-control/DemoPanel.tsx#L1-52)
+- [demo_control.py:1-345](server/app/api/endpoints/demo_control.py#L1-345)
+- [demo_control.py:1-860](server/app/services/demo_control.py#L1-860)
+- [simulator_reset.py:1-228](server/app/services/simulator_reset.py#L1-228)
+- [seed_demo.py:1458-1549](server/scripts/seed_demo.py#L1458-1549)
+- [sim_controller.py:1-1472](server/sim_controller.py#L1-1472)
 
 **Section sources**
-- [page.tsx:1-804](file://frontend/app/admin/demo-control/page.tsx#L1-804)
-- [demo_control.py:1-345](file://server/app/api/endpoints/demo_control.py#L1-345)
-- [demo_control.py:1-860](file://server/app/services/demo_control.py#L1-860)
-- [simulator_reset.py:1-228](file://server/app/services/simulator_reset.py#L1-228)
-- [seed_demo.py:1458-1549](file://server/scripts/seed_demo.py#L1458-1549)
-- [sim_controller.py:1-1472](file://server/sim_controller.py#L1-1472)
+- [page.tsx:1-804](frontend/app/admin/demo-control/page.tsx#L1-804)
+- [demo_control.py:1-345](server/app/api/endpoints/demo_control.py#L1-345)
+- [demo_control.py:1-860](server/app/services/demo_control.py#L1-860)
+- [simulator_reset.py:1-228](server/app/services/simulator_reset.py#L1-228)
+- [seed_demo.py:1458-1549](server/scripts/seed_demo.py#L1458-1549)
+- [sim_controller.py:1-1472](server/sim_controller.py#L1-1472)
 
 ## Performance Considerations
 - Data Fetching: The page uses TanStack Query with workspace-scoped keys to cache and invalidate data efficiently during resets and operations.
@@ -313,10 +313,10 @@ Common issues and resolutions:
 - Room Capture Errors: Ensure the room has a mapped node device.
 
 **Section sources**
-- [demo_control.py:56-76](file://server/app/api/endpoints/demo_control.py#L56-76)
-- [demo_control.py:308-344](file://server/app/api/endpoints/demo_control.py#L308-344)
-- [demo_control.py:155-263](file://server/app/services/demo_control.py#L155-263)
-- [demo_control.py:265-450](file://server/app/services/demo_control.py#L265-450)
+- [demo_control.py:56-76](server/app/api/endpoints/demo_control.py#L56-76)
+- [demo_control.py:308-344](server/app/api/endpoints/demo_control.py#L308-344)
+- [demo_control.py:155-263](server/app/services/demo_control.py#L155-263)
+- [demo_control.py:265-450](server/app/services/demo_control.py#L265-450)
 
 ## Conclusion
 The Demo Environment Control provides a comprehensive toolkit for administrators to prepare demonstration environments, reset demo data, control simulation parameters, and support training and testing workflows. The modular architecture ensures clear separation of concerns, while the simulator integration enables realistic, controllable demonstrations with configurable runtime parameters.

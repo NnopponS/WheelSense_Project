@@ -2,15 +2,15 @@
 
 <cite>
 **Referenced Files in This Document**
-- [frontend/app/admin/page.tsx](file://frontend/app/admin/page.tsx)
-- [frontend/app/admin/layout.tsx](file://frontend/app/admin/layout.tsx)
-- [frontend/app/admin/loading.tsx](file://frontend/app/admin/loading.tsx)
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [frontend/components/dashboard/WardOverviewGrid.tsx](file://frontend/components/dashboard/WardOverviewGrid.tsx)
-- [frontend/lib/deviceOnline.ts](file://frontend/lib/deviceOnline.ts)
-- [frontend/lib/smartDeviceOnline.ts](file://frontend/lib/smartDeviceOnline.ts)
-- [frontend/lib/types.ts](file://frontend/lib/types.ts)
-- [frontend/lib/api.ts](file://frontend/lib/api.ts)
+- [frontend/app/admin/page.tsx](frontend/app/admin/page.tsx)
+- [frontend/app/admin/layout.tsx](frontend/app/admin/layout.tsx)
+- [frontend/app/admin/loading.tsx](frontend/app/admin/loading.tsx)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx](frontend/components/dashboard/DashboardFloorplanPanel.tsx)
+- [frontend/components/dashboard/WardOverviewGrid.tsx](frontend/components/dashboard/WardOverviewGrid.tsx)
+- [frontend/lib/deviceOnline.ts](frontend/lib/deviceOnline.ts)
+- [frontend/lib/smartDeviceOnline.ts](frontend/lib/smartDeviceOnline.ts)
+- [frontend/lib/types.ts](frontend/lib/types.ts)
+- [frontend/lib/api.ts](frontend/lib/api.ts)
 </cite>
 
 ## Table of Contents
@@ -58,20 +58,20 @@ P --> LD
 ```
 
 **Diagram sources**
-- [frontend/app/admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [frontend/app/admin/page.tsx:1-488](file://frontend/app/admin/page.tsx#L1-L488)
-- [frontend/app/admin/loading.tsx:1-18](file://frontend/app/admin/loading.tsx#L1-L18)
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
-- [frontend/lib/deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [frontend/lib/smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [frontend/lib/types.ts:1-482](file://frontend/lib/types.ts#L1-L482)
-- [frontend/lib/api.ts:1-800](file://frontend/lib/api.ts#L1-L800)
+- [frontend/app/admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [frontend/app/admin/page.tsx:1-488](frontend/app/admin/page.tsx#L1-L488)
+- [frontend/app/admin/loading.tsx:1-18](frontend/app/admin/loading.tsx#L1-L18)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [frontend/lib/deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [frontend/lib/smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [frontend/lib/types.ts:1-482](frontend/lib/types.ts#L1-L482)
+- [frontend/lib/api.ts:1-800](frontend/lib/api.ts#L1-L800)
 
 **Section sources**
-- [frontend/app/admin/layout.tsx:1-12](file://frontend/app/admin/layout.tsx#L1-L12)
-- [frontend/app/admin/page.tsx:1-488](file://frontend/app/admin/page.tsx#L1-L488)
-- [frontend/app/admin/loading.tsx:1-18](file://frontend/app/admin/loading.tsx#L1-L18)
+- [frontend/app/admin/layout.tsx:1-12](frontend/app/admin/layout.tsx#L1-L12)
+- [frontend/app/admin/page.tsx:1-488](frontend/app/admin/page.tsx#L1-L488)
+- [frontend/app/admin/loading.tsx:1-18](frontend/app/admin/loading.tsx#L1-L18)
 
 ## Core Components
 The Admin Dashboard page orchestrates multiple data sources and UI sections:
@@ -90,8 +90,8 @@ Key implementation highlights:
 - Renders a floorplan panel for live ward overview
 
 **Section sources**
-- [frontend/app/admin/page.tsx:46-208](file://frontend/app/admin/page.tsx#L46-L208)
-- [frontend/app/admin/page.tsx:218-488](file://frontend/app/admin/page.tsx#L218-L488)
+- [frontend/app/admin/page.tsx:46-208](frontend/app/admin/page.tsx#L46-L208)
+- [frontend/app/admin/page.tsx:218-488](frontend/app/admin/page.tsx#L218-L488)
 
 ## Architecture Overview
 The dashboard follows a client-side rendering pattern with data fetching via a typed API client. It composes reusable dashboard components and applies role-aware routing through the admin layout.
@@ -116,9 +116,9 @@ Page-->>Browser : Render dashboard UI
 ```
 
 **Diagram sources**
-- [frontend/app/admin/page.tsx:69-95](file://frontend/app/admin/page.tsx#L69-L95)
-- [frontend/lib/api.ts:577-589](file://frontend/lib/api.ts#L577-L589)
-- [frontend/lib/types.ts:92-137](file://frontend/lib/types.ts#L92-L137)
+- [frontend/app/admin/page.tsx:69-95](frontend/app/admin/page.tsx#L69-L95)
+- [frontend/lib/api.ts:577-589](frontend/lib/api.ts#L577-L589)
+- [frontend/lib/types.ts:92-137](frontend/lib/types.ts#L92-L137)
 
 ## Detailed Component Analysis
 
@@ -149,12 +149,12 @@ RenderActivity --> End([Complete Render])
 ```
 
 **Diagram sources**
-- [frontend/app/admin/page.tsx:69-163](file://frontend/app/admin/page.tsx#L69-L163)
-- [frontend/app/admin/page.tsx:218-488](file://frontend/app/admin/page.tsx#L218-L488)
+- [frontend/app/admin/page.tsx:69-163](frontend/app/admin/page.tsx#L69-L163)
+- [frontend/app/admin/page.tsx:218-488](frontend/app/admin/page.tsx#L218-L488)
 
 **Section sources**
-- [frontend/app/admin/page.tsx:46-208](file://frontend/app/admin/page.tsx#L46-L208)
-- [frontend/app/admin/page.tsx:218-488](file://frontend/app/admin/page.tsx#L218-L488)
+- [frontend/app/admin/page.tsx:46-208](frontend/app/admin/page.tsx#L46-L208)
+- [frontend/app/admin/page.tsx:218-488](frontend/app/admin/page.tsx#L218-L488)
 
 ### DashboardFloorplanPanel
 A lightweight wrapper around the floorplan role viewer, enabling live presence visualization on the dashboard. It accepts optional initial facility, floor, and room parameters.
@@ -181,10 +181,10 @@ DashboardFloorplanPanel --> FloorplanRoleViewer : "renders"
 ```
 
 **Diagram sources**
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:5-29](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L29)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:5-29](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L5-L29)
 
 **Section sources**
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ### WardOverviewGrid
 Provides a filtered, sortable grid of rooms with occupancy and alert summaries, supporting grid and compact views, floor filtering, and occupancy filters. It calculates derived statistics such as occupancy rate and total alerts.
@@ -200,11 +200,11 @@ Render --> Popup["Room detail popup on selection"]
 ```
 
 **Diagram sources**
-- [frontend/components/dashboard/WardOverviewGrid.tsx:58-112](file://frontend/components/dashboard/WardOverviewGrid.tsx#L58-L112)
-- [frontend/components/dashboard/WardOverviewGrid.tsx:155-266](file://frontend/components/dashboard/WardOverviewGrid.tsx#L155-L266)
+- [frontend/components/dashboard/WardOverviewGrid.tsx:58-112](frontend/components/dashboard/WardOverviewGrid.tsx#L58-L112)
+- [frontend/components/dashboard/WardOverviewGrid.tsx:155-266](frontend/components/dashboard/WardOverviewGrid.tsx#L155-L266)
 
 **Section sources**
-- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
 
 ### Device and Smart Device Online Logic
 - Device online detection uses a fixed window to determine whether a device is considered online based on its last-seen timestamp.
@@ -225,12 +225,12 @@ J --> |No| K["Online"]
 ```
 
 **Diagram sources**
-- [frontend/lib/deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [frontend/lib/smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [frontend/lib/deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [frontend/lib/smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
 
 **Section sources**
-- [frontend/lib/deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [frontend/lib/smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [frontend/lib/deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [frontend/lib/smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
 
 ### Data Types and API Contracts
 The dashboard relies on strongly typed interfaces for devices, smart devices, and activity events. The API client exposes typed methods for fetching lists and details.
@@ -267,11 +267,11 @@ string summary
 ```
 
 **Diagram sources**
-- [frontend/lib/types.ts:100-137](file://frontend/lib/types.ts#L100-L137)
+- [frontend/lib/types.ts:100-137](frontend/lib/types.ts#L100-L137)
 
 **Section sources**
-- [frontend/lib/types.ts:92-137](file://frontend/lib/types.ts#L92-L137)
-- [frontend/lib/api.ts:577-589](file://frontend/lib/api.ts#L577-L589)
+- [frontend/lib/types.ts:92-137](frontend/lib/types.ts#L92-L137)
+- [frontend/lib/api.ts:577-589](frontend/lib/api.ts#L577-L589)
 
 ## Dependency Analysis
 The Admin Dashboard page depends on:
@@ -291,22 +291,22 @@ Page --> WOG["WardOverviewGrid.tsx"]
 ```
 
 **Diagram sources**
-- [frontend/app/admin/page.tsx:12-17](file://frontend/app/admin/page.tsx#L12-L17)
-- [frontend/lib/deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [frontend/lib/smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [frontend/lib/types.ts:92-137](file://frontend/lib/types.ts#L92-L137)
-- [frontend/lib/api.ts:577-589](file://frontend/lib/api.ts#L577-L589)
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [frontend/app/admin/page.tsx:12-17](frontend/app/admin/page.tsx#L12-L17)
+- [frontend/lib/deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [frontend/lib/smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [frontend/lib/types.ts:92-137](frontend/lib/types.ts#L92-L137)
+- [frontend/lib/api.ts:577-589](frontend/lib/api.ts#L577-L589)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
 
 **Section sources**
-- [frontend/app/admin/page.tsx:12-17](file://frontend/app/admin/page.tsx#L12-L17)
-- [frontend/lib/deviceOnline.ts:1-8](file://frontend/lib/deviceOnline.ts#L1-L8)
-- [frontend/lib/smartDeviceOnline.ts:1-11](file://frontend/lib/smartDeviceOnline.ts#L1-L11)
-- [frontend/lib/types.ts:92-137](file://frontend/lib/types.ts#L92-L137)
-- [frontend/lib/api.ts:577-589](file://frontend/lib/api.ts#L577-L589)
-- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
-- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](file://frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
+- [frontend/app/admin/page.tsx:12-17](frontend/app/admin/page.tsx#L12-L17)
+- [frontend/lib/deviceOnline.ts:1-8](frontend/lib/deviceOnline.ts#L1-L8)
+- [frontend/lib/smartDeviceOnline.ts:1-11](frontend/lib/smartDeviceOnline.ts#L1-L11)
+- [frontend/lib/types.ts:92-137](frontend/lib/types.ts#L92-L137)
+- [frontend/lib/api.ts:577-589](frontend/lib/api.ts#L577-L589)
+- [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
+- [frontend/components/dashboard/WardOverviewGrid.tsx:1-269](frontend/components/dashboard/WardOverviewGrid.tsx#L1-L269)
 
 ## Performance Considerations
 - Polling and stale times: Device and smart device queries use workspace-scoped endpoints with polling intervals configured via helper utilities. Activity and user queries use shorter stale times to keep data fresh without excessive polling.
@@ -315,7 +315,7 @@ Page --> WOG["WardOverviewGrid.tsx"]
 - Component composition: Dashboard components encapsulate their own logic and rendering, keeping the main page focused on orchestration.
 
 **Section sources**
-- [frontend/app/admin/page.tsx:69-95](file://frontend/app/admin/page.tsx#L69-L95)
+- [frontend/app/admin/page.tsx:69-95](frontend/app/admin/page.tsx#L69-L95)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -325,8 +325,8 @@ Common issues and resolutions:
 - MQTT status confusion: MQTT is considered healthy if there is a device fleet or recent activity within the online window. If both are absent, the status may show warning.
 
 **Section sources**
-- [frontend/lib/api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
-- [frontend/app/admin/page.tsx:142-163](file://frontend/app/admin/page.tsx#L142-L163)
+- [frontend/lib/api.ts:209-297](frontend/lib/api.ts#L209-L297)
+- [frontend/app/admin/page.tsx:142-163](frontend/app/admin/page.tsx#L142-L163)
 
 ## Conclusion
 The Admin Dashboard provides a comprehensive, real-time overview of the WheelSense Platform’s operational state. Administrators can quickly assess system health, monitor device and smart device fleets, review user statistics, and stay informed about recent activity. The modular design and typed APIs enable maintainability and scalability while ensuring a responsive user experience.

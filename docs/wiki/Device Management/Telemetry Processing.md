@@ -2,17 +2,17 @@
 
 <cite>
 **Referenced Files in This Document**
-- [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [localization.py](file://server/app/localization.py)
-- [device_management.py](file://server/app/services/device_management.py)
-- [telemetry.py](file://server/app/models/telemetry.py)
-- [vitals.py](file://server/app/models/vitals.py)
-- [activity.py](file://server/app/models/activity.py)
-- [telemetry.py (API)](file://server/app/api/endpoints/telemetry.py)
-- [cameras.py (API)](file://server/app/api/endpoints/cameras.py)
-- [camera.py (schemas)](file://server/app/schemas/camera.py)
-- [camera.py (service)](file://server/app/services/camera.py)
-- [devices.py (schemas)](file://server/app/schemas/devices.py)
+- [mqtt_handler.py](server/app/mqtt_handler.py)
+- [localization.py](server/app/localization.py)
+- [device_management.py](server/app/services/device_management.py)
+- [telemetry.py](server/app/models/telemetry.py)
+- [vitals.py](server/app/models/vitals.py)
+- [activity.py](server/app/models/activity.py)
+- [telemetry.py (API)](server/app/api/endpoints/telemetry.py)
+- [cameras.py (API)](server/app/api/endpoints/cameras.py)
+- [camera.py (schemas)](server/app/schemas/camera.py)
+- [camera.py (service)](server/app/services/camera.py)
+- [devices.py (schemas)](server/app/schemas/devices.py)
 </cite>
 
 ## Table of Contents
@@ -60,19 +60,19 @@ I --> E
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [device_management.py:127-214](file://server/app/services/device_management.py#L127-L214)
-- [telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
-- [vitals.py:24-56](file://server/app/models/vitals.py#L24-L56)
-- [activity.py:14-89](file://server/app/models/activity.py#L14-L89)
-- [telemetry.py (API):15-72](file://server/app/api/endpoints/telemetry.py#L15-L72)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
+- [device_management.py:127-214](server/app/services/device_management.py#L127-L214)
+- [telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
+- [vitals.py:24-56](server/app/models/vitals.py#L24-L56)
+- [activity.py:14-89](server/app/models/activity.py#L14-L89)
+- [telemetry.py (API):15-72](server/app/api/endpoints/telemetry.py#L15-L72)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
 
 **Section sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [telemetry.py (API):15-72](file://server/app/api/endpoints/telemetry.py#L15-L72)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [telemetry.py (API):15-72](server/app/api/endpoints/telemetry.py#L15-L72)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
 
 ## Core Components
 - MQTT listener and dispatcher: Subscribes to device and camera topics, dispatches to handlers for telemetry, acknowledgements, registrations, status, photos, and frames.
@@ -84,13 +84,13 @@ I --> E
 - API endpoints: Expose queries for recent IMU and RSSI, and photo listing/content retrieval.
 
 **Section sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
-- [vitals.py:24-56](file://server/app/models/vitals.py#L24-L56)
-- [activity.py:14-89](file://server/app/models/activity.py#L14-L89)
-- [telemetry.py (API):15-72](file://server/app/api/endpoints/telemetry.py#L15-L72)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
+- [telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
+- [vitals.py:24-56](server/app/models/vitals.py#L24-L56)
+- [activity.py:14-89](server/app/models/activity.py#L14-L89)
+- [telemetry.py (API):15-72](server/app/api/endpoints/telemetry.py#L15-L72)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
 
 ## Architecture Overview
 The telemetry pipeline is event-driven and asynchronous. MQTT messages trigger ingestion handlers that validate and normalize payloads, enrich with device and patient context, persist structured records, and publish downstream events for alerts and room predictions.
@@ -119,11 +119,11 @@ API->>DB : GET /cameras/photos, GET /cameras/photos/{id}/content
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:100-137](file://server/app/mqtt_handler.py#L100-L137)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [telemetry.py (API):15-72](file://server/app/api/endpoints/telemetry.py#L15-L72)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
+- [mqtt_handler.py:100-137](server/app/mqtt_handler.py#L100-L137)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
+- [telemetry.py (API):15-72](server/app/api/endpoints/telemetry.py#L15-L72)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
 
 ## Detailed Component Analysis
 
@@ -162,22 +162,22 @@ Save --> Done
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:100-137](file://server/app/mqtt_handler.py#L100-L137)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
-- [mqtt_handler.py:566-573](file://server/app/mqtt_handler.py#L566-L573)
-- [mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
-- [mqtt_handler.py:590-631](file://server/app/mqtt_handler.py#L590-L631)
-- [mqtt_handler.py:640-667](file://server/app/mqtt_handler.py#L640-L667)
+- [mqtt_handler.py:100-137](server/app/mqtt_handler.py#L100-L137)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
+- [mqtt_handler.py:566-573](server/app/mqtt_handler.py#L566-L573)
+- [mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
+- [mqtt_handler.py:590-631](server/app/mqtt_handler.py#L590-L631)
+- [mqtt_handler.py:640-667](server/app/mqtt_handler.py#L640-L667)
 
 **Section sources**
-- [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
-- [mqtt_handler.py:566-573](file://server/app/mqtt_handler.py#L566-L573)
-- [mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
-- [mqtt_handler.py:590-631](file://server/app/mqtt_handler.py#L590-L631)
-- [mqtt_handler.py:640-667](file://server/app/mqtt_handler.py#L640-L667)
+- [mqtt_handler.py:73-137](server/app/mqtt_handler.py#L73-L137)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
+- [mqtt_handler.py:566-573](server/app/mqtt_handler.py#L566-L573)
+- [mqtt_handler.py:575-588](server/app/mqtt_handler.py#L575-L588)
+- [mqtt_handler.py:590-631](server/app/mqtt_handler.py#L590-L631)
+- [mqtt_handler.py:640-667](server/app/mqtt_handler.py#L640-L667)
 
 ### Telemetry Ingestion Workflows
 
@@ -189,10 +189,10 @@ Save --> Done
 - Motion training samples are conditionally stored when recording flag is set.
 
 **Section sources**
-- [mqtt_handler.py:139-277](file://server/app/mqtt_handler.py#L139-L277)
-- [device_management.py:162-214](file://server/app/services/device_management.py#L162-L214)
-- [device_management.py:306-387](file://server/app/services/device_management.py#L306-L387)
-- [vitals.py:24-56](file://server/app/models/vitals.py#L24-L56)
+- [mqtt_handler.py:139-277](server/app/mqtt_handler.py#L139-L277)
+- [device_management.py:162-214](server/app/services/device_management.py#L162-L214)
+- [device_management.py:306-387](server/app/services/device_management.py#L306-L387)
+- [vitals.py:24-56](server/app/models/vitals.py#L24-L56)
 
 #### Camera Photos and Frames
 - Multipart photos: _handle_photo_chunk buffers by photo_id and reassembles when all chunks received; persisted as PhotoRecord with filesystem path and metadata.
@@ -200,19 +200,19 @@ Save --> Done
 - Node status snapshots are updated with capture counts and snapshot identifiers.
 
 **Section sources**
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
-- [mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
-- [telemetry.py:95-104](file://server/app/models/telemetry.py#L95-L104)
-- [camera.py (service):14-31](file://server/app/services/camera.py#L14-L31)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
+- [mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
+- [telemetry.py:95-104](server/app/models/telemetry.py#L95-L104)
+- [camera.py (service):14-31](server/app/services/camera.py#L14-L31)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
 
 #### Mobile Telemetry Integration
 - Mobile telemetry schema supports battery, steps, Polar connectivity, linked person, and RSSI observations.
 - This enables ingestion of mobile-derived RSSI and vitals for proximity-based localization and patient monitoring.
 
 **Section sources**
-- [devices.py (schemas):69-93](file://server/app/schemas/devices.py#L69-L93)
-- [telemetry.py:132-153](file://server/app/models/telemetry.py#L132-L153)
+- [devices.py (schemas):69-93](server/app/schemas/devices.py#L69-L93)
+- [telemetry.py:132-153](server/app/models/telemetry.py#L132-L153)
 
 ### Telemetry Data Transformation, Validation, and Enrichment
 - Timestamp normalization: Falls back to UTC now if payload timestamp is missing or invalid.
@@ -239,16 +239,16 @@ K --> End([Commit Session])
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:139-277](file://server/app/mqtt_handler.py#L139-L277)
-- [device_management.py:306-387](file://server/app/services/device_management.py#L306-L387)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [mqtt_handler.py:327-366](file://server/app/mqtt_handler.py#L327-L366)
+- [mqtt_handler.py:139-277](server/app/mqtt_handler.py#L139-L277)
+- [device_management.py:306-387](server/app/services/device_management.py#L306-L387)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
+- [mqtt_handler.py:327-366](server/app/mqtt_handler.py#L327-L366)
 
 **Section sources**
-- [mqtt_handler.py:139-277](file://server/app/mqtt_handler.py#L139-L277)
-- [device_management.py:162-214](file://server/app/services/device_management.py#L162-L214)
-- [device_management.py:306-387](file://server/app/services/device_management.py#L306-L387)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
+- [mqtt_handler.py:139-277](server/app/mqtt_handler.py#L139-L277)
+- [device_management.py:162-214](server/app/services/device_management.py#L162-L214)
+- [device_management.py:306-387](server/app/services/device_management.py#L306-L387)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
 
 ### Real-Time Alert Generation and Health Reporting
 - Fall detection: Threshold-based heuristic on vertical acceleration and velocity; enforces cooldown to avoid repeated alerts; creates Alert records and publishes alert events.
@@ -256,12 +256,12 @@ K --> End([Commit Session])
 - Node status health: Updates NodeStatusTelemetry with battery, streaming, snapshots, heap, and IP address; stores full payload for diagnostics.
 
 **Section sources**
-- [mqtt_handler.py:246-310](file://server/app/mqtt_handler.py#L246-L310)
-- [mqtt_handler.py:327-366](file://server/app/mqtt_handler.py#L327-L366)
-- [mqtt_handler.py:369-429](file://server/app/mqtt_handler.py#L369-L429)
-- [mqtt_handler.py:458-483](file://server/app/mqtt_handler.py#L458-L483)
-- [activity.py:14-48](file://server/app/models/activity.py#L14-L48)
-- [telemetry.py:107-129](file://server/app/models/telemetry.py#L107-L129)
+- [mqtt_handler.py:246-310](server/app/mqtt_handler.py#L246-L310)
+- [mqtt_handler.py:327-366](server/app/mqtt_handler.py#L327-L366)
+- [mqtt_handler.py:369-429](server/app/mqtt_handler.py#L369-L429)
+- [mqtt_handler.py:458-483](server/app/mqtt_handler.py#L458-L483)
+- [activity.py:14-48](server/app/models/activity.py#L14-L48)
+- [telemetry.py:107-129](server/app/models/telemetry.py#L107-L129)
 
 ### Telemetry Storage Models, Indexing, and Query Patterns
 - IMU telemetry: Indexed by workspace_id, device_id, timestamp; stores acceleration, angular velocity, motion metrics, and battery state.
@@ -415,14 +415,14 @@ string source
 ```
 
 **Diagram sources**
-- [telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
-- [vitals.py:24-56](file://server/app/models/vitals.py#L24-L56)
-- [activity.py:14-89](file://server/app/models/activity.py#L14-L89)
+- [telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
+- [vitals.py:24-56](server/app/models/vitals.py#L24-L56)
+- [activity.py:14-89](server/app/models/activity.py#L14-L89)
 
 **Section sources**
-- [telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
-- [vitals.py:24-56](file://server/app/models/vitals.py#L24-L56)
-- [activity.py:14-89](file://server/app/models/activity.py#L14-L89)
+- [telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
+- [vitals.py:24-56](server/app/models/vitals.py#L24-L56)
+- [activity.py:14-89](server/app/models/activity.py#L14-L89)
 
 ### Query Patterns and API Exposure
 - IMU telemetry: GET /telemetry/imu with optional device_id and limit.
@@ -430,8 +430,8 @@ string source
 - Camera photos: GET /cameras/photos with pagination and filtering by device_id; GET /cameras/photos/{id}/content for binary retrieval.
 
 **Section sources**
-- [telemetry.py (API):15-72](file://server/app/api/endpoints/telemetry.py#L15-L72)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
+- [telemetry.py (API):15-72](server/app/api/endpoints/telemetry.py#L15-L72)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
 
 ### Custom Telemetry Type Integration
 To integrate a new telemetry type:
@@ -465,22 +465,22 @@ API2 --> CS["services/camera.py"]
 ```
 
 **Diagram sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [device_management.py:127-214](file://server/app/services/device_management.py#L127-L214)
-- [telemetry.py:20-154](file://server/app/models/telemetry.py#L20-L154)
-- [vitals.py:24-56](file://server/app/models/vitals.py#L24-L56)
-- [activity.py:14-89](file://server/app/models/activity.py#L14-L89)
-- [telemetry.py (API):15-72](file://server/app/api/endpoints/telemetry.py#L15-L72)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
-- [camera.py (service):14-31](file://server/app/services/camera.py#L14-L31)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
+- [device_management.py:127-214](server/app/services/device_management.py#L127-L214)
+- [telemetry.py:20-154](server/app/models/telemetry.py#L20-L154)
+- [vitals.py:24-56](server/app/models/vitals.py#L24-L56)
+- [activity.py:14-89](server/app/models/activity.py#L14-L89)
+- [telemetry.py (API):15-72](server/app/api/endpoints/telemetry.py#L15-L72)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
+- [camera.py (service):14-31](server/app/services/camera.py#L14-L31)
 
 **Section sources**
-- [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
-- [device_management.py:127-214](file://server/app/services/device_management.py#L127-L214)
-- [telemetry.py (API):15-72](file://server/app/api/endpoints/telemetry.py#L15-L72)
-- [cameras.py (API):19-91](file://server/app/api/endpoints/cameras.py#L19-L91)
+- [mqtt_handler.py:139-325](server/app/mqtt_handler.py#L139-L325)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
+- [device_management.py:127-214](server/app/services/device_management.py#L127-L214)
+- [telemetry.py (API):15-72](server/app/api/endpoints/telemetry.py#L15-L72)
+- [cameras.py (API):19-91](server/app/api/endpoints/cameras.py#L19-L91)
 
 ## Performance Considerations
 - Asynchronous I/O: aiomqtt and SQLAlchemy async sessions minimize blocking during high-throughput ingestion.
@@ -502,11 +502,11 @@ API2 --> CS["services/camera.py"]
 - Alert cooldown: Fall alerts are suppressed within a fixed cooldown window; adjust thresholds or cooldown if needed.
 
 **Section sources**
-- [device_management.py:162-214](file://server/app/services/device_management.py#L162-L214)
-- [device_management.py:447-513](file://server/app/services/device_management.py#L447-L513)
-- [mqtt_handler.py:590-631](file://server/app/mqtt_handler.py#L590-L631)
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
-- [localization.py:268-290](file://server/app/localization.py#L268-L290)
+- [device_management.py:162-214](server/app/services/device_management.py#L162-L214)
+- [device_management.py:447-513](server/app/services/device_management.py#L447-L513)
+- [mqtt_handler.py:590-631](server/app/mqtt_handler.py#L590-L631)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
+- [localization.py:268-290](server/app/localization.py#L268-L290)
 
 ## Conclusion
 The WheelSense telemetry pipeline provides a robust, extensible foundation for processing diverse device signals. It handles heterogeneous inputs (IMU, RSSI, vitals, camera photos, mobile telemetry), enriches data with localization and patient context, and persists structured records for analytics and alerting. With careful indexing, async processing, and clear extension points, the system scales to fleet-level deployments while maintaining real-time responsiveness.
@@ -520,21 +520,21 @@ The WheelSense telemetry pipeline provides a robust, extensible foundation for p
 - Handler validates device, persists IMU/motion/battery, inserts RSSI, auto-registers BLE nodes, optionally stores motion training samples, predicts room, and emits alerts/room events.
 
 **Section sources**
-- [mqtt_handler.py:139-277](file://server/app/mqtt_handler.py#L139-L277)
-- [device_management.py:306-387](file://server/app/services/device_management.py#L306-L387)
+- [mqtt_handler.py:139-277](server/app/mqtt_handler.py#L139-L277)
+- [device_management.py:306-387](server/app/services/device_management.py#L306-L387)
 
 #### Ingest Camera Photo
 - Publish multipart to "WheelSense/camera/{id}/photo" with photo_id, device_id, chunk_index, total_chunks, base64-encoded data.
 - Handler buffers chunks and reassembles; persists PhotoRecord and updates NodeStatusTelemetry snapshots.
 
 **Section sources**
-- [mqtt_handler.py:542-573](file://server/app/mqtt_handler.py#L542-L573)
-- [mqtt_handler.py:485-540](file://server/app/mqtt_handler.py#L485-L540)
+- [mqtt_handler.py:542-573](server/app/mqtt_handler.py#L542-L573)
+- [mqtt_handler.py:485-540](server/app/mqtt_handler.py#L485-L540)
 
 #### Ingest Mobile Telemetry
 - Use MobileTelemetryIngest schema to send battery, steps, Polar connectivity, linked person, and RSSI observations.
 - Store as MobileDeviceTelemetry for proximity-based localization and patient monitoring.
 
 **Section sources**
-- [devices.py (schemas):69-93](file://server/app/schemas/devices.py#L69-L93)
-- [telemetry.py:132-153](file://server/app/models/telemetry.py#L132-L153)
+- [devices.py (schemas):69-93](server/app/schemas/devices.py#L69-L93)
+- [telemetry.py:132-153](server/app/models/telemetry.py#L132-L153)

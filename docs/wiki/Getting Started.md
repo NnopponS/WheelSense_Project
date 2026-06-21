@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [README.md](file://README.md)
-- [server/requirements.txt](file://server/requirements.txt)
-- [server/pyproject.toml](file://server/pyproject.toml)
-- [server/Dockerfile](file://server/Dockerfile)
-- [server/docker-compose.yml](file://server/docker-compose.yml)
-- [server/.env.example](file://server/.env.example)
-- [server/app/main.py](file://server/app/main.py)
-- [server/app/db/init_db.py](file://server/app/db/init_db.py)
-- [server/scripts/seed_demo.py](file://server/scripts/seed_demo.py)
-- [server/alembic/env.py](file://server/alembic/env.py)
-- [frontend/package.json](file://frontend/package.json)
-- [frontend/Dockerfile](file://frontend/Dockerfile)
-- [frontend/README.md](file://frontend/README.md)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [README.md](README.md)
+- [server/requirements.txt](server/requirements.txt)
+- [server/pyproject.toml](server/pyproject.toml)
+- [server/Dockerfile](server/Dockerfile)
+- [server/docker-compose.yml](server/docker-compose.yml)
+- [server/.env.example](server/.env.example)
+- [server/app/main.py](server/app/main.py)
+- [server/app/db/init_db.py](server/app/db/init_db.py)
+- [server/scripts/seed_demo.py](server/scripts/seed_demo.py)
+- [server/alembic/env.py](server/alembic/env.py)
+- [frontend/package.json](frontend/package.json)
+- [frontend/Dockerfile](frontend/Dockerfile)
+- [frontend/README.md](frontend/README.md)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](firmware/M5StickCPlus2_BLEGateway/platformio.ini)
 </cite>
 
 ## Table of Contents
@@ -72,21 +72,21 @@ FWPIO --> |"PlatformIO build"| Firmware["Firmware Artifacts"]
 ```
 
 **Diagram sources**
-- [server/app/main.py:1-123](file://server/app/main.py#L1-L123)
-- [server/app/db/init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [server/Dockerfile:1-22](file://server/Dockerfile#L1-L22)
-- [server/alembic/env.py:1-89](file://server/alembic/env.py#L1-L89)
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
-- [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
-- [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/app/main.py:1-123](server/app/main.py#L1-L123)
+- [server/app/db/init_db.py:1-101](server/app/db/init_db.py#L1-L101)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [server/Dockerfile:1-22](server/Dockerfile#L1-L22)
+- [server/alembic/env.py:1-89](server/alembic/env.py#L1-L89)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
+- [frontend/README.md:1-374](frontend/README.md#L1-L374)
+- [frontend/Dockerfile:1-31](frontend/Dockerfile#L1-L31)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 **Section sources**
-- [README.md:1-74](file://README.md#L1-L74)
+- [README.md:1-74](README.md#L1-L74)
 
 ## Core Components
 - Backend (FastAPI)
@@ -100,12 +100,12 @@ FWPIO --> |"PlatformIO build"| Firmware["Firmware Artifacts"]
   - M5StickCPlus2 gateway firmware configuration for Arduino framework, MQTT client, and ArduinoJson library.
 
 **Section sources**
-- [server/app/main.py:1-123](file://server/app/main.py#L1-L123)
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
-- [server/alembic/env.py:1-89](file://server/alembic/env.py#L1-L89)
-- [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
-- [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [server/app/main.py:1-123](server/app/main.py#L1-L123)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
+- [server/alembic/env.py:1-89](server/alembic/env.py#L1-L89)
+- [frontend/README.md:1-374](frontend/README.md#L1-L374)
+- [frontend/Dockerfile:1-31](frontend/Dockerfile#L1-L31)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Architecture Overview
 High-level runtime architecture:
@@ -123,9 +123,9 @@ FE --> |"/api/* proxy"| BE
 ```
 
 **Diagram sources**
-- [frontend/README.md:44-47](file://frontend/README.md#L44-L47)
-- [server/app/main.py:18-86](file://server/app/main.py#L18-L86)
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
+- [frontend/README.md:44-47](frontend/README.md#L44-L47)
+- [server/app/main.py:18-86](server/app/main.py#L18-L86)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
 
 ## Detailed Component Analysis
 
@@ -136,9 +136,9 @@ FE --> |"/api/* proxy"| BE
 - Hardware (optional): M5StickCPlus2 and Node_Tsimcam for firmware testing
 
 **Section sources**
-- [server/pyproject.toml:4-6](file://server/pyproject.toml#L4-L6)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:5-8](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L5-L8)
+- [server/pyproject.toml:4-6](server/pyproject.toml#L4-L6)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:5-8](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L5-L8)
 
 ### Local Development Setup
 
@@ -159,14 +159,14 @@ Verify --> End(["Ready"])
 ```
 
 **Diagram sources**
-- [README.md:25-44](file://README.md#L25-L44)
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
-- [server/Dockerfile:19-22](file://server/Dockerfile#L19-L22)
+- [README.md:25-44](README.md#L25-L44)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
+- [server/Dockerfile:19-22](server/Dockerfile#L19-L22)
 
 **Section sources**
-- [README.md:25-44](file://README.md#L25-L44)
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
-- [server/Dockerfile:1-22](file://server/Dockerfile#L1-L22)
+- [README.md:25-44](README.md#L25-L44)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
+- [server/Dockerfile:1-22](server/Dockerfile#L1-L22)
 
 #### Frontend (Next.js)
 1. Install dependencies.
@@ -182,12 +182,12 @@ FVerify --> FEnd(["Ready"])
 ```
 
 **Diagram sources**
-- [frontend/README.md:330-339](file://frontend/README.md#L330-L339)
-- [frontend/package.json:5-12](file://frontend/package.json#L5-L12)
+- [frontend/README.md:330-339](frontend/README.md#L330-L339)
+- [frontend/package.json:5-12](frontend/package.json#L5-L12)
 
 **Section sources**
-- [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
+- [frontend/README.md:1-374](frontend/README.md#L1-L374)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
 
 #### Firmware (PlatformIO)
 1. Navigate to the firmware directory for your device.
@@ -202,10 +202,10 @@ WUpload --> WEnd(["Ready"])
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L22)
 
 **Section sources**
-- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### Database Initialization and Seeding
 - Alembic migrations are applied automatically by the backend Docker image and via the command-line workflow.
@@ -227,18 +227,18 @@ Srv->>DB : Insert demo workspace, roles, patients, devices
 ```
 
 **Diagram sources**
-- [server/Dockerfile](file://server/Dockerfile#L21)
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
-- [server/app/db/init_db.py:16-101](file://server/app/db/init_db.py#L16-L101)
-- [server/scripts/seed_demo.py:1-800](file://server/scripts/seed_demo.py#L1-L800)
-- [server/alembic/env.py:21-22](file://server/alembic/env.py#L21-L22)
+- [server/Dockerfile](server/Dockerfile#L21)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
+- [server/app/db/init_db.py:16-101](server/app/db/init_db.py#L16-L101)
+- [server/scripts/seed_demo.py:1-800](server/scripts/seed_demo.py#L1-L800)
+- [server/alembic/env.py:21-22](server/alembic/env.py#L21-L22)
 
 **Section sources**
-- [server/Dockerfile:19-22](file://server/Dockerfile#L19-L22)
-- [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
-- [server/app/db/init_db.py:1-101](file://server/app/db/init_db.py#L1-L101)
-- [server/scripts/seed_demo.py:1-800](file://server/scripts/seed_demo.py#L1-L800)
-- [server/alembic/env.py:1-89](file://server/alembic/env.py#L1-L89)
+- [server/Dockerfile:19-22](server/Dockerfile#L19-L22)
+- [server/app/main.py:26-66](server/app/main.py#L26-L66)
+- [server/app/db/init_db.py:1-101](server/app/db/init_db.py#L1-L101)
+- [server/scripts/seed_demo.py:1-800](server/scripts/seed_demo.py#L1-L800)
+- [server/alembic/env.py:1-89](server/alembic/env.py#L1-L89)
 
 ### Environment Variables
 Configure the backend using .env. Key variables include:
@@ -253,7 +253,7 @@ Configure the backend using .env. Key variables include:
 - COMPOSE_FILE: choose default stack (mock/sim vs production)
 
 **Section sources**
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
 
 ### First-Time User Guidance
 - After starting the backend and running migrations, the system creates an initial admin user if enabled.
@@ -261,8 +261,8 @@ Configure the backend using .env. Key variables include:
 - Log in using the admin credentials and explore role dashboards in the frontend.
 
 **Section sources**
-- [server/app/db/init_db.py:16-101](file://server/app/db/init_db.py#L16-L101)
-- [server/scripts/seed_demo.py:1-800](file://server/scripts/seed_demo.py#L1-L800)
+- [server/app/db/init_db.py:16-101](server/app/db/init_db.py#L16-L101)
+- [server/scripts/seed_demo.py:1-800](server/scripts/seed_demo.py#L1-L800)
 
 ### Production Deployment Scenarios
 - Use the provided Docker Compose files to run the full stack with PostgreSQL and Mosquitto.
@@ -279,14 +279,14 @@ PDyn --> PDB["PostgreSQL"]
 ```
 
 **Diagram sources**
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [server/Dockerfile:1-22](file://server/Dockerfile#L1-L22)
-- [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [server/Dockerfile:1-22](server/Dockerfile#L1-L22)
+- [frontend/Dockerfile:1-31](frontend/Dockerfile#L1-L31)
 
 **Section sources**
-- [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [server/Dockerfile:1-22](file://server/Dockerfile#L1-L22)
-- [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
+- [server/docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [server/Dockerfile:1-22](server/Dockerfile#L1-L22)
+- [frontend/Dockerfile:1-31](frontend/Dockerfile#L1-L31)
 
 ## Dependency Analysis
 - Backend Python dependencies are declared in requirements.txt and installed in the backend Docker image.
@@ -302,14 +302,14 @@ Pkg --> FImg["Frontend Docker Image"]
 ```
 
 **Diagram sources**
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [server/pyproject.toml:4-6](file://server/pyproject.toml#L4-L6)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [server/pyproject.toml:4-6](server/pyproject.toml#L4-L6)
 
 **Section sources**
-- [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
-- [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [server/pyproject.toml:1-15](file://server/pyproject.toml#L1-L15)
+- [server/requirements.txt:1-30](server/requirements.txt#L1-L30)
+- [frontend/package.json:1-58](frontend/package.json#L1-L58)
+- [server/pyproject.toml:1-15](server/pyproject.toml#L1-L15)
 
 ## Performance Considerations
 - Use Docker Compose for consistent resource allocation and networking.
@@ -338,10 +338,10 @@ Common setup issues and resolutions:
   - Change ports in .env (backend) and frontend configuration if 8000/3000 are in use.
 
 **Section sources**
-- [server/.env.example:1-33](file://server/.env.example#L1-L33)
-- [server/app/db/init_db.py:16-101](file://server/app/db/init_db.py#L16-L101)
-- [server/scripts/seed_demo.py:1-800](file://server/scripts/seed_demo.py#L1-L800)
-- [frontend/README.md:44-47](file://frontend/README.md#L44-L47)
+- [server/.env.example:1-33](server/.env.example#L1-L33)
+- [server/app/db/init_db.py:16-101](server/app/db/init_db.py#L16-L101)
+- [server/scripts/seed_demo.py:1-800](server/scripts/seed_demo.py#L1-L800)
+- [frontend/README.md:44-47](frontend/README.md#L44-L47)
 
 ## Conclusion
 You now have the essentials to install, run, and verify the WheelSense Platform locally, and to deploy it in production using Docker. Start with the backend and database, then bring up the frontend, and optionally flash firmware devices. Use the demo seed to accelerate first-time exploration.
@@ -356,5 +356,5 @@ You now have the essentials to install, run, and verify the WheelSense Platform 
 - Admin user present: check database or backend logs for initialization
 
 **Section sources**
-- [server/app/main.py:78-114](file://server/app/main.py#L78-L114)
-- [README.md:25-54](file://README.md#L25-L54)
+- [server/app/main.py:78-114](server/app/main.py#L78-L114)
+- [README.md:25-54](README.md#L25-L54)

@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [docker-compose.yml](file://server/docker-compose.yml)
-- [docker-compose.core.yml](file://server/docker-compose.core.yml)
-- [docker-compose.data-prod.yml](file://server/docker-compose.data-prod.yml)
-- [docker-compose.data-mock.yml](file://server/docker-compose.data-mock.yml)
-- [docker-compose.sim.yml](file://server/docker-compose.sim.yml)
-- [mosquitto.conf](file://server/mosquitto.conf)
-- [Dockerfile (server)](file://server/Dockerfile)
-- [Dockerfile (frontend)](file://frontend/Dockerfile)
-- [app/config.py](file://server/app/config.py)
-- [start-prod.sh](file://server/scripts/start-prod.sh)
-- [start-sim.sh](file://server/scripts/start-sim.sh)
-- [probe_endpoints.py](file://server/probe_endpoints.py)
-- [requirements.txt](file://server/requirements.txt)
-- [pyproject.toml](file://server/pyproject.toml)
+- [docker-compose.yml](server/docker-compose.yml)
+- [docker-compose.core.yml](server/docker-compose.core.yml)
+- [docker-compose.data-prod.yml](server/docker-compose.data-prod.yml)
+- [docker-compose.data-mock.yml](server/docker-compose.data-mock.yml)
+- [docker-compose.sim.yml](server/docker-compose.sim.yml)
+- [mosquitto.conf](server/mosquitto.conf)
+- [Dockerfile (server)](server/Dockerfile)
+- [Dockerfile (frontend)](frontend/Dockerfile)
+- [app/config.py](server/app/config.py)
+- [start-prod.sh](server/scripts/start-prod.sh)
+- [start-sim.sh](server/scripts/start-sim.sh)
+- [probe_endpoints.py](server/probe_endpoints.py)
+- [requirements.txt](server/requirements.txt)
+- [pyproject.toml](server/pyproject.toml)
 </cite>
 
 ## Table of Contents
@@ -55,18 +55,18 @@ B --> E
 ```
 
 **Diagram sources**
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [docker-compose.sim.yml:1-9](file://server/docker-compose.sim.yml#L1-L9)
-- [docker-compose.core.yml:1-143](file://server/docker-compose.core.yml#L1-L143)
-- [docker-compose.data-prod.yml:1-29](file://server/docker-compose.data-prod.yml#L1-L29)
-- [docker-compose.data-mock.yml:1-62](file://server/docker-compose.data-mock.yml#L1-L62)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [docker-compose.sim.yml:1-9](server/docker-compose.sim.yml#L1-L9)
+- [docker-compose.core.yml:1-143](server/docker-compose.core.yml#L1-L143)
+- [docker-compose.data-prod.yml:1-29](server/docker-compose.data-prod.yml#L1-L29)
+- [docker-compose.data-mock.yml:1-62](server/docker-compose.data-mock.yml#L1-L62)
 
 **Section sources**
-- [docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
-- [docker-compose.sim.yml:1-9](file://server/docker-compose.sim.yml#L1-L9)
-- [docker-compose.core.yml:1-143](file://server/docker-compose.core.yml#L1-L143)
-- [docker-compose.data-prod.yml:1-29](file://server/docker-compose.data-prod.yml#L1-L29)
-- [docker-compose.data-mock.yml:1-62](file://server/docker-compose.data-mock.yml#L1-L62)
+- [docker-compose.yml:1-10](server/docker-compose.yml#L1-L10)
+- [docker-compose.sim.yml:1-9](server/docker-compose.sim.yml#L1-L9)
+- [docker-compose.core.yml:1-143](server/docker-compose.core.yml#L1-L143)
+- [docker-compose.data-prod.yml:1-29](server/docker-compose.data-prod.yml#L1-L29)
+- [docker-compose.data-mock.yml:1-62](server/docker-compose.data-mock.yml#L1-L62)
 
 ## Core Components
 - PostgreSQL (PostGIS recommended for spatial features): persistent relational store for application data and migrations.
@@ -80,10 +80,10 @@ B --> E
 Environment and configuration are driven by Pydantic settings and Docker Compose environment variables.
 
 **Section sources**
-- [docker-compose.core.yml:5-143](file://server/docker-compose.core.yml#L5-L143)
-- [docker-compose.data-prod.yml:3-29](file://server/docker-compose.data-prod.yml#L3-L29)
-- [docker-compose.data-mock.yml:3-62](file://server/docker-compose.data-mock.yml#L3-L62)
-- [app/config.py:12-152](file://server/app/config.py#L12-L152)
+- [docker-compose.core.yml:5-143](server/docker-compose.core.yml#L5-L143)
+- [docker-compose.data-prod.yml:3-29](server/docker-compose.data-prod.yml#L3-L29)
+- [docker-compose.data-mock.yml:3-62](server/docker-compose.data-mock.yml#L3-L62)
+- [app/config.py:12-152](server/app/config.py#L12-L152)
 
 ## Architecture Overview
 The platform runs as a multi-container application. The core stack includes Mosquitto, the backend server, the agent runtime, the frontend, optional AI/agent services, and Home Assistant. Data mode is selected via included Compose fragments.
@@ -112,9 +112,9 @@ CP -. optional .-> Srv
 ```
 
 **Diagram sources**
-- [docker-compose.core.yml:6-135](file://server/docker-compose.core.yml#L6-L135)
-- [docker-compose.data-prod.yml:4-20](file://server/docker-compose.data-prod.yml#L4-L20)
-- [docker-compose.data-mock.yml:4-58](file://server/docker-compose.data-mock.yml#L4-L58)
+- [docker-compose.core.yml:6-135](server/docker-compose.core.yml#L6-L135)
+- [docker-compose.data-prod.yml:4-20](server/docker-compose.data-prod.yml#L4-L20)
+- [docker-compose.data-mock.yml:4-58](server/docker-compose.data-mock.yml#L4-L58)
 
 ## Detailed Component Analysis
 
@@ -149,18 +149,18 @@ MQ-->>Srv : Telemetry events
 ```
 
 **Diagram sources**
-- [start-prod.sh:95-106](file://server/scripts/start-prod.sh#L95-L106)
-- [docker-compose.core.yml:21-103](file://server/docker-compose.core.yml#L21-L103)
-- [docker-compose.data-prod.yml:21-25](file://server/docker-compose.data-prod.yml#L21-L25)
-- [Dockerfile (server):21](file://server/Dockerfile#L21)
+- [start-prod.sh:95-106](server/scripts/start-prod.sh#L95-L106)
+- [docker-compose.core.yml:21-103](server/docker-compose.core.yml#L21-L103)
+- [docker-compose.data-prod.yml:21-25](server/docker-compose.data-prod.yml#L21-L25)
+- [Dockerfile (server):21](server/Dockerfile#L21)
 
 **Section sources**
-- [docker-compose.core.yml:5-143](file://server/docker-compose.core.yml#L5-L143)
-- [docker-compose.data-prod.yml:1-29](file://server/docker-compose.data-prod.yml#L1-L29)
-- [docker-compose.data-mock.yml:1-62](file://server/docker-compose.data-mock.yml#L1-L62)
-- [Dockerfile (server):1-22](file://server/Dockerfile#L1-L22)
-- [Dockerfile (frontend):1-31](file://frontend/Dockerfile#L1-L31)
-- [mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
+- [docker-compose.core.yml:5-143](server/docker-compose.core.yml#L5-L143)
+- [docker-compose.data-prod.yml:1-29](server/docker-compose.data-prod.yml#L1-L29)
+- [docker-compose.data-mock.yml:1-62](server/docker-compose.data-mock.yml#L1-L62)
+- [Dockerfile (server):1-22](server/Dockerfile#L1-L22)
+- [Dockerfile (frontend):1-31](frontend/Dockerfile#L1-L31)
+- [mosquitto.conf:1-7](server/mosquitto.conf#L1-L7)
 
 ### Environment Configuration and Secrets
 - Centralized settings via Pydantic Settings with environment variable overrides.
@@ -174,10 +174,10 @@ Best practices:
 - Store sensitive values outside the repository.
 
 **Section sources**
-- [app/config.py:12-152](file://server/app/config.py#L12-L152)
-- [docker-compose.core.yml:29-52](file://server/docker-compose.core.yml#L29-L52)
-- [docker-compose.data-prod.yml:22-25](file://server/docker-compose.data-prod.yml#L22-L25)
-- [docker-compose.data-mock.yml:42-54](file://server/docker-compose.data-mock.yml#L42-L54)
+- [app/config.py:12-152](server/app/config.py#L12-L152)
+- [docker-compose.core.yml:29-52](server/docker-compose.core.yml#L29-L52)
+- [docker-compose.data-prod.yml:22-25](server/docker-compose.data-prod.yml#L22-L25)
+- [docker-compose.data-mock.yml:42-54](server/docker-compose.data-mock.yml#L42-L54)
 
 ### Scaling and Load Balancing
 - Stateless API: The server is stateless and horizontally scalable behind a reverse proxy or ingress controller.
@@ -226,12 +226,12 @@ Probe-->>Probe : Log results
 ```
 
 **Diagram sources**
-- [probe_endpoints.py:12-26](file://server/probe_endpoints.py#L12-L26)
+- [probe_endpoints.py:12-26](server/probe_endpoints.py#L12-L26)
 
 **Section sources**
-- [docker-compose.core.yml:15-19](file://server/docker-compose.core.yml#L15-L19)
-- [docker-compose.data-prod.yml:15-19](file://server/docker-compose.data-prod.yml#L15-L19)
-- [probe_endpoints.py:1-28](file://server/probe_endpoints.py#L1-L28)
+- [docker-compose.core.yml:15-19](server/docker-compose.core.yml#L15-L19)
+- [docker-compose.data-prod.yml:15-19](server/docker-compose.data-prod.yml#L15-L19)
+- [probe_endpoints.py:1-28](server/probe_endpoints.py#L1-L28)
 
 ### Rollback and Disaster Recovery
 - Production reset: The production script supports a destructive reset of volumes with confirmation.
@@ -243,8 +243,8 @@ Probe-->>Probe : Log results
   - Maintain a disaster recovery playbook with steps for DB, MQTT, and app restart.
 
 **Section sources**
-- [start-prod.sh:77-87](file://server/scripts/start-prod.sh#L77-L87)
-- [start-sim.sh:78-88](file://server/scripts/start-sim.sh#L78-L88)
+- [start-prod.sh:77-87](server/scripts/start-prod.sh#L77-L87)
+- [start-sim.sh:78-88](server/scripts/start-sim.sh#L78-L88)
 
 ### Production Hardening and Performance Optimization
 - Security:
@@ -278,14 +278,14 @@ CP["Copilot CLI"] -. optional .-> SRV
 ```
 
 **Diagram sources**
-- [docker-compose.core.yml:55-103](file://server/docker-compose.core.yml#L55-L103)
-- [docker-compose.data-prod.yml:24-25](file://server/docker-compose.data-prod.yml#L24-L25)
-- [docker-compose.data-mock.yml:44-51](file://server/docker-compose.data-mock.yml#L44-L51)
+- [docker-compose.core.yml:55-103](server/docker-compose.core.yml#L55-L103)
+- [docker-compose.data-prod.yml:24-25](server/docker-compose.data-prod.yml#L24-L25)
+- [docker-compose.data-mock.yml:44-51](server/docker-compose.data-mock.yml#L44-L51)
 
 **Section sources**
-- [docker-compose.core.yml:55-103](file://server/docker-compose.core.yml#L55-L103)
-- [docker-compose.data-prod.yml:24-25](file://server/docker-compose.data-prod.yml#L24-L25)
-- [docker-compose.data-mock.yml:44-51](file://server/docker-compose.data-mock.yml#L44-L51)
+- [docker-compose.core.yml:55-103](server/docker-compose.core.yml#L55-L103)
+- [docker-compose.data-prod.yml:24-25](server/docker-compose.data-prod.yml#L24-L25)
+- [docker-compose.data-mock.yml:44-51](server/docker-compose.data-mock.yml#L44-L51)
 
 ## Performance Considerations
 - Database:
@@ -312,10 +312,10 @@ Common issues and remedies:
 - Endpoint import errors: Use the endpoint probe script to diagnose missing imports.
 
 **Section sources**
-- [Dockerfile (server):21](file://server/Dockerfile#L21)
-- [docker-compose.core.yml:15-19](file://server/docker-compose.core.yml#L15-L19)
-- [docker-compose.data-prod.yml:15-19](file://server/docker-compose.data-prod.yml#L15-L19)
-- [probe_endpoints.py:12-26](file://server/probe_endpoints.py#L12-L26)
+- [Dockerfile (server):21](server/Dockerfile#L21)
+- [docker-compose.core.yml:15-19](server/docker-compose.core.yml#L15-L19)
+- [docker-compose.data-prod.yml:15-19](server/docker-compose.data-prod.yml#L15-L19)
+- [probe_endpoints.py:12-26](server/probe_endpoints.py#L12-L26)
 
 ## Conclusion
 The WheelSense platform is designed for containerized deployment with clear separation between application services, data, and optional AI/agent integrations. The Compose-based setup supports both production and simulator modes, while scripts streamline environment bootstrapping. By applying the scaling, monitoring, and hardening recommendations herein, teams can operate a reliable, observable, and resilient platform in production.
@@ -341,7 +341,7 @@ The WheelSense platform is designed for containerized deployment with clear sepa
   - Set up logging and alerting for critical failures.
 
 **Section sources**
-- [start-prod.sh:95-106](file://server/scripts/start-prod.sh#L95-L106)
-- [start-sim.sh:102-107](file://server/scripts/start-sim.sh#L102-L107)
-- [docker-compose.core.yml:29-52](file://server/docker-compose.core.yml#L29-L52)
-- [probe_endpoints.py:12-26](file://server/probe_endpoints.py#L12-L26)
+- [start-prod.sh:95-106](server/scripts/start-prod.sh#L95-L106)
+- [start-sim.sh:102-107](server/scripts/start-sim.sh#L102-L107)
+- [docker-compose.core.yml:29-52](server/docker-compose.core.yml#L29-L52)
+- [probe_endpoints.py:12-26](server/probe_endpoints.py#L12-L26)
