@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   BellRing,
   CheckCircle2,
+  ClipboardPlus,
   Fan,
   Hospital,
   Lightbulb,
@@ -27,7 +28,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { api, ApiError, type UserSearchResult } from "@/lib/api";
-import type { CreateWorkflowTaskResponse, DemoActorOut } from "@/lib/api/task-scope-types";
+import type { CreateCareWorkflowJobInput, CreateWorkflowTaskResponse, DemoActorOut } from "@/lib/api/task-scope-types";
 import {
   demoTheaterAssets,
   patientAssetKeyForProfile,
@@ -209,6 +210,46 @@ function actorStyle(position: DemoTheaterPosition): CSSProperties {
   return {
     left: `${position.x}%`,
     top: `${position.y}%`,
+  };
+}
+
+function theaterCameraStyle(
+  stage: DemoTheaterStage,
+  selectedRoom: DemoTheaterRoomView | null,
+  staffView: DemoTheaterStaffView | null,
+): CSSProperties {
+  if (stage === "alert_active" && selectedRoom) {
+    const focus = rectCenter(selectedRoom.slot.rect);
+    return {
+      transformOrigin: `${focus.x}% ${focus.y}%`,
+      transform: "scale(2.18)",
+    };
+  }
+
+  if ((stage === "acknowledged" || stage === "staff_moving") && selectedRoom && staffView) {
+    const start = rectCenter(staffView.room.slot.rect);
+    const end = rectCenter(selectedRoom.slot.rect);
+    const focus = {
+      x: Math.min(74, Math.max(26, (start.x + end.x) / 2)),
+      y: Math.min(72, Math.max(28, (start.y + end.y) / 2)),
+    };
+    return {
+      transformOrigin: `${focus.x}% ${focus.y}%`,
+      transform: "scale(1.18)",
+    };
+  }
+
+  if (stage === "helping" && selectedRoom) {
+    const focus = rectCenter(selectedRoom.slot.rect);
+    return {
+      transformOrigin: `${focus.x}% ${focus.y}%`,
+      transform: "scale(1.7)",
+    };
+  }
+
+  return {
+    transformOrigin: "50% 50%",
+    transform: "scale(1)",
   };
 }
 
@@ -434,7 +475,7 @@ function PatientActor({
     <div
       className={cn(
         "absolute z-20 h-[44%] w-[31%] -translate-x-1/2 -translate-y-1/2",
-        isSelected && visualState === "falling" && "scale-125",
+        isSelected && visualState === "falling" && "demo-patient-fallen scale-150",
         !isSelected && "opacity-90",
       )}
       style={actorStyle(offset)}
@@ -459,6 +500,7 @@ function TheaterRoom({
   selectedPatientId,
   acFrames,
   deviceStates,
+  selectedPatientLabel,
 }: {
   room: DemoTheaterRoomView;
   roomTone: ReturnType<typeof roomToneForStage>;
@@ -466,7 +508,9 @@ function TheaterRoom({
   selectedPatientId: number | null;
   acFrames: string[];
   deviceStates: Record<DeviceKind, boolean>;
+  selectedPatientLabel: string;
 }) {
+  const showFallCallout = room.isSelected && roomTone === "danger";
   return (
     <div
       className={cn("demo-theater-room absolute", roomToneClass(room, roomTone))}
@@ -483,6 +527,12 @@ function TheaterRoom({
         {room.devices.length > 0 && <span>{room.devices.length} devices</span>}
       </div>
       <RoomFurniture acFrames={acFrames} deviceStates={deviceStates} room={room} />
+      {showFallCallout ? (
+        <div className="demo-fall-callout">
+          <span className="demo-fall-callout-kicker">Patient down</span>
+          <strong>{selectedPatientLabel} FALL</strong>
+        </div>
+      ) : null}
       {room.patients.map((patient, index) => (
         <PatientActor
           index={index}
@@ -542,6 +592,48 @@ function StaffActor({
   );
 }
 
+function ResponseRouteOverlay({
+  staffView,
+  selectedRoom,
+  stage,
+}: {
+  staffView: DemoTheaterStaffView | null;
+  selectedRoom: DemoTheaterRoomView | null;
+  stage: DemoTheaterStage;
+}) {
+  if (!staffView || !selectedRoom) return null;
+  const visible = stage === "acknowledged" || stage === "staff_moving" || stage === "helping" || stage === "resolved";
+  if (!visible) return null;
+
+  const start = rectCenter(staffView.room.slot.rect);
+  const end = rectCenter(selectedRoom.slot.rect);
+  const midY = Math.abs(start.y - end.y) > 12 ? 50 : (start.y + end.y) / 2;
+  const points = `${start.x},${start.y} ${start.x},${midY} ${end.x},${midY} ${end.x},${end.y}`;
+  const labelStartY = Math.max(5, start.y - 2.8);
+  const labelEndY = Math.max(5, end.y - 3.2);
+
+  return (
+    <svg
+      aria-hidden
+      className="demo-response-route absolute inset-0 z-20 h-full w-full"
+      preserveAspectRatio="none"
+      viewBox="0 0 100 100"
+    >
+      <polyline className="demo-response-route-casing" fill="none" points={points} />
+      <polyline className="demo-response-route-line" fill="none" points={points} />
+      <polyline className="demo-response-route-flow" fill="none" points={points} />
+      <circle className="demo-response-route-start" cx={start.x} cy={start.y} r="1.55" />
+      <circle className="demo-response-route-end" cx={end.x} cy={end.y} r="2.05" />
+      <text className="demo-response-route-label demo-response-route-label-start" x={start.x} y={labelStartY}>
+        Head nurse
+      </text>
+      <text className="demo-response-route-label demo-response-route-label-end" x={end.x} y={labelEndY}>
+        Robert
+      </text>
+    </svg>
+  );
+}
+
 export default function DemoTheaterClient() {
   const queryClient = useQueryClient();
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
@@ -550,6 +642,8 @@ export default function DemoTheaterClient() {
   const [currentTask, setCurrentTask] = useState<CreateWorkflowTaskResponse | null>(null);
   const [staffArrived, setStaffArrived] = useState(false);
   const [dispatchRunning, setDispatchRunning] = useState(false);
+  const [workflowSeedRunning, setWorkflowSeedRunning] = useState(false);
+  const [responseStartRoomId, setResponseStartRoomId] = useState<number | null>(null);
   const [deviceStates, setDeviceStates] = useState<Record<DeviceKind, boolean>>(initialDeviceStates);
   const dispatchStartedRef = useRef(false);
   const timeoutRefs = useRef<number[]>([]);
@@ -605,7 +699,11 @@ export default function DemoTheaterClient() {
     [rooms, selectedPatient?.room_id],
   );
   const selectedStaff = useMemo(
-    () => staffUsers.find((staff) => staff.is_active && staff.role !== "admin") ?? staffUsers[0] ?? null,
+    () =>
+      staffUsers.find((staff) => staff.is_active && staff.role === "head_nurse") ??
+      staffUsers.find((staff) => staff.is_active && staff.role !== "admin") ??
+      staffUsers[0] ??
+      null,
     [staffUsers],
   );
   const theaterRooms = useMemo(
@@ -631,6 +729,24 @@ export default function DemoTheaterClient() {
   const selectedTheaterRoom = useMemo(
     () => theaterRooms.find((room) => room.isSelected) ?? null,
     [theaterRooms],
+  );
+  const selectedTheaterStaff = useMemo(
+    () => theaterStaff.find((staffView) => staffView.user.id === selectedStaff?.id) ?? null,
+    [selectedStaff?.id, theaterStaff],
+  );
+  const responseStartStaffView = useMemo(() => {
+    if (!selectedTheaterStaff || responseStartRoomId == null) {
+      return selectedTheaterStaff;
+    }
+    const startRoom = theaterRooms.find((room) => room.room?.id === responseStartRoomId);
+    return startRoom ? { ...selectedTheaterStaff, room: startRoom } : selectedTheaterStaff;
+  }, [responseStartRoomId, selectedTheaterStaff, theaterRooms]);
+  const routeStaffView = stage === "acknowledged" || stage === "staff_moving" || stage === "helping" || stage === "resolved"
+    ? responseStartStaffView
+    : selectedTheaterStaff;
+  const cameraStyle = useMemo(
+    () => theaterCameraStyle(stage, selectedTheaterRoom, routeStaffView),
+    [stage, selectedTheaterRoom, routeStaffView],
   );
   const patientVisual = patientVisualStateForStage(stage);
   const staffVisual = staffVisualStateForStage(stage);
@@ -661,6 +777,10 @@ export default function DemoTheaterClient() {
   useEffect(() => {
     if (selectedPatientId != null || patients.length === 0) return;
     const preferred =
+      patients.find((patient) => {
+        const name = patientName(patient).toLowerCase();
+        return name.includes("robert");
+      }) ??
       patients.find((patient) => {
         const name = patientName(patient).toLowerCase();
         return name.includes("emika") || name.includes("krit");
@@ -707,6 +827,7 @@ export default function DemoTheaterClient() {
     setCurrentTask(null);
     setDispatchRunning(false);
     setStaffArrived(false);
+    setResponseStartRoomId(null);
     setStage("idle");
   }, [clearDispatchTimers]);
 
@@ -739,7 +860,7 @@ export default function DemoTheaterClient() {
       }
     }
 
-    const targetRoomId = selectedPatient.room_id ?? rooms[0]?.id;
+    const targetRoomId = selectedRoom?.id ?? selectedPatient.room_id ?? rooms[0]?.id;
     if (selectedStaff && targetRoomId) {
       try {
         await api.moveDemoActor("staff", selectedStaff.id, {
@@ -800,7 +921,9 @@ export default function DemoTheaterClient() {
 
   async function triggerFall() {
     if (!selectedPatient) return;
+    const responderStartRoomId = selectedTheaterStaff?.room.room?.id ?? null;
     resetLocalScenario();
+    setResponseStartRoomId(responderStartRoomId);
     setStage("alert_active");
     pushEvent("Fall detected", `${patientName(selectedPatient)} fell in ${roomName(selectedRoom)}.`, "error");
     try {
@@ -819,7 +942,9 @@ export default function DemoTheaterClient() {
 
   async function triggerSos() {
     if (!selectedPatient) return;
+    const responderStartRoomId = selectedTheaterStaff?.room.room?.id ?? null;
     resetLocalScenario();
+    setResponseStartRoomId(responderStartRoomId);
     setStage("alert_active");
     pushEvent("SOS requested", `${patientName(selectedPatient)} requested emergency help.`, "error");
     try {
@@ -865,6 +990,121 @@ export default function DemoTheaterClient() {
       await invalidateTheaterQueries();
     } catch (error) {
       pushEvent("Reset failed", errorMessage(error), "error");
+    }
+  }
+
+  async function seedTodayWorkflow() {
+    if (!selectedPatient || !selectedStaff) return;
+    setWorkflowSeedRunning(true);
+    const now = new Date();
+    const patientLabel = patientName(selectedPatient);
+    const roomLabel = roomName(selectedRoom);
+    const assigneeId = selectedStaff.id;
+    const tasks = [
+      {
+        title: `Vitals check: ${patientLabel}`,
+        description: `Record baseline vitals and confirm Polar/mobile data stream for ${patientLabel}.`,
+        priority: "high",
+        due_at: new Date(now.getTime() + 10 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Morning medication support: ${patientLabel}`,
+        description: "Confirm medication reminder status and document whether the dose was taken or deferred.",
+        priority: "high",
+        due_at: new Date(now.getTime() + 25 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Hydration and meal intake: ${patientLabel}`,
+        description: "Check water intake, breakfast tolerance, and any diet notes for the next shift.",
+        priority: "normal",
+        due_at: new Date(now.getTime() + 35 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Mobility and exercise plan: ${patientLabel}`,
+        description: "Review today's walking or stretching plan and document tolerance after the session.",
+        priority: "normal",
+        due_at: new Date(now.getTime() + 45 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Wheelchair safety inspection: ${patientLabel}`,
+        description: "Check wheel locks, seat position, and battery/companion device readiness before movement.",
+        priority: "normal",
+        due_at: new Date(now.getTime() + 58 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Smart room comfort check: ${roomLabel}`,
+        description: "Confirm light, fan, and AC state for the patient room before the next care round.",
+        priority: "normal",
+        due_at: new Date(now.getTime() + 70 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Localization sensor check: ${roomLabel}`,
+        description: "Confirm room-node RSSI is visible and the phone gateway is publishing current room context.",
+        priority: "high",
+        due_at: new Date(now.getTime() + 82 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Emergency response review: ${patientLabel}`,
+        description: "Review alert path, caregiver dispatch, and acknowledgement readiness for demo operations.",
+        priority: "critical",
+        due_at: new Date(now.getTime() + 95 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Family update note: ${patientLabel}`,
+        description: "Prepare a short care update with vitals, mobility, comfort, and any alert follow-up.",
+        priority: "normal",
+        due_at: new Date(now.getTime() + 115 * 60 * 1000).toISOString(),
+      },
+      {
+        title: `Shift handoff summary: ${patientLabel}`,
+        description: "Summarize completed tasks, pending observations, device status, and next caregiver action.",
+        priority: "high",
+        due_at: new Date(now.getTime() + 135 * 60 * 1000).toISOString(),
+      },
+    ];
+    const job: CreateCareWorkflowJobInput = {
+      title: `Today's smart environment workflow: ${patientLabel}`,
+      description: `Demo operations workflow for ${patientLabel} in ${roomLabel}.`,
+      starts_at: now.toISOString(),
+      duration_minutes: 150,
+      patient_ids: [selectedPatient.id],
+      assignee_user_ids: [assigneeId],
+      status: "active",
+      steps: tasks.map((task) => ({
+        title: task.title,
+        instructions: task.description,
+        assigned_user_id: assigneeId,
+      })),
+    };
+
+    try {
+      await api.createWorkflowJob(job);
+      await Promise.all(
+        tasks.map((task) =>
+          api.createWorkflowTask({
+            patient_id: selectedPatient.id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            due_at: task.due_at,
+            assigned_user_id: assigneeId,
+          }),
+        ),
+      );
+      pushEvent("Workflow seeded", `Today's operations tasks are ready for ${selectedStaff.display_name}.`, "success");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["head-nurse", "tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["head-nurse", "workflow-jobs"] }),
+        queryClient.invalidateQueries({ queryKey: ["observer", "tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["observer", "workflow-jobs"] }),
+        queryClient.invalidateQueries({ queryKey: ["supervisor", "tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["supervisor", "workflow-jobs"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+    } catch (error) {
+      pushEvent("Workflow seed failed", errorMessage(error), "error");
+    } finally {
+      setWorkflowSeedRunning(false);
     }
   }
 
@@ -958,6 +1198,19 @@ export default function DemoTheaterClient() {
           background-repeat: repeat;
           background-size: 64px 64px;
           image-rendering: pixelated;
+        }
+        .demo-theater-camera {
+          will-change: transform;
+          transition: transform 850ms cubic-bezier(0.2, 0.85, 0.2, 1), transform-origin 850ms ease;
+        }
+        .demo-theater-camera-fall {
+          transition-duration: 520ms;
+        }
+        .demo-theater-camera-route {
+          transition-duration: 980ms;
+        }
+        .demo-theater-camera-help {
+          transition-duration: 760ms;
         }
         .demo-hall {
           position: absolute;
@@ -1059,6 +1312,56 @@ export default function DemoTheaterClient() {
         .demo-room-normal { border-color: rgba(185, 205, 218, 0.72); }
         .demo-room-selected { border-color: var(--demo-cyan); box-shadow: inset 0 0 0 4px rgba(103,232,249,0.18), 0 0 18px rgba(103,232,249,0.24); }
         .demo-room-danger { animation: demo-room-pulse 0.85s steps(2, end) infinite; border-color: var(--demo-danger); }
+        .demo-room-danger::after {
+          content: "FALL";
+          position: absolute;
+          z-index: 38;
+          right: 9px;
+          top: 38px;
+          border: 2px solid rgba(254, 226, 226, 0.95);
+          background: rgba(127, 29, 29, 0.92);
+          color: #fff;
+          font-size: 13px;
+          font-weight: 900;
+          padding: 5px 8px;
+          text-shadow: 0 2px 0 #000;
+          box-shadow: 0 0 22px rgba(248, 113, 113, 0.72);
+        }
+        .demo-fall-callout {
+          position: absolute;
+          z-index: 44;
+          left: 50%;
+          top: 13%;
+          transform: translateX(-50%);
+          width: min(78%, 220px);
+          border: 3px solid rgba(254, 226, 226, 0.98);
+          border-radius: 4px;
+          background: rgba(127, 29, 29, 0.96);
+          box-shadow: 0 0 28px rgba(248, 113, 113, 0.8), inset 0 0 0 3px rgba(0,0,0,0.18);
+          color: #fff;
+          padding: 7px 9px;
+          text-align: center;
+          text-shadow: 0 2px 0 #000;
+          animation: demo-fall-callout-pulse 0.58s steps(2, end) infinite;
+        }
+        .demo-fall-callout-kicker {
+          display: block;
+          color: #fecaca;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 0;
+          text-transform: uppercase;
+        }
+        .demo-fall-callout strong {
+          display: block;
+          margin-top: 2px;
+          font-size: 13px;
+          line-height: 1.1;
+        }
+        .demo-patient-fallen {
+          filter: drop-shadow(0 0 16px rgba(248,113,113,0.86));
+          animation: demo-fallen-shake 0.38s steps(2, end) infinite;
+        }
         .demo-room-accepted { border-color: var(--demo-amber); box-shadow: inset 0 0 0 4px rgba(250,204,21,0.2), 0 0 22px rgba(250,204,21,0.24); }
         .demo-room-response { border-color: var(--demo-cyan); box-shadow: inset 0 0 0 4px rgba(103,232,249,0.22), 0 0 24px rgba(103,232,249,0.3); }
         .demo-room-resolved { border-color: var(--demo-success); box-shadow: inset 0 0 0 4px rgba(52,211,153,0.2), 0 0 20px rgba(52,211,153,0.28); }
@@ -1087,9 +1390,73 @@ export default function DemoTheaterClient() {
           letter-spacing: 0;
         }
         .demo-fan-on { animation: demo-spin 0.65s linear infinite; }
+        .demo-response-route {
+          pointer-events: none;
+          filter: drop-shadow(0 0 7px rgba(59,130,246,0.62));
+        }
+        .demo-response-route-casing {
+          stroke: rgba(255,255,255,0.96);
+          stroke-width: 2.4;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+        .demo-response-route-line {
+          stroke: #2563eb;
+          stroke-width: 1.55;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+        .demo-response-route-flow {
+          stroke: #93c5fd;
+          stroke-width: 0.75;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: 0.8 2.35;
+          animation: demo-route-march 0.72s linear infinite;
+        }
+        .demo-response-route-start {
+          fill: #2563eb;
+          stroke: #eff6ff;
+          stroke-width: 0.5;
+        }
+        .demo-response-route-end {
+          fill: #ef4444;
+          stroke: #fee2e2;
+          stroke-width: 0.45;
+          animation: demo-route-end-pulse 0.9s steps(2, end) infinite;
+        }
+        .demo-response-route-label {
+          paint-order: stroke;
+          stroke: rgba(15,23,42,0.9);
+          stroke-width: 0.45;
+          fill: #eff6ff;
+          font-size: 2.25px;
+          font-weight: 900;
+          text-anchor: middle;
+          text-transform: uppercase;
+        }
+        .demo-response-route-label-end {
+          fill: #fecaca;
+        }
         @keyframes demo-room-pulse {
           0%, 100% { box-shadow: inset 0 0 0 4px rgba(248, 113, 113, 0.32), 0 0 0 rgba(248, 113, 113, 0); }
           50% { box-shadow: inset 0 0 0 4px rgba(248, 113, 113, 0.32), 0 0 34px rgba(248, 113, 113, 0.62); }
+        }
+        @keyframes demo-fall-callout-pulse {
+          0%, 100% { transform: translateX(-50%) scale(1); }
+          50% { transform: translateX(-50%) scale(1.07); }
+        }
+        @keyframes demo-fallen-shake {
+          0%, 100% { transform: translate(-50%, -50%) scale(1.5) rotate(-2deg); }
+          50% { transform: translate(-50%, -50%) scale(1.5) rotate(3deg); }
+        }
+        @keyframes demo-route-march {
+          from { stroke-dashoffset: 0; }
+          to { stroke-dashoffset: -8; }
+        }
+        @keyframes demo-route-end-pulse {
+          0%, 100% { r: 1.9; }
+          50% { r: 2.6; }
         }
         @keyframes demo-spin {
           from { transform: rotate(0deg); }
@@ -1097,6 +1464,11 @@ export default function DemoTheaterClient() {
         }
         @media (prefers-reduced-motion: reduce) {
           .demo-room-danger,
+          .demo-fall-callout,
+          .demo-patient-fallen,
+          .demo-response-route-line,
+          .demo-response-route-flow,
+          .demo-response-route-end,
           .demo-fan-on {
             animation: none;
           }
@@ -1139,34 +1511,50 @@ export default function DemoTheaterClient() {
       <main className="demo-theater-main">
         <section className="demo-theater-stage-column">
           <div className="demo-theater-board relative h-[560px] overflow-hidden rounded-[6px] border-4 border-[var(--demo-pixel-border)] shadow-2xl md:h-[640px]">
-            <div className="demo-hall demo-hall-horizontal-top" />
-            <div className="demo-hall demo-hall-horizontal-bottom" />
-            <div className="demo-hall demo-hall-vertical" />
-            <div className="demo-hall-label">Main Hallway</div>
+            <div
+              className={cn(
+                "demo-theater-camera absolute inset-0",
+                stage === "alert_active" && "demo-theater-camera-fall",
+                (stage === "acknowledged" || stage === "staff_moving") && "demo-theater-camera-route",
+                stage === "helping" && "demo-theater-camera-help",
+              )}
+              style={cameraStyle}
+            >
+              <div className="demo-hall demo-hall-horizontal-top" />
+              <div className="demo-hall demo-hall-horizontal-bottom" />
+              <div className="demo-hall demo-hall-vertical" />
+              <div className="demo-hall-label">Main Hallway</div>
+              <ResponseRouteOverlay staffView={routeStaffView} selectedRoom={selectedTheaterRoom} stage={stage} />
 
-            {theaterRooms.map((room) => (
-              <TheaterRoom
-                acFrames={acFrames}
-                deviceStates={deviceStates}
-                key={room.slot.id}
-                patientVisual={patientVisual}
-                room={room}
-                roomTone={roomTone}
-                selectedPatientId={selectedPatientId}
-              />
-            ))}
+              {theaterRooms.map((room) => (
+                <TheaterRoom
+                  acFrames={acFrames}
+                  deviceStates={deviceStates}
+                  key={room.slot.id}
+                  patientVisual={patientVisual}
+                  room={room}
+                  roomTone={roomTone}
+                  selectedPatientId={selectedPatientId}
+                  selectedPatientLabel={patientName(selectedPatient)}
+                />
+              ))}
 
-            {theaterStaff.map((staffView, index) => (
-              <StaffActor
-                index={index}
-                key={staffView.user.id}
-                selectedRoom={selectedTheaterRoom}
-                selectedStaffId={selectedStaff?.id ?? null}
-                staffView={staffView}
-                staffVisual={staffVisual}
-                stage={stage}
-              />
-            ))}
+              {theaterStaff.map((staffView, index) => {
+                const displayedStaffView =
+                  routeStaffView && staffView.user.id === selectedStaff?.id ? routeStaffView : staffView;
+                return (
+                  <StaffActor
+                    index={index}
+                    key={staffView.user.id}
+                    selectedRoom={selectedTheaterRoom}
+                    selectedStaffId={selectedStaff?.id ?? null}
+                    staffView={displayedStaffView}
+                    staffVisual={staffVisual}
+                    stage={stage}
+                  />
+                );
+              })}
+            </div>
 
             <div className="absolute bottom-3 left-3 right-3 z-40 hidden gap-2 md:grid md:grid-cols-5">
               <div className="rounded-[3px] border border-white/10 bg-black/62 px-3 py-2 text-[10px] text-slate-200">
@@ -1244,6 +1632,15 @@ export default function DemoTheaterClient() {
               <Button className="demo-control justify-start" onClick={() => void resetWorkspace()} variant="outline">
                 <RotateCcw className="h-4 w-4" />
                 Reset demo
+              </Button>
+              <Button
+                className="demo-control justify-start"
+                disabled={!selectedPatient || !selectedStaff || workflowSeedRunning}
+                onClick={() => void seedTodayWorkflow()}
+                variant="outline"
+              >
+                <ClipboardPlus className="h-4 w-4" />
+                Seed today&apos;s workflow
               </Button>
             </div>
 

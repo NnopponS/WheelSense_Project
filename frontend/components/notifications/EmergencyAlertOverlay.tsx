@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
+import { playAlertChime } from "@/lib/alertSound";
 import type { Notification } from "@/hooks/useNotifications";
 import type { AlertOut } from "@/lib/api/task-scope-types";
 
@@ -89,6 +90,7 @@ export function EmergencyAlertOverlay({
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const chimeAlertIds = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     setMounted(true);
@@ -118,6 +120,13 @@ export function EmergencyAlertOverlay({
     enabled: canAcknowledge && patientId != null,
     staleTime: 30_000,
   });
+
+  useEffect(() => {
+    const alertId = selected?.alert.id;
+    if (!alertId || !canAcknowledge || chimeAlertIds.current.has(alertId)) return;
+    chimeAlertIds.current.add(alertId);
+    playAlertChime();
+  }, [canAcknowledge, selected?.alert.id]);
 
   if (!mounted || !selected || !canAcknowledge) return null;
 

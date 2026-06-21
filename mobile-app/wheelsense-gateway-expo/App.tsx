@@ -16,6 +16,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
+  Vibration,
   View,
 } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
@@ -42,6 +44,7 @@ type GatewayConfig = {
   mqttUrl: string;
   portalBaseUrl: string;
   language: Language;
+  workspaceId?: string;
 };
 
 type GatewayAlert = {
@@ -50,12 +53,43 @@ type GatewayAlert = {
   description: string;
   severity: string;
   at: string;
+  patientName?: string;
+  roomName?: string;
+  status?: string;
 };
 
-const CONFIG_KEY = 'wheelsense.expo.gateway.config.v2';
+type TelemetryPoint = {
+  at: number;
+  heartRate: number | null;
+  nodes: number;
+};
+
+type SensorDetailKey = 'm5' | 'polar' | null;
+
+type M5FrameSnapshot = {
+  at: string;
+  raw: string;
+  decoded: Record<string, unknown>;
+  normalized: Record<string, unknown>;
+};
+
+type PolarFrameSnapshot = {
+  at: string;
+  measurement: HeartRateMeasurement;
+};
+
+type TelemetryEnvelopeSnapshot = {
+  at: string;
+  topic: string;
+  source: 'm5_ble' | 'manual_test' | 'periodic';
+  payload: Record<string, unknown>;
+};
+
+const CONFIG_KEY = 'wheelsense.expo.gateway.config.v4';
 const PUBLIC_MQTT_URL = 'wss://broker.emqx.io:8084/mqtt';
-const LOCAL_MQTT_URL = 'ws://10.4.12.195:9001';
-const LOCAL_PORTAL_URL = 'http://10.4.12.195:3000';
+const PUBLIC_PORTAL_URL = 'https://challenge-staff-provide-eat.trycloudflare.com';
+const LOCAL_MQTT_URL = 'ws://10.181.255.107:9001';
+const LOCAL_PORTAL_URL = 'http://10.181.255.107:3000';
 const TOPIC_ROOT = 'wheelsense';
 const TOPIC_ROOT_ALIASES = [TOPIC_ROOT, 'WheelSense'] as const;
 const NOTIFICATION_CHANNEL_ID = 'gateway-alerts';
@@ -70,7 +104,7 @@ const PERIODIC_PUBLISH_MS = 3000;
 const defaultConfig: GatewayConfig = {
   deviceId: `wheelsense-expo-${Date.now().toString(36)}`,
   mqttUrl: PUBLIC_MQTT_URL,
-  portalBaseUrl: LOCAL_PORTAL_URL,
+  portalBaseUrl: PUBLIC_PORTAL_URL,
   language: 'th',
 };
 
@@ -157,6 +191,23 @@ const copy = {
     polarDevicesFound: 'Polar devices found',
     scanningM5: 'Scanning M5…',
     scanningPolar: 'Scanning Polar…',
+    realtimeMonitor: 'Realtime monitor',
+    liveHr: 'Live heart rate',
+    liveNodes: 'Live room nodes',
+    emergencyAlert: 'Emergency alert',
+    acknowledge: 'Acknowledge',
+    alertPatient: 'Patient',
+    alertRoom: 'Room',
+    inspectData: 'Inspect data',
+    latestSensorData: 'Latest sensor data',
+    rawPayload: 'Raw payload',
+    decodedPayload: 'Decoded payload',
+    normalizedPayload: 'Server payload',
+    mqttEnvelope: 'MQTT publish envelope',
+    rrIntervals: 'RR intervals',
+    noSensorData: 'No sensor data yet',
+    lastUpdate: 'Last update',
+    reconnecting: 'Reconnecting',
   },
   th: {
     home: 'หน้าแรก',
@@ -230,6 +281,23 @@ const copy = {
     polarDevicesFound: 'พบอุปกรณ์ Polar',
     scanningM5: 'กำลังสแกน M5…',
     scanningPolar: 'กำลังสแกน Polar…',
+    realtimeMonitor: 'Realtime monitor',
+    liveHr: 'Live heart rate',
+    liveNodes: 'Live room nodes',
+    emergencyAlert: 'Emergency alert',
+    acknowledge: 'Acknowledge',
+    alertPatient: 'Patient',
+    alertRoom: 'Room',
+    inspectData: 'ดูข้อมูล',
+    latestSensorData: 'ข้อมูลเซนเซอร์ล่าสุด',
+    rawPayload: 'ข้อมูลดิบ',
+    decodedPayload: 'ข้อมูลที่อ่านได้',
+    normalizedPayload: 'ข้อมูลที่ส่งเข้าเซิร์ฟเวอร์',
+    mqttEnvelope: 'MQTT publish envelope',
+    rrIntervals: 'RR intervals',
+    noSensorData: 'ยังไม่มีข้อมูลเซนเซอร์',
+    lastUpdate: 'อัปเดตล่าสุด',
+    reconnecting: 'กำลังเชื่อมต่อใหม่',
   },
 } satisfies Record<Language, Record<string, string>>;
 
@@ -249,6 +317,7 @@ export default function App() {
   const [message, setMessage] = useState('Ready');
   const [notificationsReady, setNotificationsReady] = useState(false);
   const [alerts, setAlerts] = useState<GatewayAlert[]>([]);
+  const [telemetryPoints, setTelemetryPoints] = useState<TelemetryPoint[]>([]);
   const [roomPrediction, setRoomPrediction] = useState<Record<string, unknown> | null>(null);
   const [latestPayload, setLatestPayload] = useState('');
   const [publishCount, setPublishCount] = useState(0);
@@ -261,17 +330,26 @@ export default function App() {
   const [connectedPolar, setConnectedPolar] = useState<Device | null>(null);
   const [heartRate, setHeartRate] = useState<HeartRateMeasurement | null>(null);
   const [nodeCount, setNodeCount] = useState(0);
+  const [selectedSensorDetail, setSelectedSensorDetail] = useState<SensorDetailKey>(null);
+  const [latestM5Frame, setLatestM5Frame] = useState<M5FrameSnapshot | null>(null);
+  const [latestPolarFrame, setLatestPolarFrame] = useState<PolarFrameSnapshot | null>(null);
+  const [latestTelemetryEnvelope, setLatestTelemetryEnvelope] = useState<TelemetryEnvelopeSnapshot | null>(null);
   const [portalKey, setPortalKey] = useState(0);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState('');
   const [portalFullScreen, setPortalFullScreen] = useState(false);
 
   const mqttRef = useRef<GatewayMqttClient | null>(null);
+  const startGatewayRef = useRef<(() => Promise<void>) | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldReconnectRef = useRef(false);
+  const suppressReconnectRef = useRef(false);
   const bleRef = useRef<BleManager | null>(null);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const m5MonitorRef = useRef<{ remove: () => void } | null>(null);
   const polarMonitorRef = useRef<{ remove: () => void } | null>(null);
   const seenAlertIdsRef = useRef<Set<string>>(new Set());
+  const alertTopicSubscriptionsRef = useRef<Set<string>>(new Set());
   // Latest M5 BLE payload + HR, plus the live WSN_* node RSSI store and scan state.
   const latestM5RawRef = useRef<string | null>(null);
   const heartRateRef = useRef<HeartRateMeasurement | null>(null);
@@ -330,6 +408,9 @@ export default function App() {
       if (publishTimerRef.current) {
         clearInterval(publishTimerRef.current);
       }
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
     };
   }, []);
 
@@ -346,18 +427,54 @@ export default function App() {
     return message;
   }, [message, mode, t.gatewayOffline, t.gatewayOnline, t.gatewayStarting]);
 
+  const activeEmergencyAlert = useMemo(
+    () => alerts.find((alert) => isEmergencySeverity(alert.severity) && alert.status !== 'acknowledged') ?? alerts[0] ?? null,
+    [alerts],
+  );
+
   const saveConfig = useCallback(
     async (next: GatewayConfig) => {
       const normalized = {
         ...next,
         deviceId: sanitizeDeviceId(next.deviceId),
         mqttUrl: normalizeMqttUrl(next.mqttUrl),
-        portalBaseUrl: normalizePortalUrl(next.portalBaseUrl) ?? LOCAL_PORTAL_URL,
+        portalBaseUrl: normalizePortalUrl(next.portalBaseUrl) ?? PUBLIC_PORTAL_URL,
       };
       await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(normalized));
       setConfig(normalized);
       setDraft(normalized);
       addLog(`Saved config for ${normalized.deviceId}`);
+    },
+    [addLog],
+  );
+
+  const scheduleMqttReconnect = useCallback(
+    (reason: string) => {
+      if (!shouldReconnectRef.current || reconnectTimerRef.current) {
+        return;
+      }
+      setMode('degraded');
+      setMessage(`${t.reconnecting}: ${reason}`);
+      addLog(`${reason}; reconnecting MQTT in 4s`);
+      reconnectTimerRef.current = setTimeout(() => {
+        reconnectTimerRef.current = null;
+        if (shouldReconnectRef.current) {
+          void startGatewayRef.current?.();
+        }
+      }, 4000);
+    },
+    [addLog, t.reconnecting],
+  );
+
+  const subscribeAlertTopic = useCallback(
+    (topic: string) => {
+      const client = mqttRef.current;
+      if (!client?.isConnected || alertTopicSubscriptionsRef.current.has(topic)) {
+        return;
+      }
+      client.subscribe(topic);
+      alertTopicSubscriptionsRef.current.add(topic);
+      addLog(`Subscribed ${topic}`);
     },
     [addLog],
   );
@@ -368,14 +485,29 @@ export default function App() {
 
       if (isTopic(event.topic, 'config')) {
         const portal = event.payload.portal_base_url;
+        const workspaceId = event.payload.workspace_id;
+        let nextConfig: GatewayConfig | null = null;
         if (typeof portal === 'string') {
           const normalized = normalizePortalUrl(portal);
           if (normalized) {
-            const next = { ...config, portalBaseUrl: normalized };
-            setConfig(next);
-            setDraft(next);
-            AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(next)).catch(() => undefined);
+            nextConfig = { ...(nextConfig ?? config), portalBaseUrl: normalized };
+            if (normalized !== config.portalBaseUrl) {
+              setPortalError('');
+              setPortalLoading(false);
+              setPortalKey((value) => value + 1);
+              addLog(`Portal URL updated: ${normalized}`);
+            }
           }
+        }
+        if (workspaceId !== undefined && workspaceId !== null) {
+          const normalizedWorkspaceId = String(workspaceId);
+          nextConfig = { ...(nextConfig ?? config), workspaceId: normalizedWorkspaceId };
+          TOPIC_ROOT_ALIASES.forEach((root) => subscribeAlertTopic(mqttTopic(root, 'alerts', 'workspace', normalizedWorkspaceId)));
+        }
+        if (nextConfig) {
+          setConfig(nextConfig);
+          setDraft(nextConfig);
+          AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(nextConfig)).catch(() => undefined);
         }
         return;
       }
@@ -395,10 +527,15 @@ export default function App() {
         setRoomPrediction(event.payload);
       }
     },
-    [addLog, config],
+    [addLog, config, subscribeAlertTopic],
   );
 
   const startGateway = useCallback(async () => {
+    shouldReconnectRef.current = true;
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
     const activeConfig = {
       ...config,
       mqttUrl: normalizeMqttUrl(config.mqttUrl),
@@ -412,14 +549,22 @@ export default function App() {
     setMessage(t.gatewayStarting);
     addLog(`Connecting ${activeConfig.mqttUrl}`);
     try {
+      suppressReconnectRef.current = true;
       mqttRef.current?.disconnect();
+      suppressReconnectRef.current = false;
       const client = new GatewayMqttClient(activeConfig.mqttUrl, {
         clientId: `rn-${activeConfig.deviceId}-${Date.now().toString(36)}`,
         onMessage: handleMqttMessage,
         onStatus: addLog,
+        onClose: () => {
+          if (!suppressReconnectRef.current) {
+            scheduleMqttReconnect('MQTT socket closed');
+          }
+        },
       });
       mqttRef.current = client;
       await client.connect();
+      alertTopicSubscriptionsRef.current.clear();
 
       uniqueTopics(
         TOPIC_ROOT_ALIASES.flatMap((root) => [
@@ -429,7 +574,16 @@ export default function App() {
           mqttTopic(root, 'room', activeConfig.deviceId),
           mqttTopic(root, 'alerts', activeConfig.deviceId),
         ]),
-      ).forEach((topic) => client.subscribe(topic));
+      ).forEach((topic) => {
+        client.subscribe(topic);
+        if (topic.toLowerCase().includes('/alerts/')) {
+          alertTopicSubscriptionsRef.current.add(topic);
+        }
+      });
+
+      if (activeConfig.workspaceId) {
+        TOPIC_ROOT_ALIASES.forEach((root) => subscribeAlertTopic(mqttTopic(root, 'alerts', 'workspace', activeConfig.workspaceId ?? '')));
+      }
 
       client.publish(mqttTopic(TOPIC_ROOT, 'mobile', activeConfig.deviceId, 'register'), {
         device_id: activeConfig.deviceId,
@@ -443,15 +597,37 @@ export default function App() {
       setMessage('MQTT registered with server');
       addLog('Published mobile registration');
     } catch (error) {
+      suppressReconnectRef.current = false;
       setMode('error');
       const detail = errorMessage(error);
       setMessage(detail);
       addLog(`Start failed: ${detail}`);
+      scheduleMqttReconnect(detail);
     }
-  }, [addLog, config, handleMqttMessage, t.gatewayStarting]);
+  }, [addLog, config, handleMqttMessage, scheduleMqttReconnect, subscribeAlertTopic, t.gatewayStarting]);
+
+  useEffect(() => {
+    startGatewayRef.current = startGateway;
+  }, [startGateway]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && shouldReconnectRef.current && mode !== 'online' && mode !== 'connecting') {
+        scheduleMqttReconnect('App returned to foreground');
+      }
+    });
+    return () => subscription.remove();
+  }, [mode, scheduleMqttReconnect]);
 
   const stopGateway = useCallback(() => {
+    shouldReconnectRef.current = false;
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+    suppressReconnectRef.current = true;
     mqttRef.current?.disconnect();
+    suppressReconnectRef.current = false;
     mqttRef.current = null;
     discoveryRef.current.active = false;
     bleRef.current?.stopDeviceScan();
@@ -466,7 +642,32 @@ export default function App() {
     setMode('offline');
     setMessage('Stopped');
     addLog('Gateway stopped');
+    Vibration.cancel();
   }, [addLog]);
+
+  const acknowledgeAlert = useCallback(
+    (alert: GatewayAlert) => {
+      const client = mqttRef.current;
+      if (!client?.isConnected) {
+        setMode('degraded');
+        setMessage('MQTT is not connected');
+        addLog('Alert acknowledge skipped: MQTT offline');
+        return;
+      }
+      const topic = mqttTopic(TOPIC_ROOT, 'mobile', config.deviceId, 'alert_ack');
+      client.publish(topic, {
+        device_id: config.deviceId,
+        alert_id: alert.id,
+        acknowledged_at: new Date().toISOString(),
+      });
+      Vibration.cancel();
+      Notifications.dismissAllNotificationsAsync().catch(() => undefined);
+      Notifications.cancelAllScheduledNotificationsAsync().catch(() => undefined);
+      setAlerts((current) => current.map((item) => (item.id === alert.id ? { ...item, status: 'acknowledged' } : item)));
+      addLog(`Alert ${alert.id} acknowledged`);
+    },
+    [addLog, config.deviceId],
+  );
 
   // Assemble one unified mobile telemetry payload from all live sources:
   // the latest M5 BLE frame, the WSN_* node RSSI snapshot, and the Polar HR.
@@ -484,6 +685,7 @@ export default function App() {
       const nodeRssi = nodeRssiRef.current.snapshot(NODE_RSSI_TTL_MS);
       const hr = heartRateRef.current;
       const decoded = rawPayload ? safeJson(rawPayload) : {};
+      const decodedRecord = asRecord(decoded);
 
       // For periodic publishes with nothing new to report, stay quiet.
       if (source === 'periodic' && !rawPayload && nodeRssi.length === 0 && !hr) {
@@ -505,8 +707,15 @@ export default function App() {
       };
 
       if (rawPayload) {
-        payload.m5 = normalizeM5Telemetry(decoded, rawPayload, connectedM5, source === 'manual_test' ? 'manual_test' : 'm5_ble');
+        const normalizedM5 = normalizeM5Telemetry(decoded, rawPayload, connectedM5, source === 'manual_test' ? 'manual_test' : 'm5_ble');
+        payload.m5 = normalizedM5;
         payload.gateway_payload = decoded;
+        setLatestM5Frame({
+          at: new Date().toISOString(),
+          raw: rawPayload,
+          decoded: decodedRecord,
+          normalized: normalizedM5,
+        });
       }
 
       if (hr) {
@@ -516,9 +725,25 @@ export default function App() {
       }
 
       mqttRef.current.publish(topic, payload);
+      setLatestTelemetryEnvelope({
+        at: new Date().toISOString(),
+        topic,
+        source,
+        payload,
+      });
       if (rawPayload) {
         setLatestPayload(rawPayload);
       }
+      setTelemetryPoints((current) =>
+        [
+          ...current,
+          {
+            at: Date.now(),
+            heartRate: hr?.bpm ?? null,
+            nodes: mergedRssi.length,
+          },
+        ].slice(-24),
+      );
       setPublishCount((value) => value + 1);
       if (source !== 'periodic') {
         addLog(`Telemetry published to ${topic}`);
@@ -666,6 +891,7 @@ export default function App() {
     m5MonitorRef.current?.remove();
     m5MonitorRef.current = null;
     latestM5RawRef.current = null;
+    setLatestM5Frame(null);
     if (connectedM5) {
       await manager().cancelDeviceConnection(connectedM5.id).catch(() => undefined);
     }
@@ -693,6 +919,10 @@ export default function App() {
               if (hr) {
                 heartRateRef.current = hr;
                 setHeartRate(hr);
+                setLatestPolarFrame({
+                  at: new Date().toISOString(),
+                  measurement: hr,
+                });
               }
             }
           },
@@ -712,6 +942,7 @@ export default function App() {
     polarMonitorRef.current = null;
     heartRateRef.current = null;
     setHeartRate(null);
+    setLatestPolarFrame(null);
     if (connectedPolar) {
       await manager().cancelDeviceConnection(connectedPolar.id).catch(() => undefined);
     }
@@ -825,6 +1056,12 @@ export default function App() {
                 },
               ]}
             />
+            <TelemetryMonitor
+              title={t.realtimeMonitor ?? 'Realtime monitor'}
+              hrLabel={t.liveHr ?? 'Live heart rate'}
+              nodesLabel={t.liveNodes ?? 'Live room nodes'}
+              points={telemetryPoints}
+            />
 
             {/* M5 Section */}
             <View style={styles.deviceSection}>
@@ -833,7 +1070,23 @@ export default function App() {
                 title={t.m5}
                 subtitle={connectedM5 ? `${t.connected}: ${connectedM5.name ?? connectedM5.id}` : t.m5Detail}
                 connected={Boolean(connectedM5)}
+                meta={t.inspectData}
+                onPress={() => setSelectedSensorDetail(selectedSensorDetail === 'm5' ? null : 'm5')}
               />
+              {selectedSensorDetail === 'm5' ? (
+                <SensorDetailPanel
+                  emptyText={t.noSensorData}
+                  latestEnvelope={latestTelemetryEnvelope}
+                  lastUpdateLabel={t.lastUpdate}
+                  sections={[
+                    { title: t.rawPayload, body: latestM5Frame?.raw ?? null },
+                    { title: t.decodedPayload, body: latestM5Frame?.decoded ?? null },
+                    { title: t.normalizedPayload, body: latestM5Frame?.normalized ?? null },
+                  ]}
+                  title={`${t.latestSensorData}: ${t.m5}`}
+                  updatedAt={latestM5Frame?.at ?? null}
+                />
+              ) : null}
               <View style={styles.actions}>
                 <ActionButton
                   label={scanning && scanProfile === 'm5' ? t.scanningM5 : t.scanM5}
@@ -870,7 +1123,22 @@ export default function App() {
                 title={t.polar}
                 subtitle={connectedPolar ? `${t.connected}: ${connectedPolar.name ?? connectedPolar.id}` : t.polarDetail}
                 connected={Boolean(connectedPolar)}
+                meta={t.inspectData}
+                onPress={() => setSelectedSensorDetail(selectedSensorDetail === 'polar' ? null : 'polar')}
               />
+              {selectedSensorDetail === 'polar' ? (
+                <SensorDetailPanel
+                  emptyText={t.noSensorData}
+                  latestEnvelope={latestTelemetryEnvelope}
+                  lastUpdateLabel={t.lastUpdate}
+                  sections={[
+                    { title: t.liveHr, body: latestPolarFrame?.measurement ?? null },
+                    { title: t.rrIntervals, body: latestPolarFrame?.measurement.rrIntervalsMs ?? null },
+                  ]}
+                  title={`${t.latestSensorData}: ${t.polar}`}
+                  updatedAt={latestPolarFrame?.at ?? null}
+                />
+              ) : null}
               <View style={styles.actions}>
                 <ActionButton
                   label={scanning && scanProfile === 'polar' ? t.scanningPolar : t.scanPolar}
@@ -910,6 +1178,23 @@ export default function App() {
                 { label: t.telemetry, value: String(publishCount), detail: latestPayload || t.noPayload, severity: publishCount ? 'normal' : 'info' },
               ]}
             />
+            {activeEmergencyAlert ? (
+              <View style={styles.emergencyCard}>
+                <Text style={styles.emergencyEyebrow}>{t.emergencyAlert ?? 'Emergency alert'}</Text>
+                <Text style={styles.emergencyTitle}>{activeEmergencyAlert.title}</Text>
+                <Text style={styles.emergencyBody}>{activeEmergencyAlert.description}</Text>
+                <View style={styles.emergencyMetaGrid}>
+                  <Text style={styles.emergencyMeta}>
+                    {(t.alertPatient ?? 'Patient')}: {activeEmergencyAlert.patientName ?? 'Robert'}
+                  </Text>
+                  <Text style={styles.emergencyMeta}>
+                    {(t.alertRoom ?? 'Room')}: {activeEmergencyAlert.roomName ?? roomSummary(roomPrediction ?? {})}
+                  </Text>
+                  <Text style={styles.emergencyMeta}>ID: {activeEmergencyAlert.id}</Text>
+                </View>
+                <ActionButton label={t.acknowledge ?? 'Acknowledge'} onPress={() => acknowledgeAlert(activeEmergencyAlert)} />
+              </View>
+            ) : null}
             <Panel title={t.alerts} subtitle={notificationsReady ? t.notificationsReady : t.notificationsDenied}>
               {alerts.length === 0 ? <RowCard title={t.noAlerts} subtitle={t.startHelp} meta={t.waiting} severity="info" /> : null}
               {alerts.map((alert) => (
@@ -1042,6 +1327,15 @@ function PortalPanel({
   setPortalFullScreen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const portalUrl = normalizePortalUrl(url);
+  const { height } = useWindowDimensions();
+  const [hasVisiblePage, setHasVisiblePage] = useState(false);
+
+  useEffect(() => {
+    setHasVisiblePage(false);
+    setPortalLoading(Boolean(portalUrl));
+    setPortalError('');
+  }, [portalKey, portalUrl, setPortalError, setPortalLoading]);
+
   return (
     <Panel
       title={title}
@@ -1059,7 +1353,7 @@ function PortalPanel({
     >
       {!portalUrl ? <RowCard title={errorText} subtitle={url} meta="URL" severity="warning" /> : null}
       {portalUrl ? (
-        <View style={[styles.portalFrame, portalFullScreen && styles.portalFrameFullScreen]}>
+        <View style={[styles.portalFrame, portalFullScreen && { height: Math.max(620, height - 190) }]}>
           <WebView
             key={portalKey}
             source={{ uri: portalUrl }}
@@ -1084,17 +1378,35 @@ function PortalPanel({
             setBuiltInZoomControls={true}
             setDisplayZoomControls={false}
             onLoadStart={() => {
-              setPortalLoading(true);
+              if (!hasVisiblePage) {
+                setPortalLoading(true);
+              }
               setPortalError('');
             }}
-            onLoadEnd={() => setPortalLoading(false)}
+            onLoadProgress={(event) => {
+              if (event.nativeEvent.progress >= 0.45) {
+                setHasVisiblePage(true);
+                setPortalLoading(false);
+              }
+            }}
+            onLoadEnd={() => {
+              setHasVisiblePage(true);
+              setPortalLoading(false);
+            }}
             onError={(event) => {
               setPortalLoading(false);
               setPortalError(event.nativeEvent.description || errorText);
             }}
+            onHttpError={(event) => {
+              const { statusCode, description } = event.nativeEvent;
+              if (statusCode >= 500 || statusCode === 403 || statusCode === 404) {
+                setPortalLoading(false);
+                setPortalError(`${statusCode}: ${description || errorText}`);
+              }
+            }}
             style={styles.portalWebView}
           />
-          {portalLoading ? (
+          {portalLoading && !hasVisiblePage ? (
             <View style={styles.portalOverlay}>
               <ActivityIndicator color="#2563EB" />
               <Text style={styles.muted}>{loadingText}</Text>
@@ -1153,17 +1465,89 @@ function RowCard({ title, subtitle, meta, severity }: { title: string; subtitle:
   );
 }
 
-function DeviceCard({ image, title, subtitle, connected }: { image: number; title: string; subtitle: string; connected: boolean }) {
-  return (
-    <View style={styles.deviceCard}>
+function DeviceCard({
+  image,
+  title,
+  subtitle,
+  connected,
+  meta,
+  onPress,
+}: {
+  image: number;
+  title: string;
+  subtitle: string;
+  connected: boolean;
+  meta?: string;
+  onPress?: () => void;
+}) {
+  const content = (
+    <>
       <Image source={image} style={styles.deviceImage} resizeMode="contain" />
       <View style={styles.rowContent}>
-        <Text style={styles.panelTitle}>{title}</Text>
+        <View style={styles.deviceTitleRow}>
+          <Text style={styles.panelTitle}>{title}</Text>
+          {meta ? <Text style={styles.deviceMeta}>{meta}</Text> : null}
+        </View>
         <View style={styles.statusLine}>
           <View style={[styles.statusDot, connected ? styles.statusDotOnline : styles.statusDotIdle]} />
           <Text style={[styles.body, connected ? styles.statusOnlineText : styles.statusIdleText]}>{subtitle}</Text>
         </View>
       </View>
+    </>
+  );
+  if (onPress) {
+    return (
+      <Pressable style={({ pressed }) => [styles.deviceCard, pressed && styles.deviceCardPressed]} onPress={onPress}>
+        {content}
+      </Pressable>
+    );
+  }
+  return (
+    <View style={styles.deviceCard}>
+      {content}
+    </View>
+  );
+}
+
+function SensorDetailPanel({
+  title,
+  updatedAt,
+  lastUpdateLabel,
+  emptyText,
+  sections,
+  latestEnvelope,
+}: {
+  title: string;
+  updatedAt: string | null;
+  lastUpdateLabel: string;
+  emptyText: string;
+  sections: Array<{ title: string; body: unknown }>;
+  latestEnvelope: TelemetryEnvelopeSnapshot | null;
+}) {
+  const hasData = sections.some((section) => section.body !== null && section.body !== undefined);
+  return (
+    <View style={styles.sensorDetailPanel}>
+      <View style={styles.sensorDetailHeader}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.muted}>
+          {lastUpdateLabel}: {updatedAt ? new Date(updatedAt).toLocaleTimeString() : '--'}
+        </Text>
+      </View>
+      {!hasData ? <Text style={styles.muted}>{emptyText}</Text> : null}
+      {sections.map((section) =>
+        section.body === null || section.body === undefined ? null : (
+          <View key={section.title} style={styles.sensorDataBlock}>
+            <Text style={styles.metricLabel}>{section.title}</Text>
+            <Text style={styles.sensorDataText}>{formatDataBlock(section.body)}</Text>
+          </View>
+        ),
+      )}
+      {latestEnvelope ? (
+        <View style={styles.sensorDataBlock}>
+          <Text style={styles.metricLabel}>MQTT</Text>
+          <Text style={styles.sensorDataText}>{formatDataBlock(latestEnvelope)}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -1178,6 +1562,67 @@ function MetricGrid({ items }: { items: Array<{ label: string; value: string; de
           <Text style={styles.metricDetail} numberOfLines={2}>{item.detail}</Text>
         </View>
       ))}
+    </View>
+  );
+}
+
+function TelemetryMonitor({
+  title,
+  hrLabel,
+  nodesLabel,
+  points,
+}: {
+  title: string;
+  hrLabel: string;
+  nodesLabel: string;
+  points: TelemetryPoint[];
+}) {
+  const latest = points[points.length - 1];
+  const hrValues = points.map((point) => point.heartRate ?? 0);
+  const nodeValues = points.map((point) => point.nodes);
+  const maxHr = Math.max(120, ...hrValues);
+  const maxNodes = Math.max(4, ...nodeValues);
+  const recent = points.length ? points : [{ at: Date.now(), heartRate: null, nodes: 0 }];
+  return (
+    <View style={styles.telemetryPanel}>
+      <View style={styles.telemetryHeader}>
+        <Text style={styles.panelTitle}>{title}</Text>
+        <Text style={styles.muted}>{new Date(latest?.at ?? Date.now()).toLocaleTimeString()}</Text>
+      </View>
+      <View style={styles.telemetryRows}>
+        <View style={styles.telemetryRow}>
+          <Text style={styles.telemetryLabel}>{hrLabel}</Text>
+          <Text style={styles.telemetryValue}>{latest?.heartRate ? `${latest.heartRate} bpm` : '--'}</Text>
+        </View>
+        <View style={styles.sparkline}>
+          {recent.map((point) => (
+            <View
+              key={`hr-${point.at}`}
+              style={[
+                styles.sparkBar,
+                styles.sparkBarHr,
+                { height: `${Math.max(8, ((point.heartRate ?? 0) / maxHr) * 100)}%` },
+              ]}
+            />
+          ))}
+        </View>
+        <View style={styles.telemetryRow}>
+          <Text style={styles.telemetryLabel}>{nodesLabel}</Text>
+          <Text style={styles.telemetryValue}>{String(latest?.nodes ?? 0)}</Text>
+        </View>
+        <View style={styles.sparkline}>
+          {recent.map((point) => (
+            <View
+              key={`node-${point.at}`}
+              style={[
+                styles.sparkBar,
+                styles.sparkBarNodes,
+                { height: `${Math.max(8, (point.nodes / maxNodes) * 100)}%` },
+              ]}
+            />
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
@@ -1242,8 +1687,8 @@ async function ensureNotificationsReady() {
     await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
       name: 'WheelSense alerts',
       importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#2563EB',
+      vibrationPattern: [0, 700, 180, 700, 180, 1100],
+      lightColor: '#DC2626',
     });
   }
   const existing = await Notifications.getPermissionsAsync();
@@ -1255,11 +1700,15 @@ async function ensureNotificationsReady() {
 }
 
 async function notifyAlert(alert: GatewayAlert) {
+  const emergency = isEmergencySeverity(alert.severity);
+  if (emergency) {
+    Vibration.vibrate([0, 900, 150, 900, 150, 1300], true);
+  }
   // Vibrate when app is in foreground
   if (AppState.currentState === 'active') {
     try {
       await Haptics.notificationAsync(
-        alert.severity === 'critical' 
+        emergency
           ? Haptics.NotificationFeedbackType.Error 
           : Haptics.NotificationFeedbackType.Warning
       );
@@ -1268,16 +1717,29 @@ async function notifyAlert(alert: GatewayAlert) {
     }
   }
   
-  // Show notification (works in background)
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: alert.title,
-      body: alert.description,
-      data: { severity: alert.severity, alertId: alert.id },
-      sound: true,
-    },
-    trigger: Platform.OS === 'android' ? { channelId: NOTIFICATION_CHANNEL_ID, seconds: 1 } : null,
-  });
+  const body = [alert.description, alert.patientName ? `Patient: ${alert.patientName}` : '', alert.roomName ? `Room: ${alert.roomName}` : '']
+    .filter(Boolean)
+    .join('\n');
+  const delays = emergency ? [1, 4, 8] : [1];
+  await Promise.all(
+    delays.map((seconds) =>
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: emergency ? `EMERGENCY: ${alert.title}` : alert.title,
+          body,
+          data: { severity: alert.severity, alertId: alert.id, patientName: alert.patientName, roomName: alert.roomName },
+          sound: true,
+          priority: emergency ? Notifications.AndroidNotificationPriority.MAX : Notifications.AndroidNotificationPriority.HIGH,
+        },
+        trigger:
+          Platform.OS === 'android'
+            ? ({ channelId: NOTIFICATION_CHANNEL_ID, seconds } as Notifications.NotificationTriggerInput)
+            : seconds === 1
+              ? null
+              : ({ seconds } as Notifications.NotificationTriggerInput),
+      }),
+    ),
+  );
 }
 
 function normalizePortalUrl(value: string) {
@@ -1395,6 +1857,17 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
+function formatDataBlock(value: unknown) {
+  if (typeof value === 'string') {
+    return value;
+  }
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
 function numberValue(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -1502,7 +1975,28 @@ function toAlert(event: GatewayMqttMessage): GatewayAlert {
     description: String(payload.description ?? payload.message ?? 'New server alert'),
     severity: String(payload.severity ?? 'info'),
     at: event.receivedAt.toLocaleTimeString(),
+    patientName:
+      typeof payload.patient_name === 'string'
+        ? payload.patient_name
+        : typeof payload.patientName === 'string'
+          ? payload.patientName
+          : undefined,
+    roomName:
+      typeof payload.room_name === 'string'
+        ? payload.room_name
+        : typeof payload.room === 'string'
+          ? payload.room
+          : undefined,
+    status: typeof payload.status === 'string' ? payload.status : undefined,
   };
+}
+
+function isEmergencySeverity(value?: string) {
+  if (!value) {
+    return false;
+  }
+  const normalized = value.toLowerCase();
+  return normalized.includes('critical') || normalized.includes('emergency') || normalized.includes('urgent') || normalized.includes('fall') || normalized.includes('high');
 }
 
 function alertSeverity(value?: string): Severity {
@@ -1510,7 +2004,7 @@ function alertSeverity(value?: string): Severity {
     return 'info';
   }
   const normalized = value.toLowerCase();
-  if (normalized.includes('critical') || normalized.includes('emergency') || normalized.includes('fall')) {
+  if (isEmergencySeverity(normalized)) {
     return 'critical';
   }
   if (normalized.includes('warn')) {
@@ -1675,6 +2169,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
   },
+  deviceCardPressed: { borderColor: '#2563EB', backgroundColor: '#EFF6FF' },
+  deviceTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  deviceMeta: { color: '#2563EB', fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   deviceImage: { width: 74, height: 74, marginRight: 12 },
   deviceSection: { marginBottom: 4 },
   sectionDivider: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 16, marginHorizontal: 4 },
@@ -1711,6 +2208,67 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
+  telemetryPanel: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DCE7F5',
+    padding: 12,
+    marginBottom: 12,
+  },
+  telemetryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 },
+  telemetryRows: { gap: 8 },
+  telemetryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  telemetryLabel: { color: '#64748B', fontSize: 12, fontWeight: '800' },
+  telemetryValue: { color: '#172033', fontSize: 13, fontWeight: '800' },
+  sparkline: {
+    height: 46,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  sparkBar: { flex: 1, minWidth: 4, borderRadius: 4 },
+  sparkBarHr: { backgroundColor: '#DC2626' },
+  sparkBarNodes: { backgroundColor: '#2563EB' },
+  sensorDetailPanel: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    marginBottom: 10,
+  },
+  sensorDetailHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 },
+  sensorDataBlock: {
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingTop: 8,
+    marginTop: 8,
+  },
+  sensorDataText: {
+    color: '#0F172A',
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 6,
+  },
+  emergencyCard: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#F87171',
+    backgroundColor: '#FEF2F2',
+    padding: 14,
+    marginBottom: 12,
+  },
+  emergencyEyebrow: { color: '#991B1B', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', marginBottom: 6 },
+  emergencyTitle: { color: '#7F1D1D', fontSize: 20, fontWeight: '900', marginBottom: 6 },
+  emergencyBody: { color: '#7F1D1D', fontSize: 14, lineHeight: 20 },
+  emergencyMetaGrid: { gap: 4, marginTop: 10, marginBottom: 4 },
+  emergencyMeta: { color: '#991B1B', fontSize: 12, fontWeight: '800' },
   alertRow: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#EDF2F7' },
   logLine: {
     color: '#172033',

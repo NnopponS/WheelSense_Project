@@ -421,17 +421,22 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const quickPrompts = useMemo(() => {
+    const demoPrompts = [
+      t("aiChat.quick.demoRobertTimeline"),
+      t("aiChat.quick.demoRobertRoutine"),
+      t("aiChat.quick.demoRoomControl"),
+    ];
     switch (user?.role) {
       case "admin":
-        return [t("aiChat.quick.adminRisks"), t("aiChat.quick.adminAudit")];
+        return [...demoPrompts, t("aiChat.quick.adminRisks"), t("aiChat.quick.adminAudit")];
       case "head_nurse":
-        return [t("aiChat.quick.headNurseActions"), t("aiChat.quick.headNurseAlerts")];
+        return [...demoPrompts, t("aiChat.quick.headNurseActions"), t("aiChat.quick.headNurseAlerts")];
       case "supervisor":
-        return [t("aiChat.quick.supervisorVitals"), t("aiChat.quick.supervisorDirectives")];
+        return [...demoPrompts, t("aiChat.quick.supervisorVitals"), t("aiChat.quick.supervisorDirectives")];
       case "patient":
         return [t("aiChat.quick.patientVitals"), t("aiChat.quick.patientUnwell")];
       default:
-        return [t("aiChat.quick.defaultTasks"), t("aiChat.quick.defaultAlerts")];
+        return [...demoPrompts, t("aiChat.quick.defaultTasks"), t("aiChat.quick.defaultAlerts")];
     }
   }, [t, user?.role]);
 

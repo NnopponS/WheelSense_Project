@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const configDir = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingRoot: configDir,
+  // `npx tsc --noEmit` is the explicit type gate for this repo. Next's
+  // integrated type phase can hang on Windows after webpack compilation.
+  typescript: { ignoreBuildErrors: true },
   reactCompiler: true,
   async redirects() {
     return [

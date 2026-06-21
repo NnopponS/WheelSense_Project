@@ -86,6 +86,9 @@ async def publish_alert_to_mqtt(alert) -> None:
         await mqtt_publish_json_topic_roots(f"alerts/{alert.patient_id}", body)
     elif alert.device_id:
         await mqtt_publish_json_topic_roots(f"alerts/{alert.device_id}", body)
+    workspace_id = getattr(alert, "workspace_id", None)
+    if workspace_id is not None:
+        await mqtt_publish_json_topic_roots(f"alerts/workspace/{workspace_id}", body)
 
 
 def publish_alert_to_mqtt_background(alert) -> None:
@@ -97,6 +100,7 @@ def publish_alert_to_mqtt_background(alert) -> None:
 def build_mobile_mqtt_config_payload(
     linked_patient_id: int | None,
     linked_caregiver_id: int | None = None,
+    workspace_id: int | None = None,
 ) -> dict[str, Any]:
     """Payload for WheelSense/config/{device_id}; retained so late-joining apps receive it."""
     linked_person_type: str | None = None
@@ -110,6 +114,8 @@ def build_mobile_mqtt_config_payload(
         "linked_person_type": linked_person_type,
         "alerts_enabled": linked_patient_id is not None or linked_caregiver_id is not None,
     }
+    if workspace_id is not None:
+        payload["workspace_id"] = workspace_id
     if (settings.portal_base_url or "").strip():
         payload["portal_base_url"] = str(settings.portal_base_url).strip().rstrip("/")
     return payload
@@ -148,10 +154,11 @@ async def publish_mobile_device_config_with_payload(
     device_id: str,
     linked_patient_id: int | None,
     linked_caregiver_id: int | None = None,
+    workspace_id: int | None = None,
     *,
     retain: bool = True,
 ) -> None:
-    payload = build_mobile_mqtt_config_payload(linked_patient_id, linked_caregiver_id)
+    payload = build_mobile_mqtt_config_payload(linked_patient_id, linked_caregiver_id, workspace_id)
     await mqtt_publish_json_topic_roots(f"config/{device_id}", payload, retain=retain)
 
 
@@ -165,6 +172,7 @@ async def publish_mobile_device_config(
         device_id,
         patient_id,
         caregiver_id,
+        workspace_id=None,
         retain=True,
     )
 
@@ -182,12 +190,16 @@ def publish_mobile_device_config_background(
 async def publish_mobile_device_config_resolved(device_id: str) -> None:
     """Look up active patient assignment and publish full mobile config (portal + alerts flags)."""
     async with AsyncSessionLocal() as session:
+        device = (
+            await session.execute(select(Device).where(Device.device_id == device_id).limit(1))
+        ).scalar_one_or_none()
         patient_id = await lookup_active_patient_for_registry_device(session, device_id)
         caregiver_id = await lookup_active_caregiver_for_registry_device(session, device_id)
     await publish_mobile_device_config_with_payload(
         device_id,
         patient_id,
         caregiver_id,
+        workspace_id=device.workspace_id if device is not None else None,
         retain=True,
     )
 

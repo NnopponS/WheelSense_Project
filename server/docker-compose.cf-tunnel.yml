@@ -24,6 +24,10 @@ services:
       - .env
     environment:
       TUNNEL_TARGET_URL: ${CF_TUNNEL_TARGET_URL:-http://wheelsense-platform-web:3000}
+      TUNNEL_PROTOCOL: ${CF_TUNNEL_PROTOCOL:-http2}
+      TUNNEL_EDGE_IP_VERSION: ${CF_TUNNEL_EDGE_IP_VERSION:-4}
+      TUNNEL_RESTART_AFTER_EDGE_LOSS_SECONDS: ${CF_TUNNEL_RESTART_AFTER_EDGE_LOSS_SECONDS:-14}
+      TUNNEL_RESTART_BACKOFF_SECONDS: ${CF_TUNNEL_RESTART_BACKOFF_SECONDS:-6}
       # MQTT_BROKER intentionally NOT set here — it comes from env_file (.env) so it
       # always matches the server app. run.py falls back to localhost if unset.
       MQTT_PORT: ${MQTT_PORT:-1883}

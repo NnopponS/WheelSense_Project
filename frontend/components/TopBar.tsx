@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, Search, Beaker, Volume2, VolumeX } from "lucide-react";
 import { getAlertSoundEnabled, primeAlertAudioFromUserGesture, setAlertSoundEnabled } from "@/lib/alertSound";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,12 +46,14 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const { user, impersonation, stopImpersonation } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alertSoundOn, setAlertSoundOn] = useState(() => getAlertSoundEnabled());
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications } = useNotifications();
   const canAcknowledgeEmergencyAlerts = Boolean(
     user && ["admin", "head_nurse", "supervisor", "observer"].includes(user.role),
   );
+  const suppressEmergencyOverlay = pathname.endsWith("/demo-control");
   const { data: simulatorStatus } = useQuery({
     queryKey: ["shell", "topbar", "demo-simulator-status"],
     queryFn: () => api.get<SimulatorStatus>("/demo/simulator/status"),
@@ -210,7 +212,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
       />
       <EmergencyAlertOverlay
         notifications={notifications}
-        canAcknowledge={canAcknowledgeEmergencyAlerts}
+        canAcknowledge={canAcknowledgeEmergencyAlerts && !suppressEmergencyOverlay}
       />
     </header>
   );

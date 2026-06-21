@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -186,6 +186,7 @@ function transformMessage(message: RoleMessageOut, role: AppRole): Notification 
 export function useNotifications(): UseNotificationsReturn {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useTranslation();
   const { user } = useAuth();
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
@@ -195,6 +196,7 @@ export function useNotifications(): UseNotificationsReturn {
   const canListWorkflowTasks = Boolean(user?.role && WORKFLOW_TASKS_ROLES.has(user.role));
   const canAcknowledgeAlerts =
     role === "admin" || role === "head_nurse" || role === "supervisor" || role === "observer";
+  const suppressNotificationPopups = pathname.endsWith("/demo-control");
 
   const alertToastBootstrap = useRef(false);
   const alertToastIds = useRef<Set<number>>(new Set());
@@ -232,6 +234,12 @@ export function useNotifications(): UseNotificationsReturn {
   useEffect(() => {
     if (!alertsData || !user) return;
     const active = alertsData.filter((a) => a.status === "active");
+
+    if (suppressNotificationPopups) {
+      active.forEach((a) => alertToastIds.current.add(a.id));
+      alertToastBootstrap.current = true;
+      return;
+    }
 
     if (!alertToastBootstrap.current) {
       active.forEach((a) => alertToastIds.current.add(a.id));
@@ -295,10 +303,15 @@ export function useNotifications(): UseNotificationsReturn {
         alertToastIds.current.delete(id);
       }
     }
-  }, [alertsData, user, role, router, t, canAcknowledgeAlerts]);
+  }, [alertsData, user, role, router, t, canAcknowledgeAlerts, suppressNotificationPopups]);
 
   useEffect(() => {
     if (!workflowJobsData || !user || !canListWorkflowTasks) return;
+    if (suppressNotificationPopups) {
+      workflowJobsData.forEach((j) => workflowJobSignatures.current.set(j.id, workflowJobSignature(j)));
+      workflowJobNotifyBootstrap.current = true;
+      return;
+    }
     const map = workflowJobSignatures.current;
     if (!workflowJobNotifyBootstrap.current) {
       workflowJobsData.forEach((j) => map.set(j.id, workflowJobSignature(j)));
@@ -349,7 +362,7 @@ export function useNotifications(): UseNotificationsReturn {
     for (const id of map.keys()) {
       if (!seen.has(id)) map.delete(id);
     }
-  }, [workflowJobsData, user, canListWorkflowTasks, t, router, role]);
+  }, [workflowJobsData, user, canListWorkflowTasks, t, router, role, suppressNotificationPopups]);
 
   const notifications: Notification[] = useMemo(() => {
     const rows: Notification[] = [

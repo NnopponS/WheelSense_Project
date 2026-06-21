@@ -447,6 +447,18 @@ const translations = {
   "aiChat.notice.actionExecuted": { en: "Action executed.", th: "ดำเนินการแล้ว" },
   "aiChat.error.requestFailed": { en: "Request failed", th: "คำขอล้มเหลว" },
   "aiChat.error.actionExecutionFailed": { en: "Action execution failed.", th: "ดำเนินการไม่สำเร็จ" },
+  "aiChat.quick.demoRobertTimeline": {
+    en: "Show Robert's timeline and latest fall context.",
+    th: "ดูไทม์ไลน์ของ Robert และบริบทการล้มล่าสุด",
+  },
+  "aiChat.quick.demoRobertRoutine": {
+    en: "Advise Robert's daily routine and exercise plan.",
+    th: "แนะนำกิจวัตรและแผนออกกำลังกายของ Robert",
+  },
+  "aiChat.quick.demoRoomControl": {
+    en: "Turn on Robert's room light after confirmation.",
+    th: "เปิดไฟห้อง Robert หลังยืนยันคำสั่ง",
+  },
   "aiChat.quick.adminRisks": { en: "Summarize system risks today.", th: "สรุปความเสี่ยงระบบวันนี้" },
   "aiChat.quick.adminAudit": { en: "What should I audit right now?", th: "ตอนนี้ควรตรวจสอบอะไร" },
   "aiChat.quick.headNurseActions": {

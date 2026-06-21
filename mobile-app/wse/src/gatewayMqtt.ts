@@ -12,6 +12,7 @@ type GatewayMqttClientOptions = {
   password?: string;
   onMessage?: (message: GatewayMqttMessage) => void;
   onStatus?: (message: string) => void;
+  onClose?: () => void;
 };
 
 const MQTT_PROTOCOL_LEVEL = 4;
@@ -44,7 +45,7 @@ export class GatewayMqttClient {
     this.disconnect();
 
     // Re-normalize at connection time so stale AsyncStorage values
-    // (e.g. ws://broker.emqx.io:1883/mqtt) are always corrected to port 8083.
+    // (e.g. ws://broker.emqx.io:1883/mqtt) are always corrected to secure port 8084.
     const resolvedUrl = normalizeMqttWebSocketUrl(this.url);
 
     if (!/^wss?:\/\//i.test(resolvedUrl)) {
@@ -81,7 +82,7 @@ export class GatewayMqttClient {
           clearTimeout(timer);
           reject(
             new Error(
-              `MQTT WebSocket error for ${resolvedUrl}. Check that ${resolvedUrl} is reachable. Public EMQX endpoint: ws://broker.emqx.io:8083/mqtt (port 8083, not 1883).`,
+              `MQTT WebSocket error for ${resolvedUrl}. Check that ${resolvedUrl} is reachable. Public EMQX endpoint: wss://broker.emqx.io:8084/mqtt (secure WebSocket, not TCP 1883).`,
             ),
           );
         }
@@ -91,6 +92,7 @@ export class GatewayMqttClient {
         this.connected = false;
         this.stopPing();
         this.emitStatus('MQTT socket closed');
+        this.options.onClose?.();
       };
 
       socket.onmessage = async (event) => {

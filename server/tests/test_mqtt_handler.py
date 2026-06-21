@@ -8,6 +8,7 @@ from app.config import settings
 from app.models.core import Device, Room, SmartDevice, Workspace
 from app.models.core import DeviceCommandDispatch
 from app.models.activity import Alert
+from app.models.caregivers import CareGiver, CareGiverDeviceAssignment
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import IMUTelemetry, MotionTrainingData, RSSIReading, RoomPrediction
 from app.models.vitals import VitalReading
@@ -21,6 +22,7 @@ from app.mqtt_handler import (
     _starts_wheelsense_topic,
     _handle_telemetry,
     _handle_mobile_registration,
+    _handle_mobile_alert_ack,
     _handle_mobile_telemetry,
     _handle_device_ack,
     _handle_legacy_state_sync_request,
@@ -51,6 +53,100 @@ async def active_workspace():
         await session.commit()
         await session.refresh(ws)
         return ws
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_handle_mobile_alert_ack_acknowledges_workspace_alert(active_workspace):
+    async with _SessionFactory() as session:
+        caregiver = CareGiver(
+            workspace_id=active_workspace.id,
+            first_name="Helen",
+            last_name="Brooks",
+            role="head_nurse",
+            is_active=True,
+        )
+        mobile = Device(
+            workspace_id=active_workspace.id,
+            device_id="MOB_HEAD_NURSE",
+            device_type="mobile_phone",
+            hardware_type="mobile_phone",
+        )
+        alert = Alert(
+            workspace_id=active_workspace.id,
+            alert_type="fall",
+            severity="critical",
+            title="Robert fall",
+            description="Robert fell in Room 402",
+            status="active",
+        )
+        session.add_all([caregiver, mobile, alert])
+        await session.flush()
+        session.add(
+            CareGiverDeviceAssignment(
+                workspace_id=active_workspace.id,
+                caregiver_id=caregiver.id,
+                device_id=mobile.device_id,
+                device_role="mobile_phone",
+                is_active=True,
+            )
+        )
+        await session.commit()
+        alert_id = alert.id
+        caregiver_id = caregiver.id
+
+    await _handle_mobile_alert_ack(
+        json.dumps({"alert_id": alert_id}).encode(),
+        topic="WheelSense/mobile/MOB_HEAD_NURSE/alert_ack",
+    )
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        refreshed = (await session.execute(select(Alert).where(Alert.id == alert_id))).scalar_one()
+
+    assert refreshed.status == "acknowledged"
+    assert refreshed.acknowledged_by == caregiver_id
+    assert refreshed.acknowledged_at is not None
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_handle_mobile_alert_ack_ignores_other_workspace_alert(active_workspace):
+    async with _SessionFactory() as session:
+        other = Workspace(name="Other WS", is_active=True)
+        session.add(other)
+        await session.flush()
+        mobile = Device(
+            workspace_id=active_workspace.id,
+            device_id="MOB_HEAD_NURSE",
+            device_type="mobile_phone",
+            hardware_type="mobile_phone",
+        )
+        alert = Alert(
+            workspace_id=other.id,
+            alert_type="fall",
+            severity="critical",
+            title="Other fall",
+            description="Other workspace alert",
+            status="active",
+        )
+        session.add_all([mobile, alert])
+        await session.commit()
+        alert_id = alert.id
+
+    await _handle_mobile_alert_ack(
+        json.dumps({"alert_id": alert_id}).encode(),
+        topic="WheelSense/mobile/MOB_HEAD_NURSE/alert_ack",
+    )
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        refreshed = (await session.execute(select(Alert).where(Alert.id == alert_id))).scalar_one()
+
+    assert refreshed.status == "active"
+    assert refreshed.acknowledged_at is None
 
 
 @pytest.mark.asyncio

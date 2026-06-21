@@ -34,6 +34,7 @@ from app.services.device_management import (
 )
 from app.models.activity import ActivityTimeline, Alert
 from app.models.base import utcnow
+from app.models.caregivers import CareGiverDeviceAssignment
 from app.models.core import Device, Room, SmartDevice
 from app.models.patients import PatientDeviceAssignment
 from app.models.telemetry import (
@@ -52,6 +53,7 @@ from app.services.legacy_firmware_control import (
     legacy_appliance_for_device,
     legacy_room_for_device,
 )
+from app.services.activity import alert_service
 from app.services.physical_model_demo import apply_yolo_fall_event
 
 logger = logging.getLogger("wheelsense.mqtt")
@@ -295,6 +297,7 @@ async def mqtt_listener():
                     await client.subscribe(_topic(root, "mobile", "+", "telemetry"))
                     await client.subscribe(_topic(root, "mobile", "+", "register"))
                     await client.subscribe(_topic(root, "mobile", "+", "walkstep"))
+                    await client.subscribe(_topic(root, "mobile", "+", "alert_ack"))
                     await client.subscribe(_topic(root, "camera", "+", "registration"))
                     await client.subscribe(_topic(root, "camera", "+", "status"))
                     await client.subscribe(_topic(root, "camera", "+", "photo"))
@@ -328,6 +331,8 @@ async def mqtt_listener():
                             await _handle_mobile_registration(message.payload)
                         elif _starts_wheelsense_topic(topic, "mobile") and topic.endswith("/walkstep"):
                             await _handle_mobile_walkstep(message.payload)
+                        elif _starts_wheelsense_topic(topic, "mobile") and topic.endswith("/alert_ack"):
+                            await _handle_mobile_alert_ack(message.payload, topic=topic)
                         elif _is_wheelsense_topic(topic, "central", "state_sync_request"):
                             await _handle_legacy_state_sync_request(client, message.payload)
                         elif (physical_room := _physical_detection_room_from_topic(topic)) is not None:
@@ -1885,6 +1890,83 @@ async def _handle_mobile_registration(payload: bytes):
     from app.services.mqtt_publish import publish_mobile_device_config_resolved_background
 
     publish_mobile_device_config_resolved_background(device_id)
+
+
+async def _handle_mobile_alert_ack(payload: bytes, topic: str | None = None):
+    """Acknowledge an alert from a registered mobile gateway.
+
+    Topic: WheelSense/mobile/{device_id}/alert_ack
+    Payload: {"alert_id": 123}
+
+    The device registry owns workspace scope. A phone may only acknowledge an
+    alert in the same workspace as its registered mobile device row.
+    """
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON on mobile alert_ack topic")
+        return
+
+    parts = _topic_parts(topic or "")
+    topic_device_id = parts[2] if len(parts) >= 4 and parts[1].lower() == "mobile" else ""
+    device_id = str(data.get("device_id") or topic_device_id or "").strip()
+    if not device_id:
+        logger.warning("Mobile alert ack ignored without device_id")
+        return
+
+    try:
+        alert_id = int(data.get("alert_id") or data.get("id"))
+    except (TypeError, ValueError):
+        logger.warning("Mobile alert ack ignored without numeric alert_id")
+        return
+
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+        if device is None:
+            logger.warning("Mobile alert ack ignored for unregistered device: %s", device_id)
+            return
+
+        alert = await session.get(Alert, alert_id)
+        if alert is None:
+            logger.warning("Mobile alert ack ignored for missing alert: %s", alert_id)
+            return
+        if alert.workspace_id != device.workspace_id:
+            logger.warning(
+                "Mobile alert ack ignored for workspace mismatch: device=%s ws=%s alert=%s ws=%s",
+                device_id,
+                device.workspace_id,
+                alert_id,
+                alert.workspace_id,
+            )
+            return
+
+        caregiver_id = data.get("caregiver_id")
+        if caregiver_id is None:
+            caregiver_id = (
+                await session.execute(
+                    select(CareGiverDeviceAssignment.caregiver_id)
+                    .where(
+                        CareGiverDeviceAssignment.workspace_id == device.workspace_id,
+                        CareGiverDeviceAssignment.device_id == device.device_id,
+                        CareGiverDeviceAssignment.is_active.is_(True),
+                    )
+                    .order_by(
+                        CareGiverDeviceAssignment.assigned_at.desc(),
+                        CareGiverDeviceAssignment.id.desc(),
+                    )
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+        else:
+            with suppress(TypeError, ValueError):
+                caregiver_id = int(caregiver_id)
+
+        await alert_service.acknowledge(
+            session,
+            ws_id=device.workspace_id,
+            alert_id=alert_id,
+            caregiver_id=caregiver_id if isinstance(caregiver_id, int) else None,
+        )
 
 
 async def _handle_mobile_walkstep(payload: bytes):

@@ -36,6 +36,7 @@ async def test_alert_publish_uses_both_topic_roots():
             "device_id": "MOB_1",
             "status": "active",
             "timestamp": None,
+            "workspace_id": 5,
         },
     )()
 
@@ -45,4 +46,18 @@ async def test_alert_publish_uses_both_topic_roots():
     assert [call.args[0] for call in publish.await_args_list] == [
         "WheelSense/alerts/42",
         "wheelsense/alerts/42",
+        "WheelSense/alerts/workspace/5",
+        "wheelsense/alerts/workspace/5",
     ]
+
+
+def test_mobile_config_payload_includes_workspace_when_known():
+    payload = mqtt_publish.build_mobile_mqtt_config_payload(
+        linked_patient_id=None,
+        linked_caregiver_id=9,
+        workspace_id=4,
+    )
+
+    assert payload["linked_caregiver_id"] == 9
+    assert payload["linked_person_type"] == "caregiver"
+    assert payload["workspace_id"] == 4
