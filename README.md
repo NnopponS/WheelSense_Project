@@ -6,26 +6,26 @@ WheelSense is an IoT + clinical workflow platform for wheelchair monitoring, roo
 
 - `server/` - FastAPI backend, PostgreSQL models, MQTT ingestion, ML/localization, CLI, Home Assistant integration
 - `frontend/` - Next.js 16 web app with role-based dashboards and EaseAI chat (3-stage propose/confirm/execute)
-- `mobile-app/wheelsense-gateway-flutter/` - Flutter gateway app with BLE/Polar sensor pairing, MQTT forwarding, alerts, and web portal embedding (see `mobile-app/BUILD_GUIDE.md`)
+- `mobile-app/wheelsense-gateway-flutter/` - Flutter gateway app with BLE/Polar sensor pairing, MQTT forwarding, alerts, and web portal embedding (see [mobile-app/BUILD_GUIDE.md](mobile-app/BUILD_GUIDE.md))
 - `firmware/` - PlatformIO firmware for the wheelchair device (`M5StickCPlus2_BLEGateway`) and camera/beacon node (`Node_Tsimcam`)
 - `e2e/` - Playwright end-to-end suite
-- `docs/` - architecture overview (`docs/ARCHITECTURE.md`), ADRs (`docs/adr/`), design notes (`docs/design/`), implementation plans (`docs/plans/`), wiki (`docs/wiki/`)
+- `docs/` - architecture overview ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)), ADRs (`docs/adr/`), design notes (`docs/design/`), implementation plans (`docs/plans/`), wiki (`docs/wiki/`)
 - `scripts/` - repo-level scripts (e.g. plugin install)
 - `Thesis/` - local-only academic deliverable; not part of the platform build
 - `.agents/`, `.windsurf/`, `.skillshare/`, `.github/` - shared workflow memory, agent skills, and CI infrastructure (managed via `skillshare sync`)
-- `HANDOVER.md` - **start here** if you are new to the project
+- [HANDOVER.md](HANDOVER.md) — **start here** if you are new to the project
 
 ## Source Of Truth
 
 Read the repo in this order:
 
 1. Runtime code in `server/`, `frontend/`, and `firmware/`
-2. `server/AGENTS.md` for backend architecture and operating rules
-3. `.agents/workflows/wheelsense.md` for cross-agent workflow and implementation patterns
+2. [server/AGENTS.md](server/AGENTS.md) for backend architecture and operating rules
+3. [`.agents/workflows/wheelsense.md`](.agents/workflows/wheelsense.md) for cross-agent workflow and implementation patterns
 4. `.windsurf/skills/*`, `.github/skills/*` for managed agent skills (sync via `skillshare`)
 5. `docs/adr/*` for accepted/proposed architectural decisions
 6. `docs/plans/*` and `.agents/changes/*` as planning/history, not runtime truth  
-   See `docs/README.md` for a compact map of architecture, design drafts, and MCP docs.
+   See [docs/README.md](docs/README.md) for a compact map of architecture, design drafts, and MCP docs.
 
 ## Quick Start
 
@@ -143,12 +143,12 @@ Comprehensive documentation is available in [`docs/wiki/`](docs/wiki/README.md):
 
 ### Additional Documentation
 
-- Cross-stack architecture (web + backend contracts): `docs/ARCHITECTURE.md`
-- Backend runtime + API memory: `server/AGENTS.md`
-- Backend setup/ops/env: `server/docs/CONTRIBUTING.md`, `server/docs/ENV.md`, `server/docs/RUNBOOK.md`
-- Frontend app notes: `frontend/README.md`
-- Architecture decisions: `docs/adr/README.md`
-- Product / UX design notes: `docs/design/`
+- [Cross-stack architecture](docs/ARCHITECTURE.md) — web + backend contracts
+- [Backend runtime & API memory](server/AGENTS.md)
+- Backend operations: [Contributing guide](server/docs/CONTRIBUTING.md) · [Environment reference](server/docs/ENV.md) · [Runbook](server/docs/RUNBOOK.md)
+- [Frontend app notes](frontend/README.md)
+- [Architecture Decision Records](docs/adr/README.md)
+- [Product & UX design notes](docs/design/)
 
 ## Historical Notes
 
