@@ -28,5 +28,5 @@ openai>=1.50.0
 github-copilot-sdk>=0.2.0
 sentence-transformers>=3.0.0
 pre-commit>=3.6.0
-bandit>=1.7.6
+bandit>=1.9.4
 safety>=3.0.0
