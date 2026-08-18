@@ -16,6 +16,8 @@ interface MetricCardProps {
   href?: string;
   hrefLabel?: string;
   className?: string;
+  /** Shorter card with no description paragraph or "Open" link; the whole card is a click target when `href` is set. */
+  compact?: boolean;
 }
 
 export function MetricCard({
@@ -28,7 +30,39 @@ export function MetricCard({
   href,
   hrefLabel,
   className,
+  compact = false,
 }: MetricCardProps) {
+  if (compact) {
+    const body = (
+      <CardContent className="flex h-full flex-col gap-2 p-3.5 sm:p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </div>
+          {status ? <StatusBadge label={status.label} tone={status.tone} /> : null}
+        </div>
+        <div className="min-w-0">
+          <p className="ws-tabular-nums text-2xl font-bold leading-none tracking-tight text-foreground">{value}</p>
+          <p className="mt-1 text-xs font-medium text-muted-foreground">
+            {label}
+            {description ? <span className="text-muted-foreground/80"> · {description}</span> : null}
+          </p>
+        </div>
+      </CardContent>
+    );
+
+    if (href) {
+      return (
+        <Link href={href} className="block h-full">
+          <Card className={cn("h-full transition-colors hover:border-primary/40 hover:bg-muted/40", className)}>
+            {body}
+          </Card>
+        </Link>
+      );
+    }
+    return <Card className={cn("h-full", className)}>{body}</Card>;
+  }
+
   return (
     <Card className={cn("h-full", className)}>
       <CardContent className="flex h-full flex-col gap-4 pt-[var(--ws-card-padding)] sm:pt-5">

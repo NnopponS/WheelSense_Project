@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import { ArrowRight, ExternalLink, MapPin, Search, ShieldAlert, Users } from "lucide-react";
 import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -23,9 +24,12 @@ type DashboardMapLauncherProps = {
   primaryLabel?: string;
   emergencyCount?: number;
   peopleCount?: number;
+  deviceCount?: string | number;
   roomLabel?: string;
   compact?: boolean;
   className?: string;
+  /** "row" (default) is the wide banner layout; "card" is a small grid-cell summary card. */
+  variant?: "row" | "card";
 };
 
 function MapLauncherMetric({
@@ -66,14 +70,71 @@ export function DashboardMapLauncher({
   primaryLabel,
   emergencyCount = 0,
   peopleCount,
+  deviceCount,
   roomLabel,
   compact = false,
   className,
+  variant = "row",
 }: DashboardMapLauncherProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const resolvedPrimaryLabel = primaryLabel ?? t("dashboard.map.openMap");
   const resolvedRoomLabel = roomLabel ?? t("dashboard.map.needLocation");
+
+  if (variant === "card") {
+    return (
+      <>
+        <Card className={cn("h-full", emergencyCount > 0 && "border-red-500/35 bg-red-500/5", className)}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <MapLauncherMetric icon={Users} label={t("dashboard.map.metricPeople")} value={peopleCount ?? "-"} tone="primary" />
+              <MapLauncherMetric
+                icon={ShieldAlert}
+                label={t("dashboard.map.metricEmergency")}
+                value={emergencyCount}
+                tone={emergencyCount > 0 ? "danger" : "neutral"}
+              />
+              <MapLauncherMetric icon={MapPin} label={t("admin.system.activeDevices")} value={deviceCount ?? "-"} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+            >
+              {t("admin.system.openLiveMap")}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </CardContent>
+        </Card>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="w-[calc(100vw-0.75rem)] max-w-[76rem] max-h-[94vh] rounded-lg sm:w-[calc(100vw-2rem)]">
+            <DialogHeader className="px-4 py-4 pr-14 sm:px-5">
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                {emergencyCount > 0 ? <ShieldAlert className="h-5 w-5 text-red-600" /> : <MapPin className="h-5 w-5 text-primary" />}
+                {title}
+              </DialogTitle>
+              <DialogDescription className="line-clamp-2 pr-2">{description}</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[calc(94vh-7.5rem)] overflow-y-auto px-3 pb-3 sm:px-4 sm:pb-4">
+              <DashboardFloorplanPanel compact={false} showPresence className="border-0 shadow-none" />
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3 sm:px-5">
+              <Button asChild variant="outline" size="sm">
+                <Link href={href}>
+                  {t("dashboard.map.fullPage")}
+                  <ExternalLink className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 
   return (
     <>
