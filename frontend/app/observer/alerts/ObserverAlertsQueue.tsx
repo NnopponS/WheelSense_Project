@@ -6,14 +6,14 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Bell } from "lucide-react";
+import { AlertTriangle, Bell } from "lucide-react";
 import { ApiError, api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
 import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
 import { buildRoomByIdMap, formatPatientRoomLine } from "@/lib/alertPatientLocation";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type { Room } from "@/lib/types";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
@@ -161,29 +161,35 @@ export default function ObserverAlertsQueue() {
         header: t("observer.alerts.colSeverity"),
         cell: ({ row }) => {
           const severity = row.original.severity;
-          const variant =
-            severity === "critical"
-              ? "destructive"
-              : severity === "warning"
-                ? "warning"
-                : "secondary";
-          return <Badge variant={variant}>{severity}</Badge>;
+          return (
+            <StatusBadge
+              label={severity}
+              tone={severity === "critical" ? "critical" : severity === "warning" ? "warning" : "info"}
+            />
+          );
         },
       },
       {
         accessorKey: "status",
         header: t("observer.alerts.colStatus"),
         cell: ({ row }) => (
-          <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
-            {row.original.status}
-          </Badge>
+          <StatusBadge
+            label={row.original.status}
+            tone={
+              row.original.status === "active"
+                ? "critical"
+                : row.original.status === "acknowledged"
+                  ? "info"
+                  : "success"
+            }
+          />
         ),
       },
       {
         accessorKey: "timestamp",
         header: t("observer.alerts.colTime"),
         cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
+          <div className="ws-tabular-nums space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
             <p className="text-sm text-muted-foreground">
               {formatRelativeTime(row.original.timestamp)}
@@ -201,6 +207,7 @@ export default function ObserverAlertsQueue() {
                 type="button"
                 size="sm"
                 variant="outline"
+                className="border-warning/40 text-warning-foreground hover:bg-warning-bg"
                 disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
                 onClick={() => {
                   setPendingAlertId(row.original.id);
@@ -215,6 +222,8 @@ export default function ObserverAlertsQueue() {
               <Button
                 type="button"
                 size="sm"
+                variant="outline"
+                className="border-success/40 text-success-foreground hover:bg-success-bg"
                 disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
                 onClick={() => {
                   setPendingAlertId(row.original.id);
@@ -256,7 +265,11 @@ export default function ObserverAlertsQueue() {
   return (
     <div className="space-y-4">
       {actionError ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div
+          className="flex items-start gap-3 rounded-xl border border-critical/35 bg-critical-bg px-4 py-3 text-sm text-critical-foreground"
+          role="alert"
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
           {actionError}
         </div>
       ) : null}
@@ -267,7 +280,7 @@ export default function ObserverAlertsQueue() {
         columns={columns}
         isLoading={false}
         emptyText={t("observer.alerts.empty")}
-        rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
+        rightSlot={<Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />}
         pageSize={200}
         getRowDomId={(row) => `ws-alert-${row.id}`}
         getRowClassName={(row) =>

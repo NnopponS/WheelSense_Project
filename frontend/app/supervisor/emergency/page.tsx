@@ -6,11 +6,12 @@ import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, ClipboardList, LayoutDashboard, MapPin, Radio, Siren, Stethoscope } from "lucide-react";
+import { AlertTriangle, MapPin, Radio, Siren } from "lucide-react";
 import { z } from "zod";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
-import FeatureDetailActions from "@/components/dashboard/FeatureDetailActions";
+import { AppPage } from "@/components/layout/AppPage";
+import { PriorityBanner } from "@/components/shared/PriorityBanner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -381,21 +382,30 @@ export default function SupervisorEmergencyPage() {
   const flashAlertId = useAlertRowHighlight(highlightAlertId, highlightReady);
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("supervisor.emergency.pageTitle")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.emergency.pageSubtitle")}</p>
-      </div>
-
-      <FeatureDetailActions
-        title="Related views"
-        actions={[
-          { label: t("nav.dashboard"), description: "Priority summary", href: "/supervisor", icon: LayoutDashboard, tone: "primary" },
-          { label: t("nav.tasks"), description: "Response work", href: "/supervisor/tasks", icon: ClipboardList, tone: "warning" },
-          { label: t("nav.patients"), description: "Risk review", href: "/supervisor/personnel", icon: Stethoscope, tone: "neutral" },
-          { label: t("nav.monitoring"), description: "Open map", href: "/supervisor/floorplans", icon: MapPin, tone: "neutral" },
-        ]}
-      />
+    <AppPage
+      title={t("supervisor.emergency.pageTitle")}
+      description={t("supervisor.emergency.pageSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/supervisor" },
+        { label: t("supervisor.emergency.pageTitle") },
+      ]}
+      priority={
+        <PriorityBanner
+          tone={activeCriticalAlerts.length > 0 ? "critical" : "success"}
+          title={
+            activeCriticalAlerts.length > 0
+              ? t("supervisor.emergency.priorityCritical")
+              : t("supervisor.emergency.priorityClear")
+          }
+          description={t("supervisor.emergency.priorityDescription")}
+          detail={
+            activeCriticalAlerts.length > 0
+              ? `${activeCriticalAlerts.length} ${t("supervisor.emergency.statCriticalAlerts")}`
+              : undefined
+          }
+        />
+      }
+    >
 
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <SummaryStatCard
@@ -426,6 +436,7 @@ export default function SupervisorEmergencyPage() {
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.alertQueueEmpty")}
         rightSlot={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
+        mobileMode="cards"
         pageSize={200}
         getRowDomId={(row) => `ws-alert-${row.alertId}`}
         getRowClassName={(row) =>
@@ -453,6 +464,7 @@ export default function SupervisorEmergencyPage() {
         columns={roomColumns}
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.floorCoverageEmpty")}
+        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-supervisor-floor-coverage",
           headers: ["Room ID", "Room", "Type", "Localized devices", "Average confidence", "Last signal", "Critical"],
@@ -475,6 +487,7 @@ export default function SupervisorEmergencyPage() {
         columns={predictionColumns}
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.localizationFeedEmpty")}
+        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-supervisor-localization",
           headers: ["Device ID", "Room", "Confidence", "Model", "Timestamp"],
@@ -487,7 +500,7 @@ export default function SupervisorEmergencyPage() {
           ],
         }}
       />
-    </div>
+    </AppPage>
   );
 }
 

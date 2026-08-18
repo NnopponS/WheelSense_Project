@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { DetailSheet } from "@/components/shared/DetailSheet";
+import { EntityHeader } from "@/components/shared/EntityHeader";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
@@ -387,61 +389,55 @@ function RoomInspectorContent({
   requestCapture: () => void;
   refetchPresence: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 border border-outline-variant/20 p-4 surface-card">
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h4 className="truncate text-lg font-semibold text-foreground">
-              {selectedRoomEntry.room.label}
-            </h4>
-            <p className="mt-1 text-sm text-foreground-variant">
-              {selectedPresenceRoom
-                ? `${describeNodeStatus(selectedPresenceRoom)}${selectedPresenceRoom.node_device_id ? ` | ${selectedPresenceRoom.node_device_id}` : ""}`
-                : "No live room telemetry yet"}
-            </p>
-          </div>
-          <Badge
-            variant={
-              getNodeTone(selectedPresenceRoom) === "critical"
-                ? "destructive"
-                : getNodeTone(selectedPresenceRoom) === "warning"
-                  ? "warning"
-                  : "outline"
-            }
-          >
-            {selectedPresenceRoom ? describeNodeStatus(selectedPresenceRoom) : "Layout only"}
-          </Badge>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="success">{selectedPatients.length} patients</Badge>
-          <Badge variant="secondary">{selectedStaff.length} staff</Badge>
-          <Badge variant={(selectedPresenceRoom?.alert_count ?? 0) > 0 ? "destructive" : "outline"}>
-            {selectedPresenceRoom?.alert_count ?? 0} alerts
-          </Badge>
-          {selectedPresenceRoom?.prediction_hint ? (
-            (selectedPresenceRoom.prediction_hint as { model_type?: string }).model_type === "max_rssi" ? (
-              <Badge variant="outline">Strongest RSSI</Badge>
-            ) : (
-              <Badge variant="outline">
-                {Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}% prediction
-              </Badge>
-            )
-          ) : null}
-        </div>
-      </div>
-
-      <OccupantList
-        title="Patients in room"
-        items={selectedPatients}
-        emptyText="No patient is currently associated with this room."
+      <EntityHeader
+        headingLevel={3}
+        name={selectedRoomEntry.room.label}
+        description={
+          selectedPresenceRoom
+            ? `${describeNodeStatus(selectedPresenceRoom)}${selectedPresenceRoom.node_device_id ? ` | ${selectedPresenceRoom.node_device_id}` : ""}`
+            : "No live room telemetry yet"
+        }
+        status={
+          <StatusBadge
+            tone={getNodeTone(selectedPresenceRoom)}
+            label={selectedPresenceRoom ? describeNodeStatus(selectedPresenceRoom) : "Layout only"}
+          />
+        }
+        metadata={
+          <>
+            <StatusBadge tone="success" label={`${selectedPatients.length} patients`} />
+            <StatusBadge tone="neutral" label={`${selectedStaff.length} staff`} />
+            <StatusBadge
+              tone={(selectedPresenceRoom?.alert_count ?? 0) > 0 ? "critical" : "neutral"}
+              label={`${selectedPresenceRoom?.alert_count ?? 0} alerts`}
+            />
+            {selectedPresenceRoom?.prediction_hint ? (
+              <StatusBadge
+                tone="info"
+                label={
+                  (selectedPresenceRoom.prediction_hint as { model_type?: string }).model_type === "max_rssi"
+                    ? "Strongest RSSI"
+                    : `${Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}% prediction`
+                }
+              />
+            ) : null}
+          </>
+        }
       />
 
       <OccupantList
-        title="Staff in room"
+        title={t("floorplan.summaryPatients")}
+        items={selectedPatients}
+        emptyText={t("floorplan.roomPatientsEmpty")}
+      />
+
+      <OccupantList
+        title={t("floorplan.roomStaffTitle")}
         items={selectedStaff}
-        emptyText="No staff presence has been set for this room."
+        emptyText={t("floorplan.roomStaffEmpty")}
       />
 
       <div className="space-y-2">
@@ -902,7 +898,7 @@ export default function FloorplanRoleViewer({
               <MapPin className="h-4 w-4 text-primary" />
               {compact ? "Ward monitoring summary" : "Live operations map"}
             </h3>
-            <p className="mt-1 text-xs text-foreground-variant">
+            <p className="mt-1 text-sm text-foreground-variant">
               {compact
                 ? "Room occupancy, alerts, and node freshness in one glance."
                 : "Readable room cards, occupancy context, and room-level inspection for staff operations."}
@@ -910,13 +906,19 @@ export default function FloorplanRoleViewer({
           </div>
 
           <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
-            <div className="inline-flex rounded-lg border border-border p-0.5">
+            {!compact ? (
+            <div
+              className="inline-flex rounded-lg border border-border p-1"
+              role="group"
+          aria-label={t("floorplan.displayMode")}
+            >
               <Button
                 type="button"
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
-                className="h-7 text-xs px-3"
+                className="px-3 text-sm"
                 onClick={() => setViewMode("list")}
+                aria-pressed={viewMode === "list"}
               >
                 List
               </Button>
@@ -924,12 +926,14 @@ export default function FloorplanRoleViewer({
                 type="button"
                 variant={viewMode === "floorplan" ? "default" : "ghost"}
                 size="sm"
-                className="h-7 text-xs px-3"
+                className="px-3 text-sm"
                 onClick={() => setViewMode("floorplan")}
+                aria-pressed={viewMode === "floorplan"}
               >
                 Floorplan
               </Button>
             </div>
+            ) : null}
             <Badge variant="outline">{presenceRooms.length || rooms.length} rooms</Badge>
             <Badge variant="success">{occupiedRooms} occupied</Badge>
             <Badge variant={totalAlerts > 0 ? "destructive" : "outline"}>{totalAlerts} alerts</Badge>
@@ -964,10 +968,14 @@ export default function FloorplanRoleViewer({
 
       <div className="mb-4 grid gap-2 sm:grid-cols-2 sm:gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-foreground-variant">
+          <label
+            htmlFor="floorplan-building"
+            className="mb-1 block text-sm font-medium text-foreground-variant"
+          >
             {t("floorplan.building")}
           </label>
           <select
+            id="floorplan-building"
             className="input-field w-full text-sm"
             value={effectiveFacilityId === "" ? "" : String(effectiveFacilityId)}
             onChange={(event) => {
@@ -989,10 +997,14 @@ export default function FloorplanRoleViewer({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-foreground-variant">
+          <label
+            htmlFor="floorplan-floor"
+            className="mb-1 block text-sm font-medium text-foreground-variant"
+          >
             {t("floorplan.floor")}
           </label>
           <select
+            id="floorplan-floor"
             className="input-field w-full text-sm"
             value={effectiveFloorId === "" ? "" : String(effectiveFloorId)}
             onChange={(event) => {
@@ -1039,7 +1051,7 @@ export default function FloorplanRoleViewer({
               onSelect={setSelectedId}
               roomMetaById={roomMetaById}
             />
-            <p className="mt-2 text-xs text-foreground-variant">
+            <p className="mt-2 text-sm text-foreground-variant">
               {selectedRoomEntry?.presenceRoom
                 ? `${selectedRoomEntry.room.label}: ${getRoomOccupants(selectedRoomEntry.presenceRoom)
                     .slice(0, 3)
@@ -1055,29 +1067,37 @@ export default function FloorplanRoleViewer({
                 <div className="grid max-h-[720px] auto-rows-fr grid-cols-1 gap-2 overflow-y-auto pr-2 sm:grid-cols-2">
                   {roomEntries.map((entry) => {
                     const meta = roomMetaById[entry.room.id];
-                    const toneClass = meta?.tone === "critical" ? "border-red-500/50 bg-red-500/10" :
-                                      meta?.tone === "warning" ? "border-amber-500/50 bg-amber-500/10" :
-                                      meta?.tone === "success" ? "border-emerald-500/50 bg-emerald-500/10" :
-                                      "border-border bg-surface-container-low";
+                    const toneClass =
+                      meta?.tone === "critical"
+                        ? "border-critical/40 bg-critical-container/45"
+                        : meta?.tone === "warning"
+                          ? "border-warning/40 bg-warning-container/45"
+                          : meta?.tone === "success"
+                            ? "border-success/40 bg-success-container/45"
+                            : "border-border bg-surface-container-low";
                     return (
                       <button
                         key={entry.room.id}
                         type="button"
-                        className={`flex h-full w-full flex-col rounded-lg border p-4 text-left transition-colors ${entry.room.id === visibleSelectedId ? "ring-2 ring-primary" : ""} ${toneClass}`}
+                        className={`flex min-h-24 w-full flex-col rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${entry.room.id === visibleSelectedId ? "ring-2 ring-primary" : ""} ${toneClass}`}
                         onClick={() => setSelectedId(entry.room.id)}
+                        aria-pressed={entry.room.id === visibleSelectedId}
+                        aria-label={`Open details for ${entry.room.label}`}
                       >
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="font-semibold text-sm truncate">{entry.room.label}</div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="truncate text-base font-semibold">{entry.room.label}</div>
                         </div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {meta?.chips?.map((c, i) => (
-                            <Badge key={i} variant={c.tone === "critical" ? "destructive" : c.tone === "success" ? "success" : c.tone === "warning" ? "warning" : "outline"} className="text-[10px]">
-                              {c.label}
-                            </Badge>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {meta?.chips?.map((chip, index) => (
+                            <StatusBadge
+                              key={`${chip.label}-${index}`}
+                              tone={chip.tone}
+                              label={chip.label}
+                            />
                           ))}
                         </div>
                         {meta?.detailLines && meta.detailLines.length > 0 && (
-                          <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-0.5">
+                          <div className="mt-2 flex flex-col gap-1 text-sm text-foreground-variant">
                             {meta.detailLines.map((line, idx) => (
                               <span key={idx} className="truncate">{line}</span>
                             ))}
@@ -1097,14 +1117,17 @@ export default function FloorplanRoleViewer({
                   roomMetaById={roomMetaById}
                 />
               )}
-              <div className="rounded-lg border border-outline-variant/20 bg-card px-3 py-2 text-xs text-foreground-variant">
+              <div
+                className="rounded-lg border border-outline-variant/20 bg-card px-3 py-3 text-sm text-foreground-variant"
+                role={presenceError ? "status" : undefined}
+              >
                 {presenceError
                   ? "Presence feed degraded. Room geometry remains available while live overlays retry."
                   : "Select a room on the map or list to open live details in the side panel."}
               </div>
             </div>
 
-            <Sheet
+            <DetailSheet
               open={inspectorOpen}
               onOpenChange={(open) => {
                 if (!open) {
@@ -1112,26 +1135,23 @@ export default function FloorplanRoleViewer({
                   setCaptureMessage(null);
                 }
               }}
+              title={selectedRoomEntry ? `Room ${selectedRoomEntry.room.label}` : "Room details"}
+          description={t("floorplan.liveDescription")}
             >
-              <SheetContent side="right" className="w-full overflow-y-auto p-6 sm:max-w-md">
-                <SheetTitle className="sr-only">
-                  {selectedRoomEntry ? `Room ${selectedRoomEntry.room.label}` : "Room details"}
-                </SheetTitle>
-                {selectedRoomEntry ? (
-                  <RoomInspectorContent
-                    selectedRoomEntry={selectedRoomEntry}
-                    selectedPresenceRoom={selectedPresenceRoom}
-                    selectedPatients={selectedPatients}
-                    selectedStaff={selectedStaff}
-                    inspectorDevices={inspectorDevices}
-                    captureBusy={captureBusy}
-                    captureMessage={captureMessage}
-                    requestCapture={() => void requestCapture()}
-                    refetchPresence={() => void refetchPresence()}
-                  />
-                ) : null}
-              </SheetContent>
-            </Sheet>
+              {selectedRoomEntry ? (
+                <RoomInspectorContent
+                  selectedRoomEntry={selectedRoomEntry}
+                  selectedPresenceRoom={selectedPresenceRoom}
+                  selectedPatients={selectedPatients}
+                  selectedStaff={selectedStaff}
+                  inspectorDevices={inspectorDevices}
+                  captureBusy={captureBusy}
+                  captureMessage={captureMessage}
+                  requestCapture={() => void requestCapture()}
+                  refetchPresence={() => void refetchPresence()}
+                />
+              ) : null}
+            </DetailSheet>
           </>
         )
       ) : (

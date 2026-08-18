@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ArrowRight, Bell, ClipboardList, MapPin, MessageSquare, Monitor, Server, Settings, ShieldAlert, Tablet, Users, type LucideIcon } from "lucide-react";
+import { Activity, ArrowRight, Bell, Monitor, Settings, Tablet, Users, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import { api } from "@/lib/api";
@@ -19,8 +19,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CsvExportButton } from "@/components/shared/CsvExportButton";
 import DashboardMapLauncher from "@/components/dashboard/DashboardMapLauncher";
-import { RoleQuickActions } from "@/components/dashboard/RoleQuickActions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AppPage } from "@/components/layout/AppPage";
+import { MetricCard } from "@/components/shared/MetricCard";
+import { PriorityBanner } from "@/components/shared/PriorityBanner";
 
 type HealthStatus = "healthy" | "warning";
 
@@ -361,73 +363,41 @@ export default function AdminDashboardPage() {
   const healthyServices = [systemStatus.api, systemStatus.database, systemStatus.mqtt, systemStatus.automation].filter(
     (status) => status === "healthy",
   ).length;
-  const mobileCommandActions = useMemo(
-    () => [
-      {
-        label: t("nav.alerts"),
-        description: `${criticalAlerts.length}/${alerts.length}`,
-        href: "/admin/alerts",
-        icon: ShieldAlert,
-        tone: criticalAlerts.length > 0 ? ("danger" as const) : ("neutral" as const),
-      },
-      {
-        label: t("nav.tasks"),
-        description: t("admin.system.summaryOperations"),
-        href: "/admin/tasks",
-        icon: ClipboardList,
-        tone: "warning" as const,
-      },
-      {
-        label: t("admin.system.devices"),
-        description: formatTemplate(t("admin.system.detailOnline"), { online: totalDevicesOnline, total: totalFleet }),
-        href: "/admin/devices",
-        icon: Tablet,
-        tone: totalDevicesOffline > 0 ? ("warning" as const) : ("success" as const),
-      },
-      {
-        label: t("admin.system.users"),
-        description: formatTemplate(t("admin.system.noteActiveAccounts"), {
-          active: userStats.active,
-          total: userStats.total,
-        }),
-        href: "/admin/users",
-        icon: Users,
-        tone: "primary" as const,
-      },
-      {
-        label: t("nav.facilities"),
-        description: t("admin.system.noteFacilities"),
-        href: "/admin/facility-management",
-        icon: MapPin,
-        tone: "neutral" as const,
-      },
-      {
-        label: t("admin.system.settings"),
-        description: t("admin.system.noteSettings"),
-        href: "/admin/settings",
-        icon: Settings,
-        tone: "neutral" as const,
-      },
-    ],
-    [alerts.length, criticalAlerts.length, t, totalDevicesOffline, totalDevicesOnline, totalFleet, userStats.active, userStats.total],
-  );
-
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Server className="h-3.5 w-3.5" />
-            {t("admin.system.badge")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("admin.system.title")}</h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              {t("admin.system.subtitle")}
-            </p>
-          </div>
-        </div>
-        <div className="hidden flex-wrap gap-2 md:flex">
+    <AppPage
+      eyebrow={t("admin.system.badge")}
+      title={t("admin.system.title")}
+      description={t("admin.system.subtitle")}
+      className="animate-fade-in pb-6"
+      priority={
+        <PriorityBanner
+          tone={criticalAlerts.length > 0 ? "critical" : totalDevicesOffline > 0 ? "warning" : "success"}
+          title={
+            criticalAlerts.length > 0
+              ? formatTemplate(t("admin.system.priorityCriticalTitle"), { count: criticalAlerts.length })
+              : totalDevicesOffline > 0
+                ? formatTemplate(t("admin.system.priorityOfflineTitle"), { count: totalDevicesOffline })
+                : t("admin.system.priorityHealthyTitle")
+          }
+          description={
+            criticalAlerts.length > 0
+              ? t("admin.system.priorityCriticalDescription")
+              : totalDevicesOffline > 0
+                ? t("admin.system.priorityOfflineDescription")
+                : t("admin.system.priorityHealthyDescription")
+          }
+          action={
+            <Button asChild variant={criticalAlerts.length > 0 ? "destructive" : "outline"}>
+              <Link href={criticalAlerts.length > 0 ? "/admin/alerts" : "/admin/devices"}>
+                {criticalAlerts.length > 0 ? t("nav.alerts") : t("admin.system.devices")}
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            </Button>
+          }
+        />
+      }
+      actions={
+        <>
           <CsvExportButton
             fileNameBase="wheelsense-admin-overview"
             headers={[
@@ -441,85 +411,62 @@ export default function AdminDashboardPage() {
           />
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/alerts">
-              <Bell className="mr-1.5 h-4 w-4" />
+              <Bell className="h-5 w-5" aria-hidden="true" />
               {t("nav.alerts")}
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/tasks">
-              <ClipboardList className="mr-1.5 h-4 w-4" />
-              {t("nav.tasks")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/support">
-              <MessageSquare className="mr-1.5 h-4 w-4" />
-              {t("nav.support")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/users">
-              <Users className="mr-1.5 h-4 w-4" />
-              {t("admin.system.users")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/devices">
-              <Tablet className="mr-1.5 h-4 w-4" />
-              {t("admin.system.devices")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/audit">
-              <Activity className="mr-1.5 h-4 w-4" />
-              {t("admin.system.audit")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
             <Link href="/admin/settings">
-              <Settings className="mr-1.5 h-4 w-4" />
+              <Settings className="h-5 w-5" aria-hidden="true" />
               {t("admin.system.settings")}
             </Link>
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
-      <div className="flex items-center justify-between gap-2 md:hidden">
-        <CsvExportButton
-          fileNameBase="wheelsense-admin-overview"
-          headers={[
-            t("admin.system.csvMetric"),
-            t("admin.system.csvArea"),
-            t("admin.system.csvTotal"),
-            t("admin.system.csvPrimaryState"),
-            t("admin.system.csvSecondaryState"),
-          ]}
-          rows={adminExportRows}
+      <section className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label={t("admin.system.users")}
+          value={userStats.active}
+          description={formatTemplate(t("admin.system.noteActiveAccounts"), {
+            active: userStats.active,
+            total: userStats.total,
+          })}
+          icon={Users}
+          href="/admin/users"
+          hrefLabel={t("admin.system.open")}
         />
-        <Button asChild size="sm" variant="outline">
-          <Link href="/admin/facility-management">
-            <MapPin className="h-4 w-4" />
-            {t("dashboard.map.fullPage")}
-          </Link>
-        </Button>
-      </div>
-
-      <RoleQuickActions
-        title={t("admin.system.mobileActions")}
-        actions={mobileCommandActions}
-        className="md:hidden"
-      />
-
-      <DashboardMapLauncher
-        href="/admin/facility-management"
-        title={t("admin.system.liveMapTitle")}
-        description={t("admin.system.liveMapDesc")}
-        primaryLabel={criticalAlerts.length ? t("headNurse.dashboard.openEmergencyMap") : t("dashboard.map.openMap")}
-        emergencyCount={criticalAlerts.length}
-        peopleCount={userStats.active}
-        roomLabel={t("headNurse.dashboard.find")}
-        compact
-      />
+        <MetricCard
+          label={t("admin.system.fleetOnline")}
+          value={`${totalDevicesOnline}/${totalFleet}`}
+          description={formatTemplate(t("admin.system.detailOnline"), {
+            online: totalDevicesOnline,
+            total: totalFleet,
+          })}
+          icon={Tablet}
+          href="/admin/devices"
+          hrefLabel={t("admin.system.open")}
+          status={totalDevicesOffline > 0 ? { label: t("admin.system.statusNeedsReview"), tone: "warning" } : undefined}
+        />
+        <MetricCard
+          label={t("admin.openAlerts")}
+          value={criticalAlerts.length}
+          description={t("admin.system.noteAlerts")}
+          icon={Bell}
+          href="/admin/alerts"
+          hrefLabel={t("admin.system.open")}
+          status={criticalAlerts.length > 0 ? { label: t("admin.system.statusNeedsReview"), tone: "critical" } : undefined}
+        />
+        <MetricCard
+          label={t("admin.system.recentEvents")}
+          value={latestActivity.length}
+          description={t("admin.system.recentGovernanceDesc")}
+          icon={Activity}
+          href="/admin/audit"
+          hrefLabel={t("admin.system.open")}
+        />
+      </section>
 
       <div className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
         <Card className="border-border/70">
@@ -537,7 +484,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="min-h-20 rounded-lg border border-border/70 bg-background/65 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.system.fleetOnline")}</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-600">
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-success">
                   {totalDevicesOnline}/{totalFleet}
                 </p>
               </div>
@@ -695,6 +642,17 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
+      <DashboardMapLauncher
+        href="/admin/facility-management"
+        title={t("admin.system.liveMapTitle")}
+        description={t("admin.system.liveMapDesc")}
+        primaryLabel={criticalAlerts.length ? t("headNurse.dashboard.openEmergencyMap") : t("dashboard.map.openMap")}
+        emergencyCount={criticalAlerts.length}
+        peopleCount={userStats.active}
+        roomLabel={t("headNurse.dashboard.find")}
+        compact
+      />
+
       <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="border-border/70">
           <CardHeader className="pb-3">
@@ -720,10 +678,10 @@ export default function AdminDashboardPage() {
                     <TableCell className="font-medium text-foreground">{row.label}</TableCell>
                     <TableCell>{row.total}</TableCell>
                     <TableCell>
-                      <span className="text-emerald-600">{row.online}</span>
+                      <span className="text-success">{row.online}</span>
                     </TableCell>
                     <TableCell>
-                      <span className={row.offline > 0 ? "text-amber-600" : "text-muted-foreground"}>
+                      <span className={row.offline > 0 ? "text-warning" : "text-muted-foreground"}>
                         {row.offline}
                       </span>
                     </TableCell>
@@ -741,10 +699,10 @@ export default function AdminDashboardPage() {
                   <TableCell className="font-medium text-foreground">{t("admin.smartFleet")}</TableCell>
                   <TableCell>{smartStats.total}</TableCell>
                   <TableCell>
-                    <span className="text-emerald-600">{smartStats.online}</span>
+                    <span className="text-success">{smartStats.online}</span>
                   </TableCell>
                   <TableCell>
-                    <span className={smartStats.offline > 0 ? "text-amber-600" : "text-muted-foreground"}>
+                    <span className={smartStats.offline > 0 ? "text-warning" : "text-muted-foreground"}>
                       {smartStats.offline}
                     </span>
                   </TableCell>
@@ -812,6 +770,6 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppPage>
   );
 }

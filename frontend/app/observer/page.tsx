@@ -9,22 +9,21 @@ import {
   CheckSquare,
   ArrowRight,
   ClipboardEdit,
-  ConciergeBell,
-  Bot,
 } from "lucide-react";
-import { MobilePageLayout } from "@/components/layout/MobilePageLayout";
+import { AppPage } from "@/components/layout/AppPage";
 import DashboardMapLauncher from "@/components/dashboard/DashboardMapLauncher";
-import { RoleQuickActions } from "@/components/dashboard/RoleQuickActions";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { mergeServerShiftChecklist, utcShiftDateString } from "@/lib/shiftChecklistDefaults";
 import { formatRelativeTime } from "@/lib/datetime";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShiftChecklistMePanel } from "@/components/shift-checklist/ShiftChecklistMePanel";
 import { ObserverNextActionHero } from "@/components/observer/ObserverNextActionHero";
 import { CsvExportButton } from "@/components/shared/CsvExportButton";
+import { MetricCard } from "@/components/shared/MetricCard";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import EmptyState from "@/components/EmptyState";
 import type {
   CareTaskOut,
   ListAlertsResponse,
@@ -305,54 +304,6 @@ export default function ObserverDashboardPage() {
     () => activeAlerts.filter((alert) => alert.severity === "critical"),
     [activeAlerts],
   );
-  const quickActions = useMemo(
-    () => [
-      {
-        label: t("nav.observer.alerts"),
-        description: `${criticalAlerts.length}/${activeAlerts.length}`,
-        href: "/observer/alerts",
-        icon: AlertTriangle,
-        tone: criticalAlerts.length > 0 ? ("danger" as const) : ("neutral" as const),
-      },
-      {
-        label: t("nav.observer.tasks"),
-        description: `${myTasks.length}`,
-        href: "/observer/tasks",
-        icon: CheckSquare,
-        tone: "warning" as const,
-      },
-      {
-        label: t("nav.observer.patients"),
-        description: `${myPatients.length}`,
-        href: "/observer/personnel",
-        icon: Users,
-        tone: "primary" as const,
-      },
-      {
-        label: t("nav.observer.handover"),
-        description: t("observer.page.handoverActionDesc"),
-        href: "/observer/messages?new=handover",
-        icon: ClipboardEdit,
-        tone: "neutral" as const,
-      },
-      {
-        label: t("nav.observer.support"),
-        description: `${supportRequests.length}`,
-        href: "/observer/support?new=request",
-        icon: ConciergeBell,
-        tone: "success" as const,
-      },
-      {
-        label: t("observer.page.askAi"),
-        description: t("observer.page.askAiDesc"),
-        icon: Bot,
-        tone: "neutral" as const,
-        aiPrompt: t("observer.page.askAiPrompt"),
-      },
-    ],
-    [activeAlerts.length, criticalAlerts.length, myPatients.length, myTasks.length, supportRequests.length, t],
-  );
-
   const onHeroPrimaryAction = () => {
     if (heroSelection.mode === "alert" && heroSelection.alertId != null) {
       acknowledgeHeroAlertMutation.mutate(heroSelection.alertId);
@@ -362,27 +313,38 @@ export default function ObserverDashboardPage() {
   };
 
   return (
-    <MobilePageLayout
+    <AppPage
       title={t("nav.observer.today")}
       description={t("observer.page.dashboardSubtitle")}
-      topActions={
-        <CsvExportButton
-          fileNameBase="wheelsense-observer-shift"
-          headers={[
-            t("observer.page.exportType"),
-            t("observer.page.exportId"),
-            t("observer.page.exportState"),
-            t("observer.page.exportTitle"),
-            t("observer.page.exportPatientId"),
-          ]}
-          rows={observerExportRows}
-        />
+      className="animate-fade-in pb-6"
+      actions={
+        <>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/observer/messages?new=handover">
+              <ClipboardEdit className="h-5 w-5" aria-hidden="true" />
+              {t("nav.observer.handover")}
+            </Link>
+          </Button>
+          <CsvExportButton
+            fileNameBase="wheelsense-observer-shift"
+            headers={[
+              t("observer.page.exportType"),
+              t("observer.page.exportId"),
+              t("observer.page.exportState"),
+              t("observer.page.exportTitle"),
+              t("observer.page.exportPatientId"),
+            ]}
+            rows={observerExportRows}
+          />
+        </>
       }
     >
-      <div className="space-y-3 pb-4 animate-fade-in sm:space-y-4 sm:pb-6">
-
       {taskActionError ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div
+          className="flex items-start gap-3 rounded-xl border border-critical/35 bg-critical-bg px-4 py-3 text-sm text-critical-foreground"
+          role="alert"
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
           {taskActionError}
         </div>
       ) : null}
@@ -398,33 +360,77 @@ export default function ObserverDashboardPage() {
         onPrimaryAction={onHeroPrimaryAction}
       />
 
-        <RoleQuickActions title={t("observer.page.roleDuties")} actions={quickActions} />
-
-        <DashboardMapLauncher
-          href="/observer/floorplans"
-          title={t("observer.page.mapTitle")}
-          description={t("observer.page.mapDesc")}
-          primaryLabel={criticalAlerts.length ? t("observer.page.openEmergencyMap") : t("nav.observer.map")}
-          emergencyCount={criticalAlerts.length}
-          peopleCount={myPatients.length}
-          roomLabel={t("observer.page.findRoom")}
-          compact
+      <section
+        aria-label={t("observer.page.roleDuties")}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <MetricCard
+          label={t("observer.page.statAlerts")}
+          value={activeAlerts.length}
+          description={t("observer.page.statActiveZone")}
+          icon={AlertTriangle}
+          status={{
+            label:
+              criticalAlerts.length > 0
+                ? `${criticalAlerts.length} ${t("observer.page.alertPlural")}`
+                : t("supervisor.page.allAcknowledged"),
+            tone: criticalAlerts.length > 0 ? "critical" : "success",
+          }}
+          href="/observer/alerts"
+          hrefLabel={t("dash.viewAll")}
         />
+        <MetricCard
+          label={t("observer.page.statMyTasks")}
+          value={myTasks.length}
+          description={t("observer.page.statPending")}
+          icon={CheckSquare}
+          status={{
+            label:
+              myTasks.length > 0
+                ? t("observer.page.statPending")
+                : t("supervisor.page.allAcknowledged"),
+            tone: myTasks.length > 0 ? "warning" : "success",
+          }}
+          href="/observer/tasks"
+          hrefLabel={t("dash.viewAll")}
+        />
+        <MetricCard
+          label={t("observer.page.statChecklist")}
+          value={`${shiftStats.percent}%`}
+          description={`${shiftStats.completed}/${shiftStats.total} ${t("observer.page.statCompletedSuffix")}`}
+          icon={ClipboardEdit}
+          status={{
+            label:
+              shiftStats.remaining > 0
+                ? `${shiftStats.remaining} ${t("observer.page.statPending")}`
+                : t("supervisor.page.allAcknowledged"),
+            tone: shiftStats.remaining > 0 ? "info" : "success",
+          }}
+        />
+        <MetricCard
+          label={t("observer.page.statMyPatients")}
+          value={myPatients.length}
+          description={t("observer.page.statAssignedToday")}
+          icon={Users}
+          href="/observer/personnel"
+          hrefLabel={t("dash.viewAll")}
+        />
+      </section>
 
         {/* Shift Checklist */}
         <ShiftChecklistMePanel shiftDate={shiftDate} />
 
         {/* My Patients Summary (Compact — top 3 only) */}
-        <Card className="border-border/70">
+        <Card>
           <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
             <div>
-              <CardTitle className="text-base">{t("observer.page.statMyPatients")}</CardTitle>
+              <CardTitle>{t("observer.page.statMyPatients")}</CardTitle>
               <CardDescription>{t("observer.page.previewPatientsDesc")}</CardDescription>
             </div>
-            <Button asChild size="sm" variant="ghost" className="h-8">
+            <Button asChild size="sm" variant="ghost">
               <Link href="/observer/personnel">
                 {t("dash.viewAll")}
-                <ArrowRight className="ml-1.5 h-4 w-4" />
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Link>
             </Button>
           </CardHeader>
@@ -434,25 +440,24 @@ export default function ObserverDashboardPage() {
                 <Link
                   key={patient.id}
                   href={`/observer/personnel/${patient.id}`}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40 transition-colors"
+                  className="flex min-h-16 items-start justify-between gap-3 rounded-xl border border-border/80 px-4 py-3 transition-colors hover:bg-muted/40"
                 >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-medium text-foreground">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-foreground">
                         {patient.first_name} {patient.last_name}
                       </p>
-                      <Badge
-                        variant={
+                      <StatusBadge
+                        label={careLevelLabel(t, patient.care_level)}
+                        tone={
                           patient.care_level === "critical"
-                            ? "destructive"
+                            ? "critical"
                             : patient.care_level === "special"
                               ? "warning"
-                              : "outline"
+                              : "success"
                         }
                         className="shrink-0"
-                      >
-                        {careLevelLabel(t, patient.care_level)}
-                      </Badge>
+                      />
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {t("observer.page.roomPrefix")} {patient.room_id ?? "—"}
@@ -461,16 +466,23 @@ export default function ObserverDashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
-                <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {t("observer.page.noPatientsAssigned")}
-                </p>
-              </div>
+              <EmptyState icon={Users} message={t("observer.page.noPatientsAssigned")} />
             )}
           </CardContent>
         </Card>
-      </div>
-    </MobilePageLayout>
+
+      <DashboardMapLauncher
+        href="/observer/floorplans"
+        title={t("observer.page.mapTitle")}
+        description={t("observer.page.mapDesc")}
+        primaryLabel={
+          criticalAlerts.length ? t("observer.page.openEmergencyMap") : t("nav.observer.map")
+        }
+        emergencyCount={criticalAlerts.length}
+        peopleCount={myPatients.length}
+        roomLabel={t("observer.page.findRoom")}
+        compact
+      />
+    </AppPage>
   );
 }

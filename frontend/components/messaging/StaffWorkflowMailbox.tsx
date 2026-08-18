@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { Inbox, Mail, PenLine, Send, Trash2, UserRoundCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { AppPage } from "@/components/layout/AppPage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -378,12 +379,17 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
   const loading = messagesQuery.isLoading || patientsQuery.isLoading;
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">{t(cfg.titleKey)}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t(cfg.subtitleKey)}</p>
-        </div>
+    <AppPage
+      title={t(cfg.titleKey)}
+      description={t(cfg.subtitleKey)}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: `/${variant.replace("_", "-")}`,
+        },
+        { label: t("nav.messages") },
+      ]}
+      actions={
         <Button
           type="button"
           className="shrink-0 gap-2"
@@ -392,10 +398,11 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
             setComposeOpen(true);
           }}
         >
-          <PenLine className="h-4 w-4" />
+          <PenLine className="h-5 w-5" aria-hidden="true" />
           {t("messaging.mailbox.composeButton")}
         </Button>
-      </div>
+      }
+    >
 
       <div className="flex flex-col overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm lg:min-h-[min(70vh,780px)] lg:flex-row">
         <div className="flex w-full min-w-0 flex-col border-border/80 lg:w-[min(100%,400px)] lg:border-r">
@@ -732,6 +739,6 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
           </form>
         </SheetContent>
       </Sheet>
-    </div>
+    </AppPage>
   );
 }

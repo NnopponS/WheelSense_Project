@@ -8,11 +8,12 @@ import { ArrowRight, CheckCircle2, CircleDot, ListTodo, MapPin } from "lucide-re
 import { api } from "@/lib/api";
 import type { CareScheduleOut, CareTaskOut } from "@/lib/api/task-scope-types";
 import type { Room } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge";
+import { LoadingState } from "@/components/layout/LoadingState";
 
 const DEFAULT_DURATION_MS = 60 * 60 * 1000;
 const MAX_EACH = 4;
@@ -58,6 +59,25 @@ function roomLabel(roomId: number | null | undefined, rooms: Room[]): string | n
   return floor ? `${r.name} · ${floor}` : r.name;
 }
 
+function statusTone(status: string | null | undefined): StatusTone {
+  switch ((status ?? "").toLowerCase()) {
+    case "completed":
+      return "success";
+    case "in_progress":
+      return "info";
+    case "cancelled":
+      return "neutral";
+    case "overdue":
+    case "failed":
+      return "critical";
+    case "pending":
+    case "scheduled":
+      return "warning";
+    default:
+      return "neutral";
+  }
+}
+
 interface PatientCareRoadmapProps {
   patientId: number;
 }
@@ -80,9 +100,15 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
     queryFn: () => api.listRooms(),
   });
 
-  const schedules = (schedulesQuery.data ?? []) as CareScheduleOut[];
-  const tasks = (tasksQuery.data ?? []) as CareTaskOut[];
-  const rooms = (roomsQuery.data ?? []) as Room[];
+  const schedules = useMemo(
+    () => (schedulesQuery.data ?? []) as CareScheduleOut[],
+    [schedulesQuery.data],
+  );
+  const tasks = useMemo(
+    () => (tasksQuery.data ?? []) as CareTaskOut[],
+    [tasksQuery.data],
+  );
+  const rooms = useMemo(() => (roomsQuery.data ?? []) as Room[], [roomsQuery.data]);
 
   const patientTasks = useMemo(
     () => tasks.filter((x) => x.patient_id === patientId),
@@ -135,11 +161,7 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
     schedulesQuery.isLoading || tasksQuery.isLoading || roomsQuery.isLoading;
 
   if (loading) {
-    return (
-      <Card className="border-border/70">
-        <CardContent className="p-6 text-sm text-muted-foreground">{t("common.loading")}</CardContent>
-      </Card>
-    );
+    return <LoadingState message={t("common.loading")} />;
   }
 
   const renderRow = (
@@ -160,19 +182,17 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 space-y-1">
               <p className="font-medium text-foreground leading-snug">{s.title}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="ws-tabular-nums text-sm text-muted-foreground">
                 {format(row.at, "PPp")} · {s.schedule_type}
               </p>
               {loc ? (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-5 w-5 shrink-0" aria-hidden="true" />
                   <span>{loc}</span>
                 </p>
               ) : null}
             </div>
-            <Badge variant="outline" className="shrink-0 text-[10px] uppercase">
-              {s.status}
-            </Badge>
+            <StatusBadge label={s.status} tone={statusTone(s.status)} className="shrink-0" />
           </div>
         </li>
       );
@@ -190,15 +210,13 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
           <div className="min-w-0 space-y-1">
             <p className="font-medium text-foreground leading-snug">{tk.title}</p>
             {tk.description ? (
-              <p className="text-xs text-muted-foreground line-clamp-2">{tk.description}</p>
+              <p className="line-clamp-2 text-sm text-muted-foreground">{tk.description}</p>
             ) : null}
-            <p className="text-xs text-muted-foreground">
+            <p className="ws-tabular-nums text-sm text-muted-foreground">
               {tk.due_at ? format(parseISO(tk.due_at), "PPp") : t("patient.roadmap.noDue")}
             </p>
           </div>
-          <Badge variant="outline" className="shrink-0 text-[10px] uppercase">
-            {tk.status}
-          </Badge>
+          <StatusBadge label={tk.status} tone={statusTone(tk.status)} className="shrink-0" />
         </div>
       </li>
     );
@@ -211,13 +229,13 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
     <section className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">{t("patient.roadmap.title")}</h3>
+          <h2 className="text-xl font-semibold text-foreground">{t("patient.roadmap.title")}</h2>
           <p className="text-sm text-muted-foreground">{t("patient.roadmap.subtitle")}</p>
         </div>
         <Button asChild variant="outline" size="sm" className="shrink-0 self-start sm:self-auto">
           <Link href="/patient/schedule">
             {t("patient.roadmap.openSchedule")}
-            <ArrowRight className="ml-1.5 h-4 w-4" />
+            <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         </Button>
       </div>
@@ -232,8 +250,8 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="border-border/70">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-success" aria-hidden="true" />
                 {t("patient.roadmap.past")}
               </CardTitle>
             </CardHeader>
@@ -248,8 +266,8 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
 
           <Card className="border-primary/25 bg-primary/[0.03]">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <CircleDot className="h-4 w-4 text-primary" />
+              <CardTitle className="flex items-center gap-2">
+                <CircleDot className="h-5 w-5 text-primary" aria-hidden="true" />
                 {t("patient.roadmap.now")}
               </CardTitle>
             </CardHeader>
@@ -264,8 +282,8 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
 
           <Card className="border-border/70">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <ListTodo className="h-4 w-4 text-sky-600" />
+              <CardTitle className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-info" aria-hidden="true" />
                 {t("patient.roadmap.next")}
               </CardTitle>
             </CardHeader>
@@ -280,8 +298,8 @@ export function PatientCareRoadmap({ patientId }: PatientCareRoadmapProps) {
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
-        <MapPin className="h-3.5 w-3.5 shrink-0" />
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+        <MapPin className="h-5 w-5 shrink-0" aria-hidden="true" />
         {t("patient.roadmap.locationHint")}
         <Link href="/patient/room-controls" className="text-primary underline-offset-2 hover:underline">
           {t("patient.roadmap.roomControlsLink")}

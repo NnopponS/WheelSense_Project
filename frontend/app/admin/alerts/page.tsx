@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Search } from "lucide-react";
 import {
   AdminAlertsTable,
   type AdminAlertFilterStatus,
 } from "@/components/admin/alerts/AdminAlertsTable";
-import { Input } from "@/components/ui/input";
+import { AppPage } from "@/components/layout/AppPage";
+import { FilterBar } from "@/components/shared/FilterBar";
 import {
   Select,
   SelectContent,
@@ -61,32 +61,33 @@ export default function AdminAlertsPage() {
   const alerts = (alertsQuery.data ?? []) as Alert[];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Bell className="h-3.5 w-3.5" />
-            {t("nav.alerts")}
-          </div>
-          <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">
-            {t("alerts.title")}
-          </h2>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            {t("admin.alerts.pageSubtitle")}
-          </p>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_180px]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("admin.alerts.searchPlaceholder")}
-              className="pl-9"
-            />
-          </div>
+    <AppPage
+      eyebrow={t("nav.alerts")}
+      title={t("alerts.title")}
+      description={t("admin.alerts.pageSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/admin" },
+        { label: t("nav.alerts") },
+      ]}
+    >
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchLabel={t("common.search")}
+        searchPlaceholder={t("admin.alerts.searchPlaceholder")}
+        resetLabel={t("common.reset")}
+        hasActiveFilters={search.trim().length > 0 || filter !== "all"}
+        onReset={() => {
+          setSearch("");
+          setFilter("all");
+        }}
+      >
+        <div className="min-w-48 flex-1">
+          <label htmlFor="admin-alert-status" className="mb-1 block text-sm font-medium text-foreground">
+            {t("headNurse.alerts.filterStatusPlaceholder")}
+          </label>
           <Select value={filter} onValueChange={(value) => setFilter(value as AdminAlertFilterStatus)}>
-            <SelectTrigger>
+            <SelectTrigger id="admin-alert-status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -97,10 +98,10 @@ export default function AdminAlertsPage() {
             </SelectContent>
           </Select>
         </div>
-      </div>
+      </FilterBar>
 
       {actionError ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-xl border border-critical/30 bg-critical-bg px-4 py-3 text-sm text-critical-foreground" role="alert">
           {actionError}
         </div>
       ) : null}
@@ -113,6 +114,6 @@ export default function AdminAlertsPage() {
         onUpdateStatus={(id, status) => updateAlertMutation.mutate({ id, status })}
         canAcknowledge
       />
-    </div>
+    </AppPage>
   );
 }

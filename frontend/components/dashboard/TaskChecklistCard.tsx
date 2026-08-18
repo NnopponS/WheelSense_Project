@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
-  Circle,
   Clock,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
   User,
   Calendar,
 } from "lucide-react";
@@ -31,21 +29,14 @@ interface TaskChecklistCardProps {
 }
 
 const priorityConfig = {
-  low: { color: "bg-muted text-muted-foreground", label: "Low" },
-  medium: { color: "bg-primary/10 text-primary", label: "Medium" },
-  high: { color: "bg-amber-500/10 text-amber-600", label: "High" },
-  urgent: { color: "bg-destructive/10 text-destructive", label: "Urgent" },
+  low: { color: "bg-muted text-muted-foreground" },
+  medium: { color: "bg-primary/10 text-primary" },
+  high: { color: "bg-warning/15 text-warning-foreground" },
+  urgent: { color: "bg-destructive/10 text-destructive" },
 };
 
-const statusConfig = {
-  pending: { color: "bg-muted text-muted-foreground", icon: Circle },
-  in_progress: { color: "bg-primary/10 text-primary", icon: Clock },
-  completed: { color: "bg-emerald-500/10 text-emerald-600", icon: CheckCircle2 },
-  cancelled: { color: "bg-muted text-muted-foreground", icon: AlertCircle },
-};
-
-function formatDueTime(dueAt?: string | null): string {
-  if (!dueAt) return "No due date";
+function formatDueTime(dueAt: string | null | undefined, t: (key: string) => string): string {
+  if (!dueAt) return t("tasks.checklist.noDueDate");
   
   const due = new Date(dueAt);
   const now = new Date();
@@ -54,10 +45,10 @@ function formatDueTime(dueAt?: string | null): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMs < 0) return "Overdue";
-  if (diffMins < 60) return `${diffMins}m remaining`;
-  if (diffHours < 24) return `${diffHours}h remaining`;
-  return `${diffDays}d remaining`;
+  if (diffMs < 0) return t("tasks.overdue");
+  if (diffMins < 60) return `${diffMins} ${t("tasks.checklist.minutesRemaining")}`;
+  if (diffHours < 24) return `${diffHours} ${t("tasks.checklist.hoursRemaining")}`;
+  return `${diffDays} ${t("tasks.checklist.daysRemaining")}`;
 }
 
 function getDueStatusColor(dueAt?: string | null): string {
@@ -123,7 +114,7 @@ export function TaskChecklistCard({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h4 className="font-semibold text-sm">Tasks</h4>
+              <h4 className="font-semibold text-sm">{t("tasks.taskManagement")}</h4>
               <Badge variant="secondary" className="text-xs">
                 {completedCount}/{localTasks.length}
               </Badge>
@@ -134,7 +125,7 @@ export function TaskChecklistCard({
               className="h-7 text-xs"
               onClick={() => router.push("/head-nurse/tasks")}
             >
-              View All
+              {t("tasks.checklist.viewAll")}
             </Button>
           </div>
           <Progress value={progress} className="h-1.5" />
@@ -146,17 +137,14 @@ export function TaskChecklistCard({
           <div className="text-center py-6">
             <CheckCircle2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">
-              No tasks assigned
+              {t("tasks.checklist.empty")}
             </p>
           </div>
         ) : (
           <div className="space-y-2">
             {displayedTasks.map((task) => {
-              const status = task.status as keyof typeof statusConfig;
               const priority = (task.priority || "medium") as keyof typeof priorityConfig;
-              const statusInfo = statusConfig[status] || statusConfig.pending;
               const priorityInfo = priorityConfig[priority] || priorityConfig.medium;
-              const StatusIcon = statusInfo.icon;
               const isCompleted = task.status === "completed";
 
               return (
@@ -192,7 +180,7 @@ export function TaskChecklistCard({
                         variant="secondary"
                         className={cn("text-[10px] px-1.5 py-0 h-4 shrink-0", priorityInfo.color)}
                       >
-                        {priorityInfo.label}
+                        {t(`tasks.checklist.priority.${priority}`)}
                       </Badge>
                     </div>
 
@@ -210,20 +198,20 @@ export function TaskChecklistCard({
                     <div className="flex items-center gap-3 mt-2">
                       <div className={cn("flex items-center gap-1 text-xs", getDueStatusColor(task.due_at))}>
                         <Clock className="h-3 w-3" />
-                        {formatDueTime(task.due_at)}
+                        {formatDueTime(task.due_at, t)}
                       </div>
                       
                       {task.patient_id && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <User className="h-3 w-3" />
-                          Patient #{task.patient_id}
+                          {t("tasks.patient")} #{task.patient_id}
                         </div>
                       )}
 
                       {task.schedule_id && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          Scheduled
+                          {t("workflow.console.status.scheduled")}
                         </div>
                       )}
                     </div>
@@ -242,12 +230,12 @@ export function TaskChecklistCard({
                 {expanded ? (
                   <>
                     <ChevronUp className="mr-1 h-3.5 w-3.5" />
-                    Show Less
+                    {t("tasks.checklist.showLess")}
                   </>
                 ) : (
                   <>
                     <ChevronDown className="mr-1 h-5 w-5" />
-                    Show {localTasks.length - maxDisplay} More
+                    {t("tasks.checklist.showMore")} {localTasks.length - maxDisplay}
                   </>
                 )}
               </Button>

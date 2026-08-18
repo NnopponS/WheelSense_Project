@@ -6,13 +6,12 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Bell, ClipboardList, Filter, LayoutDashboard, MapPin, Users } from "lucide-react";
+import { Bell } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
-import FeatureDetailActions from "@/components/dashboard/FeatureDetailActions";
+import { AppPage } from "@/components/layout/AppPage";
+import { FilterBar } from "@/components/shared/FilterBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -284,32 +283,34 @@ export default function HeadNurseAlertsPage() {
   const flashAlertId = useAlertRowHighlight(highlightAlertId, highlightReady);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("nav.alerts")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.alerts.pageSubtitle")}</p>
-      </div>
-
-      <FeatureDetailActions
-        title="Related views"
-        actions={[
-          { label: t("nav.dashboard"), description: "Safety summary", href: "/head-nurse", icon: LayoutDashboard, tone: "primary" },
-          { label: t("nav.tasks"), description: "Assign response work", href: "/head-nurse/tasks", icon: ClipboardList, tone: "warning" },
-          { label: t("nav.personnel"), description: "Open patient or staff", href: "/head-nurse/personnel", icon: Users, tone: "neutral" },
-          { label: t("nav.monitoring"), description: "Locate room", href: "/head-nurse/floorplans", icon: MapPin, tone: "neutral" },
-        ]}
-      />
-
-      <Card className="border-border/70">
-        <CardContent className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t("headNurse.alerts.searchPlaceholder")}
-          />
-
-          <Select value={status} onValueChange={(value) => setStatus(value as AlertStatusFilter)}>
-            <SelectTrigger>
+    <AppPage
+      title={t("nav.alerts")}
+      description={t("headNurse.alerts.pageSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/head-nurse" },
+        { label: t("nav.alerts") },
+      ]}
+    >
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchLabel={t("common.search")}
+        searchPlaceholder={t("headNurse.alerts.searchPlaceholder")}
+        resultLabel={`${rows.length} ${rows.length === 1 ? t("table.row") : t("table.rows")}`}
+        resetLabel={t("common.reset")}
+        hasActiveFilters={search.trim().length > 0 || status !== "all" || severity !== "all"}
+        onReset={() => {
+          setSearch("");
+          setStatus("all");
+          setSeverity("all");
+        }}
+      >
+          <div className="min-w-44 flex-1">
+            <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="alert-status-filter">
+              {t("headNurse.alerts.filterStatusPlaceholder")}
+            </label>
+            <Select value={status} onValueChange={(value) => setStatus(value as AlertStatusFilter)}>
+            <SelectTrigger id="alert-status-filter">
               <SelectValue placeholder={t("headNurse.alerts.filterStatusPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
@@ -319,9 +320,14 @@ export default function HeadNurseAlertsPage() {
               <SelectItem value="resolved">{t("headNurse.alerts.statusResolved")}</SelectItem>
             </SelectContent>
           </Select>
+          </div>
 
-          <Select value={severity} onValueChange={(value) => setSeverity(value as AlertSeverityFilter)}>
-            <SelectTrigger>
+          <div className="min-w-44 flex-1">
+            <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="alert-severity-filter">
+              {t("headNurse.alerts.filterSeverityPlaceholder")}
+            </label>
+            <Select value={severity} onValueChange={(value) => setSeverity(value as AlertSeverityFilter)}>
+            <SelectTrigger id="alert-severity-filter">
               <SelectValue placeholder={t("headNurse.alerts.filterSeverityPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
@@ -331,8 +337,8 @@ export default function HeadNurseAlertsPage() {
               <SelectItem value="info">{t("headNurse.alerts.severityInfo")}</SelectItem>
             </SelectContent>
           </Select>
-        </CardContent>
-      </Card>
+          </div>
+      </FilterBar>
 
       <DataTableCard
         title={t("headNurse.alerts.streamTitle")}
@@ -341,7 +347,8 @@ export default function HeadNurseAlertsPage() {
         columns={columns}
         isLoading={alertsTableLoading}
         emptyText={t("headNurse.alerts.empty")}
-        rightSlot={<Filter className="h-4 w-4 text-muted-foreground" />}
+        rightSlot={<Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />}
+        mobileMode="cards"
         pageSize={200}
         getRowDomId={(row) => `ws-alert-${row.id}`}
         getRowClassName={(row) =>
@@ -366,7 +373,7 @@ export default function HeadNurseAlertsPage() {
       />
 
       {actionError ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-xl border border-critical/30 bg-critical-bg px-4 py-3 text-sm text-critical-foreground" role="alert">
           {actionError}
         </div>
       ) : null}
@@ -377,6 +384,6 @@ export default function HeadNurseAlertsPage() {
           {rows.filter((item) => item.status === "active").length} {t("headNurse.alerts.footerActivePrefix")}
         </div>
       </div>
-    </div>
+    </AppPage>
   );
 }

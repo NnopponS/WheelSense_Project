@@ -65,6 +65,42 @@ export interface NavGroup {
 
 export type RoleNavConfig = NavGroup[];
 
+interface SearchParamsLike {
+  get(name: string): string | null;
+}
+
+export function isNavItemActive(
+  item: NavItem,
+  pathname: string,
+  searchParams: SearchParamsLike,
+  role?: string,
+): boolean {
+  if (item.activeForPaths?.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    return true;
+  }
+
+  const base = item.href.split("?")[0];
+  if (item.activeWhenQueryMatch) {
+    const { param, value } = item.activeWhenQueryMatch;
+    return (
+      (pathname === base || pathname.startsWith(`${base}/`)) &&
+      searchParams.get(param) === value
+    );
+  }
+
+  const rolePath = role?.replaceAll("_", "-") ?? "";
+  const isRoleRoot = base === `/${rolePath}` || (role === "admin" && base === "/admin");
+  if (isRoleRoot) {
+    if (item.inactiveWhenQueryMatch && pathname === base) {
+      const { param, value } = item.inactiveWhenQueryMatch;
+      if (searchParams.get(param) === value) return false;
+    }
+    return pathname === base;
+  }
+
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
 /**
  * Role-based navigation configurations
  * Each role has its own set of navigation groups and items

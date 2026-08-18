@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AppPage } from "@/components/layout/AppPage";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
@@ -246,19 +247,15 @@ export default function AdminSupportPage() {
     : null;
 
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            {t("admin.support.badge")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("admin.support.title")}</h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t("admin.support.subtitle")}</p>
-          </div>
-        </div>
-      </div>
+    <AppPage
+      eyebrow={t("admin.support.badge")}
+      title={t("admin.support.title")}
+      description={t("admin.support.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/admin" },
+        { label: t("nav.support") },
+      ]}
+    >
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as SupportTab)} className="space-y-6">
         <TabsList>
@@ -348,7 +345,7 @@ export default function AdminSupportPage() {
                         onClick={() => ticketUpdateMutation.mutate()}
                         disabled={ticketUpdateMutation.isPending}
                       >
-                        <CheckCircle2 className="mr-1.5 h-4 w-4 text-emerald-600" />
+                        <CheckCircle2 className="mr-1.5 h-4 w-4 text-success" />
                         {t("admin.support.markResolved")}
                       </Button>
                     ) : null}
@@ -644,6 +641,6 @@ export default function AdminSupportPage() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </AppPage>
   );
 }

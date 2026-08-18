@@ -31,6 +31,8 @@ import { Input } from "@/components/ui/input";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { cn } from "@/lib/utils";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
 
 function registryDeviceLabelSortKey(device: Device): string {
   return (device.display_name?.trim() || device.device_id).toLocaleLowerCase();
@@ -158,11 +160,17 @@ function DevicesPageContent() {
   }, [smartDevices]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("devices.title")}</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("devices.healthNote")}</p>
-      </div>
+    <AppPage
+      title={t("devices.title")}
+      description={t("devices.healthNote")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: user?.role ? `/${String(user.role).replace("_", "-")}` : "/admin",
+        },
+        { label: t("nav.devices") },
+      ]}
+    >
 
       {tab === "smart_ha" ? (
         <div className="grid items-stretch gap-3 md:grid-cols-3">
@@ -251,13 +259,13 @@ function DevicesPageContent() {
                   <CardContent className="flex flex-1 flex-col gap-2 text-sm">
                     <p className="text-muted-foreground">{device.device_type}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">State</span>
+                      <span className="text-muted-foreground">{t("devices.state")}</span>
                       <span className="font-medium text-foreground">
                         {device.state || (device.is_active ? t("smartDevices.active") : t("smartDevices.inactive"))}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Status</span>
+                      <span className="text-muted-foreground">{t("clinical.table.status")}</span>
                       <Badge variant={device.is_active ? "success" : "outline"}>
                         {device.is_active ? t("smartDevices.active") : t("smartDevices.inactive")}
                       </Badge>
@@ -311,11 +319,11 @@ function DevicesPageContent() {
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col gap-2 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Hardware</span>
+                    <span className="text-muted-foreground">{t("devicesDetail.hardware")}</span>
                     <span className="font-medium text-foreground">{device.hardware_type}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Firmware</span>
+                    <span className="text-muted-foreground">{t("devices.firmware")}</span>
                     <span className="font-medium text-foreground">{device.firmware || "-"}</span>
                   </div>
                   <div className="space-y-1">
@@ -340,7 +348,7 @@ function DevicesPageContent() {
           onMutate={onMutate}
         />
       ) : null}
-    </div>
+    </AppPage>
   );
 }
 
@@ -349,10 +357,7 @@ export default function DevicesPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center py-24">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <span className="sr-only">{t("common.loading")}</span>
-        </div>
+        <DataState kind="loading" title={t("common.loading")} />
       }
     >
       <DevicesPageContent />
@@ -372,9 +377,9 @@ function SummaryCard({
   tone: "info" | "success" | "warning";
 }) {
   const toneClassMap: Record<"info" | "success" | "warning", string> = {
-    info: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
-    success: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
-    warning: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+    info: "bg-info-bg text-info-foreground",
+    success: "bg-success-bg text-success-foreground",
+    warning: "bg-warning-bg text-warning-foreground",
   };
 
   return (

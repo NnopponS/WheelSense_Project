@@ -3,19 +3,27 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Activity, ClipboardList, MessageSquare, NotebookPen, Pill, Search, Users } from "lucide-react";
+import { Activity, ClipboardList, MessageSquare, NotebookPen, Pill, Users } from "lucide-react";
 import ObserverPrescriptionsPage from "@/app/observer/prescriptions/page";
 import { useHubTab, HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/shared/FilterBar";
 import { api } from "@/lib/api";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
+import {
+  buildPatientListHref,
+  rememberPatientListScroll,
+  restorePatientListScroll,
+  withPatientListReturnTo,
+} from "@/lib/patientListContext";
 import type {
   CareTaskOut,
   ListPatientsResponse,
@@ -70,7 +78,26 @@ function observerCareLevelKey(level: string): TranslationKey {
 
 function PatientsContent() {
   const { t } = useTranslation();
-  const [search, setSearch] = useState("");
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+
+  const replaceSearch = useCallback(
+    (nextSearch: string) => {
+      router.replace(buildPatientListHref(pathname, searchParams, nextSearch, "all"), { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const currentPatientListHref = useMemo(
+    () => buildPatientListHref(pathname, searchParams, search, "all"),
+    [pathname, search, searchParams],
+  );
+
+  useEffect(() => {
+    restorePatientListScroll(currentPatientListHref);
+  }, [currentPatientListHref]);
 
   const patientsQuery = useQuery({
     queryKey: ["observer", "patients", "list"],
@@ -207,19 +234,33 @@ function PatientsContent() {
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm" variant="outline">
-              <Link href={`/observer/personnel/${row.original.id}`}>{t("observer.patients.openDetail")}</Link>
+              <Link
+                href={withPatientListReturnTo(
+                  `/observer/personnel/${row.original.id}`,
+                  currentPatientListHref,
+                )}
+                onClick={() => rememberPatientListScroll(currentPatientListHref)}
+              >
+                {t("observer.patients.openDetail")}
+              </Link>
             </Button>
             <Button asChild size="sm" variant="outline">
-              <Link href={`/observer/personnel/${row.original.id}#timeline`}>
+              <Link
+                href={withPatientListReturnTo(
+                  `/observer/personnel/${row.original.id}#timeline`,
+                  currentPatientListHref,
+                )}
+                onClick={() => rememberPatientListScroll(currentPatientListHref)}
+              >
                 <Activity className="h-4 w-4" />
-                Timeline
+                {t("nav.timeline")}
               </Link>
             </Button>
           </div>
         ),
       },
     ],
-    [t],
+    [currentPatientListHref, t],
   );
 
   const openTaskTotal = tasks.filter(
@@ -234,11 +275,14 @@ function PatientsContent() {
     handoversQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("observer.patients.title")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("observer.patients.subtitle")}</p>
-      </div>
+    <AppPage
+      title={t("observer.patients.title")}
+      description={t("observer.patients.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/observer" },
+        { label: t("nav.patients") },
+      ]}
+    >
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryStatCard icon={Users} label={t("observer.patients.assignedPatients")} value={patients.length} tone="info" />
@@ -247,24 +291,29 @@ function PatientsContent() {
         <SummaryStatCard icon={NotebookPen} label={t("observer.patients.recentHandovers")} value={handovers.length} tone="info" />
       </section>
 
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("observer.patients.searchPlaceholder")}
-          className="pl-9"
-        />
-      </div>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          replaceSearch(value);
+        }}
+        searchPlaceholder={t("observer.patients.searchPlaceholder")}
+        resultLabel={`${rows.length} ${rows.length === 1 ? t("table.row") : t("table.rows")}`}
+        hasActiveFilters={search.trim().length > 0}
+        onReset={() => {
+          setSearch("");
+          replaceSearch("");
+        }}
+      />
 
       <DataTableCard
         title={t("observer.patients.coverageTitle")}
+        mobileMode="cards"
         description={t("observer.patients.coverageDesc")}
         data={rows}
         columns={columns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patients.noMatch")}
-        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-observer-personnel",
           headers: [
@@ -289,6 +338,6 @@ function PatientsContent() {
           ],
         }}
       />
-    </div>
+    </AppPage>
   );
 }

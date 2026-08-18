@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Menu, Search, Beaker, Volume2, VolumeX } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Menu, Beaker, Volume2, VolumeX } from "lucide-react";
 import { getAlertSoundEnabled, primeAlertAudioFromUserGesture, setAlertSoundEnabled } from "@/lib/alertSound";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
@@ -13,8 +13,10 @@ import { api } from "@/lib/api";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { filterNavItemsByCapability, getNavConfig, isNavItemActive } from "@/lib/sidebarConfig";
+import { hasCapability, type AppRole } from "@/lib/permissions";
+import { NavigationSearch } from "./NavigationSearch";
 import LanguageSwitcher from "./LanguageSwitcher";
 import RoleSwitcher from "./RoleSwitcher";
 import UserAvatar from "./shared/UserAvatar";
@@ -45,6 +47,8 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const { user, impersonation, stopImpersonation } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alertSoundOn, setAlertSoundOn] = useState(() => getAlertSoundEnabled());
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications } = useNotifications();
@@ -56,6 +60,18 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
     refetchInterval: getQueryPollingMs("/demo/simulator/status"),
     retry: 3,
   });
+
+  const currentNavLabel = useMemo(() => {
+    if (!user) return undefined;
+    const items = filterNavItemsByCapability(getNavConfig(user.role), (capability) =>
+      hasCapability(user.role as AppRole, capability),
+    ).flatMap((group) => group.items);
+    const activeItem = items.find((item) => isNavItemActive(item, pathname, searchParams, user.role));
+    return activeItem ? t(activeItem.key) : undefined;
+  }, [pathname, searchParams, t, user]);
+
+  const roleLabel = user ? t(ROLE_LABELS[user.role] ?? "shell.roleAdmin") : undefined;
+  const resolvedTitle = title ?? currentNavLabel ?? roleLabel;
 
   const notificationInboxHint = useMemo(() => {
     if (!user || user.role === "patient") return undefined;
@@ -103,21 +119,22 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
             <Menu className="h-6 w-6" />
           </Button>
         ) : null}
-        {title ? (
+        {resolvedTitle ? (
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold leading-tight text-foreground sm:text-xl">
-              {title}
-            </h1>
-            {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+            <p className="truncate text-base font-semibold leading-tight text-foreground sm:text-lg">
+              {resolvedTitle}
+            </p>
+            {(subtitle ?? roleLabel) ? (
+              <p className="hidden truncate text-sm text-muted-foreground sm:block">
+                {subtitle ?? roleLabel}
+              </p>
+            ) : null}
           </div>
         ) : null}
         </div>
 
         <div className="mx-0 hidden min-w-0 flex-1 md:flex md:max-w-md lg:mx-8">
-          <div className="relative w-full">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="text" placeholder={t("shell.search")} className="pl-10" />
-          </div>
+          <NavigationSearch />
         </div>
 
         <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
@@ -126,11 +143,8 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
           </div>
           {/* Environment Badge - Only shown for admins in simulator mode */}
           {simulatorStatus?.is_simulator && user?.role === "admin" ? (
-            <Badge 
-              variant="secondary" 
-              className="hidden sm:inline-flex bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-100"
-            >
-              <Beaker className="mr-1 h-5 w-5" />
+            <Badge variant="warning" className="hidden sm:inline-flex">
+              <Beaker className="h-5 w-5" aria-hidden="true" />
               SIM
             </Badge>
           ) : null}

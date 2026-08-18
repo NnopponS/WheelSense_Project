@@ -7,9 +7,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, Bell, ClipboardList, HeartPulse, MessageSquare, NotebookPen } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { AppPage } from "@/components/layout/AppPage";
 import { PatientHealthAnalysisPanel } from "@/components/patients/PatientHealthAnalysisPanel";
 import { MovementTimelineCard } from "@/components/timeline/MovementTimelineCard";
-import UserAvatar from "@/components/shared/UserAvatar";
 import {
   WorkflowMessageDetailDialog,
   WorkflowMessagePreviewTrigger,
@@ -915,23 +915,16 @@ export function PatientCareCoordinationPanel({
     handoversQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {showHeader ? (
-        <div className="flex min-w-0 items-center gap-4">
-          <UserAvatar
-            username={patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
-            profileImageUrl={patient?.photo_url}
-            sizePx={64}
-            fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
-          />
-          <div className="min-w-0">
-            <h2 className="truncate text-2xl font-bold text-foreground">
-              {patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("observer.patientDetail.subtitle")}</p>
-          </div>
-        </div>
-      ) : null}
+    <AppPage
+      showHeader={showHeader}
+      title={patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
+      description={t("observer.patientDetail.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/observer" },
+        { label: t("nav.patients"), href: invalidBackHref },
+        { label: patientDisplayName ?? t("observer.patientDetail.title") },
+      ]}
+    >
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryStatCard icon={Bell} label={t("observer.patientDetail.activeAlerts")} value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
@@ -950,7 +943,7 @@ export function PatientCareCoordinationPanel({
       />
 
       {actionError ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-xl border border-critical/30 bg-critical-bg px-4 py-3 text-sm text-critical-foreground" role="alert">
           {actionError}
         </div>
       ) : null}
@@ -1025,6 +1018,7 @@ export function PatientCareCoordinationPanel({
         columns={vitalsColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noVitals")}
+        mobileMode="cards"
         csvExport={vitalsCsvExport}
       />
 
@@ -1035,6 +1029,7 @@ export function PatientCareCoordinationPanel({
         columns={alertColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noAlerts")}
+        mobileMode="cards"
         rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
         csvExport={alertsCsvExport}
       />
@@ -1046,6 +1041,7 @@ export function PatientCareCoordinationPanel({
         columns={taskColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noTasks")}
+        mobileMode="cards"
         rightSlot={<Activity className="h-4 w-4 text-muted-foreground" />}
         csvExport={tasksCsvExport}
       />
@@ -1057,6 +1053,7 @@ export function PatientCareCoordinationPanel({
         columns={timelineColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noTimeline")}
+        mobileMode="cards"
         csvExport={timelineCsvExport}
       />
 
@@ -1067,6 +1064,7 @@ export function PatientCareCoordinationPanel({
         columns={messagesColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noMessages")}
+        mobileMode="cards"
       />
 
       <DataTableCard
@@ -1076,6 +1074,7 @@ export function PatientCareCoordinationPanel({
         columns={handoversColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noHandovers")}
+        mobileMode="cards"
         rightSlot={<NotebookPen className="h-4 w-4 text-muted-foreground" />}
         csvExport={handoversCsvExport}
       />
@@ -1093,6 +1092,6 @@ export function PatientCareCoordinationPanel({
           attachments={messageDetail.attachments}
         />
       ) : null}
-    </div>
+    </AppPage>
   );
 }

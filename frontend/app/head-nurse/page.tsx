@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import DashboardMapLauncher from "@/components/dashboard/DashboardMapLauncher";
 import { HeadNurseSituationBanner } from "@/components/head-nurse/HeadNurseSituationBanner";
+import { AppPage } from "@/components/layout/AppPage";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
@@ -27,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CsvExportButton } from "@/components/shared/CsvExportButton";
+import { MetricCard } from "@/components/shared/MetricCard";
 import type {
   CareDirectiveOut,
   CareScheduleOut,
@@ -646,29 +648,19 @@ export default function HeadNurseDashboardPage() {
 
   const actionToneClass: Record<(typeof commandActions)[number]["tone"], string> = {
     primary: "border-primary/25 bg-primary/10 text-primary hover:bg-primary/15",
-    danger: "border-red-500/35 bg-red-500/10 text-red-700 hover:bg-red-500/15 dark:text-red-300",
-    warning: "border-amber-500/30 bg-amber-500/10 text-amber-800 hover:bg-amber-500/15 dark:text-amber-300",
+    danger: "border-critical/35 bg-critical-bg text-critical-foreground hover:bg-critical-bg/75",
+    warning: "border-warning/35 bg-warning-bg text-warning-foreground hover:bg-warning-bg/75",
     neutral: "border-border/70 bg-card text-foreground hover:bg-muted/45",
   };
 
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Stethoscope className="h-3.5 w-3.5" />
-            {t("headNurse.title")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
-              {t("headNurse.wardDashboardTitle")}
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              {t("headNurse.wardDashboardSubtitle")}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <AppPage
+      eyebrow={t("headNurse.title")}
+      title={t("headNurse.wardDashboardTitle")}
+      description={t("headNurse.wardDashboardSubtitle")}
+      className="animate-fade-in pb-6"
+      actions={
+        <>
           <CsvExportButton
             fileNameBase="wheelsense-head-nurse-command-center"
             headers={[
@@ -680,8 +672,9 @@ export default function HeadNurseDashboardPage() {
             ]}
             rows={headNurseExportRows}
           />
-        </div>
-      </div>
+        </>
+      }
+    >
 
       <HeadNurseSituationBanner
         alerts={alerts}
@@ -690,77 +683,45 @@ export default function HeadNurseDashboardPage() {
         tasks={tasks}
       />
 
-      <DashboardMapLauncher
-        href="/head-nurse/floorplans"
-        title={t("headNurse.dashboard.floorPlanOnDemand")}
-        description={t("headNurse.dashboard.floorPlanDesc")}
-        primaryLabel={criticalAlerts.length ? t("headNurse.dashboard.openEmergencyMap") : t("headNurse.dashboard.openFloorPlan")}
-        emergencyCount={criticalAlerts.length}
-        peopleCount={wardSummary?.total_patients ?? patients.length}
-        roomLabel={t("headNurse.dashboard.find")}
-        compact
-      />
-
       <section className="grid auto-rows-fr gap-3 md:grid-cols-3">
-        <Card className="min-h-[7.25rem] border-border/70">
-          <CardContent className="flex h-full items-center gap-3.5 p-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/12 text-amber-700 dark:text-amber-300">
-              <MessageSquareMore className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="line-clamp-2 text-xs font-semibold uppercase leading-snug tracking-wide text-muted-foreground">
-                {t("headNurse.situation.unreadMessages")}
-              </p>
-              <p className="text-2xl font-semibold leading-none tabular-nums text-foreground">
-                {unreadMessages.length}
-              </p>
-              <p className="text-xs leading-tight text-muted-foreground">
-                {formatTemplate(t("headNurse.situation.totalInboxMessages"), { count: messages.length })}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          label={t("headNurse.situation.unreadMessages")}
+          value={unreadMessages.length}
+          description={formatTemplate(t("headNurse.situation.totalInboxMessages"), { count: messages.length })}
+          icon={MessageSquareMore}
+          href="/head-nurse/messages"
+          hrefLabel={t("headNurse.dashboard.viewAll")}
+          status={unreadMessages.length > 0 ? { label: t("headNurse.dashboard.unread"), tone: "warning" } : undefined}
+        />
 
-        <Card className="min-h-[7.25rem] border-border/70">
-          <CardContent className="flex h-full items-center gap-3.5 p-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-sky-500/12 text-sky-700 dark:text-sky-300">
-              <Calendar className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="line-clamp-2 text-xs font-semibold uppercase leading-snug tracking-wide text-muted-foreground">
-                {t("headNurse.situation.handoverReview")}
-              </p>
-              <p className="text-2xl font-semibold leading-none tabular-nums text-foreground">
-                {highPriorityHandovers.length}
-              </p>
-              <p className="text-xs leading-tight text-muted-foreground">
-                {formatTemplate(t("headNurse.situation.notesAcrossShifts"), { count: handovers.length })}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          label={t("headNurse.situation.handoverReview")}
+          value={highPriorityHandovers.length}
+          description={formatTemplate(t("headNurse.situation.notesAcrossShifts"), { count: handovers.length })}
+          icon={Calendar}
+          status={
+            highPriorityHandovers.length > 0
+              ? { label: t("headNurse.dashboard.highPriority"), tone: "info" }
+              : undefined
+          }
+        />
 
-        <Card className="min-h-[7.25rem] border-border/70">
-          <CardContent className="flex h-full items-center gap-3.5 p-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-500/12 text-red-700 dark:text-red-300">
-              <WifiOff className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="line-clamp-2 text-xs font-semibold uppercase leading-snug tracking-wide text-muted-foreground">
-                {t("headNurse.situation.deviceLocationWarnings")}
-              </p>
-              <p className="text-2xl font-semibold leading-none tabular-nums text-foreground">
-                {deviceWarningRows.length + roomlessPatientRows.length}
-              </p>
-              <p className="text-xs leading-tight text-muted-foreground">
-                {formatTemplate(t("headNurse.situation.deviceRoomWarnings"), {
-                  devices: deviceWarningRows.length,
-                  rooms: roomlessPatientRows.length,
-                })}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          label={t("headNurse.situation.deviceLocationWarnings")}
+          value={deviceWarningRows.length + roomlessPatientRows.length}
+          description={formatTemplate(t("headNurse.situation.deviceRoomWarnings"), {
+            devices: deviceWarningRows.length,
+            rooms: roomlessPatientRows.length,
+          })}
+          icon={WifiOff}
+          href="/head-nurse/floorplans"
+          hrefLabel={t("headNurse.dashboard.openFloorPlans")}
+          status={
+            deviceWarningRows.length + roomlessPatientRows.length > 0
+              ? { label: t("headNurse.dashboard.deviceIssues"), tone: "critical" }
+              : undefined
+          }
+        />
       </section>
 
       <section aria-label={t("headNurse.dashboard.commandActionsLabel")} className="grid auto-rows-fr gap-2 sm:grid-cols-2 xl:grid-cols-6">
@@ -774,12 +735,12 @@ export default function HeadNurseDashboardPage() {
               className={`h-full min-h-16 justify-start gap-3 px-3 py-3 text-left whitespace-normal ${actionToneClass[action.tone]}`}
             >
               <Link href={action.href}>
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold leading-tight">
                     {action.label}
                   </span>
-                  <span className="block text-xs font-normal leading-tight opacity-75">
+                  <span className="block text-sm font-normal leading-tight opacity-80">
                     {action.detail}
                   </span>
                 </span>
@@ -1000,6 +961,17 @@ export default function HeadNurseDashboardPage() {
           </Card>
         </div>
       </div>
+
+      <DashboardMapLauncher
+        href="/head-nurse/floorplans"
+        title={t("headNurse.dashboard.floorPlanOnDemand")}
+        description={t("headNurse.dashboard.floorPlanDesc")}
+        primaryLabel={criticalAlerts.length ? t("headNurse.dashboard.openEmergencyMap") : t("headNurse.dashboard.openFloorPlan")}
+        emergencyCount={criticalAlerts.length}
+        peopleCount={wardSummary?.total_patients ?? patients.length}
+        roomLabel={t("headNurse.dashboard.find")}
+        compact
+      />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card className="border-border/70">
@@ -1295,6 +1267,6 @@ export default function HeadNurseDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppPage>
   );
 }

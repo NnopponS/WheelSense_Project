@@ -1,6 +1,7 @@
 "use client";
 
-import { OperationsConsole } from "@/components/workflow/OperationsConsole";
+import { AppPage } from "@/components/layout/AppPage";
+import { ExpandableOperationsConsole } from "@/components/workflow/ExpandableOperationsConsole";
 import { WorkflowTasksHubContent } from "@/components/workflow/WorkflowTasksHubContent";
 import { useTranslation } from "@/lib/i18n";
 
@@ -8,22 +9,20 @@ export default function SupervisorTasksPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
-          {t("supervisor.tasksTitle")}
-        </h2>
-        <p className="max-w-3xl text-sm text-muted-foreground">
-          {t("supervisor.tasksDescription")}
-        </p>
-      </div>
-
+    <AppPage
+      title={t("supervisor.tasksTitle")}
+      description={t("supervisor.tasksDescription")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/supervisor" },
+        { label: t("nav.tasks") },
+      ]}
+    >
       <WorkflowTasksHubContent variant="supervisor" />
-      <OperationsConsole
+      <ExpandableOperationsConsole
         role="supervisor"
         title={t("admin.workflowQueue")}
         subtitle={t("workflowTasks.hubBoardSubtitle")}
       />
-    </div>
+    </AppPage>
   );
 }

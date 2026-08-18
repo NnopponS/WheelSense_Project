@@ -1,25 +1,22 @@
 "use client";
 
 import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
-import { MapPin } from "lucide-react";
+import { AppPage } from "@/components/layout/AppPage";
 import { useTranslation } from "@/lib/i18n";
 
 export default function SupervisorFloorplansPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <MapPin className="w-7 h-7 text-primary" />
-          {t("floorplan.viewTitle")}
-        </h2>
-        <p className="text-sm text-foreground-variant mt-1">
-          {t("supervisor.floorplans.subtitle")}
-        </p>
-      </div>
-
+    <AppPage
+      title={t("floorplan.viewTitle")}
+      description={t("supervisor.floorplans.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/supervisor" },
+        { label: t("nav.floorplans") },
+      ]}
+    >
       <FloorplanRoleViewer showPresence={true} />
-    </div>
+    </AppPage>
   );
 }

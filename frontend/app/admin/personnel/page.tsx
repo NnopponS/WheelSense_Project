@@ -24,6 +24,8 @@ import {
 import UserAvatar from "@/components/shared/UserAvatar";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
 import { hasCapability } from "@/lib/permissions";
 import {
   getPatientDetailPath,
@@ -32,6 +34,12 @@ import {
   getCaregiversPath,
   getAccountManagementPath,
 } from "@/lib/routes";
+import {
+  buildPatientListHref,
+  rememberPatientListScroll,
+  restorePatientListScroll,
+  withPatientListReturnTo,
+} from "@/lib/patientListContext";
 import type { Caregiver, Patient, User as AppUser } from "@/lib/types";
 import type {
   ListCaregiversResponse,
@@ -93,7 +101,7 @@ function PersonnelPageContent() {
     hasCapability(me.role, "users.manage");
 
   const [tab, setTab] = useState<ViewTab>("staff");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [roleFilter, setRoleFilter] = useState<"all" | User["role"]>("all");
   const [patientStatusFilter, setPatientStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [accountKindFilter, setAccountKindFilter] = useState<"all" | "staff" | "patient">("all");
@@ -194,16 +202,29 @@ function PersonnelPageContent() {
     if (parsed) setTab(parsed);
   }, [searchParams]);
 
+  const currentPatientListHref = buildPatientListHref(pathname, searchParams, search, "all");
+
+  useEffect(() => {
+    restorePatientListScroll(currentPatientListHref);
+  }, [currentPatientListHref]);
+
+  const replaceSearch = useCallback(
+    (nextSearch: string) => {
+      router.replace(buildPatientListHref(pathname, searchParams, nextSearch, "all"), { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
   const onPersonnelTabChange = useCallback(
     (v: ViewTab) => {
       setTab(v);
-      const basePath = pathname.includes("/head-nurse/personnel")
-        ? "/head-nurse/personnel"
-        : "/admin/personnel";
-      const path = v === "staff" ? basePath : `${basePath}?tab=${encodeURIComponent(v)}`;
-      router.replace(path, { scroll: false });
+      const nextParams = new URLSearchParams(searchParams.toString());
+      if (v === "staff") nextParams.delete("tab");
+      else nextParams.set("tab", v);
+      const query = nextParams.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
     },
-    [pathname, router],
+    [pathname, router, searchParams],
   );
 
   const onSubmitStaffPlusAccount = useCallback(async () => {
@@ -404,12 +425,17 @@ function PersonnelPageContent() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">{t("personnel.workspaceTitle")}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t("personnel.workspaceSubtitle")}</p>
-        </div>
+    <AppPage
+      title={t("personnel.workspaceTitle")}
+      description={t("personnel.workspaceSubtitle")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: me?.role ? `/${String(me.role).replace("_", "-")}` : "/admin",
+        },
+        { label: t("nav.personnel") },
+      ]}
+      actions={
         <div className="flex gap-2">
           <Badge variant="outline">
             {t("nav.staff")} {stats.staff}
@@ -421,7 +447,8 @@ function PersonnelPageContent() {
             {t("personnel.tabAccounts")} {stats.accounts}
           </Badge>
         </div>
-      </div>
+      }
+    >
 
       <Card>
         <CardContent className="pt-6">
@@ -478,7 +505,10 @@ function PersonnelPageContent() {
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={search}
-                    onChange={(event) => setSearch(event.target.value)}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      replaceSearch(event.target.value);
+                    }}
                     placeholder={
                       tab === "accounts"
                         ? t("personnel.searchPlaceholderAccounts")
@@ -575,15 +605,27 @@ function PersonnelPageContent() {
                         {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={getPatientDetailPath(me?.role || "admin", row.id)}>
+                        <Link
+                          href={withPatientListReturnTo(
+                            getPatientDetailPath(me?.role || "admin", row.id),
+                            currentPatientListHref,
+                          )}
+                          onClick={() => rememberPatientListScroll(currentPatientListHref)}
+                        >
                           {t("personnel.rowOpen")}
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`${getPatientDetailPath(me?.role || "admin", row.id)}?tab=care#timeline`}>
+                        <Link
+                          href={withPatientListReturnTo(
+                            `${getPatientDetailPath(me?.role || "admin", row.id)}?tab=care#timeline`,
+                            currentPatientListHref,
+                          )}
+                          onClick={() => rememberPatientListScroll(currentPatientListHref)}
+                        >
                           <Activity className="h-3.5 w-3.5" />
-                          Timeline
+                          {t("nav.timeline")}
                         </Link>
                       </Button>
                       {canManageAccounts ? (
@@ -855,9 +897,9 @@ function PersonnelPageContent() {
                 value={ptCare}
                 onChange={(e) => setPtCare(e.target.value as typeof ptCare)}
               >
-                <option value="normal">normal</option>
-                <option value="special">special</option>
-                <option value="critical">critical</option>
+                <option value="normal">{t("patients.careLevelNormal")}</option>
+                <option value="special">{t("patients.careLevelSpecial")}</option>
+                <option value="critical">{t("patients.careLevelCritical")}</option>
               </select>
                   </div>
                   <div>
@@ -955,17 +997,16 @@ function PersonnelPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppPage>
   );
 }
 
 export default function PersonnelPage() {
+  const { t } = useTranslation();
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center py-24">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+        <DataState kind="loading" title={t("common.loading")} />
       }
     >
       <PersonnelPageContent />

@@ -1,32 +1,16 @@
 "use client";
 "use no memo";
 
-import { useMemo, useState } from "react";
-import {
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type ColumnDef,
-  type SortingState,
-} from "@tanstack/react-table";
+import { useMemo } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, Bell, CheckCheck, Siren, TriangleAlert } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import type { Alert } from "@/lib/types";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CsvExportButton } from "@/components/shared/CsvExportButton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
 
 export type AdminAlertFilterStatus = "all" | "active" | "acknowledged" | "resolved";
 
@@ -60,9 +44,6 @@ export function AdminAlertsTable({
   canAcknowledge,
 }: Props) {
   const { t } = useTranslation();
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "timestamp", desc: true },
-  ]);
 
   const filteredAlerts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -191,22 +172,6 @@ export function AdminAlertsTable({
     [canAcknowledge, onUpdateStatus, t],
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table is the chosen admin grid engine.
-  const table = useReactTable({
-    data: filteredAlerts,
-    columns,
-    state: { sorting },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
-  });
-
   const counts = useMemo(() => {
     const source = alerts ?? [];
     return {
@@ -220,111 +185,37 @@ export function AdminAlertsTable({
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="Total alerts" value={counts.total} icon={Bell} />
+        <SummaryCard label={t("alerts.total")} value={counts.total} icon={Bell} />
         <SummaryCard label={t("alerts.active")} value={counts.active} icon={Siren} />
         <SummaryCard
           label={t("alerts.acknowledged")}
           value={counts.acknowledged}
           icon={CheckCheck}
         />
-        <SummaryCard label="Critical" value={counts.critical} icon={TriangleAlert} />
+        <SummaryCard label={t("alerts.critical")} value={counts.critical} icon={TriangleAlert} />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle>{t("alerts.title")}</CardTitle>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <CsvExportButton
-              fileNameBase="wheelsense-admin-alerts"
-              headers={["Alert ID", "Title", "Type", "Severity", "Status", "Patient ID", "Timestamp"]}
-              rows={filteredAlerts.map((alert) => [
-                alert.id,
-                alert.title,
-                alert.alert_type,
-                alert.severity,
-                alert.status,
-                alert.patient_id,
-                alert.timestamp,
-              ])}
-            />
-            <p className="text-sm text-muted-foreground">
-              {filteredAlerts.length} {filteredAlerts.length === 1 ? "match" : "matches"}
-            </p>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoading ? (
-            <div className="flex min-h-72 items-center justify-center">
-              <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
-          ) : (
-            <>
-              <div className="overflow-hidden rounded-2xl border border-border/70">
-                <Table>
-                  <TableHeader className="bg-muted/55">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <TableHead key={header.id}>
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(header.column.columnDef.header, header.getContext())}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableHeader>
-                  <TableBody>
-                    {table.getRowModel().rows.length ? (
-                      table.getRowModel().rows.map((row) => (
-                        <TableRow key={row.id}>
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
-                          {t("alerts.empty")}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <DataTableCard
+        title={t("alerts.title")}
+        data={filteredAlerts}
+        columns={columns}
+        isLoading={isLoading}
+        emptyText={t("alerts.empty")}
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-admin-alerts",
+          headers: ["Alert ID", "Title", "Type", "Severity", "Status", "Patient ID", "Timestamp"],
+          getRowValues: (alert) => [
+            alert.id,
+            alert.title,
+            alert.alert_type,
+            alert.severity,
+            alert.status,
+            alert.patient_id,
+            alert.timestamp,
+          ],
+        }}
+      />
     </div>
   );
 }

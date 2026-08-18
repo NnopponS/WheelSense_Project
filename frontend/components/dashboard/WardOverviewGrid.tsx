@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Building2, Filter, Grid3X3, LayoutGrid, List } from "lucide-react";
+import { Building2, Filter, Grid3X3, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RoomSubCard } from "./RoomSubCard";
 import { RoomDetailPopup } from "./RoomDetailPopup";
@@ -124,11 +123,11 @@ export function WardOverviewGrid({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold">{stats.totalPatients}</p>
-              <p className="text-xs text-muted-foreground">Patients</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.ward.patients")}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold">{stats.totalRooms}</p>
-              <p className="text-xs text-muted-foreground">Total Rooms</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.ward.totalRooms")}</p>
             </div>
             <div className="text-center">
               <p className={cn(
@@ -137,7 +136,7 @@ export function WardOverviewGrid({
               )}>
                 {stats.occupancyRate}%
               </p>
-              <p className="text-xs text-muted-foreground">Occupancy</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.ward.occupancy")}</p>
             </div>
             <div className="text-center">
               <p className={cn(
@@ -146,7 +145,7 @@ export function WardOverviewGrid({
               )}>
                 {stats.totalAlerts}
               </p>
-              <p className="text-xs text-muted-foreground">Active Alerts</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.ward.activeAlerts")}</p>
             </div>
           </div>
         </CardContent>

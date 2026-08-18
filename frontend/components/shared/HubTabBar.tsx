@@ -11,6 +11,7 @@ export interface HubTab {
   label: string;
   icon: LucideIcon;
   badge?: boolean;
+  badgeLabel?: string;
 }
 
 interface HubTabBarProps {
@@ -34,7 +35,7 @@ export function HubTabBar({ tabs, currentTab, className, ariaLabel }: HubTabBarP
   return (
     <nav
       aria-label={ariaLabel ?? t("common.pageSectionsAria")}
-      className={cn("flex gap-0.5 border-b border-border mb-6 overflow-x-auto no-scrollbar", className)}
+      className={cn("mb-6 flex gap-1 overflow-x-auto border-b border-border no-scrollbar", className)}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
@@ -54,18 +55,19 @@ export function HubTabBar({ tabs, currentTab, className, ariaLabel }: HubTabBarP
             href={href}
             scroll={false}
             className={cn(
-              "flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0",
+              "-mb-px flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition-colors",
               isActive
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
             )}
             aria-current={isActive ? "page" : undefined}
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
             {tab.label}
             {tab.badge && (
-              <span className="ml-1 flex h-2 w-2 rounded-full bg-destructive" />
+              <span className="ml-1 flex h-2.5 w-2.5 rounded-full bg-destructive" aria-hidden="true" />
             )}
+            {tab.badgeLabel ? <span className="sr-only">{tab.badgeLabel}</span> : null}
           </Link>
         );
       })}

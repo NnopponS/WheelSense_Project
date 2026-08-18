@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, ClipboardList, Eye, MapPin, MessageSquare, ShieldAlert, Siren, Users } from "lucide-react";
+import { Bell, ClipboardCheck, Eye, FileText, Users } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { AppPage } from "@/components/layout/AppPage";
 import DashboardMapLauncher from "@/components/dashboard/DashboardMapLauncher";
-import { RoleQuickActions } from "@/components/dashboard/RoleQuickActions";
+import { MetricCard } from "@/components/shared/MetricCard";
+import { PriorityBanner } from "@/components/shared/PriorityBanner";
 import { SupervisorQueue } from "@/components/supervisor/SupervisorQueue";
 import type {
   CareDirectiveOut,
@@ -22,7 +24,6 @@ export default function SupervisorDashboardPage() {
   const { t } = useTranslation();
   const { user: me } = useAuth();
 
-  // Data queries
   const patientsQuery = useQuery({
     queryKey: ["supervisor", "dashboard", "patients"],
     queryFn: () => api.listPatients({ limit: 300 }),
@@ -44,7 +45,6 @@ export default function SupervisorDashboardPage() {
     queryFn: () => api.listWorkflowDirectives({ status: "active", limit: 50 }),
   });
 
-  // Data processing
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,
     [patientsQuery.data],
@@ -78,101 +78,115 @@ export default function SupervisorDashboardPage() {
       ),
     [currentUserId, openTasks],
   );
-  const quickActions = useMemo(
-    () => [
-      {
-        label: t("nav.supervisor.emergency"),
-        description: `${criticalAlerts.length}/${activeAlerts.length}`,
+
+  const priority = criticalAlerts.length > 0
+    ? {
+        tone: "critical" as const,
+        title: t("supervisor.page.criticalPriorityTitle"),
+        description: t("supervisor.page.criticalPriorityDesc"),
+        detail: `${criticalAlerts.length} ${t("supervisor.page.criticalAlerts")} · ${activeAlerts.length} ${t("supervisor.page.totalActiveAlerts")}`,
         href: "/supervisor/emergency",
-        icon: Siren,
-        tone: criticalAlerts.length > 0 ? ("danger" as const) : ("neutral" as const),
-      },
-      {
-        label: t("nav.supervisor.tasks"),
-        description: `${assignedToMeTasks.length}/${openTasks.length}`,
-        href: "/supervisor/tasks",
-        icon: ClipboardList,
-        tone: "warning" as const,
-      },
-      {
-        label: t("nav.supervisor.patients"),
-        description: `${patients.length}`,
-        href: "/supervisor/personnel",
-        icon: Users,
-        tone: "primary" as const,
-      },
-      {
-        label: t("nav.supervisor.messages"),
-        description: t("supervisor.page.handoverSupport"),
-        href: "/supervisor/messages",
-        icon: MessageSquare,
-        tone: "neutral" as const,
-      },
-      {
-        label: t("supervisor.page.zoneMap"),
-        description: t("dashboard.map.metricMode"),
-        href: "/supervisor/floorplans",
-        icon: MapPin,
-        tone: "success" as const,
-      },
-      {
-        label: t("supervisor.page.askAi"),
-        description: t("supervisor.page.askAiDesc"),
-        icon: Bot,
-        tone: "neutral" as const,
-        aiPrompt: t("supervisor.page.askAiPrompt"),
-      },
-    ],
-    [activeAlerts.length, assignedToMeTasks.length, criticalAlerts.length, openTasks.length, patients.length, t],
-  );
+        label: t("nav.supervisor.emergency"),
+      }
+    : assignedToMeTasks.length > 0
+      ? {
+          tone: "warning" as const,
+          title: t("supervisor.page.assignedPriorityTitle"),
+          description: t("supervisor.page.assignedPriorityDesc"),
+          detail: `${assignedToMeTasks.length} ${t("supervisor.page.openTasks")}`,
+          href: "/supervisor/tasks",
+          label: t("nav.supervisor.tasks"),
+        }
+      : {
+          tone: "success" as const,
+          title: t("supervisor.page.clearPriorityTitle"),
+          description: t("supervisor.page.clearPriorityDesc"),
+          detail: `${openTasks.length} ${t("supervisor.page.openTasks")}`,
+          href: "/supervisor/tasks",
+          label: t("supervisor.page.viewAll"),
+        };
 
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <ShieldAlert className="h-3.5 w-3.5" />
-            {t("supervisor.page.commandBadge")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
-              {t("nav.supervisor.queue")}
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              {t("supervisor.page.dashboardSubtitle")}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+    <AppPage
+      eyebrow={t("supervisor.page.commandBadge")}
+      title={t("nav.supervisor.queue")}
+      description={t("supervisor.page.dashboardSubtitle")}
+      className="animate-fade-in pb-6"
+      actions={
+        <>
           <Button asChild variant="outline" size="sm">
             <Link href="/supervisor/personnel">{t("nav.personnel")}</Link>
           </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/supervisor/tasks">{t("supervisor.page.workflowLink")}</Link>
-          </Button>
           <Button asChild size="sm">
             <Link href="/supervisor/floorplans">
-              <Eye className="mr-1.5 h-4 w-4" />
+              <Eye className="h-5 w-5" aria-hidden="true" />
               {t("supervisor.page.zoneMap")}
             </Link>
           </Button>
-        </div>
-      </div>
-
-      {/* Unified Queue — alerts, tasks, and directives in priority order */}
-      <RoleQuickActions title={t("supervisor.page.roleDuties")} actions={quickActions} />
-
-      <DashboardMapLauncher
-        href="/supervisor/floorplans"
-        title={t("supervisor.page.mapTitle")}
-        description={t("supervisor.page.mapDesc")}
-        primaryLabel={criticalAlerts.length ? t("supervisor.page.openEmergencyMap") : t("supervisor.page.zoneMap")}
-        emergencyCount={criticalAlerts.length}
-        peopleCount={patients.length}
-        roomLabel={t("supervisor.page.findRoom")}
-        compact
-      />
+        </>
+      }
+      priority={
+        <PriorityBanner
+          tone={priority.tone}
+          title={priority.title}
+          description={priority.description}
+          detail={priority.detail}
+          action={
+            <Button asChild variant={priority.tone === "critical" ? "destructive" : "outline"}>
+              <Link href={priority.href}>{priority.label}</Link>
+            </Button>
+          }
+        />
+      }
+    >
+      <section
+        aria-label={t("supervisor.page.commandBadge")}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <MetricCard
+          label={t("supervisor.page.criticalAlerts")}
+          value={criticalAlerts.length}
+          description={`${activeAlerts.length} ${t("supervisor.page.totalActiveAlerts")}`}
+          icon={Bell}
+          status={{
+            label:
+              criticalAlerts.length > 0
+                ? t("supervisor.page.criticalPriorityTitle")
+                : t("supervisor.page.allAcknowledged"),
+            tone: criticalAlerts.length > 0 ? "critical" : "success",
+          }}
+          href="/supervisor/emergency"
+          hrefLabel={t("supervisor.page.viewAll")}
+        />
+        <MetricCard
+          label={t("supervisor.page.openTasks")}
+          value={openTasks.length}
+          description={`${assignedToMeTasks.length} ${t("supervisor.page.assignedToYou")}`}
+          icon={ClipboardCheck}
+          status={{
+            label: t("supervisor.page.pendingCompletion"),
+            tone: openTasks.length > 0 ? "warning" : "success",
+          }}
+          href="/supervisor/tasks"
+          hrefLabel={t("supervisor.page.viewAll")}
+        />
+        <MetricCard
+          label={t("supervisor.page.patientsInZone")}
+          value={patients.length}
+          description={t("supervisor.page.inYourZone")}
+          icon={Users}
+          href="/supervisor/personnel"
+          hrefLabel={t("supervisor.page.viewAll")}
+        />
+        <MetricCard
+          label={t("supervisor.page.directivesTitle")}
+          value={directives.length}
+          description={t("supervisor.page.awaitingAck")}
+          icon={FileText}
+          href="/supervisor/tasks"
+          hrefLabel={t("supervisor.page.workflowLink")}
+        />
+      </section>
 
       <SupervisorQueue
         alerts={alerts}
@@ -181,6 +195,21 @@ export default function SupervisorDashboardPage() {
         patients={patients}
         currentUserId={currentUserId}
       />
-    </div>
+
+      <DashboardMapLauncher
+        href="/supervisor/floorplans"
+        title={t("supervisor.page.mapTitle")}
+        description={t("supervisor.page.mapDesc")}
+        primaryLabel={
+          criticalAlerts.length
+            ? t("supervisor.page.openEmergencyMap")
+            : t("supervisor.page.zoneMap")
+        }
+        emergencyCount={criticalAlerts.length}
+        peopleCount={patients.length}
+        roomLabel={t("supervisor.page.findRoom")}
+        compact
+      />
+    </AppPage>
   );
 }

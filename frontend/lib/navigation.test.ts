@@ -10,7 +10,7 @@ import {
   getPersonnelPath,
   getRoleHome,
 } from "./routes";
-import { ROLE_NAV_CONFIGS, partitionNavByGroup } from "./sidebarConfig";
+import { isNavItemActive, ROLE_NAV_CONFIGS, partitionNavByGroup } from "./sidebarConfig";
 
 function hrefsFor(role: keyof typeof ROLE_NAV_CONFIGS) {
   const { primary, more } = partitionNavByGroup(ROLE_NAV_CONFIGS[role]);
@@ -77,6 +77,36 @@ describe("role navigation model", () => {
       primary: ["/patient", "/patient/schedule", "/patient/pharmacy", "/patient/messages", "/patient/room-controls"],
       more: ["/patient?tab=support", "/patient/settings"],
     });
+  });
+});
+
+describe("active navigation state", () => {
+  const params = (values: Record<string, string> = {}) => ({
+    get: (name: string) => values[name] ?? null,
+  });
+
+  it("keeps a destination active on its detail routes without matching sibling prefixes", () => {
+    const personnel = ROLE_NAV_CONFIGS.admin[0].items.find((item) => item.href === "/admin/personnel")!;
+
+    expect(isNavItemActive(personnel, "/admin/personnel/42", params(), "admin")).toBe(true);
+    expect(isNavItemActive(personnel, "/admin/personnel-archive", params(), "admin")).toBe(false);
+  });
+
+  it("distinguishes patient home from a query-backed support destination", () => {
+    const items = ROLE_NAV_CONFIGS.patient.flatMap((group) => group.items);
+    const home = items.find((item) => item.href === "/patient")!;
+    const support = items.find((item) => item.href === "/patient?tab=support")!;
+
+    expect(isNavItemActive(home, "/patient", params({ tab: "support" }), "patient")).toBe(false);
+    expect(isNavItemActive(support, "/patient", params({ tab: "support" }), "patient")).toBe(true);
+  });
+
+  it("honors explicit aliases such as the shared account route", () => {
+    const account = ROLE_NAV_CONFIGS.patient
+      .flatMap((group) => group.items)
+      .find((item) => item.href === "/patient/settings")!;
+
+    expect(isNavItemActive(account, "/account", params(), "patient")).toBe(true);
   });
 });
 

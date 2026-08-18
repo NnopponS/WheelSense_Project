@@ -23,6 +23,7 @@ import type {
   ListSmartDevicesResponse,
 } from "@/lib/api/task-scope-types";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 
 type SmartDevice = ListSmartDevicesResponse[number];
 
@@ -358,27 +359,21 @@ export default function PatientRoomControlsPage() {
   const isBusy = loading || refreshingAll;
 
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            <Home className="h-3.5 w-3.5" />
-            {t("patient.roomControls.badge")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
-              {t("patient.roomControls.title")}
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              {t("patient.roomControls.subtitle")}
-            </p>
-          </div>
-        </div>
+    <AppPage
+      eyebrow={t("patient.roomControls.badge")}
+      title={t("patient.roomControls.title")}
+      description={t("patient.roomControls.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/patient" },
+        { label: t("patient.roomControls.title") },
+      ]}
+      actions={
         <Button type="button" variant="outline" onClick={() => void loadDevices()} disabled={isBusy}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${refreshingAll ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-5 w-5 ${refreshingAll ? "animate-spin" : ""}`} aria-hidden="true" />
           {t("patient.roomControls.refreshAll")}
         </Button>
-      </div>
+      }
+    >
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label={t("patient.roomControls.summaryActive")} value={summary.active} />
@@ -440,7 +435,7 @@ export default function PatientRoomControlsPage() {
           ))}
         </div>
       )}
-    </div>
+    </AppPage>
   );
 }
 

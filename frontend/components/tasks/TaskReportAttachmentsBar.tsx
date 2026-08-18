@@ -10,6 +10,7 @@ import {
   taskTemplateAttachmentContentUrl,
 } from "@/lib/api/tasks";
 import { ReportAttachmentPreviewDialog } from "./ReportAttachmentPreviewDialog";
+import { useTranslation } from "@/lib/i18n";
 
 export interface PendingAttachmentItem {
   pendingId: string;
@@ -43,6 +44,7 @@ export function TaskReportAttachmentsBar({
   readOnly,
   className,
 }: TaskReportAttachmentsBarProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<{
@@ -140,7 +142,7 @@ export function TaskReportAttachmentsBar({
             ) : (
               <Paperclip className="h-5 w-5" />
             )}
-            <span className="text-sm">PDF / Image</span>
+            <span className="text-sm">{t("tasks.attachment.add")}</span>
           </Button>
         ) : null}
         {list.map((item) => (
@@ -160,7 +162,7 @@ export function TaskReportAttachmentsBar({
               type="button"
               className="shrink-0 p-0.5 rounded hover:bg-muted"
               onClick={item.onPreview}
-              aria-label="Preview"
+              aria-label={t("tasks.attachment.preview")}
             >
               <Eye className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
@@ -169,7 +171,7 @@ export function TaskReportAttachmentsBar({
                 type="button"
                 className="shrink-0 p-0.5 rounded hover:bg-destructive/15"
                 onClick={item.onRemove}
-                aria-label="Remove"
+                aria-label={t("tasks.attachment.remove")}
               >
                 <X className="h-3.5 w-3.5" />
               </button>

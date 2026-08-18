@@ -843,11 +843,11 @@ export function CreateTaskDialog({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="text">Text</SelectItem>
-                              <SelectItem value="number">Number</SelectItem>
-                              <SelectItem value="select">Select</SelectItem>
-                              <SelectItem value="textarea">Textarea</SelectItem>
-                              <SelectItem value="boolean">Boolean</SelectItem>
+                              <SelectItem value="text">{t("tasks.fieldType.text")}</SelectItem>
+                              <SelectItem value="number">{t("tasks.fieldType.number")}</SelectItem>
+                              <SelectItem value="select">{t("tasks.fieldType.select")}</SelectItem>
+                              <SelectItem value="textarea">{t("tasks.fieldType.textarea")}</SelectItem>
+                              <SelectItem value="boolean">{t("tasks.fieldType.boolean")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button

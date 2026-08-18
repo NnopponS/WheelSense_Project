@@ -31,6 +31,7 @@ import {
 import { api, ApiError } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { AppPage } from "@/components/layout/AppPage";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
   ListWorkflowMessagesResponse,
@@ -252,20 +253,20 @@ export function PatientWorkflowMailbox() {
   ) : null;
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("patient.messages.title")}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            {t("patient.messages.inboxIntro")} {rows.length} {t("patient.messages.messagesWord")},{" "}
-            {unreadCount} {t("patient.messages.unreadLabel")}.
-          </p>
-        </div>
+    <AppPage
+      title={t("patient.messages.title")}
+      description={`${t("patient.messages.inboxIntro")} ${rows.length} ${t("patient.messages.messagesWord")}, ${unreadCount} ${t("patient.messages.unreadLabel")}.`}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/patient" },
+        { label: t("nav.messages") },
+      ]}
+      actions={
         <Button type="button" className="shrink-0 gap-2" onClick={() => setComposeOpen(true)}>
-          <PenLine className="h-4 w-4" />
+          <PenLine className="h-5 w-5" aria-hidden="true" />
           {t("messaging.mailbox.composeButton")}
         </Button>
-      </div>
+      }
+    >
 
       <div className="flex min-h-[min(70vh,780px)] flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm lg:flex-row">
         <div className="flex w-full min-w-0 flex-col border-border/80 lg:w-[min(100%,400px)] lg:border-r">
@@ -279,6 +280,7 @@ export function PatientWorkflowMailbox() {
                 setActiveTab("inbox");
                 setSelectedId(null);
               }}
+              aria-pressed={activeTab === "inbox"}
             >
               <Inbox className="h-4 w-4 opacity-80" />
               {t("messaging.mailbox.inboxTab")} ({inboxRows.length})
@@ -292,6 +294,7 @@ export function PatientWorkflowMailbox() {
                 setActiveTab("sent");
                 setSelectedId(null);
               }}
+              aria-pressed={activeTab === "sent"}
             >
               <Mail className="h-4 w-4 opacity-80" />
               {t("messaging.mailbox.sentTab")} ({sentRows.length})
@@ -302,7 +305,7 @@ export function PatientWorkflowMailbox() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("messaging.mailbox.searchPlaceholder")}
-              className="h-9 bg-muted/30"
+              className="bg-muted/30"
               aria-label={t("messaging.mailbox.searchPlaceholder")}
             />
           </div>
@@ -337,7 +340,7 @@ export function PatientWorkflowMailbox() {
                         >
                           {row.subject}
                         </span>
-                        <span className="line-clamp-1 text-xs text-muted-foreground">
+                        <span className="line-clamp-1 text-sm text-muted-foreground">
                           {activeTab === "inbox" ? row.senderLabel : row.recipientLabel} · {formatRelativeTime(row.createdAt)}
                         </span>
                       </button>
@@ -499,7 +502,7 @@ export function PatientWorkflowMailbox() {
               }}
             />
 
-            {sendError ? <p className="text-sm text-destructive">{sendError}</p> : null}
+            {sendError ? <p className="text-sm text-critical-foreground" role="alert">{sendError}</p> : null}
 
             <Button
               type="button"
@@ -517,6 +520,6 @@ export function PatientWorkflowMailbox() {
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </AppPage>
   );
 }

@@ -9,8 +9,10 @@ import SearchableListboxPicker, {
   type SearchableListboxOption,
 } from "@/components/shared/SearchableListboxPicker";
 import UserAvatar from "@/components/shared/UserAvatar";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
+import { AppPage } from "@/components/layout/AppPage";
+import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import { getCaregiverDetailPath, getPatientDetailPath } from "@/lib/routes";
 import { hasCapability } from "@/lib/permissions";
@@ -53,8 +55,15 @@ function formatPatient(p: AdminPatient): string {
   return `${p.first_name} ${p.last_name}`.trim() || `Patient #${p.id}`;
 }
 
-function roleLabel(role: string): string {
-  return role.replace(/_/g, " ");
+function roleLabel(role: string, t: (key: TranslationKey) => string): string {
+  switch (role) {
+    case "admin": return t("shell.roleAdmin");
+    case "head_nurse": return t("shell.roleHeadNurse");
+    case "supervisor": return t("shell.roleSupervisor");
+    case "observer": return t("shell.roleObserver");
+    case "patient": return t("shell.rolePatient");
+    default: return role.replace(/_/g, " ");
+  }
 }
 
 function isStaffRole(role: string): role is (typeof STAFF_ROLES)[number] {
@@ -392,29 +401,38 @@ export default function AccountManagementPage() {
   const loading = usersQuery.isLoading || patientsQuery.isLoading || caregiversQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Account Management</h2>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Filter by staff/patient and role, then search by account id, username, staff name, or patient name.
-          </p>
-        </div>
-        <Link
-          href={ROUTES.PROFILE}
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition-smooth hover:bg-muted"
-        >
-          <Settings2 className="h-4 w-4 text-muted-foreground" aria-hidden />
-          {t("accountMgmt.profileCta")}
-        </Link>
-      </div>
+    <AppPage
+      title={t("accountMgmt.title")}
+      description={t("accountMgmt.subtitle")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: me?.role ? `/${String(me.role).replace("_", "-")}` : "/admin",
+        },
+        { label: t("nav.users") },
+      ]}
+      actions={
+        <Button asChild variant="outline">
+          <Link href={ROUTES.PROFILE}>
+            <Settings2 className="h-5 w-5" aria-hidden="true" />
+            {t("accountMgmt.profileCta")}
+          </Link>
+        </Button>
+      }
+    >
 
       {!canEdit && (
         <p className="text-sm text-muted-foreground">{t("accountMgmt.readOnlyHint")}</p>
       )}
 
       {canEdit && (
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <form
+          className="rounded-xl border border-border bg-card p-5 shadow-sm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onCreateUser();
+          }}
+        >
           <div className="mb-4 flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" aria-hidden />
             <div>
@@ -457,7 +475,7 @@ export default function AccountManagementPage() {
               >
                 {USER_ROLES.map((role) => (
                   <option key={role} value={role}>
-                    {roleLabel(role)}
+                    {roleLabel(role, t)}
                   </option>
                 ))}
               </select>
@@ -466,7 +484,7 @@ export default function AccountManagementPage() {
           <p className="mt-2 text-xs text-muted-foreground">{t("accountMgmt.createLinkHint")}</p>
           {isStaffRole(createRole) ? (
             <div className="mt-3">
-              <label id={createStaffLabelId} htmlFor={createStaffInputId} className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label id={createStaffLabelId} htmlFor={createStaffInputId} className="mb-1 block text-sm font-medium text-muted-foreground">
                 {t("accountMgmt.pickStaff")}
               </label>
               <SearchableListboxPicker
@@ -476,7 +494,7 @@ export default function AccountManagementPage() {
                 options={createCaregiverOptions}
                 search={createStaffSearch}
                 onSearchChange={setCreateStaffSearch}
-                searchPlaceholder="Search staff by name, role, phone, email"
+                searchPlaceholder={t("accountMgmt.searchStaffPlaceholder")}
                 selectedOptionId={createCaregiverId}
                 onSelectOption={(id) => {
                   const selected = id === NO_SELECTION ? null : caregiverById.get(Number(id));
@@ -493,7 +511,7 @@ export default function AccountManagementPage() {
           ) : null}
           {createRole === "patient" ? (
             <div className="mt-3">
-              <label id={createPatientLabelId} htmlFor={createPatientInputId} className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label id={createPatientLabelId} htmlFor={createPatientInputId} className="mb-1 block text-sm font-medium text-muted-foreground">
                 {t("accountMgmt.pickPatient")}
               </label>
               <SearchableListboxPicker
@@ -503,7 +521,7 @@ export default function AccountManagementPage() {
                 options={createPatientOptions}
                 search={createPatientSearch}
                 onSearchChange={setCreatePatientSearch}
-                searchPlaceholder="Search patients by name or id"
+                searchPlaceholder={t("accountMgmt.searchPatientPlaceholder")}
                 selectedOptionId={createPatientId}
                 onSelectOption={(id) => {
                   const selected = id === NO_SELECTION ? null : patientById.get(Number(id));
@@ -522,15 +540,14 @@ export default function AccountManagementPage() {
           {createBanner ? <p className="mt-3 text-sm text-primary">{createBanner}</p> : null}
           <div className="mt-4 flex justify-end">
             <button
-              type="button"
-              onClick={() => void onCreateUser()}
+              type="submit"
               disabled={creating || createUsername.trim().length < 3 || createPassword.trim().length < 6}
               className="gradient-cta rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             >
               {creating ? t("common.saving") : t("admin.users.create")}
             </button>
           </div>
-        </section>
+        </form>
       )}
 
       {usersQuery.error && <p className="text-sm text-destructive" role="alert">{t("accountMgmt.loadError")}</p>}
@@ -538,19 +555,19 @@ export default function AccountManagementPage() {
       <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <div className="grid gap-3 border-b border-border bg-muted/40 px-4 py-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-lg border border-border bg-background px-3 py-2.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Visible Accounts</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("accountMgmt.visibleAccounts")}</p>
             <p className="mt-1 text-xl font-semibold text-foreground">{filteredStats.total}</p>
           </div>
           <div className="rounded-lg border border-border bg-background px-3 py-2.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Active</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("accountMgmt.activeAccounts")}</p>
             <p className="mt-1 text-xl font-semibold text-foreground">{filteredStats.active}</p>
           </div>
           <div className="rounded-lg border border-border bg-background px-3 py-2.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Staff Accounts</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("accountMgmt.staffAccounts")}</p>
             <p className="mt-1 text-xl font-semibold text-foreground">{filteredStats.staff}</p>
           </div>
           <div className="rounded-lg border border-border bg-background px-3 py-2.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Patient Accounts</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("accountMgmt.patientAccounts")}</p>
             <p className="mt-1 text-xl font-semibold text-foreground">{filteredStats.patients}</p>
           </div>
         </div>
@@ -559,33 +576,39 @@ export default function AccountManagementPage() {
             {t("accountMgmt.tableCaption")}
           </p>
           <div className="flex flex-wrap gap-2">
+            <label className="sr-only" htmlFor="account-kind-filter">{t("accountMgmt.accountTypeFilter")}</label>
             <select
+              id="account-kind-filter"
               className="input-field py-2 text-sm"
               value={kindFilter}
               onChange={(event) => setKindFilter(event.target.value as "all" | "staff" | "patient")}
             >
-              <option value="all">All Accounts</option>
-              <option value="staff">Staff</option>
-              <option value="patient">Patients</option>
+              <option value="all">{t("accountMgmt.allAccounts")}</option>
+              <option value="staff">{t("accountMgmt.staff")}</option>
+              <option value="patient">{t("accountMgmt.patients")}</option>
             </select>
+            <label className="sr-only" htmlFor="account-role-filter">{t("accountMgmt.roleFilter")}</label>
             <select
+              id="account-role-filter"
               className="input-field py-2 text-sm capitalize"
               value={roleFilter}
               onChange={(event) => setRoleFilter(event.target.value as "all" | AccountDraft["role"])}
             >
-              <option value="all">All Roles</option>
+              <option value="all">{t("accountMgmt.allRoles")}</option>
               {USER_ROLES.map((role) => (
                 <option key={role} value={role}>
-                  {roleLabel(role)}
+                  {roleLabel(role, t)}
                 </option>
               ))}
             </select>
+            <label className="sr-only" htmlFor="account-table-search">{t("accountMgmt.searchLabel")}</label>
             <input
+              id="account-table-search"
               className="input-field min-w-[16rem] py-2 text-sm"
               type="search"
               value={tableSearch}
               onChange={(event) => setTableSearch(event.target.value)}
-              placeholder="Search by ID, username, or linked name"
+              placeholder={t("accountMgmt.searchPlaceholder")}
             />
           </div>
         </div>
@@ -637,7 +660,7 @@ export default function AccountManagementPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 capitalize text-muted-foreground">{roleLabel(u.role)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{roleLabel(u.role, t)}</td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {u.is_active ? t("accountMgmt.yes") : t("accountMgmt.no")}
                       </td>
@@ -720,7 +743,13 @@ export default function AccountManagementPage() {
           aria-modal="true"
           aria-labelledby="account-mgmt-edit-title"
         >
-          <div className="w-full max-w-2xl rounded-xl border border-border bg-card p-6 shadow-xl">
+          <form
+            className="w-full max-w-2xl rounded-xl border border-border bg-card p-6 shadow-xl"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void onSave();
+            }}
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h4 id="account-mgmt-edit-title" className="text-lg font-semibold text-foreground">
@@ -729,7 +758,7 @@ export default function AccountManagementPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{editing.username}</p>
               </div>
               <span className="rounded-full bg-muted px-3 py-1 text-xs capitalize text-muted-foreground">
-                {roleLabel(editing.role)}
+                {roleLabel(editing.role, t)}
               </span>
             </div>
 
@@ -753,7 +782,7 @@ export default function AccountManagementPage() {
                   className="input-field py-2.5 text-sm"
                   value={draft.password}
                   onChange={(event) => setDraft((prev) => prev ? { ...prev, password: event.target.value } : prev)}
-                  placeholder="Leave blank to keep current password"
+                  placeholder={t("accountMgmt.passwordOptionalPlaceholder")}
                   autoComplete="new-password"
                 />
               </label>
@@ -770,7 +799,7 @@ export default function AccountManagementPage() {
                 >
                   {USER_ROLES.map((role) => (
                     <option key={role} value={role}>
-                      {roleLabel(role)}
+                      {roleLabel(role, t)}
                     </option>
                   ))}
                 </select>
@@ -786,7 +815,7 @@ export default function AccountManagementPage() {
                 <span className="text-sm font-medium text-foreground">{t("accountMgmt.colActive")}</span>
               </label>
               <div>
-                <label id={staffLabelId} htmlFor={staffInputId} className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label id={staffLabelId} htmlFor={staffInputId} className="mb-1 block text-sm font-medium text-muted-foreground">
                   {t("accountMgmt.pickStaff")}
                 </label>
                 <SearchableListboxPicker
@@ -796,7 +825,7 @@ export default function AccountManagementPage() {
                   options={caregiverOptions}
                   search={staffSearch}
                   onSearchChange={setStaffSearch}
-                  searchPlaceholder="Search staff by name, role, phone, email"
+                    searchPlaceholder={t("accountMgmt.searchStaffPlaceholder")}
                   selectedOptionId={draft.caregiverId}
                   onSelectOption={(id) => {
                     const selected = id === NO_SELECTION ? null : caregiverById.get(Number(id));
@@ -811,7 +840,7 @@ export default function AccountManagementPage() {
                 />
               </div>
               <div>
-                <label id={patientLabelId} htmlFor={patientInputId} className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label id={patientLabelId} htmlFor={patientInputId} className="mb-1 block text-sm font-medium text-muted-foreground">
                   {t("accountMgmt.pickPatient")}
                 </label>
                 <SearchableListboxPicker
@@ -821,7 +850,7 @@ export default function AccountManagementPage() {
                   options={patientOptions}
                   search={patientSearch}
                   onSearchChange={setPatientSearch}
-                  searchPlaceholder="Search patients by name or id"
+                    searchPlaceholder={t("accountMgmt.searchPatientPlaceholder")}
                   selectedOptionId={draft.patientId}
                   onSelectOption={(id) => {
                     const selected = id === NO_SELECTION ? null : patientById.get(Number(id));
@@ -859,8 +888,7 @@ export default function AccountManagementPage() {
                   {t("accountMgmt.cancel")}
                 </button>
                 <button
-                  type="button"
-                  onClick={() => void onSave()}
+                  type="submit"
                   disabled={saving || deleting || draft.username.trim().length < 3}
                   className="gradient-cta rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                 >
@@ -868,9 +896,9 @@ export default function AccountManagementPage() {
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </div>
       )}
-    </div>
+    </AppPage>
   );
 }

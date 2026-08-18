@@ -113,7 +113,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
             type="button"
             className="rounded-lg p-1.5 hover:bg-surface-container-high transition-smooth"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X className="h-5 w-5" aria-hidden />
           </button>

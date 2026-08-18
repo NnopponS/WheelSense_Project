@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
   CreatePrescriptionRequest,
@@ -35,12 +36,12 @@ const EMPTY_SELECT = "__empty__";
 
 const prescriptionFormSchema = z.object({
   patientId: z.string().refine((value) => value !== EMPTY_SELECT, {
-    message: "Select a patient",
+    message: "supervisor.prescriptions.selectPatient",
   }),
   specialistId: z.string(),
-  medicationName: z.string().trim().min(1, "Medication name is required"),
-  dosage: z.string().trim().min(1, "Dosage is required"),
-  frequency: z.string().trim().min(1, "Frequency is required"),
+  medicationName: z.string().trim().min(1, "supervisor.prescriptions.medicationRequired"),
+  dosage: z.string().trim().min(1, "supervisor.prescriptions.dosageRequired"),
+  frequency: z.string().trim().min(1, "supervisor.prescriptions.frequencyRequired"),
   instructions: z.string().trim(),
 });
 
@@ -57,10 +58,10 @@ type PrescriptionRow = {
   createdAt: string;
 };
 
-function errorText(error: unknown): string {
+function errorText(error: unknown, fallback: string): string {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return "Failed to save prescription.";
+  return fallback;
 }
 
 export default function SupervisorPrescriptionsPage() {
@@ -180,11 +181,16 @@ export default function SupervisorPrescriptionsPage() {
         accessorKey: "specialistId",
         header: t("clinical.table.specialist"),
         cell: ({ row }) =>
-          row.original.specialistId != null ? `#${row.original.specialistId}` : "-",
+          row.original.specialistId != null ? `#${row.original.specialistId}` : "—",
       },
       {
         accessorKey: "status",
         header: t("clinical.table.status"),
+        cell: ({ row }) => row.original.status === "active"
+          ? t("patients.statusActive")
+          : row.original.status === "inactive"
+            ? t("patients.statusInactive")
+            : row.original.status.replace(/_/g, " "),
       },
       {
         accessorKey: "createdAt",
@@ -201,19 +207,22 @@ export default function SupervisorPrescriptionsPage() {
   );
 
   const saveError = createPrescriptionMutation.error
-    ? errorText(createPrescriptionMutation.error)
+    ? errorText(createPrescriptionMutation.error, t("supervisor.prescriptions.saveError"))
     : null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("supervisor.prescriptions.pageTitle")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.prescriptions.pageSubtitle")}</p>
-      </div>
+    <AppPage
+      title={t("supervisor.prescriptions.pageTitle")}
+      description={t("supervisor.prescriptions.pageSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/supervisor" },
+        { label: t("nav.prescriptions") },
+      ]}
+    >
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Create Prescription</CardTitle>
+          <CardTitle className="text-base">{t("supervisor.prescriptions.createTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -222,17 +231,17 @@ export default function SupervisorPrescriptionsPage() {
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
-                <Label>Patient</Label>
+                <Label>{t("supervisor.prescriptions.patientLabel")}</Label>
                 <Controller
                   control={form.control}
                   name="patientId"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select patient" />
+                        <SelectValue placeholder={t("supervisor.prescriptions.selectPatient")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={EMPTY_SELECT}>Select patient</SelectItem>
+                        <SelectItem value={EMPTY_SELECT}>{t("supervisor.prescriptions.selectPatient")}</SelectItem>
                         {patients.map((patient) => (
                           <SelectItem key={patient.id} value={String(patient.id)}>
                             {patient.first_name} {patient.last_name}
@@ -243,22 +252,22 @@ export default function SupervisorPrescriptionsPage() {
                   )}
                 />
                 {form.formState.errors.patientId ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.patientId.message}</p>
+                  <p className="text-sm text-destructive">{t(form.formState.errors.patientId.message as TranslationKey)}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>Specialist</Label>
+                <Label>{t("supervisor.prescriptions.specialistLabel")}</Label>
                 <Controller
                   control={form.control}
                   name="specialistId"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select specialist" />
+                        <SelectValue placeholder={t("supervisor.prescriptions.selectSpecialist")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={EMPTY_SELECT}>Select specialist</SelectItem>
+                        <SelectItem value={EMPTY_SELECT}>{t("supervisor.prescriptions.selectSpecialist")}</SelectItem>
                         {specialists.map((specialist) => (
                           <SelectItem key={specialist.id} value={String(specialist.id)}>
                             {specialist.first_name} {specialist.last_name} ({specialist.specialty})
@@ -271,40 +280,40 @@ export default function SupervisorPrescriptionsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Medication</Label>
-                <Input {...form.register("medicationName")} placeholder="Medication name" />
+                <Label>{t("supervisor.prescriptions.medicationLabel")}</Label>
+                <Input {...form.register("medicationName")} placeholder={t("supervisor.prescriptions.medicationPlaceholder")} />
                 {form.formState.errors.medicationName ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.medicationName.message}</p>
+                  <p className="text-sm text-destructive">{t(form.formState.errors.medicationName.message as TranslationKey)}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>Dosage</Label>
-                <Input {...form.register("dosage")} placeholder="Dosage" />
+                <Label>{t("supervisor.prescriptions.dosageLabel")}</Label>
+                <Input {...form.register("dosage")} placeholder={t("supervisor.prescriptions.dosagePlaceholder")} />
                 {form.formState.errors.dosage ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.dosage.message}</p>
+                  <p className="text-sm text-destructive">{t(form.formState.errors.dosage.message as TranslationKey)}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>Frequency</Label>
-                <Input {...form.register("frequency")} placeholder="Frequency" />
+                <Label>{t("supervisor.prescriptions.frequencyLabel")}</Label>
+                <Input {...form.register("frequency")} placeholder={t("supervisor.prescriptions.frequencyPlaceholder")} />
                 {form.formState.errors.frequency ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.frequency.message}</p>
+                  <p className="text-sm text-destructive">{t(form.formState.errors.frequency.message as TranslationKey)}</p>
                 ) : null}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Instructions</Label>
-              <Textarea rows={3} {...form.register("instructions")} placeholder="Optional instructions" />
+              <Label>{t("supervisor.prescriptions.instructionsLabel")}</Label>
+              <Textarea rows={3} {...form.register("instructions")} placeholder={t("supervisor.prescriptions.instructionsPlaceholder")} />
             </div>
 
             {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
 
             <Button type="submit" disabled={createPrescriptionMutation.isPending}>
               <Plus className="h-4 w-4" />
-              {createPrescriptionMutation.isPending ? "Saving..." : "Create prescription"}
+              {createPrescriptionMutation.isPending ? t("common.saving") : t("supervisor.prescriptions.createAction")}
             </Button>
           </form>
         </CardContent>
@@ -312,16 +321,25 @@ export default function SupervisorPrescriptionsPage() {
 
       <DataTableCard
         title={t("supervisor.prescriptions.listTitle")}
+        mobileMode="cards"
         description={t("supervisor.prescriptions.listDesc")}
         data={rows}
         columns={columns}
         isLoading={prescriptionsQuery.isLoading || patientsQuery.isLoading || specialistsQuery.isLoading}
         emptyText={t("supervisor.prescriptions.listEmpty")}
         rightSlot={<Pill className="h-4 w-4 text-muted-foreground" />}
-        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-supervisor-prescriptions",
-          headers: ["Prescription ID", "Medication", "Dosage", "Frequency", "Patient", "Specialist ID", "Status", "Created"],
+          headers: [
+            t("supervisor.prescriptions.csvId"),
+            t("supervisor.prescriptions.medicationLabel"),
+            t("supervisor.prescriptions.dosageLabel"),
+            t("supervisor.prescriptions.frequencyLabel"),
+            t("supervisor.prescriptions.patientLabel"),
+            t("supervisor.prescriptions.csvSpecialistId"),
+            t("clinical.table.status"),
+            t("clinical.table.created"),
+          ],
           getRowValues: (row) => [
             row.id,
             row.medicationName,
@@ -329,12 +347,12 @@ export default function SupervisorPrescriptionsPage() {
             row.frequency,
             row.patientName,
             row.specialistId,
-            row.status,
+            row.status === "active" ? t("patients.statusActive") : row.status === "inactive" ? t("patients.statusInactive") : row.status,
             row.createdAt,
           ],
         }}
       />
-    </div>
+    </AppPage>
   );
 }
 

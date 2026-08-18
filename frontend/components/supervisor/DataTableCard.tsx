@@ -17,6 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { buildCsvFromRows, downloadCsvFile } from "@/lib/csv";
 import { useTranslation } from "@/lib/i18n";
+import { LoadingState } from "@/components/layout/LoadingState";
+import { DataState } from "@/components/layout/DataState";
 import {
   Table,
   TableBody,
@@ -53,6 +55,7 @@ type Props<TData> = {
   columns: ColumnDef<TData>[];
   isLoading?: boolean;
   emptyText?: string;
+  emptyKind?: "empty" | "filtered-empty";
   description?: string;
   rightSlot?: React.ReactNode;
   pageSize?: number;
@@ -71,6 +74,7 @@ export function DataTableCard<TData>({
   columns,
   isLoading = false,
   emptyText,
+  emptyKind = "empty",
   description,
   rightSlot,
   pageSize = 10,
@@ -133,9 +137,9 @@ export function DataTableCard<TData>({
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
-          <div className="flex min-h-64 items-center justify-center">
-            <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
+          <LoadingState message={t("common.loading")} className="min-h-64" />
+        ) : data.length === 0 ? (
+          <DataState kind={emptyKind} title={emptyText ?? t("table.noRows")} className="min-h-52" />
         ) : (
           <>
             {mobileMode === "cards" ? (
@@ -159,10 +163,10 @@ export function DataTableCard<TData>({
                                 <div className="space-y-2">
                                   {detailCells.map((cell) => (
                                     <div key={cell.id} className="grid gap-0.5">
-                                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                      <p className="text-sm font-medium text-muted-foreground">
                                         {getMobileCellLabel(cell)}
                                       </p>
-                                      <div className="min-w-0 text-sm text-foreground">
+                                      <div className="min-w-0 text-base text-foreground">
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                       </div>
                                     </div>

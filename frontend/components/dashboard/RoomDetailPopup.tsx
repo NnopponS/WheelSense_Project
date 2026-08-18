@@ -1,18 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DoorOpen,
   Users,
-  Phone,
   MessageSquare,
   AlertCircle,
   Activity,
   Battery,
   Wifi,
   WifiOff,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
@@ -111,13 +108,13 @@ export function RoomDetailPopup({
             <Card className="bg-muted/50">
               <CardContent className="p-3 text-center">
                 <p className="text-xl font-bold">{patients.length}</p>
-                <p className="text-xs text-muted-foreground">Patients</p>
+                <p className="text-sm text-muted-foreground">{t("dashboard.ward.patients")}</p>
               </CardContent>
             </Card>
             <Card className="bg-emerald-500/5">
               <CardContent className="p-3 text-center">
                 <p className="text-xl font-bold text-emerald-600">{onlineDevices}</p>
-                <p className="text-xs text-muted-foreground">Online</p>
+                <p className="text-sm text-muted-foreground">{t("devices.online")}</p>
               </CardContent>
             </Card>
             <Card className={cn(offlineDevices > 0 ? "bg-destructive/5" : "bg-muted/50")}>
@@ -125,7 +122,7 @@ export function RoomDetailPopup({
                 <p className={cn("text-xl font-bold", offlineDevices > 0 ? "text-destructive" : "text-muted-foreground")}>
                   {offlineDevices}
                 </p>
-                <p className="text-xs text-muted-foreground">Offline</p>
+                <p className="text-sm text-muted-foreground">{t("devices.offline")}</p>
               </CardContent>
             </Card>
           </div>

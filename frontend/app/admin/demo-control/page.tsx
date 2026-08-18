@@ -35,10 +35,10 @@ type SimulatorStatusResp = {
   workspace_id?: number | null;
 };
 
-function errText(error: unknown): string {
+function errText(error: unknown, fallback: string): string {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return "Request failed.";
+  return fallback;
 }
 
 function ts() {
@@ -62,10 +62,6 @@ function logId(prefix: string) {
 
 function displayName(user: User) {
   return user.username;
-}
-
-function roomLabel(room: Room) {
-  return room.name || `Room #${room.id}`;
 }
 
 export default function AdminDemoControlPage() {
@@ -103,12 +99,18 @@ export default function AdminDemoControlPage() {
   const [alertPatientId, setAlertPatientId] = useState("");
   const [alertType, setAlertType] = useState<DemoAlertType>("manual_test");
   const [alertSeverity, setAlertSeverity] = useState("warning");
-  const [alertTitle, setAlertTitle] = useState("Manual Test Alert");
-  const [alertDescription, setAlertDescription] = useState("Triggered from Manual Testing Panel");
+  const [alertTitle, setAlertTitle] = useState(() => t("demoControl.defaultAlertTitle"));
+  const [alertDescription, setAlertDescription] = useState(() => t("demoControl.defaultAlertDescription"));
   const [alertHrBpm, setAlertHrBpm] = useState("120");
 
   const [logs, setLogs] = useState<Array<{ id: string; title: string; detail: string; tone: Tone; at: string }>>([
-    { id: logId("seed"), title: "Ready", detail: "Manual Testing Control Panel loaded.", tone: "info", at: ts() },
+    {
+      id: logId("seed"),
+      title: t("demoControl.ready"),
+      detail: t("demoControl.readyDetail"),
+      tone: "info",
+      at: ts(),
+    },
   ]);
 
   const activePatients = patients.filter((item) => item.is_active);
@@ -131,7 +133,7 @@ export default function AdminDemoControlPage() {
       pushLog(title, detail, "success");
       queryClient.invalidateQueries();
     } catch (error) {
-      pushLog(title, errText(error), "error");
+      pushLog(title, errText(error, t("common.requestFailed")), "error");
     }
   }
 
@@ -152,15 +154,15 @@ export default function AdminDemoControlPage() {
     if (!alertPatientId) return;
     const care = selectedAlertPatient?.care_level ?? "normal";
     const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
-    let title = alertTitle.trim() || "Alert";
-    let description = alertDescription.trim() || "Triggered from Manual Testing Panel";
+    let title = alertTitle.trim() || t("demoControl.alertFallbackTitle");
+    let description = alertDescription.trim() || t("demoControl.defaultAlertDescription");
     let severity = alertSeverity as "low" | "warning" | "critical";
 
     if (alertType === "abnormal_hr") {
-      title = alertTitle.trim() || `High Heart Rate: ${bpm} BPM`;
+      title = alertTitle.trim() || formatTemplate(t("demoControl.highHeartRateTitle"), { bpm });
       description =
         alertDescription.trim() ||
-        `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`;
+        formatTemplate(t("demoControl.highHeartRateDescription"), { bpm, care });
       if (severity === "low") severity = "warning";
     }
 
@@ -177,8 +179,12 @@ export default function AdminDemoControlPage() {
     };
 
     void run(
-      "Inject event",
-      `Created ${severity} ${alertType} for Patient #${alertPatientId}`,
+      t("demoControl.injectEventLog"),
+      formatTemplate(t("demoControl.injectEventDetail"), {
+        severity,
+        type: alertType.replace(/_/g, " "),
+        patient: alertPatientId,
+      }),
       () => api.createAlert(payload),
     );
   }
@@ -206,25 +212,27 @@ export default function AdminDemoControlPage() {
               {metricLabel("demoControl.countStaff", staffUsers.length)}
             </Badge>
             <Badge variant="secondary">{metricLabel("demoControl.countRooms", rooms.length)}</Badge>
-            <Badge variant="secondary">Alerts {alerts.length}</Badge>
+            <Badge variant="secondary">
+              {formatTemplate(t("demoControl.countAlerts"), { count: alerts.length })}
+            </Badge>
           </div>
         </div>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <DemoPanel
-          badge="Clean State"
-          title="Clean State"
-          description="Reset demo data and keep automatic simulator alerts quiet."
+          badge={t("demoControl.cleanStateBadge")}
+          title={t("demoControl.cleanStateTitle")}
+          description={t("demoControl.cleanStateDescription")}
           action={<Trash2 className="h-4 w-4 text-muted-foreground" />}
         >
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-              <p className="text-sm text-muted-foreground">Patients</p>
+              <p className="text-sm text-muted-foreground">{t("demoControl.patients")}</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">{activePatients.length}</p>
             </div>
             <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-              <p className="text-sm text-muted-foreground">Rooms</p>
+              <p className="text-sm text-muted-foreground">{t("demoControl.rooms")}</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">{rooms.length}</p>
             </div>
           </div>
@@ -241,7 +249,7 @@ export default function AdminDemoControlPage() {
         </DemoPanel>
 
         <DemoPanel
-          badge="Inject Events"
+          badge={t("demoControl.alertPanelBadge")}
           title={t("demoControl.alertPanelTitle")}
           description={t("demoControl.alertPanelDesc")}
           action={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
@@ -257,19 +265,21 @@ export default function AdminDemoControlPage() {
                   if (next === "abnormal_hr") {
                     const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
                     const care = selectedAlertPatient?.care_level ?? "normal";
-                    setAlertTitle(`High Heart Rate: ${bpm} BPM`);
-                    setAlertDescription(`Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`);
+                    setAlertTitle(formatTemplate(t("demoControl.highHeartRateTitle"), { bpm }));
+                    setAlertDescription(formatTemplate(t("demoControl.highHeartRateDescription"), { bpm, care }));
                     setAlertSeverity("warning");
                   } else if (next === "manual_test") {
-                    setAlertTitle("Manual Test Alert");
-                    setAlertDescription("Triggered from Manual Testing Panel");
+                    setAlertTitle(t("demoControl.defaultAlertTitle"));
+                    setAlertDescription(t("demoControl.defaultAlertDescription"));
                   } else if (next === "fall") {
-                    setAlertTitle("Fall detected");
-                    setAlertDescription("Triggered from Manual Testing Panel");
+                    setAlertTitle(t("demoControl.fallDetectedTitle"));
+                    setAlertDescription(t("demoControl.defaultAlertDescription"));
                     setAlertSeverity("critical");
                   } else {
-                    setAlertTitle(`${next.replace(/_/g, " ")} alert`);
-                    setAlertDescription("Triggered from Manual Testing Panel");
+                    setAlertTitle(
+                      formatTemplate(t("demoControl.genericAlertTitle"), { type: next.replace(/_/g, " ") }),
+                    );
+                    setAlertDescription(t("demoControl.defaultAlertDescription"));
                   }
                 }}
               >
@@ -295,7 +305,7 @@ export default function AdminDemoControlPage() {
                     const p = activePatients.find((x) => String(x.id) === v);
                     const care = p?.care_level ?? "normal";
                     const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
-                    setAlertDescription(`Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`);
+                    setAlertDescription(formatTemplate(t("demoControl.highHeartRateDescription"), { bpm, care }));
                   }
                 }}
               >
@@ -348,29 +358,29 @@ export default function AdminDemoControlPage() {
         </DemoPanel>
 
         <DemoPanel
-          badge="Movement"
-          title="Movement"
-          description="Place a patient or staff member in a room."
+          badge={t("demoControl.movementBadge")}
+          title={t("demoControl.movementTitle")}
+          description={t("demoControl.movementDescription")}
           action={<Route className="h-4 w-4 text-muted-foreground" />}
         >
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>Actor type</Label>
+              <Label>{t("demoControl.actorType")}</Label>
               <Select value={actorType} onValueChange={(value) => setActorType(value as ActorType)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="patient">Patient</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="patient">{t("demoControl.patient")}</SelectItem>
+                  <SelectItem value="staff">{t("demoControl.staff")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Actor</Label>
+              <Label>{t("demoControl.actor")}</Label>
               <Select value={actorId} onValueChange={setActorId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select actor" />
+                  <SelectValue placeholder={t("demoControl.selectActor")} />
                 </SelectTrigger>
                 <SelectContent>
                   {actorType === "patient"
@@ -388,15 +398,15 @@ export default function AdminDemoControlPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Room</Label>
+              <Label>{t("demoControl.room")}</Label>
               <Select value={roomId} onValueChange={setRoomId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select room" />
+                  <SelectValue placeholder={t("demoControl.selectRoom")} />
                 </SelectTrigger>
                 <SelectContent>
                   {rooms.map((room) => (
                     <SelectItem key={room.id} value={String(room.id)}>
-                      {roomLabel(room)}
+                      {room.name || formatTemplate(t("demoControl.roomFallback"), { id: room.id })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -407,18 +417,18 @@ export default function AdminDemoControlPage() {
               disabled={!actorId || !roomId}
               onClick={() =>
                 void run(
-                  `Move ${actorType} #${actorId}`,
-                  "Actor movement command sent.",
+                  formatTemplate(t("demoControl.moveActorLog"), { type: actorType, id: actorId }),
+                  t("demoControl.moveActorDetail"),
                   () =>
                     api.post(`/demo/actors/${actorType}/${encodeURIComponent(actorId)}/move`, {
                       room_id: Number(roomId),
-                      note: "Move the selected actor for the walkthrough.",
+                      note: t("demoControl.moveActorNote"),
                     }),
                 )
               }
             >
               <Send className="mr-2 h-4 w-4" />
-              Move actor
+              {t("demoControl.moveActorButton")}
             </Button>
           </div>
         </DemoPanel>
@@ -428,8 +438,10 @@ export default function AdminDemoControlPage() {
         <CardContent className="space-y-3 p-5">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">Command log</p>
-              <h3 className="text-base font-semibold text-foreground">Latest actions</h3>
+              <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">
+                {t("demoControl.commandLog")}
+              </p>
+              <h3 className="text-base font-semibold text-foreground">{t("demoControl.latestActions")}</h3>
             </div>
             <Badge variant="outline">{logs.length}</Badge>
           </div>
@@ -439,9 +451,9 @@ export default function AdminDemoControlPage() {
                 key={entry.id}
                 className={`rounded-2xl border px-3 py-3 text-sm ${
                   entry.tone === "success"
-                    ? "border-emerald-500/20 bg-emerald-500/8"
+                    ? "border-success/25 bg-success-bg"
                     : entry.tone === "error"
-                      ? "border-red-500/20 bg-red-500/8"
+                      ? "border-critical/25 bg-critical-bg"
                       : "border-border/70 bg-surface-container-low/40"
                 }`}
               >

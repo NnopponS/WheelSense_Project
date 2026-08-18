@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, Bell, HeartPulse, Tablet } from "lucide-react";
@@ -22,6 +22,10 @@ import { ageYears } from "@/lib/age";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
+import { PriorityBanner } from "@/components/shared/PriorityBanner";
+import { getSafePatientListReturnTo } from "@/lib/patientListContext";
 import type {
   GetPatientResponse,
   ListAlertsResponse,
@@ -74,6 +78,11 @@ function asTimestampMs(value: string): number {
 export default function HeadNursePatientDetailPage() {
   const { t } = useTranslation();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const patientListHref = getSafePatientListReturnTo(
+    searchParams.get("returnTo"),
+    "/head-nurse/personnel",
+  );
   const nowMs = useFixedNowMs();
 
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -392,15 +401,16 @@ export default function HeadNursePatientDetailPage() {
 
   if (!hasValidPatientId) {
     return (
-      <Card>
-        <CardContent className="space-y-3 pt-6">
-          <h2 className="text-xl font-semibold text-foreground">{t("clinical.patient.invalidIdTitle")}</h2>
-          <p className="text-sm text-muted-foreground">{t("clinical.patient.invalidIdDesc")}</p>
+      <DataState
+        kind="empty"
+        title={t("clinical.patient.invalidIdTitle")}
+        description={t("clinical.patient.invalidIdDesc")}
+        action={
           <Button asChild size="sm" variant="outline">
-            <Link href="/head-nurse/personnel">{t("clinical.patient.backToPatients")}</Link>
+            <Link href={patientListHref}>{t("clinical.patient.backToPatients")}</Link>
           </Button>
-        </CardContent>
-      </Card>
+        }
+      />
     );
   }
 
@@ -412,7 +422,25 @@ export default function HeadNursePatientDetailPage() {
     assignmentsQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <AppPage
+      title={patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
+      description={t("headNurse.patientDetail.pageSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/head-nurse" },
+        { label: t("nav.patients"), href: patientListHref },
+        { label: patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle") },
+      ]}
+      priority={
+        criticalAlerts.length > 0 ? (
+          <PriorityBanner
+            tone="critical"
+            title={t("clinical.patientDetail.statCriticalAlerts")}
+            detail={String(criticalAlerts.length)}
+            description={t("headNurse.patientDetail.alertsDesc")}
+          />
+        ) : undefined
+      }
+    >
       <Card>
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -485,6 +513,7 @@ export default function HeadNursePatientDetailPage() {
         columns={vitalsColumns}
         isLoading={isLoadingAny}
         emptyText={t("clinical.patientDetail.vitalsEmpty")}
+        mobileMode="cards"
       />
 
       <PersonSensorStatusPanel personType="patient" personId={patientId} compact />
@@ -496,6 +525,7 @@ export default function HeadNursePatientDetailPage() {
         columns={alertsColumns}
         isLoading={isLoadingAny}
         emptyText={t("clinical.patientDetail.alertsEmpty")}
+        mobileMode="cards"
       />
 
       <MovementTimelineCard
@@ -512,6 +542,7 @@ export default function HeadNursePatientDetailPage() {
         columns={timelineColumns}
         isLoading={isLoadingAny}
         emptyText={t("headNurse.patientDetail.timelineEmpty")}
+        mobileMode="cards"
       />
 
       <DataTableCard
@@ -521,15 +552,16 @@ export default function HeadNursePatientDetailPage() {
         columns={assignmentColumns}
         isLoading={isLoadingAny}
         emptyText={t("headNurse.patientDetail.assignmentsEmpty")}
+        mobileMode="cards"
       />
-    </div>
+    </AppPage>
   );
 }
 
 function QuickInfo({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );

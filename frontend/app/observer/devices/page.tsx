@@ -18,6 +18,7 @@ import type {
   ListAlertsResponse,
   ListVitalReadingsResponse,
 } from "@/lib/api/task-scope-types";
+import { AppPage } from "@/components/layout/AppPage";
 
 const deviceSchema = z
   .object({
@@ -232,11 +233,14 @@ export default function ObserverDevicesPage() {
     vitalsQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("observer.devices.title")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("observer.devices.subtitle")}</p>
-      </div>
+    <AppPage
+      title={t("observer.devices.title")}
+      description={t("observer.devices.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/observer" },
+        { label: t("nav.devices") },
+      ]}
+    >
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryStatCard icon={Tablet} label={t("observer.devices.total")} value={rows.length} tone="info" />
@@ -270,6 +274,6 @@ export default function ObserverDevicesPage() {
           ],
         }}
       />
-    </div>
+    </AppPage>
   );
 }

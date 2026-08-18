@@ -14,8 +14,6 @@ import type {
   MedicalConditionEntry,
 } from "@/lib/types";
 import {
-  ArrowLeft,
-  AlertCircle,
   Phone,
   User,
   CalendarDays,
@@ -48,8 +46,10 @@ import type { CareScheduleOut } from "@/lib/api/task-scope-types";
 import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/profileImageProcess";
 import {
   getPatientsPath,
+  getPersonnelPath,
   getCaregiverDetailPath,
 } from "@/lib/routes";
+import { getSafePatientListReturnTo } from "@/lib/patientListContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -63,6 +63,9 @@ import { PatientCareCoordinationPanel } from "@/components/patients/PatientCareC
 import { PatientHealthAnalysisPanel } from "@/components/patients/PatientHealthAnalysisPanel";
 import { PersonSensorStatusPanel } from "@/components/shared/PersonSensorStatusPanel";
 import UserAvatar from "@/components/shared/UserAvatar";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
+import { Button } from "@/components/ui/button";
 
 function caregiverSearchText(c: Caregiver): string {
   return [
@@ -162,6 +165,11 @@ export default function PatientDetailPage() {
   const router = useRouter();
   const { t, locale } = useTranslation();
   const { user: authUser } = useAuth();
+  const patientListHref = getSafePatientListReturnTo(
+    searchParams.get("returnTo"),
+    getPatientsPath(authUser?.role || "admin"),
+    [getPersonnelPath(authUser?.role || "admin")],
+  );
   const nowMs = useFixedNowMs();
   const staffSearchInputId = useId();
   const staffSearchListboxId = useId();
@@ -629,25 +637,26 @@ export default function PatientDetailPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="h-8 w-64 bg-surface-container-high rounded-lg animate-pulse" />
-        <div className="h-60 surface-card rounded-xl animate-pulse" />
-      </div>
+      <AppPage title={t("patients.title")} breadcrumbs={[{ label: t("nav.patients") }] }>
+        <DataState kind="loading" title={t("common.loading")} />
+      </AppPage>
     );
   }
 
   if (error || !patient) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="w-12 h-12 text-error mb-3" />
-        <p className="text-foreground font-medium">{error || t("patients.empty")}</p>
-        <Link
-          href="../patients"
-          className="text-sm text-primary mt-3 hover:underline"
-        >
-          {t("patients.backToList")}
-        </Link>
-      </div>
+      <AppPage title={t("patients.title")} breadcrumbs={[{ label: t("nav.patients") }] }>
+        <DataState
+          kind="error"
+          title={t("patients.empty")}
+          description={error || t("patients.empty")}
+          action={
+            <Button asChild variant="outline">
+              <Link href={patientListHref}>{t("patients.backToList")}</Link>
+            </Button>
+          }
+        />
+      </AppPage>
     );
   }
 
@@ -689,16 +698,18 @@ export default function PatientDetailPage() {
   const isSavingAbout = savingCard === "about";
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href={getPatientsPath(authUser?.role || "admin")}
-          className="inline-flex items-center gap-2 text-sm text-foreground-variant hover:text-primary transition-smooth"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {t("patients.backToList")}
-        </Link>
-      </div>
+    <AppPage
+      title={`${patient.first_name} ${patient.last_name}`.trim() || t("patients.title")}
+      description={[patient.care_level, roomDetail?.name].filter(Boolean).join(" · ")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: authUser?.role ? `/${String(authUser.role).replace("_", "-")}` : "/admin",
+        },
+        { label: t("nav.patients"), href: patientListHref },
+        { label: `${patient.first_name} ${patient.last_name}`.trim() || t("patients.title") },
+      ]}
+    >
 
       <Tabs
         value={mainTab}
@@ -722,11 +733,11 @@ export default function PatientDetailPage() {
               <div className="absolute right-4 top-4 z-10">
                 {isEditingAbout ? (
                   <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high bg-surface border border-outline-variant/30" onClick={cancelEditingCard} disabled={isSavingAbout}>{t("common.cancel")}</button>
-                    <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveCard("about")} disabled={isSavingAbout || !cardDrafts.first_name.trim() || !cardDrafts.last_name.trim()}>{isSavingAbout ? t("common.saving") : t("common.save")}</button>
+                    <button type="button" className="min-h-11 rounded-lg border border-outline-variant/30 bg-surface px-4 py-2 text-sm font-medium text-foreground-variant hover:bg-surface-container-high" onClick={cancelEditingCard} disabled={isSavingAbout}>{t("common.cancel")}</button>
+                    <button type="button" className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveCard("about")} disabled={isSavingAbout || !cardDrafts.first_name.trim() || !cardDrafts.last_name.trim()}>{isSavingAbout ? t("common.saving") : t("common.save")}</button>
                   </div>
                 ) : (
-                  <button type="button" className="rounded-lg border border-outline-variant/30 bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high" onClick={() => startEditingCard("about")}>{t("common.edit")}</button>
+                  <button type="button" className="min-h-11 rounded-lg border border-outline-variant/30 bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-container-high" onClick={() => startEditingCard("about")}>{t("common.edit")}</button>
                 )}
               </div>
             )}
@@ -746,31 +757,31 @@ export default function PatientDetailPage() {
                     </div>
                   )}
                   {canEditPatient && patientPhotoUrl && (
-                    <button type="button" className="absolute right-1 top-1 z-10 rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-semibold text-white hover:bg-black/70 disabled:opacity-50" disabled={patientPhotoBusy} onClick={() => void onRemovePatientPhoto()}>{t("profile.avatar.removePhoto")}</button>
+                    <button type="button" className="absolute right-1 top-1 z-10 min-h-11 rounded-lg bg-black/60 px-3 py-2 text-sm font-semibold text-white hover:bg-black/75 disabled:opacity-50" disabled={patientPhotoBusy} onClick={() => void onRemovePatientPhoto()}>{t("profile.avatar.removePhoto")}</button>
                   )}
                 </div>
                 {canEditPatient && (
-                  <label htmlFor={patientPhotoInputId} className="cursor-pointer text-center text-[10px] text-primary hover:underline">{t("profile.avatar.localFileLabel")}</label>
+                  <label htmlFor={patientPhotoInputId} className="flex min-h-11 cursor-pointer items-center rounded-lg px-3 text-center text-sm font-medium text-primary hover:bg-primary/10">{t("profile.avatar.localFileLabel")}</label>
                 )}
                 <input id={patientPhotoInputId} type="file" accept="image/*" disabled={patientPhotoBusy} onChange={(e) => void onPickPatientPhoto(e)} className="sr-only" />
-                {patientPhotoErr && <p className="text-center text-[10px] text-destructive">{patientPhotoErr}</p>}
-                <span className="rounded-md bg-surface-container-high px-2 py-0.5 font-mono text-[9px] text-foreground-variant">#{patient.id}</span>
+                {patientPhotoErr && <p className="text-center text-sm text-destructive">{patientPhotoErr}</p>}
+                <span className="rounded-md bg-surface-container-high px-2 py-1 font-mono text-xs text-foreground-variant">#{patient.id}</span>
               </div>
 
               {/* Info column */}
               <div className="min-w-0 flex-1">
                 {isEditingAbout ? (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.firstName")}</span><input className="input-field w-full text-sm" value={cardDrafts.first_name} onChange={(e) => setCardDrafts((p) => ({ ...p, first_name: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.lastName")}</span><input className="input-field w-full text-sm" value={cardDrafts.last_name} onChange={(e) => setCardDrafts((p) => ({ ...p, last_name: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.dateOfBirth")}</span><input type="date" className="input-field w-full text-sm" value={cardDrafts.date_of_birth} onChange={(e) => setCardDrafts((p) => ({ ...p, date_of_birth: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.gender")}</span><select className="input-field w-full text-sm" value={cardDrafts.gender} onChange={(e) => setCardDrafts((p) => ({ ...p, gender: e.target.value }))}><option value="">{t("patients.genderUnset")}</option><option value="male">{t("patients.genderMale")}</option><option value="female">{t("patients.genderFemale")}</option><option value="other">{t("patients.genderOther")}</option></select></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.careLevel")}</span><select className="input-field w-full text-sm" value={cardDrafts.care_level} onChange={(e) => setCardDrafts((p) => ({ ...p, care_level: e.target.value }))}><option value="normal">{t("patients.careLevelNormal")}</option><option value="special">{t("patients.careLevelSpecial")}</option><option value="critical">{t("patients.careLevelCritical")}</option></select></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.mobilityType")}</span><select className="input-field w-full text-sm" value={cardDrafts.mobility_type} onChange={(e) => setCardDrafts((p) => ({ ...p, mobility_type: e.target.value }))}><option value="wheelchair">{t("patients.mobilityWheelchair")}</option><option value="walker">{t("patients.mobilityWalker")}</option><option value="independent">{t("patients.mobilityIndependent")}</option></select></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.bloodType")}</span><input className="input-field w-full text-sm" value={cardDrafts.blood_type} onChange={(e) => setCardDrafts((p) => ({ ...p, blood_type: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.heightCm")}</span><input className="input-field w-full text-sm" value={cardDrafts.height_cm} onChange={(e) => setCardDrafts((p) => ({ ...p, height_cm: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.weightKg")}</span><input className="input-field w-full text-sm" value={cardDrafts.weight_kg} onChange={(e) => setCardDrafts((p) => ({ ...p, weight_kg: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.room")}</span><input className="input-field w-full text-sm" value={cardDrafts.room_id} onChange={(e) => setCardDrafts((p) => ({ ...p, room_id: e.target.value }))} placeholder={t("patients.noRoom")} /></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.firstName")}</span><input className="input-field w-full text-sm" value={cardDrafts.first_name} onChange={(e) => setCardDrafts((p) => ({ ...p, first_name: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.lastName")}</span><input className="input-field w-full text-sm" value={cardDrafts.last_name} onChange={(e) => setCardDrafts((p) => ({ ...p, last_name: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.dateOfBirth")}</span><input type="date" className="input-field w-full text-sm" value={cardDrafts.date_of_birth} onChange={(e) => setCardDrafts((p) => ({ ...p, date_of_birth: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.gender")}</span><select className="input-field w-full text-sm" value={cardDrafts.gender} onChange={(e) => setCardDrafts((p) => ({ ...p, gender: e.target.value }))}><option value="">{t("patients.genderUnset")}</option><option value="male">{t("patients.genderMale")}</option><option value="female">{t("patients.genderFemale")}</option><option value="other">{t("patients.genderOther")}</option></select></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.careLevel")}</span><select className="input-field w-full text-sm" value={cardDrafts.care_level} onChange={(e) => setCardDrafts((p) => ({ ...p, care_level: e.target.value }))}><option value="normal">{t("patients.careLevelNormal")}</option><option value="special">{t("patients.careLevelSpecial")}</option><option value="critical">{t("patients.careLevelCritical")}</option></select></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.mobilityType")}</span><select className="input-field w-full text-sm" value={cardDrafts.mobility_type} onChange={(e) => setCardDrafts((p) => ({ ...p, mobility_type: e.target.value }))}><option value="wheelchair">{t("patients.mobilityWheelchair")}</option><option value="walker">{t("patients.mobilityWalker")}</option><option value="independent">{t("patients.mobilityIndependent")}</option></select></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.bloodType")}</span><input className="input-field w-full text-sm" value={cardDrafts.blood_type} onChange={(e) => setCardDrafts((p) => ({ ...p, blood_type: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.heightCm")}</span><input className="input-field w-full text-sm" value={cardDrafts.height_cm} onChange={(e) => setCardDrafts((p) => ({ ...p, height_cm: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.weightKg")}</span><input className="input-field w-full text-sm" value={cardDrafts.weight_kg} onChange={(e) => setCardDrafts((p) => ({ ...p, weight_kg: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("patients.room")}</span><input className="input-field w-full text-sm" value={cardDrafts.room_id} onChange={(e) => setCardDrafts((p) => ({ ...p, room_id: e.target.value }))} placeholder={t("patients.noRoom")} /></label>
                     <label className="flex items-center gap-2 text-sm text-foreground sm:col-span-2"><input type="checkbox" checked={cardDrafts.is_active} onChange={(e) => setCardDrafts((p) => ({ ...p, is_active: e.target.checked }))} />{t("patients.statusActive")}</label>
                   </div>
                 ) : (
@@ -786,11 +797,11 @@ export default function PatientDetailPage() {
                     {/* Status badges */}
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold care-${patient.care_level}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${patient.care_level === "critical" ? "bg-red-500" : patient.care_level === "special" ? "bg-amber-500" : "bg-emerald-500"}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full ${patient.care_level === "critical" ? "bg-critical" : patient.care_level === "special" ? "bg-warning" : "bg-success"}`} />
                         {patient.care_level}
                       </span>
                       <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-medium text-foreground-variant">{patient.mobility_type}</span>
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${patient.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-surface-container text-outline"}`}>{patient.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${patient.is_active ? "bg-success-bg text-success" : "bg-surface-container text-outline"}`}>{patient.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
                       {patient.blood_type && <span className="rounded-full border border-outline-variant/30 px-3 py-1 text-xs font-mono font-medium text-foreground">{patient.blood_type}</span>}
                     </div>
                     {/* Room row */}
@@ -806,7 +817,7 @@ export default function PatientDetailPage() {
                         )}
                       </span>
                       {patient.room_id != null && (
-                        <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => setPatientMapOpen(true)}>{t("patients.roomOpenFacility")}</button>
+                        <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary/10" onClick={() => setPatientMapOpen(true)}>{t("patients.roomOpenFacility")}</button>
                       )}
                     </div>
                   </>
@@ -855,8 +866,8 @@ export default function PatientDetailPage() {
                     {patient.medical_conditions.map((c, i) => {
                       const raw = c as Record<string, unknown>;
                       const sev = String(raw.severity ?? "").toLowerCase();
-                      const sevClass = sev === "high" || sev === "สูง" ? "border-red-300 bg-red-50 text-foreground dark:border-red-800/40 dark:bg-red-950/30 dark:text-foreground"
-                        : sev === "medium" || sev === "ปานกลาง" ? "border-amber-300 bg-amber-50 text-foreground dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-foreground"
+                      const sevClass = sev === "high" || sev === "สูง" ? "border-critical/30 bg-critical-bg text-foreground"
+                        : sev === "medium" || sev === "ปานกลาง" ? "border-warning/30 bg-warning-bg text-foreground"
                         : "border-outline-variant/30 bg-surface-container-high text-foreground";
                       return (
                         <li key={i} className={`flex items-start justify-between gap-2 rounded-lg border px-4 py-3 text-sm ${sevClass}`}>
@@ -882,8 +893,8 @@ export default function PatientDetailPage() {
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {patient.allergies.map((a, i) => (
-                      <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-semibold text-foreground dark:border-red-800/40 dark:bg-red-950/30 dark:text-foreground">
-                        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                      <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-critical/30 bg-critical-bg px-3 py-1 text-xs font-semibold text-foreground">
+                        <span className="h-1.5 w-1.5 rounded-full bg-critical" />
                         {a}
                       </span>
                     ))}
@@ -963,17 +974,17 @@ export default function PatientDetailPage() {
                         {editingAccountId === u.id && canManageAccounts ? (
                           <div className="space-y-3">
                             <div className="grid gap-2 sm:grid-cols-2">
-                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.username")}</span><input className="input-field w-full text-sm" value={accountDraft.username} onChange={(e) => setAccountDraft((p) => ({ ...p, username: e.target.value }))} /></label>
-                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={accountDraft.role} onChange={(e) => setAccountDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_nurse">{t("shell.roleHeadNurse")}</option><option value="supervisor">{t("shell.roleSupervisor")}</option><option value="observer">{t("shell.roleObserver")}</option><option value="patient">{t("shell.rolePatient")}</option></select></label>
-                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("accountMgmt.pickStaff")}</span><input className="input-field w-full text-sm" value={accountDraft.caregiver_id} onChange={(e) => setAccountDraft((p) => ({ ...p, caregiver_id: e.target.value }))} /></label>
-                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("accountMgmt.pickPatient")}</span><input className="input-field w-full text-sm" value={accountDraft.patient_id} onChange={(e) => setAccountDraft((p) => ({ ...p, patient_id: e.target.value }))} /></label>
-                              <label className="space-y-1 sm:col-span-2"><span className="text-xs text-foreground-variant">{t("admin.users.resetPassword")}</span><input type="password" className="input-field w-full text-sm" placeholder={t("patients.editorPasswordOptionalHint")} value={accountDraft.password} onChange={(e) => setAccountDraft((p) => ({ ...p, password: e.target.value }))} /></label>
+                              <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("admin.users.username")}</span><input className="input-field w-full text-sm" value={accountDraft.username} onChange={(e) => setAccountDraft((p) => ({ ...p, username: e.target.value }))} /></label>
+                              <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={accountDraft.role} onChange={(e) => setAccountDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_nurse">{t("shell.roleHeadNurse")}</option><option value="supervisor">{t("shell.roleSupervisor")}</option><option value="observer">{t("shell.roleObserver")}</option><option value="patient">{t("shell.rolePatient")}</option></select></label>
+                              <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("accountMgmt.pickStaff")}</span><input className="input-field w-full text-sm" value={accountDraft.caregiver_id} onChange={(e) => setAccountDraft((p) => ({ ...p, caregiver_id: e.target.value }))} /></label>
+                              <label className="space-y-1"><span className="text-sm text-foreground-variant">{t("accountMgmt.pickPatient")}</span><input className="input-field w-full text-sm" value={accountDraft.patient_id} onChange={(e) => setAccountDraft((p) => ({ ...p, patient_id: e.target.value }))} /></label>
+                              <label className="space-y-1 sm:col-span-2"><span className="text-sm text-foreground-variant">{t("admin.users.resetPassword")}</span><input type="password" className="input-field w-full text-sm" placeholder={t("patients.editorPasswordOptionalHint")} value={accountDraft.password} onChange={(e) => setAccountDraft((p) => ({ ...p, password: e.target.value }))} /></label>
                               <label className="flex items-center gap-2 text-sm text-foreground sm:col-span-2"><input type="checkbox" checked={accountDraft.is_active} onChange={(e) => setAccountDraft((p) => ({ ...p, is_active: e.target.checked }))} />{t("patients.statusActive")}</label>
                             </div>
-                            {accountError && <p className="text-xs text-error">{accountError}</p>}
+                            {accountError && <p className="text-sm text-error">{accountError}</p>}
                             <div className="flex items-center justify-end gap-2">
-                              <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={() => setEditingAccountId(null)} disabled={accountBusy}>{t("common.cancel")}</button>
-                              <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveAccountEditor(u.id)} disabled={accountBusy}>{accountBusy ? t("common.saving") : t("common.save")}</button>
+                              <button type="button" className="min-h-11 rounded-lg px-4 py-2 text-sm font-medium text-foreground-variant hover:bg-surface-container-high" onClick={() => setEditingAccountId(null)} disabled={accountBusy}>{t("common.cancel")}</button>
+                              <button type="button" className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveAccountEditor(u.id)} disabled={accountBusy}>{accountBusy ? t("common.saving") : t("common.save")}</button>
                             </div>
                           </div>
                         ) : (
@@ -981,7 +992,7 @@ export default function PatientDetailPage() {
                             <div><p className="font-semibold text-foreground">{u.username}</p><p className="text-xs text-foreground-variant capitalize">{u.role}</p></div>
                             <div className="flex items-center gap-2">
                               <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${u.is_active ? "care-normal" : "bg-surface-container text-outline"}`}>{u.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
-                              {canManageAccounts && <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => openAccountEditor(u)}>{t("common.edit")}</button>}
+                              {canManageAccounts && <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary/10" onClick={() => openAccountEditor(u)}>{t("common.edit")}</button>}
                             </div>
                           </div>
                         )}
@@ -1006,8 +1017,8 @@ export default function PatientDetailPage() {
                     </div>
                     {canEditPatient && (
                       editingCard === "emergency"
-                        ? <div className="flex gap-2"><button type="button" className="rounded-lg px-2 py-1 text-xs font-medium text-white/85 hover:bg-white/15" onClick={cancelEditingCard} disabled={savingCard === "emergency"}>{t("common.cancel")}</button><button type="button" className="rounded-lg bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30" onClick={() => void saveCard("emergency")} disabled={savingCard === "emergency"}>{savingCard === "emergency" ? t("common.saving") : t("common.save")}</button></div>
-                        : <button type="button" className="rounded-lg border border-white/30 px-2.5 py-1 text-xs font-semibold text-white hover:bg-white/15" onClick={() => startEditingCard("emergency")}>{t("common.edit")}</button>
+                        ? <div className="flex gap-2"><button type="button" className="min-h-11 rounded-lg px-3 py-2 text-sm font-medium text-white/85 hover:bg-white/15" onClick={cancelEditingCard} disabled={savingCard === "emergency"}>{t("common.cancel")}</button><button type="button" className="min-h-11 rounded-lg bg-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/30" onClick={() => void saveCard("emergency")} disabled={savingCard === "emergency"}>{savingCard === "emergency" ? t("common.saving") : t("common.save")}</button></div>
+                        : <button type="button" className="min-h-11 rounded-lg border border-white/30 px-3 py-2 text-sm font-semibold text-white hover:bg-white/15" onClick={() => startEditingCard("emergency")}>{t("common.edit")}</button>
                     )}
                   </div>
                   {editingCard === "emergency" ? (
@@ -1079,7 +1090,7 @@ export default function PatientDetailPage() {
                             <span className="text-xs text-foreground-variant">{formatStaffRoleLabel(person.role, t)}{person.employee_code?.trim() ? ` · ${person.employee_code.trim()}` : ""}</span>
                           </Link>
                           {canManageResponsibleStaff && (
-                            <button type="button" className="shrink-0 text-xs font-semibold text-critical hover:underline" onClick={() => setCaregiverDraftIds((prev) => prev.filter((x) => x !== person.id))}>{t("patients.responsibleStaffRemove")}</button>
+                            <button type="button" className="min-h-11 shrink-0 rounded-lg px-3 text-sm font-semibold text-critical hover:bg-critical/10" onClick={() => setCaregiverDraftIds((prev) => prev.filter((x) => x !== person.id))}>{t("patients.responsibleStaffRemove")}</button>
                           )}
                         </div>
                       </li>
@@ -1099,7 +1110,7 @@ export default function PatientDetailPage() {
           <PatientCareCoordinationPanel
             patientId={Number(id)}
             showHeader={false}
-            invalidBackHref={getPatientsPath(authUser?.role || "admin")}
+            invalidBackHref={patientListHref}
           />
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1205,7 +1216,7 @@ export default function PatientDetailPage() {
         defaultPatientId={patient.id}
         lockedPatientId={patient.id}
       />
-    </div>
+    </AppPage>
   );
 }
 
@@ -1242,7 +1253,7 @@ function EditBtn({ onClick, t }: { onClick: () => void; t: (k: string) => string
   return (
     <button
       type="button"
-      className="rounded-lg border border-outline-variant/30 px-3 py-1 text-xs font-semibold text-foreground hover:bg-surface-container-high"
+      className="min-h-11 rounded-lg border border-outline-variant/30 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-container-high"
       onClick={onClick}
     >
       {t("common.edit")}
@@ -1263,8 +1274,8 @@ function EditActions({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <button type="button" className="rounded-lg px-3 py-1 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={onCancel} disabled={saving}>{t("common.cancel")}</button>
-      <button type="button" className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={onSave} disabled={saving}>{saving ? t("common.saving") : t("common.save")}</button>
+      <button type="button" className="min-h-11 rounded-lg px-4 py-2 text-sm font-medium text-foreground-variant hover:bg-surface-container-high" onClick={onCancel} disabled={saving}>{t("common.cancel")}</button>
+      <button type="button" className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={onSave} disabled={saving}>{saving ? t("common.saving") : t("common.save")}</button>
     </div>
   );
 }

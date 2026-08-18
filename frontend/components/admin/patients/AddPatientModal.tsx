@@ -508,6 +508,7 @@ function SelectField({
   disabled: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Controller
       control={control}
@@ -522,7 +523,7 @@ function SelectField({
             disabled={disabled}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select..." />
+                      <SelectValue placeholder={t("common.select")} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option) => (

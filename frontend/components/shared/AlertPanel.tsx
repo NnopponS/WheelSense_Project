@@ -1,9 +1,13 @@
 "use client";
 
+import { AlertTriangle, Bell, Clock, Info, ShieldAlert } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
-import EmptyState from "@/components/EmptyState";
-import { Bell, AlertTriangle, Clock } from "lucide-react";
 import type { Alert } from "@/lib/types";
+import EmptyState from "@/components/EmptyState";
+import { LoadingState } from "@/components/layout/LoadingState";
+import { Button } from "@/components/ui/button";
+import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge";
+import { cn } from "@/lib/utils";
 
 type FilterStatus = "all" | "active" | "acknowledged" | "resolved";
 
@@ -11,9 +15,40 @@ type Props = {
   alerts: Alert[] | null | undefined;
   isLoading: boolean;
   filter: FilterStatus;
-  onFilterChange: (f: FilterStatus) => void;
+  onFilterChange: (filter: FilterStatus) => void;
   onUpdateStatus: (id: number, status: string) => void;
   canAcknowledge: boolean;
+};
+
+function severityTone(severity: string): StatusTone {
+  if (severity === "critical") return "critical";
+  if (severity === "warning") return "warning";
+  return "info";
+}
+
+function statusTone(status: string): StatusTone {
+  if (status === "resolved") return "success";
+  if (status === "acknowledged") return "info";
+  if (status === "active") return "critical";
+  return "neutral";
+}
+
+const severityStyles = {
+  critical: {
+    icon: ShieldAlert,
+    border: "border-l-critical",
+    iconSurface: "bg-critical-bg text-critical-foreground",
+  },
+  warning: {
+    icon: AlertTriangle,
+    border: "border-l-warning",
+    iconSurface: "bg-warning-bg text-warning-foreground",
+  },
+  info: {
+    icon: Info,
+    border: "border-l-info",
+    iconSurface: "bg-info-bg text-info-foreground",
+  },
 };
 
 export default function AlertPanel({
@@ -25,14 +60,12 @@ export default function AlertPanel({
   canAcknowledge,
 }: Props) {
   const { t } = useTranslation();
+  const filtered = filter === "all" ? alerts : alerts?.filter((alert) => alert.status === filter);
 
-  const filtered =
-    filter === "all" ? alerts : alerts?.filter((a) => a.status === filter);
-
-  const FILTERS: {
+  const filters: Array<{
     key: FilterStatus;
     labelKey: "alerts.all" | "alerts.active" | "alerts.acknowledged" | "alerts.resolved";
-  }[] = [
+  }> = [
     { key: "all", labelKey: "alerts.all" },
     { key: "active", labelKey: "alerts.active" },
     { key: "acknowledged", labelKey: "alerts.acknowledged" },
@@ -40,112 +73,101 @@ export default function AlertPanel({
   ];
 
   return (
-    <>
-      <div className="flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => onFilterChange(f.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-smooth ${
-              filter === f.key
-                ? "bg-primary text-on-primary"
-                : "bg-surface-container-low text-foreground-variant hover:bg-surface-container"
-            }`}
-          >
-            {t(f.labelKey)}
-          </button>
-        ))}
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2" aria-label={t("alerts.filterLabel")}>
+        {filters.map((item) => {
+          const selected = filter === item.key;
+          return (
+            <Button
+              key={item.key}
+              type="button"
+              size="sm"
+              variant={selected ? "default" : "outline"}
+              aria-pressed={selected}
+              onClick={() => onFilterChange(item.key)}
+            >
+              {t(item.labelKey)}
+            </Button>
+          );
+        })}
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : !filtered || filtered.length === 0 ? (
+        <LoadingState message={t("common.loading")} />
+      ) : !filtered?.length ? (
         <EmptyState icon={Bell} message={t("alerts.empty")} />
       ) : (
-        <div className="space-y-3">
-          {filtered.map((alert) => (
-            <div
-              key={alert.id}
-              className="surface-card p-4 flex items-start gap-4 border-l-4 border-l-primary"
-            >
-              <div className="w-10 h-10 rounded-lg bg-error-container flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-error" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-foreground">
-                    {alert.title || alert.alert_type}
-                  </span>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-medium uppercase ${
-                      alert.severity === "critical"
-                        ? "bg-error text-on-error"
-                        : alert.severity === "warning"
-                          ? "bg-warning text-on-warning"
-                          : "bg-surface-container-high text-foreground-variant"
-                    }`}
-                  >
-                    {alert.severity}
-                  </span>
-                </div>
-                {alert.description && (
-                  <p className="text-sm text-foreground-variant mt-1">{alert.description}</p>
+        <div className="space-y-3" aria-live="polite">
+          {filtered.map((alert) => {
+            const tone = severityTone(alert.severity);
+            const style = severityStyles[
+              tone === "critical" ? "critical" : tone === "warning" ? "warning" : "info"
+            ];
+            const Icon = style.icon;
+
+            return (
+              <article
+                key={alert.id}
+                className={cn(
+                  "surface-card flex flex-col gap-4 border-l-4 p-4 sm:flex-row sm:items-start",
+                  style.border,
                 )}
-                <div className="flex items-center gap-4 mt-2 text-xs text-outline">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {alert.timestamp
-                      ? new Date(alert.timestamp).toLocaleString()
-                      : "—"}
-                  </span>
-                  <span
-                    className={`font-medium ${
-                      alert.status === "active"
-                        ? "text-error"
-                        : alert.status === "resolved"
-                          ? "text-primary"
-                          : "text-warning"
-                    }`}
-                  >
-                    {alert.status}
-                  </span>
+              >
+                <div
+                  className={cn(
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg",
+                    style.iconSurface,
+                  )}
+                >
+                  <Icon className="h-6 w-6" aria-hidden="true" />
                 </div>
-              </div>
-              <div className="flex flex-col gap-2 shrink-0">
-                {alert.status === "active" && canAcknowledge && (
-                  <div className="flex gap-2">
-                    <button
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-semibold text-foreground">
+                      {alert.title || alert.alert_type}
+                    </h3>
+                    <StatusBadge label={alert.severity} tone={tone} />
+                    <StatusBadge label={alert.status} tone={statusTone(alert.status)} />
+                  </div>
+                  {alert.description ? (
+                    <p className="mt-2 text-base leading-relaxed text-muted-foreground">
+                      {alert.description}
+                    </p>
+                  ) : null}
+                  <p className="ws-tabular-nums mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-5 w-5" aria-hidden="true" />
+                    {alert.timestamp ? new Date(alert.timestamp).toLocaleString() : "—"}
+                  </p>
+                </div>
+
+                {canAcknowledge && alert.status !== "resolved" ? (
+                  <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-48 sm:justify-end">
+                    {alert.status === "active" ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="border-warning/40 text-warning-foreground hover:bg-warning-bg"
+                        onClick={() => onUpdateStatus(alert.id, "acknowledged")}
+                      >
+                        {t("alerts.acknowledge")}
+                      </Button>
+                    ) : null}
+                    <Button
                       type="button"
-                      onClick={() => onUpdateStatus(alert.id, "acknowledged")}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-warning-bg text-warning hover:opacity-80 transition-smooth"
-                    >
-                      {t("alerts.acknowledge")}
-                    </button>
-                    <button
-                      type="button"
+                      variant="outline"
+                      className="border-success/40 text-success-foreground hover:bg-success-bg"
                       onClick={() => onUpdateStatus(alert.id, "resolved")}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-success-bg text-success hover:opacity-80 transition-smooth"
                     >
                       {t("alerts.resolve")}
-                    </button>
+                    </Button>
                   </div>
-                )}
-                {alert.status === "acknowledged" && canAcknowledge && (
-                  <button
-                    type="button"
-                    onClick={() => onUpdateStatus(alert.id, "resolved")}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-success-bg text-success hover:opacity-80 transition-smooth"
-                  >
-                    {t("alerts.resolve")}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 import type {
   CreateSpecialistRequest,
   ListSpecialistsResponse,
@@ -173,11 +174,14 @@ export default function HeadNurseSpecialistsPage() {
   const saveError = createMutation.error ? errorText(createMutation.error) : null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("headNurse.specialists.pageTitle")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.specialists.pageSubtitle")}</p>
-      </div>
+    <AppPage
+      title={t("headNurse.specialists.pageTitle")}
+      description={t("headNurse.specialists.pageSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/head-nurse" },
+        { label: t("headNurse.specialists.pageTitle") },
+      ]}
+    >
 
       <Card>
         <CardHeader>
@@ -190,7 +194,7 @@ export default function HeadNurseSpecialistsPage() {
                 <Label>{t("headNurse.specialists.firstNameLabel")}</Label>
                 <Input {...form.register("firstName")} placeholder={t("headNurse.specialists.firstNamePlaceholder")} />
                 {form.formState.errors.firstName ? (
-                  <p className="text-sm text-destructive">{form.formState.errors.firstName.message}</p>
+                  <p className="text-sm text-critical-foreground" role="alert">{form.formState.errors.firstName.message}</p>
                 ) : null}
               </div>
 
@@ -198,7 +202,7 @@ export default function HeadNurseSpecialistsPage() {
                 <Label>{t("headNurse.specialists.lastNameLabel")}</Label>
                 <Input {...form.register("lastName")} placeholder={t("headNurse.specialists.lastNamePlaceholder")} />
                 {form.formState.errors.lastName ? (
-                  <p className="text-sm text-destructive">{form.formState.errors.lastName.message}</p>
+                  <p className="text-sm text-critical-foreground" role="alert">{form.formState.errors.lastName.message}</p>
                 ) : null}
               </div>
 
@@ -253,11 +257,11 @@ export default function HeadNurseSpecialistsPage() {
               <Textarea rows={3} {...form.register("notes")} placeholder={t("headNurse.specialists.notesPlaceholder")} />
             </div>
 
-            {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
+            {saveError ? <p className="text-sm text-critical-foreground" role="alert">{saveError}</p> : null}
 
             <Button type="submit" disabled={createMutation.isPending}>
               <Plus className="h-4 w-4" />
-              {createMutation.isPending ? "Saving..." : "Add specialist"}
+              {createMutation.isPending ? t("common.saving") : t("headNurse.specialists.addTitle")}
             </Button>
           </form>
         </CardContent>
@@ -271,7 +275,8 @@ export default function HeadNurseSpecialistsPage() {
         isLoading={specialistsQuery.isLoading}
         emptyText={t("headNurse.specialists.listEmpty")}
         rightSlot={<Stethoscope className="h-4 w-4 text-muted-foreground" />}
+        mobileMode="cards"
       />
-    </div>
+    </AppPage>
   );
 }

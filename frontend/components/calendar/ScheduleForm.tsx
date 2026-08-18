@@ -369,12 +369,12 @@ export function ScheduleForm({
 
             {/* Title and Type */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label="Title *" error={errors.title?.message}>
+              <FormField label={t("scheduleForm.titleRequired")} error={errors.title?.message}>
                 <Controller
                   name="title"
                   control={control}
                   render={({ field }) => (
-                    <Input {...field} placeholder="e.g., Morning medication" disabled={isSubmitting} />
+                    <Input {...field} placeholder={t("scheduleForm.titlePlaceholder")} disabled={isSubmitting} />
                   )}
                 />
               </FormField>
@@ -395,12 +395,12 @@ export function ScheduleForm({
                       disabled={isSubmitting || planKind === "routine"}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select type..." />
+                        <SelectValue placeholder={t("scheduleForm.selectType")} />
                       </SelectTrigger>
                       <SelectContent>
                         {scheduleTypes.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
-                            {type.label}
+                            {t(`scheduleForm.type.${type.value}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -412,7 +412,7 @@ export function ScheduleForm({
 
             {/* Patient and Room */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label="Patient">
+              <FormField label={t("scheduleForm.patient")}>
                 <Controller
                   name="patientId"
                   control={control}
@@ -427,12 +427,12 @@ export function ScheduleForm({
                       disabled={isSubmitting}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select patient..." />
+                        <SelectValue placeholder={t("scheduleForm.selectPatient")} />
                       </SelectTrigger>
                       <SelectContent>
                         {lockedPatientId == null ? (
                           <SelectItem value={EMPTY_SELECT_VALUE}>
-                            <span className="text-muted-foreground">— No patient —</span>
+                            <span className="text-muted-foreground">— {t("scheduleForm.noPatient")} —</span>
                           </SelectItem>
                         ) : null}
                         {patients.map((patient) => (
@@ -447,12 +447,12 @@ export function ScheduleForm({
                 {selectedPatient && (
                   <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                     <User className="h-3 w-3" />
-                    Selected: {selectedPatient.first_name} {selectedPatient.last_name}
+                    {t("scheduleForm.selected")}: {selectedPatient.first_name} {selectedPatient.last_name}
                   </div>
                 )}
               </FormField>
 
-              <FormField label="Room">
+              <FormField label={t("scheduleForm.room")}>
                 <Controller
                   name="roomId"
                   control={control}
@@ -467,11 +467,11 @@ export function ScheduleForm({
                       disabled={isSubmitting}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select room..." />
+                        <SelectValue placeholder={t("scheduleForm.selectRoom")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={EMPTY_SELECT_VALUE}>
-                          <span className="text-muted-foreground">— No room —</span>
+                          <span className="text-muted-foreground">— {t("scheduleForm.noRoom")} —</span>
                         </SelectItem>
                         {Array.isArray(rooms) && rooms.map((room) => (
                           <SelectItem key={room.id} value={room.id.toString()}>
@@ -485,14 +485,14 @@ export function ScheduleForm({
                 {selectedRoom && (
                   <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3" />
-                    Selected: {selectedRoom.name}
+                    {t("scheduleForm.selected")}: {selectedRoom.name}
                   </div>
                 )}
               </FormField>
             </div>
 
             {/* Assignee */}
-            <FormField label="Assigned To">
+            <FormField label={t("scheduleForm.assignee")}>
               <Controller
                 name="assigneeId"
                 control={control}
@@ -507,11 +507,11 @@ export function ScheduleForm({
                     disabled={isSubmitting}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select assignee..." />
+                      <SelectValue placeholder={t("scheduleForm.selectAssignee")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={EMPTY_SELECT_VALUE}>
-                        <span className="text-muted-foreground">— Unassigned —</span>
+                        <span className="text-muted-foreground">— {t("workflow.console.unassigned")} —</span>
                       </SelectItem>
                       {caregivers.map((caregiver) => (
                         <SelectItem key={caregiver.id} value={caregiver.id.toString()}>
@@ -533,12 +533,12 @@ export function ScheduleForm({
             <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-medium">
                 <Calendar className="h-4 w-4" />
-                Date & Time
+                {t("scheduleForm.dateTime")}
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-3">
-                  <FormField label="Start Date *" error={errors.startDate?.message}>
+                  <FormField label={t("scheduleForm.startDateRequired")} error={errors.startDate?.message}>
                     <Controller
                       name="startDate"
                       control={control}
@@ -548,7 +548,7 @@ export function ScheduleForm({
                     />
                   </FormField>
 
-                  <FormField label="Start Time *" error={errors.startTime?.message}>
+                  <FormField label={t("scheduleForm.startTimeRequired")} error={errors.startTime?.message}>
                     <Controller
                       name="startTime"
                       control={control}
@@ -560,7 +560,7 @@ export function ScheduleForm({
                 </div>
 
                 <div className="space-y-3">
-                  <FormField label="End Date *" error={errors.endDate?.message}>
+                  <FormField label={t("scheduleForm.endDateRequired")} error={errors.endDate?.message}>
                     <Controller
                       name="endDate"
                       control={control}
@@ -570,7 +570,7 @@ export function ScheduleForm({
                     />
                   </FormField>
 
-                  <FormField label="End Time *" error={errors.endTime?.message}>
+                  <FormField label={t("scheduleForm.endTimeRequired")} error={errors.endTime?.message}>
                     <Controller
                       name="endTime"
                       control={control}
@@ -606,7 +606,7 @@ export function ScheduleForm({
                         <SelectContent>
                           {recurrenceOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value || EMPTY_SELECT_VALUE}>
-                              {option.label}
+                              {t(`scheduleForm.recurrence.${option.value || "none"}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -620,14 +620,14 @@ export function ScheduleForm({
             )}
 
             {/* Notes */}
-            <FormField label="Notes" error={errors.notes?.message}>
+            <FormField label={t("scheduleForm.notes")} error={errors.notes?.message}>
               <Controller
                 name="notes"
                 control={control}
                 render={({ field }) => (
                   <Textarea
                     {...field}
-                    placeholder="Additional notes or instructions..."
+                    placeholder={t("scheduleForm.notesPlaceholder")}
                     rows={3}
                     disabled={isSubmitting}
                   />
@@ -651,16 +651,16 @@ export function ScheduleForm({
               onClick={handleClose}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("scheduleForm.cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting
                 ? mode === "edit"
-                  ? "Saving..."
-                  : "Creating..."
+                  ? t("common.saving")
+                  : t("adminCaregivers.creating")
                 : mode === "edit"
-                  ? "Save Changes"
-                  : "Create Schedule"}
+                  ? t("scheduleForm.save")
+                  : t("scheduleForm.create")}
             </Button>
           </DialogFooter>
         </form>

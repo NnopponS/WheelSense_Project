@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Upload, X, AlertCircle, FileText } from "lucide-react";
+import { Upload, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -188,7 +188,7 @@ export function ReportSubmitDialog({
           },
         }
       );
-    } catch (error) {
+    } catch {
       toast.error(t("tasks.reportError"));
     }
   };

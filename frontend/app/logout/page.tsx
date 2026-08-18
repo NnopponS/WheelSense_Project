@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
 
 /**
  * Logout page - clears authentication and redirects to login
@@ -10,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function LogoutPage() {
   const { logout } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Perform logout
@@ -22,7 +24,7 @@ export default function LogoutPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-muted-foreground">Logging out...</p>
+        <p className="text-sm text-muted-foreground">{t("auth.loggingOut")}</p>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
   ListPrescriptionsResponse,
@@ -109,14 +110,18 @@ export default function ObserverPrescriptionsPage() {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("observer.prescriptions.title")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("observer.prescriptions.subtitle")}</p>
-      </div>
+    <AppPage
+      title={t("observer.prescriptions.title")}
+      description={t("observer.prescriptions.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/observer" },
+        { label: t("nav.prescriptions") },
+      ]}
+    >
 
       <DataTableCard
         title={t("observer.prescriptions.board")}
+        mobileMode="cards"
         description={t("observer.prescriptions.boardDesc")}
         data={rows}
         columns={columns}
@@ -124,6 +129,6 @@ export default function ObserverPrescriptionsPage() {
         emptyText={t("observer.prescriptions.noItems")}
         rightSlot={<ClipboardList className="h-4 w-4 text-muted-foreground" />}
       />
-    </div>
+    </AppPage>
   );
 }

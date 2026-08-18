@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTranslation } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { CalendarView, type CalendarViewMode } from "@/components/calendar/CalendarView";
 import {
@@ -177,13 +178,14 @@ function ScheduleContent() {
   }
 
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("patient.schedule.title")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("patient.schedule.subtitle")}
-        </p>
-      </div>
+    <AppPage
+      title={t("patient.schedule.title")}
+      description={t("patient.schedule.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/patient" },
+        { label: t("nav.schedule") },
+      ]}
+    >
 
       <section className="grid gap-3 sm:grid-cols-3">
         <Card>
@@ -254,6 +256,6 @@ function ScheduleContent() {
           </Button>
         </div>
       ) : null}
-    </div>
+    </AppPage>
   );
 }

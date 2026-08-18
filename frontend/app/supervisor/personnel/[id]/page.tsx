@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, ClipboardList, HeartPulse, Siren } from "lucide-react";
@@ -20,6 +20,11 @@ import { ageYears } from "@/lib/age";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
+import { PriorityBanner } from "@/components/shared/PriorityBanner";
+import { getSafePatientListReturnTo } from "@/lib/patientListContext";
+import { toast } from "sonner";
 import type {
   CareDirectiveOut,
   CareTaskOut,
@@ -66,6 +71,11 @@ type DirectiveRow = {
 export default function SupervisorPatientDetailPage() {
   const { t } = useTranslation();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const patientListHref = getSafePatientListReturnTo(
+    searchParams.get("returnTo"),
+    "/supervisor/personnel",
+  );
   const queryClient = useQueryClient();
   const nowMs = useFixedNowMs();
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
@@ -113,7 +123,9 @@ export default function SupervisorPatientDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["supervisor", "patient-detail", patientId, "tasks"] });
       await queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["supervisor", "directives"] });
+      toast.success(t("common.updateSuccess"));
     },
+    onError: () => toast.error(t("common.requestFailed")),
     onSettled: () => {
       setPendingTaskId(null);
     },
@@ -129,7 +141,9 @@ export default function SupervisorPatientDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["supervisor", "patient-detail", patientId, "directives"] });
       await queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["supervisor", "directives"] });
+      toast.success(t("common.updateSuccess"));
     },
+    onError: () => toast.error(t("common.requestFailed")),
     onSettled: () => {
       setPendingDirectiveId(null);
     },
@@ -443,15 +457,16 @@ export default function SupervisorPatientDetailPage() {
 
   if (!hasValidPatientId) {
     return (
-      <Card>
-        <CardContent className="space-y-3 pt-6">
-          <h2 className="text-xl font-semibold text-foreground">{t("clinical.patient.invalidIdTitle")}</h2>
-          <p className="text-sm text-muted-foreground">{t("clinical.patient.invalidIdDesc")}</p>
+      <DataState
+        kind="empty"
+        title={t("clinical.patient.invalidIdTitle")}
+        description={t("clinical.patient.invalidIdDesc")}
+        action={
           <Button asChild size="sm" variant="outline">
-            <Link href="/supervisor/personnel">{t("clinical.patient.backToPatients")}</Link>
+            <Link href={patientListHref}>{t("clinical.patient.backToPatients")}</Link>
           </Button>
-        </CardContent>
-      </Card>
+        }
+      />
     );
   }
 
@@ -463,7 +478,25 @@ export default function SupervisorPatientDetailPage() {
     directivesQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <AppPage
+      title={patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
+      description={t("supervisor.patientDetail.pageSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/supervisor" },
+        { label: t("nav.patients"), href: patientListHref },
+        { label: patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle") },
+      ]}
+      priority={
+        criticalAlerts.length > 0 ? (
+          <PriorityBanner
+            tone="critical"
+            title={t("clinical.patientDetail.statCriticalAlerts")}
+            detail={String(criticalAlerts.length)}
+            description={t("clinical.patientDetail.alertsDesc")}
+          />
+        ) : undefined
+      }
+    >
       <Card>
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -536,6 +569,7 @@ export default function SupervisorPatientDetailPage() {
         columns={vitalsColumns}
         isLoading={isLoadingAny}
         emptyText={t("clinical.patientDetail.vitalsEmpty")}
+        mobileMode="cards"
       />
 
       <DataTableCard
@@ -545,6 +579,7 @@ export default function SupervisorPatientDetailPage() {
         columns={alertsColumns}
         isLoading={isLoadingAny}
         emptyText={t("clinical.patientDetail.alertsEmpty")}
+        mobileMode="cards"
       />
 
       <DataTableCard
@@ -554,6 +589,7 @@ export default function SupervisorPatientDetailPage() {
         columns={tasksColumns}
         isLoading={isLoadingAny}
         emptyText={t("supervisor.patientDetail.tasksEmpty")}
+        mobileMode="cards"
       />
 
       <DataTableCard
@@ -563,8 +599,9 @@ export default function SupervisorPatientDetailPage() {
         columns={directivesColumns}
         isLoading={isLoadingAny}
         emptyText={t("supervisor.patientDetail.directivesEmpty")}
+        mobileMode="cards"
       />
-    </div>
+    </AppPage>
   );
 }
 

@@ -9,8 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AiSettingsPanel from "@/components/admin/settings/AiSettingsPanel";
 import ServerSettingsPanel from "@/components/admin/settings/ServerSettingsPanel";
-import AdminAuditPage from "@/app/admin/audit/page";
 import MlCalibrationClient from "@/app/admin/ml-calibration/MlCalibrationClient";
+import { AppPage } from "@/components/layout/AppPage";
 
 export type SettingsTabKey = "profile" | "ai" | "server" | "audit" | "system";
 
@@ -46,11 +46,15 @@ export default function AdminSettingsClient() {
   const backendDocs = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8000"}/docs`;
 
   return (
-    <div className="max-w-5xl space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("settings.title")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("settings.subtitle")}</p>
-      </div>
+    <AppPage
+      width="content"
+      title={t("settings.title")}
+      description={t("settings.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/admin" },
+        { label: t("nav.settings") },
+      ]}
+    >
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
         {([
@@ -103,10 +107,19 @@ export default function AdminSettingsClient() {
 
       {tab === "server" ? <ServerSettingsPanel /> : null}
 
-      {tab === "audit" ? <AdminAuditPage /> : null}
+      {tab === "audit" ? (
+        <Card>
+          <CardContent className="space-y-4 pt-6">
+            <p className="text-sm text-muted-foreground">{t("admin.auditLog.recordsDesc")}</p>
+            <Button type="button" onClick={() => router.push("/admin/audit")}>
+              {t("nav.auditLog")}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      {tab === "system" ? <MlCalibrationClient /> : null}
-    </div>
+      {tab === "system" ? <MlCalibrationClient embedded /> : null}
+    </AppPage>
   );
 }
 

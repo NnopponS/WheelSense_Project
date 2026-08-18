@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { MovementTimelineCard } from "@/components/timeline/MovementTimelineCard";
 import { formatDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -198,6 +199,7 @@ function metricText(metric: unknown): string {
 }
 
 function PatientHealthAnalysisCard({ card }: { card: EaseAIBackendCard }) {
+  const { t } = useTranslation();
   const payload = nestedPayload(card, ["health", "health_analysis", "patient_health_analysis", "analysis"]);
   const baseline = asRecord(payload.baseline) ?? {};
   const riskLevel = asString(payload.risk_level) || asString(payload.riskLevel) || "unknown";
@@ -206,23 +208,23 @@ function PatientHealthAnalysisCard({ card }: { card: EaseAIBackendCard }) {
   const recommendations = asArray(payload.recommendations).map((item) => asRecord(item)).filter(Boolean) as JsonRecord[];
 
   return (
-    <CardShell icon={<HeartPulse className="h-4 w-4" />} title={titleFor(card, "Patient Health Analysis")}>
+    <CardShell icon={<HeartPulse className="h-4 w-4" />} title={titleFor(card, t("ai.card.healthAnalysis"))}>
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-lg bg-surface px-3 py-2">
-          <p className="text-muted-foreground">Risk</p>
+          <p className="text-muted-foreground">{t("ai.card.risk")}</p>
           <p className="mt-0.5 font-semibold capitalize text-foreground">{riskLevel.replace(/_/g, " ")}</p>
         </div>
         <div className="rounded-lg bg-surface px-3 py-2">
-          <p className="text-muted-foreground">Score</p>
-          <p className="mt-0.5 font-semibold text-foreground">{score != null ? `${score}/100` : "Not reported"}</p>
+          <p className="text-muted-foreground">{t("ai.card.score")}</p>
+          <p className="mt-0.5 font-semibold text-foreground">{score != null ? `${score}/100` : t("ai.card.notReported")}</p>
         </div>
         <div className="rounded-lg bg-surface px-3 py-2">
-          <p className="text-muted-foreground">Baseline HR</p>
-          <p className="mt-0.5 font-semibold text-foreground">{metricText(baseline.heart_rate_bpm) || "Not reported"}</p>
+          <p className="text-muted-foreground">{t("ai.card.baselineHr")}</p>
+          <p className="mt-0.5 font-semibold text-foreground">{metricText(baseline.heart_rate_bpm) || t("ai.card.notReported")}</p>
         </div>
         <div className="rounded-lg bg-surface px-3 py-2">
-          <p className="text-muted-foreground">Baseline SpO2</p>
-          <p className="mt-0.5 font-semibold text-foreground">{metricText(baseline.spo2) || "Not reported"}</p>
+          <p className="text-muted-foreground">{t("ai.card.baselineSpo2")}</p>
+          <p className="mt-0.5 font-semibold text-foreground">{metricText(baseline.spo2) || t("ai.card.notReported")}</p>
         </div>
       </div>
       {asString(payload.trend_summary) ? (
@@ -421,6 +423,7 @@ function formatTimePart(value: unknown): string {
 }
 
 function TaskSuccessCard({ card }: { card: EaseAIBackendCard }) {
+  const { t } = useTranslation();
   const payload = cardPayload(card);
   const result = asRecord(payload.task) ?? payload;
   const dueAt = result.due_at;
@@ -452,7 +455,7 @@ function TaskSuccessCard({ card }: { card: EaseAIBackendCard }) {
           </div>
         ))}
         <div className="contents">
-          <dt className="text-emerald-900/70">Status</dt>
+          <dt className="text-success-foreground/80">{t("workflow.console.field.status")}</dt>
           <dd>
             <Badge variant="warning" className="rounded-full px-2 py-0 text-[11px]">
               {asString(result.status) || "pending"}
@@ -483,6 +486,7 @@ function normalizeColumns(rows: JsonRecord[], rawColumns: unknown[]): Column[] {
 }
 
 function DataTableCard({ card }: { card: EaseAIBackendCard }) {
+  const { t } = useTranslation();
   const payload = cardPayload(card);
   const rawColumns = asArray(payload.columns);
   const rawRows = asArray(payload.rows).length > 0 ? asArray(payload.rows) : asArray(payload.data);
@@ -504,9 +508,9 @@ function DataTableCard({ card }: { card: EaseAIBackendCard }) {
   const columns = normalizeColumns(rows, rawColumns);
 
   return (
-    <CardShell icon={<Table2 className="h-4 w-4" />} title={titleFor(card, "Data Table")}>
+    <CardShell icon={<Table2 className="h-4 w-4" />} title={titleFor(card, t("ai.card.dataTable"))}>
       {rows.length === 0 || columns.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No rows returned.</p>
+        <p className="text-sm text-muted-foreground">{t("ai.card.noRows")}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-xs">
@@ -539,6 +543,7 @@ function DataTableCard({ card }: { card: EaseAIBackendCard }) {
 }
 
 function PatientSummaryCard({ card }: { card: EaseAIBackendCard }) {
+  const { t } = useTranslation();
   const payload = nestedPayload(card, ["patient", "profile", "summary"]);
   const name =
     asString(payload.patient_name) ||
@@ -563,7 +568,7 @@ function PatientSummaryCard({ card }: { card: EaseAIBackendCard }) {
           ))}
         </dl>
       ) : (
-        <p className="text-xs text-muted-foreground">No patient fields returned.</p>
+        <p className="text-sm text-muted-foreground">{t("ai.card.noPatientFields")}</p>
       )}
       {asString(payload.summary) ? <p className="mt-2 text-xs text-muted-foreground">{asString(payload.summary)}</p> : null}
       <Provenance items={provenanceItems(card)} />
@@ -579,6 +584,7 @@ function displayValue(value: unknown): string {
 }
 
 function ProfileSummaryCard({ card }: { card: EaseAIBackendCard }) {
+  const { t } = useTranslation();
   const payload = nestedPayload(card, ["profile", "patient", "staff", "person", "summary"]);
   const name =
     asString(payload.display_name) ||
@@ -608,7 +614,7 @@ function ProfileSummaryCard({ card }: { card: EaseAIBackendCard }) {
           ))}
         </dl>
       ) : (
-        <p className="text-xs text-muted-foreground">No profile fields returned.</p>
+        <p className="text-sm text-muted-foreground">{t("ai.card.noProfileFields")}</p>
       )}
       {asString(payload.summary) ? <p className="mt-2 text-xs text-muted-foreground">{asString(payload.summary)}</p> : null}
       <Provenance items={provenanceItems(card)} />
@@ -650,6 +656,7 @@ function StaffSummaryCard({ card }: { card: EaseAIBackendCard }) {
 }
 
 function StaffTimelineResponseCard({ card }: { card: EaseAIBackendCard }) {
+  const { t } = useTranslation();
   const payload = nestedPayload(card, ["timeline", "staff_timeline"]);
   const events = (
     asArray(payload.items).length > 0
@@ -662,9 +669,9 @@ function StaffTimelineResponseCard({ card }: { card: EaseAIBackendCard }) {
     .filter(Boolean) as JsonRecord[];
 
   return (
-    <CardShell icon={<CalendarClock className="h-4 w-4" />} title={titleFor(card, "Staff Timeline")}>
+    <CardShell icon={<CalendarClock className="h-4 w-4" />} title={titleFor(card, t("ai.card.staffTimeline"))}>
       {events.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No staff events returned.</p>
+        <p className="text-sm text-muted-foreground">{t("ai.card.noStaffEvents")}</p>
       ) : (
         <ol className="space-y-2 text-xs">
           {events.slice(0, 6).map((event, index) => {
@@ -740,6 +747,7 @@ function SensorStatusCard({ card }: { card: EaseAIBackendCard }) {
 }
 
 function HealthTrendChartCard({ card }: { card: EaseAIBackendCard }) {
+  const { t } = useTranslation();
   const payload = nestedPayload(card, ["health_trend_chart", "trend", "chart"]);
   const points = (
     asArray(payload.points).length > 0
@@ -759,7 +767,7 @@ function HealthTrendChartCard({ card }: { card: EaseAIBackendCard }) {
   ].filter(([, value]) => value);
 
   return (
-    <CardShell icon={<BarChart3 className="h-4 w-4" />} title={titleFor(card, "Health Trend")}>
+    <CardShell icon={<BarChart3 className="h-4 w-4" />} title={titleFor(card, t("ai.card.healthTrend"))}>
       {points.length > 0 ? (
         <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
           <Gauge className="h-3.5 w-3.5" />
@@ -776,7 +784,7 @@ function HealthTrendChartCard({ card }: { card: EaseAIBackendCard }) {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">No trend values returned.</p>
+        <p className="text-sm text-muted-foreground">{t("ai.card.noTrendValues")}</p>
       )}
       <Provenance items={provenanceItems(card)} />
     </CardShell>

@@ -5,6 +5,7 @@ import { format, isPast, isToday } from "date-fns";
 import {
   closestCorners,
   DndContext,
+  KeyboardSensor,
   type DragEndEvent,
   PointerSensor,
   useDraggable,
@@ -15,7 +16,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Clock, GripVertical, User } from "lucide-react";
 import type { CareTaskOut } from "@/lib/api/task-scope-types";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -26,6 +26,8 @@ import {
   taskToBoardColumn,
   type WorkflowTaskBoardColumn,
 } from "@/lib/workflowTaskBoard";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export interface WorkflowTasksKanbanProps {
   tasks: CareTaskOut[];
@@ -59,7 +61,7 @@ function KanbanColumn({
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        <span className="tabular-nums text-xs text-muted-foreground">{count}</span>
+        <span className="ws-tabular-nums text-sm text-muted-foreground">{count}</span>
       </div>
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto pr-0.5">{children}</div>
     </div>
@@ -70,10 +72,12 @@ function KanbanTaskCard({
   task,
   patientLine,
   disabled,
+  onColumnChange,
 }: {
   task: CareTaskOut;
   patientLine?: string;
   disabled?: boolean;
+  onColumnChange: (column: WorkflowTaskBoardColumn) => void;
 }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -97,38 +101,40 @@ function KanbanTaskCard({
         "rounded-xl border border-border/80 bg-card p-3 shadow-sm transition-shadow",
         isDragging && "z-10 cursor-grabbing opacity-90 shadow-lg ring-2 ring-primary/30",
         !isDragging && "cursor-grab",
-        disabled && "pointer-events-none opacity-60",
+        disabled && "opacity-60",
       )}
+      aria-disabled={disabled || undefined}
     >
       <div className="flex items-start gap-2">
           <button
             type="button"
-            className="mt-0.5 shrink-0 rounded-md p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="mt-0.5 flex h-11 w-11 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed"
             aria-label={t("workflowTasks.kanban.dragHandleAria")}
+            disabled={disabled}
             {...listeners}
             {...attributes}
           >
-            <GripVertical className="h-4 w-4" />
+            <GripVertical className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium leading-snug text-foreground">{task.title}</div>
             {task.description ? (
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
+              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.description}</p>
             ) : null}
             {patientLine ? (
-              <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                <User className="h-3 w-3 shrink-0" />
+              <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <User className="h-5 w-5 shrink-0" aria-hidden="true" />
                 <span className="truncate">{patientLine}</span>
               </div>
             ) : null}
             {due ? (
               <div
                 className={cn(
-                  "mt-1 flex items-center gap-1 text-xs",
+                  "ws-tabular-nums mt-1 flex items-center gap-1.5 text-sm",
                   overdue ? "font-medium text-destructive" : "text-muted-foreground",
                 )}
               >
-                <Clock className="h-3 w-3 shrink-0" />
+                <Clock className="h-5 w-5 shrink-0" aria-hidden="true" />
                 {t("headNurse.taskDuePrefix")}{" "}
                 {format(due, isToday(due) ? "HH:mm" : "MMM d, HH:mm")}
                 {overdue ? ` · ${t("observer.tasks.overdueSuffix")}` : ""}
@@ -136,11 +142,37 @@ function KanbanTaskCard({
             ) : null}
             {task.priority ? (
               <div className="mt-2">
-                <Badge variant="secondary" className="text-[10px] uppercase">
-                  {task.priority}
-                </Badge>
+                <StatusBadge
+                  label={task.priority}
+                  tone={
+                    task.priority === "critical"
+                      ? "critical"
+                      : task.priority === "high"
+                        ? "warning"
+                        : "neutral"
+                  }
+                />
               </div>
             ) : null}
+            <div className="mt-3 space-y-1.5">
+              <label className="text-sm font-medium text-muted-foreground" htmlFor={`task-${task.id}-column`}>
+                {t("workflowTasks.kanban.moveTo")}
+              </label>
+              <Select
+                value={taskToBoardColumn(task)}
+                disabled={disabled}
+                onValueChange={(value) => onColumnChange(value as WorkflowTaskBoardColumn)}
+              >
+                <SelectTrigger id={`task-${task.id}-column`} className="h-11 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">{t("workflowTasks.kanban.columnPending")}</SelectItem>
+                  <SelectItem value="in_progress">{t("workflowTasks.kanban.columnInProgress")}</SelectItem>
+                  <SelectItem value="completed">{t("workflowTasks.kanban.columnCompleted")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
     </div>
@@ -158,6 +190,7 @@ export function WorkflowTasksKanban({
   const pending = pendingTaskIds ?? new Set<number>();
 
   const sensors = useSensors(
+    useSensor(KeyboardSensor),
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
     }),
@@ -203,7 +236,7 @@ export function WorkflowTasksKanban({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <p className="text-xs text-muted-foreground">{t("workflowTasks.kanban.dragHint")}</p>
+      <p className="text-sm text-muted-foreground">{t("workflowTasks.kanban.dragHint")}</p>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -218,7 +251,7 @@ export function WorkflowTasksKanban({
               count={grouped[col].length}
             >
               {grouped[col].length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">
+                <p className="py-8 text-center text-sm text-muted-foreground">
                   {t("workflowTasks.kanban.emptyColumn")}
                 </p>
               ) : (
@@ -234,6 +267,11 @@ export function WorkflowTasksKanban({
                       task={task}
                       patientLine={pl}
                       disabled={pending.has(task.id)}
+                      onColumnChange={(column) => {
+                        if (taskToBoardColumn(task) !== column) {
+                          onColumnChange(task.id, column);
+                        }
+                      }}
                     />
                   );
                 })

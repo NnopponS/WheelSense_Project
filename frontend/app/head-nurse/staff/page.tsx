@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { z } from "zod";
-import { CalendarClock, ClipboardList, ListTodo, Plus, Search, UserCog } from "lucide-react";
+import { CalendarClock, ClipboardList, ListTodo, Plus, UserCog } from "lucide-react";
 import { HeadNurseStaffMemberSheet } from "@/components/head-nurse/HeadNurseStaffMemberSheet";
 import type { User } from "@/lib/types";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
@@ -29,6 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
+import { FilterBar } from "@/components/shared/FilterBar";
 import type {
   CareTaskOut,
   CareScheduleOut,
@@ -592,13 +594,14 @@ export default function HeadNurseStaffPage() {
     scheduleError ?? (createScheduleMutation.error ? parseRequestError(createScheduleMutation.error) : null);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("headNurse.staffTitle")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("headNurse.staffSubtitle")}
-        </p>
-      </div>
+    <AppPage
+      title={t("headNurse.staffTitle")}
+      description={t("headNurse.staffSubtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/head-nurse" },
+        { label: t("nav.staff") },
+      ]}
+    >
 
       <section className="grid gap-3 lg:grid-cols-2">
         <Card className="border-border/70 bg-card/90">
@@ -617,7 +620,7 @@ export default function HeadNurseStaffPage() {
         <Card className="border-border/70 bg-card/90">
           <CardContent className="flex h-full flex-col gap-3 p-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning-bg text-warning-foreground">
                 <ListTodo className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -638,20 +641,15 @@ export default function HeadNurseStaffPage() {
         <SummaryStatCard icon={ClipboardList} label={t("headNurse.openTasks")} value={openTaskCount} tone="warning" />
       </section>
 
-      <Card className="border-border/70">
-        <CardContent className="p-4">
-          <div className="relative w-full md:max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("headNurse.staffSearchPlaceholder")}
-              className="pl-9"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchLabel={t("common.search")}
+        searchPlaceholder={t("headNurse.staffSearchPlaceholder")}
+        resetLabel={t("common.reset")}
+        hasActiveFilters={search.trim().length > 0}
+        onReset={() => setSearch("")}
+      />
 
       <Card>
         <CardHeader>
@@ -675,7 +673,7 @@ export default function HeadNurseStaffPage() {
                 <Label>{t("headNurse.quickCreateTitleLabel")}</Label>
                 <Input {...taskForm.register("title")} placeholder={t("headNurse.quickCreateTitlePlaceholder")} />
                 {taskForm.formState.errors.title ? (
-                  <p className="text-sm text-destructive">{taskForm.formState.errors.title.message}</p>
+                  <p className="text-sm text-critical-foreground" role="alert">{taskForm.formState.errors.title.message}</p>
                 ) : null}
               </div>
 
@@ -683,7 +681,7 @@ export default function HeadNurseStaffPage() {
                 <Label>{t("headNurse.quickCreateDescLabel")}</Label>
                 <Textarea rows={3} {...taskForm.register("description")} placeholder={t("headNurse.quickCreateDescPlaceholder")} />
                 {taskForm.formState.errors.description ? (
-                  <p className="text-sm text-destructive">{taskForm.formState.errors.description.message}</p>
+                  <p className="text-sm text-critical-foreground" role="alert">{taskForm.formState.errors.description.message}</p>
                 ) : null}
               </div>
 
@@ -764,7 +762,7 @@ export default function HeadNurseStaffPage() {
                 </div>
               </div>
 
-              {taskSaveError ? <p className="text-sm text-destructive">{taskSaveError}</p> : null}
+              {taskSaveError ? <p className="text-sm text-critical-foreground" role="alert">{taskSaveError}</p> : null}
 
               <Button type="submit" disabled={createTaskMutation.isPending}>
                 <Plus className="h-4 w-4" />
@@ -788,7 +786,7 @@ export default function HeadNurseStaffPage() {
                 <Label>{t("headNurse.scheduleTitleLabel")}</Label>
                 <Input {...scheduleForm.register("title")} placeholder={t("headNurse.scheduleTitlePlaceholder")} />
                 {scheduleForm.formState.errors.title ? (
-                  <p className="text-sm text-destructive">{scheduleForm.formState.errors.title.message}</p>
+                  <p className="text-sm text-critical-foreground" role="alert">{scheduleForm.formState.errors.title.message}</p>
                 ) : null}
               </div>
 
@@ -819,7 +817,7 @@ export default function HeadNurseStaffPage() {
                   <Label>{t("headNurse.scheduleStartsLabel")}</Label>
                   <Input type="datetime-local" {...scheduleForm.register("startsAt")} />
                   {scheduleForm.formState.errors.startsAt ? (
-                    <p className="text-sm text-destructive">{scheduleForm.formState.errors.startsAt.message}</p>
+                    <p className="text-sm text-critical-foreground" role="alert">{scheduleForm.formState.errors.startsAt.message}</p>
                   ) : null}
                 </div>
               </div>
@@ -875,7 +873,7 @@ export default function HeadNurseStaffPage() {
                 />
               </div>
 
-              {scheduleSaveError ? <p className="text-sm text-destructive">{scheduleSaveError}</p> : null}
+              {scheduleSaveError ? <p className="text-sm text-critical-foreground" role="alert">{scheduleSaveError}</p> : null}
 
               <Button type="submit" disabled={createScheduleMutation.isPending}>
                 <Plus className="h-4 w-4" />
@@ -893,6 +891,7 @@ export default function HeadNurseStaffPage() {
         columns={caregiversColumns}
         isLoading={isLoadingAny}
         emptyText={t("headNurse.rosterEmpty")}
+        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-head-nurse-roster",
           headers: ["Caregiver ID", "Name", "Role", "Phone", "Email", "Active"],
@@ -914,6 +913,7 @@ export default function HeadNurseStaffPage() {
         columns={schedulesColumns}
         isLoading={isLoadingAny}
         emptyText={t("headNurse.upcomingSchedulesEmpty")}
+        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-head-nurse-schedules",
           headers: ["Schedule ID", "Title", "Type", "Recurrence", "Status", "Assigned role", "Assigned user ID", "Starts at"],
@@ -937,6 +937,7 @@ export default function HeadNurseStaffPage() {
         columns={tasksColumns}
         isLoading={isLoadingAny}
         emptyText={t("headNurse.openTaskBoardEmpty")}
+        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-head-nurse-tasks",
           headers: ["Task ID", "Title", "Priority", "Status", "Due at", "Assigned role", "Assigned user ID"],
@@ -971,6 +972,6 @@ export default function HeadNurseStaffPage() {
         tasksForUser={tasksForMemberSheet}
         schedulesForUser={schedulesForMemberSheet}
       />
-    </div>
+    </AppPage>
   );
 }

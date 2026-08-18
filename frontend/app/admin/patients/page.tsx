@@ -2,11 +2,11 @@
 "use no memo";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
-  Search,
   Users,
   Plus,
   Calendar,
@@ -15,15 +15,15 @@ import {
   Heart,
   UserCheck,
   AlertCircle,
-  Filter,
   Trash2,
 } from "lucide-react";
+import { AppPage } from "@/components/layout/AppPage";
+import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -41,6 +41,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { getPatientDetailPath, getPatientsPath } from "@/lib/routes";
 import { hasCapability } from "@/lib/permissions";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import {
+  buildPatientListHref,
+  parsePatientListFilter,
+  rememberPatientListScroll,
+  restorePatientListScroll,
+  withPatientListReturnTo,
+  type PatientListFilter,
+} from "@/lib/patientListContext";
 import type { ListPatientsResponse, CareScheduleOut, CaregiverOut } from "@/lib/api/task-scope-types";
 
 type CaregiverPatientAccessOut = {
@@ -71,8 +79,6 @@ type Routine = {
   assigned_to: string;
   status: "active" | "paused" | "completed";
 };
-
-type FilterType = "all" | "critical" | "unassigned" | "recent";
 
 function formatCaregiver(caregiver: CaregiverOut): string {
   return `${caregiver.first_name} ${caregiver.last_name}`.trim() || `Caregiver #${caregiver.id}`;
@@ -119,11 +125,33 @@ function routineStatusKey(status: Routine["status"]): TranslationKey {
 
 export default function AdminPatientsPage() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [activeFilter, setActiveFilter] = useState<PatientListFilter>(() =>
+    parsePatientListFilter(searchParams.get("view")),
+  );
   const [patientToDelete, setPatientToDelete] = useState<PatientRow | null>(null);
+
+  const replaceListState = useCallback(
+    (nextSearch: string, nextFilter: PatientListFilter) => {
+      const href = buildPatientListHref(pathname, searchParams, nextSearch, nextFilter);
+      router.replace(href, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const currentPatientListHref = useMemo(
+    () => buildPatientListHref(pathname, searchParams, search, activeFilter),
+    [activeFilter, pathname, search, searchParams],
+  );
+
+  useEffect(() => {
+    restorePatientListScroll(currentPatientListHref);
+  }, [currentPatientListHref]);
 
   const canDeletePatient = user?.role ? hasCapability(user.role, "patients.manage") : false;
 
@@ -299,13 +327,13 @@ export default function AdminPatientsPage() {
   const getRoutineTypeColor = (type: Routine["schedule_type"]) => {
     switch (type) {
       case "medication":
-        return "bg-red-500/12 text-red-700 dark:text-red-300 border-red-500/30";
+        return "bg-critical-bg text-critical border-critical/30";
       case "check_in":
-        return "bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/30";
+        return "bg-info-bg text-info border-info/30";
       case "procedure":
-        return "bg-purple-500/12 text-purple-700 dark:text-purple-300 border-purple-500/30";
+        return "bg-warning-bg text-warning border-warning/30";
       case "meal":
-        return "bg-green-500/12 text-green-700 dark:text-green-300 border-green-500/30";
+        return "bg-success-bg text-success border-success/30";
       default:
         return "bg-muted text-muted-foreground";
     }
@@ -421,12 +449,26 @@ export default function AdminPatientsPage() {
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild size="sm" variant="outline">
-              <Link href={getPatientDetailPath(user?.role || "admin", row.original.id)}>{t("patients.viewProfile")}</Link>
+              <Link
+                href={withPatientListReturnTo(
+                  getPatientDetailPath(user?.role || "admin", row.original.id),
+                  currentPatientListHref,
+                )}
+                onClick={() => rememberPatientListScroll(currentPatientListHref)}
+              >
+                {t("patients.viewProfile")}
+              </Link>
             </Button>
             <Button asChild size="sm" variant="outline">
-              <Link href={`${getPatientDetailPath(user?.role || "admin", row.original.id)}?tab=care#timeline`}>
+              <Link
+                href={withPatientListReturnTo(
+                  `${getPatientDetailPath(user?.role || "admin", row.original.id)}?tab=care#timeline`,
+                  currentPatientListHref,
+                )}
+                onClick={() => rememberPatientListScroll(currentPatientListHref)}
+              >
                 <Activity className="h-4 w-4" />
-                Timeline
+                {t("nav.timeline")}
               </Link>
             </Button>
             {canDeletePatient ? (
@@ -449,27 +491,29 @@ export default function AdminPatientsPage() {
         ),
       },
     ],
-    [t, canDeletePatient, deletePatientMutation, user?.role],
+    [t, canDeletePatient, currentPatientListHref, deletePatientMutation, user?.role],
   );
 
   const isLoading =
     patientsQuery.isLoading || schedulesQuery.isLoading || caregiversQuery.isLoading || caregiverAccessQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">{t("patients.title")}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t("adminPatients.subtitle")}</p>
-        </div>
+    <AppPage
+      title={t("patients.title")}
+      description={t("adminPatients.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: `/${(user?.role || "admin").replace("_", "-")}` },
+        { label: t("nav.patients") },
+      ]}
+      actions={
         <Button asChild>
           <Link href={`${getPatientsPath(user?.role || "admin")}/new`}>
-            <Plus className="mr-1.5 h-4 w-4" />
+            <Plus className="h-5 w-5" aria-hidden="true" />
             {t("patients.addNew")}
           </Link>
         </Button>
-      </div>
+      }
+    >
 
       {/* Stats Cards */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -499,53 +543,36 @@ export default function AdminPatientsPage() {
         />
       </section>
 
-      {/* Quick Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Filter className="h-4 w-4 text-muted-foreground mr-1" />
-        <Button
-          size="sm"
-          variant={activeFilter === "all" ? "default" : "outline"}
-          onClick={() => setActiveFilter("all")}
-        >
-          {t("adminPatients.filterAll")}
-        </Button>
-        <Button
-          size="sm"
-          variant={activeFilter === "critical" ? "destructive" : "outline"}
-          onClick={() => setActiveFilter("critical")}
-        >
-          <AlertCircle className="mr-1.5 h-4 w-4" />
-          {t("adminPatients.filterCritical")}
-        </Button>
-        <Button
-          size="sm"
-          variant={activeFilter === "unassigned" ? "default" : "outline"}
-          className={activeFilter === "unassigned" ? "bg-amber-600 hover:bg-amber-700" : ""}
-          onClick={() => setActiveFilter("unassigned")}
-        >
-          <UserCheck className="mr-1.5 h-4 w-4" />
-          {t("adminPatients.filterUnassigned")}
-        </Button>
-        <Button
-          size="sm"
-          variant={activeFilter === "recent" ? "default" : "outline"}
-          onClick={() => setActiveFilter("recent")}
-        >
-          <Clock className="mr-1.5 h-4 w-4" />
-          {t("adminPatients.filterRecent")}
-        </Button>
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("adminPatients.searchPlaceholder")}
-          className="pl-9"
-        />
-      </div>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          replaceListState(value, activeFilter);
+        }}
+        searchLabel={t("common.search")}
+        searchPlaceholder={t("adminPatients.searchPlaceholder")}
+        resultLabel={`${filteredRows.length} ${filteredRows.length === 1 ? t("table.row") : t("table.rows")}`}
+        resetLabel={t("common.reset")}
+        savedViewLabel={t("common.savedView")}
+        savedViewValue={activeFilter}
+        savedViews={[
+          { value: "all", label: t("adminPatients.filterAll") },
+          { value: "critical", label: t("adminPatients.filterCritical") },
+          { value: "unassigned", label: t("adminPatients.filterUnassigned") },
+          { value: "recent", label: t("adminPatients.filterRecent") },
+        ]}
+        onSavedViewChange={(value) => {
+          const nextFilter = parsePatientListFilter(value);
+          setActiveFilter(nextFilter);
+          replaceListState(search, nextFilter);
+        }}
+        hasActiveFilters={search.trim().length > 0 || activeFilter !== "all"}
+        onReset={() => {
+          setSearch("");
+          setActiveFilter("all");
+          replaceListState("", "all");
+        }}
+      />
 
       <Tabs defaultValue="patients" className="space-y-6">
         <TabsList>
@@ -567,8 +594,10 @@ export default function AdminPatientsPage() {
             data={filteredRows}
             columns={columns}
             isLoading={isLoading}
-            emptyText={t("adminPatients.emptyRoster")}
+            emptyKind={search.trim().length > 0 || activeFilter !== "all" ? "filtered-empty" : "empty"}
+            emptyText={search.trim().length > 0 || activeFilter !== "all" ? t("common.filteredEmpty") : t("adminPatients.emptyRoster")}
             rightSlot={<Users className="h-4 w-4 text-muted-foreground" />}
+            mobileMode="cards"
             csvExport={{
               fileNameBase: "wheelsense-patients",
               headers: [
@@ -777,6 +806,6 @@ export default function AdminPatientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppPage>
   );
 }
