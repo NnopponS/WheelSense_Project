@@ -1,0 +1,6 @@
+ws_protocol 2 0.0472015
+ws_ipc_messages 2 0.0488085
+ws_ipc_queue 2 0.0454
+ws_ipc_endpoint 1 0.160395
+ws_ipc_transport 1 0.146844
+---

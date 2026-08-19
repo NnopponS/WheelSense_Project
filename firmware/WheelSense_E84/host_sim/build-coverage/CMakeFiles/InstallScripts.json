@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/cmake_install.cmake",
+		"C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

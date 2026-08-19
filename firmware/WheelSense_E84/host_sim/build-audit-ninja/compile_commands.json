@@ -1,0 +1,116 @@
+[
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_protocol.dir\\test_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_protocol.dir/test_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_protocol.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_protocol.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_messages.dir\\test_ipc_messages.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_ipc_messages.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ipc_messages.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_messages.dir/test_ipc_messages.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_messages.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_messages.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_messages.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_messages.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_messages.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_messages.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_queue.dir\\test_ipc_queue.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_ipc_queue.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ipc_queue.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_queue.dir/test_ipc_queue.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_queue.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_queue.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_queue.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_queue.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_queue.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_queue.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_queue.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_queue.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_endpoint.dir\\test_ipc_endpoint.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_ipc_endpoint.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ipc_endpoint.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_endpoint.dir/test_ipc_endpoint.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_endpoint.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_endpoint.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_endpoint.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_endpoint.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_endpoint.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_queue.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_queue.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_endpoint.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ipc_endpoint.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_endpoint.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_endpoint.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_endpoint.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_ipc_endpoint.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_endpoint.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_shared_types.dir\\test_shared_types.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_shared_types.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_shared_types.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_shared_types.dir/test_shared_types.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_feature_matrix_default.dir\\test_feature_matrix.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_feature_matrix.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_feature_matrix.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_feature_matrix_default.dir/test_feature_matrix.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -DWS_FEATURE_BLE=0 -DWS_FEATURE_CAMERA=0 -DWS_FEATURE_ENVIRONMENT=0 -DWS_FEATURE_MICROPHONE=0 -DWS_FEATURE_MOTION_AI=0 -DWS_FEATURE_SPEAKER=0 -DWS_FEATURE_TOUCH=0 -DWS_FEATURE_WIFI=0 -DWS_TEST_EXPECT_MINIMAL -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_feature_matrix_minimal.dir\\test_feature_matrix.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_feature_matrix.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_feature_matrix.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_feature_matrix_minimal.dir/test_feature_matrix.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -DWS_FEATURE_HOST_SIM=1 -DWS_TEST_EXPECT_HOST -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_feature_matrix_host.dir\\test_feature_matrix.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_feature_matrix.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_feature_matrix.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-audit-ninja/tests/CMakeFiles/test_feature_matrix_host.dir/test_feature_matrix.c.obj"
+}
+]

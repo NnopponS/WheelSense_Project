@@ -1,0 +1,14 @@
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/CMakeFiles/test.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/CMakeFiles/edit_cache.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/CMakeFiles/rebuild_cache.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_protocol.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ipc_messages.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ipc_queue.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ipc_transport.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_shared_types.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_feature_matrix_default.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_feature_matrix_minimal.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_feature_matrix_host.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/edit_cache.dir
+C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/rebuild_cache.dir
