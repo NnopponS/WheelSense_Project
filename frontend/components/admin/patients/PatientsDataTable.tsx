@@ -179,7 +179,7 @@ export function PatientsDataTable({
         header: "",
         cell: ({ row }) => (
           <Button asChild size="sm" variant="outline">
-            <Link href={`/head-nurse/personnel/${row.original.id}`}>{t("admin.patients.openAction")}</Link>
+            <Link href={`/head-caregiver/patients/${row.original.id}`}>{t("admin.patients.openAction")}</Link>
           </Button>
         ),
       },

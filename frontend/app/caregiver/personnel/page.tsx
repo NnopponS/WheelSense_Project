@@ -207,10 +207,10 @@ function PatientsContent() {
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm" variant="outline">
-              <Link href={`/caregiver/personnel/${row.original.id}`}>{t("observer.patients.openDetail")}</Link>
+              <Link href={`/caregiver/patients/${row.original.id}`}>{t("observer.patients.openDetail")}</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
-              <Link href={`/caregiver/personnel/${row.original.id}#timeline`}>
+              <Link href={`/caregiver/patients/${row.original.id}#timeline`}>
                 <Activity className="h-4 w-4" />
                 Timeline
               </Link>
@@ -266,7 +266,7 @@ function PatientsContent() {
         emptyText={t("observer.patients.noMatch")}
         mobileMode="cards"
         csvExport={{
-          fileNameBase: "wheelsense-observer-personnel",
+          fileNameBase: "wheelsense-caregiver-patients",
           headers: [
             t("patients.recordId"),
             t("clinical.table.patient"),

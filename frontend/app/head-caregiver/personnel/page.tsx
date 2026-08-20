@@ -145,7 +145,7 @@ function PatientsContent() {
         header: t("clinical.table.actions"),
         cell: ({ row }) => (
           <Button asChild size="sm" variant="outline">
-            <Link href={`/head-caregiver/personnel/${row.original.id}`}>{t("clinical.table.openDetail")}</Link>
+            <Link href={`/head-caregiver/patients/${row.original.id}`}>{t("clinical.table.openDetail")}</Link>
           </Button>
         ),
       },
@@ -184,7 +184,7 @@ function PatientsContent() {
         rightSlot={<Users className="h-4 w-4 text-muted-foreground" />}
         mobileMode="cards"
         csvExport={{
-          fileNameBase: "wheelsense-supervisor-personnel",
+          fileNameBase: "wheelsense-head-caregiver-patients",
           headers: [
             t("patients.recordId"),
             t("clinical.table.patient"),

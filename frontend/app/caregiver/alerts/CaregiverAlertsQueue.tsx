@@ -228,7 +228,7 @@ export default function CaregiverAlertsQueue() {
             <Button asChild size="sm" variant="outline">
               <Link
                 href={
-                  row.original.patientId ? `/caregiver/personnel/${row.original.patientId}` : "/caregiver/personnel"
+                  row.original.patientId ? `/caregiver/patients/${row.original.patientId}` : "/caregiver/patients"
                 }
               >
                 {t("observer.alerts.openPatient")}
@@ -277,7 +277,7 @@ export default function CaregiverAlertsQueue() {
         }
         mobileMode="cards"
         csvExport={{
-          fileNameBase: "wheelsense-observer-alerts",
+          fileNameBase: "wheelsense-caregiver-alerts",
           headers: ["Alert ID", "Title", "Severity", "Patient", "Room", "Timestamp"],
           getRowValues: (row) => [
             row.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { addMinutes, format, isPast, parseISO } from "date-fns";
 import {
   AlertCircle,
@@ -83,6 +83,8 @@ const QUERY = {
       ["supervisor", "dashboard", "tasks"],
       ["supervisor", "calendar", "tasks"],
       ["supervisor", "workflow-jobs"],
+      ["head_caregiver", "dashboard", "tasks"],
+      ["head_caregiver", "emergency"],
     ] as const,
   },
   caregiver: {
@@ -95,6 +97,8 @@ const QUERY = {
       ["observer", "patients"],
       ["observer", "patient-detail"],
       ["observer", "workflow-jobs"],
+      ["caregiver", "dashboard", "tasks"],
+      ["caregiver", "patients"],
     ] as const,
   },
 } as const;
@@ -133,39 +137,6 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
 
   const isLoading = tasksQuery.isLoading;
   const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
-
-  // region agent log
-  useEffect(() => {
-    const linked = tasks.filter((t) => t.workflow_job_id != null).length;
-    const filtered = tasks.filter((task) => {
-      if (selectedStatus !== "all" && task.status !== selectedStatus) return false;
-      if (selectedPatientId !== ALL_FILTER && task.patient_id !== Number(selectedPatientId)) {
-        return false;
-      }
-      return true;
-    });
-    void fetch("http://127.0.0.1:7687/ingest/3079ba95-d656-44c3-9953-dc1c569178f1", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4d0de1" },
-      body: JSON.stringify({
-        sessionId: "4d0de1",
-        hypothesisId: "H2-H3",
-        location: "WorkflowTasksHubContent.tsx:tasks",
-        message: "tasks + filters",
-        data: {
-          variant,
-          tasksLen: tasks.length,
-          workflowLinked: linked,
-          filteredLen: filtered.length,
-          selectedStatus,
-          selectedPatientId,
-          tasksFetchStatus: tasksQuery.fetchStatus,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }, [tasks, variant, selectedStatus, selectedPatientId, tasksQuery.fetchStatus]);
-  // endregion
 
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,

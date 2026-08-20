@@ -1,18 +1,10 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useParams } from "next/navigation";
-import { PatientCareCoordinationPanel } from "@/components/patients/PatientCareCoordinationPanel";
-
-export default function CaregiverPatientDetailPage() {
-  const params = useParams();
-  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const patientId = Number(rawId);
-
-  return (
-    <PatientCareCoordinationPanel
-      patientId={patientId}
-      showHeader
-      invalidBackHref="/caregiver/personnel"
-    />
-  );
+export default async function CaregiverPersonnelDetailRedirect({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  redirect(`/caregiver/patients/${encodeURIComponent(id)}`);
 }

@@ -2,18 +2,18 @@
 "use no memo";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { AlertTriangle, ClipboardList, LayoutDashboard, MapPin, Radio, Siren, Stethoscope } from "lucide-react";
 import { z } from "zod";
+import { ApiError, api } from "@/lib/api";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import FeatureDetailActions from "@/components/dashboard/FeatureDetailActions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
 import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
@@ -47,6 +47,8 @@ type AlertRow = {
   alertId: number;
   title: string;
   description: string;
+  severity: string;
+  status: string;
   patientName: string;
   patientRoomLine: string;
   patientId: number | null;
@@ -61,9 +63,73 @@ type PredictionRow = {
   timestamp: string | null;
 };
 
+function EmergencyContentFallback() {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="flex min-h-56 items-center justify-center rounded-xl border border-border/60 bg-muted/25 px-6 py-10"
+      aria-busy="true"
+    >
+      <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+    </div>
+  );
+}
+
 export default function HeadCaregiverEmergencyPage() {
   const { t } = useTranslation();
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">{t("supervisor.emergency.pageTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.emergency.pageSubtitle")}</p>
+      </div>
+
+      <FeatureDetailActions
+        title={t("supervisor.emergency.relatedViews")}
+        actions={[
+          { label: t("nav.dashboard"), description: t("supervisor.emergency.dashboardDesc"), href: "/head-caregiver", icon: LayoutDashboard, tone: "primary" },
+          { label: t("nav.tasks"), description: t("supervisor.emergency.tasksDesc"), href: "/head-caregiver/tasks", icon: ClipboardList, tone: "warning" },
+          { label: t("nav.patients"), description: t("supervisor.emergency.patientsDesc"), href: "/head-caregiver/personnel", icon: Stethoscope, tone: "neutral" },
+          { label: t("nav.monitoring"), description: t("supervisor.emergency.monitoringDesc"), href: "/head-caregiver/floorplans", icon: MapPin, tone: "neutral" },
+        ]}
+      />
+
+      <Suspense fallback={<EmergencyContentFallback />}>
+        <HeadCaregiverEmergencyContent />
+      </Suspense>
+    </div>
+  );
+}
+
+function HeadCaregiverEmergencyContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const [pendingAlertId, setPendingAlertId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const updateAlertMutation = useMutation({
+    mutationFn: async (variables: { id: number; status: "acknowledged" | "resolved" }) => {
+      if (variables.status === "acknowledged") {
+        await api.acknowledgeAlert(variables.id, { caregiver_id: null });
+        return;
+      }
+      await api.resolveAlert(variables.id, { resolution_note: "" });
+    },
+    onSuccess: async () => {
+      setActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["head_caregiver", "emergency"] });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error) => {
+      setActionError(error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Request failed.");
+    },
+    onSettled: () => {
+      setPendingAlertId(null);
+    },
+  });
+
   const alertsQuery = useQuery({
     queryKey: ["head_caregiver", "emergency", "alerts"],
     queryFn: () => api.listAlerts({ status: "active", limit: 200 }),
@@ -136,13 +202,14 @@ export default function HeadCaregiverEmergencyPage() {
   }, [predictions]);
 
   const occupancyByRoom = useMemo(() => {
-    const map = new Map<string, { devices: number; avgConfidence: number; latestSeen: string | null }>();
+    const map = new Map<number, { devices: number; avgConfidence: number; latestSeen: string | null }>();
     for (const prediction of latestPredictionByDevice) {
-      const roomName = prediction.predicted_room_name ?? t("supervisor.emergency.unknownRoom");
-      const existing = map.get(roomName);
+      const roomId = prediction.predicted_room_id;
+      if (roomId == null) continue;
+      const existing = map.get(roomId);
       const confidence = prediction.confidence ?? 0;
       if (!existing) {
-        map.set(roomName, {
+        map.set(roomId, {
           devices: 1,
           avgConfidence: confidence,
           latestSeen: prediction.timestamp ?? null,
@@ -151,7 +218,7 @@ export default function HeadCaregiverEmergencyPage() {
       }
 
       const nextDevices = existing.devices + 1;
-      map.set(roomName, {
+      map.set(roomId, {
         devices: nextDevices,
         avgConfidence: (existing.avgConfidence * existing.devices + confidence) / nextDevices,
         latestSeen:
@@ -161,17 +228,26 @@ export default function HeadCaregiverEmergencyPage() {
       });
     }
     return map;
-  }, [latestPredictionByDevice, t]);
+  }, [latestPredictionByDevice]);
 
-  const criticalRooms = useMemo(() => {
-    const names = new Set<string>();
+  const criticalRoomIds = useMemo(() => {
+    const ids = new Set<number>();
+    const roomByName = new Map(rooms.map((r) => [r.name, r.id]));
     for (const alert of activeCriticalAlerts) {
       const data = alert.data as Record<string, unknown>;
+      const roomId = typeof data.room_id === "number" ? data.room_id : null;
+      if (roomId != null) {
+        ids.add(roomId);
+        continue;
+      }
       const roomName = typeof data.room_name === "string" ? data.room_name : null;
-      if (roomName) names.add(roomName);
+      if (roomName) {
+        const resolvedId = roomByName.get(roomName);
+        if (resolvedId != null) ids.add(resolvedId);
+      }
     }
-    return names;
-  }, [activeCriticalAlerts]);
+    return ids;
+  }, [activeCriticalAlerts, rooms]);
 
   const alertRows = useMemo<AlertRow[]>(() => {
     const severityRank = (s: string) => {
@@ -193,6 +269,8 @@ export default function HeadCaregiverEmergencyPage() {
           alertId: alert.id,
           title: alert.title,
           description: alert.description,
+          severity: alert.severity,
+          status: alert.status,
           patientName,
           patientRoomLine,
           patientId: alert.patient_id,
@@ -210,7 +288,7 @@ export default function HeadCaregiverEmergencyPage() {
 
   const roomRows = useMemo<RoomRow[]>(() => {
     return rooms.map((room) => {
-      const occupancy = occupancyByRoom.get(room.name);
+      const occupancy = occupancyByRoom.get(room.id);
       return {
         roomId: room.id,
         roomName: room.name,
@@ -219,10 +297,10 @@ export default function HeadCaregiverEmergencyPage() {
         averageConfidence:
           typeof occupancy?.avgConfidence === "number" ? occupancy.avgConfidence : null,
         lastSignal: occupancy?.latestSeen ?? null,
-        isCritical: criticalRooms.has(room.name),
+        isCritical: criticalRoomIds.has(room.id),
       };
     });
-  }, [criticalRooms, occupancyByRoom, rooms]);
+  }, [criticalRoomIds, occupancyByRoom, rooms]);
 
   const predictionRows = useMemo<PredictionRow[]>(() => {
     return [...latestPredictionByDevice]
@@ -267,6 +345,29 @@ export default function HeadCaregiverEmergencyPage() {
         ),
       },
       {
+        accessorKey: "severity",
+        header: t("observer.alerts.colSeverity"),
+        cell: ({ row }) => {
+          const severity = row.original.severity;
+          const variant =
+            severity === "critical"
+              ? "destructive"
+              : severity === "warning"
+                ? "warning"
+                : "secondary";
+          return <Badge variant={variant}>{severity}</Badge>;
+        },
+      },
+      {
+        accessorKey: "status",
+        header: t("observer.alerts.colStatus"),
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
         accessorKey: "timestamp",
         header: t("clinical.table.time"),
         cell: ({ row }) => (
@@ -279,17 +380,47 @@ export default function HeadCaregiverEmergencyPage() {
       {
         id: "actions",
         header: t("clinical.table.actions"),
-        cell: ({ row }) => {
-          const href = row.original.patientId ? `/head-caregiver/personnel/${row.original.patientId}` : "/head-caregiver/personnel";
-          return (
+        cell: ({ row }) => (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {row.original.status === "active" ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={updateAlertMutation.isPending && pendingAlertId === row.original.alertId}
+                onClick={() => {
+                  setPendingAlertId(row.original.alertId);
+                  setActionError(null);
+                  updateAlertMutation.mutate({ id: row.original.alertId, status: "acknowledged" });
+                }}
+              >
+                {t("alerts.acknowledge")}
+              </Button>
+            ) : null}
+            {row.original.status === "active" || row.original.status === "acknowledged" ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={updateAlertMutation.isPending && pendingAlertId === row.original.alertId}
+                onClick={() => {
+                  setPendingAlertId(row.original.alertId);
+                  setActionError(null);
+                  updateAlertMutation.mutate({ id: row.original.alertId, status: "resolved" });
+                }}
+              >
+                {t("alerts.resolve")}
+              </Button>
+            ) : null}
             <Button asChild size="sm" variant="outline">
-              <Link href={href}>{t("headNurse.alerts.openPatient")}</Link>
+              <Link href={row.original.patientId ? `/head-caregiver/patients/${row.original.patientId}` : "/head-caregiver/patients"}>
+                {t("headNurse.alerts.openPatient")}
+              </Link>
             </Button>
-          );
-        },
+          </div>
+        ),
       },
     ],
-    [t],
+    [t, pendingAlertId, updateAlertMutation],
   );
 
   const roomColumns = useMemo<ColumnDef<RoomRow>[]>(
@@ -381,22 +512,12 @@ export default function HeadCaregiverEmergencyPage() {
   const flashAlertId = useAlertRowHighlight(highlightAlertId, highlightReady);
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("supervisor.emergency.pageTitle")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.emergency.pageSubtitle")}</p>
-      </div>
-
-      <FeatureDetailActions
-        title="Related views"
-        actions={[
-          { label: t("nav.dashboard"), description: "Priority summary", href: "/head-caregiver", icon: LayoutDashboard, tone: "primary" },
-          { label: t("nav.tasks"), description: "Response work", href: "/head-caregiver/tasks", icon: ClipboardList, tone: "warning" },
-          { label: t("nav.patients"), description: "Risk review", href: "/head-caregiver/personnel", icon: Stethoscope, tone: "neutral" },
-          { label: t("nav.monitoring"), description: "Open map", href: "/head-caregiver/floorplans", icon: MapPin, tone: "neutral" },
-        ]}
-      />
-
+    <div className="space-y-4">
+      {actionError ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {actionError}
+        </div>
+      ) : null}
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <SummaryStatCard
           icon={Siren}
@@ -434,11 +555,13 @@ export default function HeadCaregiverEmergencyPage() {
             : undefined
         }
         csvExport={{
-          fileNameBase: "wheelsense-supervisor-emergency-alerts",
-          headers: ["Alert ID", "Title", "Patient", "Room", "Timestamp"],
+          fileNameBase: "wheelsense-head-caregiver-emergency-alerts",
+          headers: ["Alert ID", "Title", "Severity", "Status", "Patient", "Room", "Timestamp"],
           getRowValues: (row) => [
             row.alertId,
             row.title,
+            row.severity,
+            row.status,
             row.patientName,
             row.patientRoomLine,
             row.timestamp,
@@ -454,7 +577,7 @@ export default function HeadCaregiverEmergencyPage() {
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.floorCoverageEmpty")}
         csvExport={{
-          fileNameBase: "wheelsense-supervisor-floor-coverage",
+          fileNameBase: "wheelsense-head-caregiver-floor-coverage",
           headers: ["Room ID", "Room", "Type", "Localized devices", "Average confidence", "Last signal", "Critical"],
           getRowValues: (row) => [
             row.roomId,
@@ -476,7 +599,7 @@ export default function HeadCaregiverEmergencyPage() {
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.localizationFeedEmpty")}
         csvExport={{
-          fileNameBase: "wheelsense-supervisor-localization",
+          fileNameBase: "wheelsense-head-caregiver-localization",
           headers: ["Device ID", "Room", "Confidence", "Model", "Timestamp"],
           getRowValues: (row) => [
             row.deviceId,

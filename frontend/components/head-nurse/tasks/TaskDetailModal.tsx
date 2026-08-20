@@ -395,11 +395,11 @@ export function TaskDetailModal({
       case "admin":
         return `/admin/patients/${task.patient_id}`;
       case "head-caregiver":
-        return `/head-caregiver/personnel/${task.patient_id}`;
+        return `/head-caregiver/patients/${task.patient_id}`;
       case "caregiver":
-        return `/caregiver/personnel/${task.patient_id}`;
+        return `/caregiver/patients/${task.patient_id}`;
       default:
-        return `/head-caregiver/personnel/${task.patient_id}`;
+        return `/head-caregiver/patients/${task.patient_id}`;
     }
   })();
 

@@ -433,7 +433,7 @@ export default function CaregiverDashboardPage() {
               myPatients.slice(0, 3).map(({ patient }) => (
                 <Link
                   key={patient.id}
-                  href={`/caregiver/personnel/${patient.id}`}
+                  href={`/caregiver/patients/${patient.id}`}
                   className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40 transition-colors"
                 >
                   <div className="min-w-0">
