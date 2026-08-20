@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
+from app.schemas.roles import CanonicalRole
+
 # JSON column may store legacy list[str] or structured {condition, severity, ...} dicts.
 MedicalConditionEntry = str | dict[str, Any]
 
@@ -89,7 +91,7 @@ class PatientAssignedStaffOut(BaseModel):
     id: int
     first_name: str
     last_name: str
-    role: str
+    role: CanonicalRole
     phone: str = ""
     email: str = ""
     photo_url: str = ""

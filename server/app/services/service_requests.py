@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.service_requests import ServiceRequest
 from app.models.users import User
+from app.roles import role_is_allowed
 from app.schemas.service_requests import ServiceRequestCreateIn, ServiceRequestPatchIn
 
 
@@ -22,11 +23,11 @@ def _is_patient(user: User) -> bool:
 
 
 def _is_head_nurse(user: User) -> bool:
-    return user.role == "head_nurse"
+    return role_is_allowed(user.role, {"head_caregiver"})
 
 
 def _is_floor_staff(user: User) -> bool:
-    return user.role in ("observer", "supervisor")
+    return user.role in ("caregiver", "head_caregiver")
 
 
 async def _visible_patient_ids(session: AsyncSession, ws_id: int, user: User) -> set[int] | None:

@@ -2,11 +2,11 @@
 """
 WheelSense Production Seed Script
 =================================
-Creates comprehensive, realistic seed data for the WheelSense platform.
+Creates comprehensive, realistic seed data for the Ease AI platform.
 
 This script creates:
 - 8 Thai patients with complete medical profiles and linked user accounts
-- 8 Staff members (2 head_nurse, 1 supervisor, 5 observers) with user accounts
+- 8 Staff members (3 head caregivers, 5 caregivers) with user accounts
 - Facility with 2 floors and 15 rooms (Rooms 101-110)
 - Patient-caregiver access assignments
 - Schedules, tasks, and care routines
@@ -24,14 +24,14 @@ Admin credentials (preserved):
     password: wheelsense2026
 
 Demo credentials (created):
-    head_nurse:   nurse_siri / demo1234
-    head_nurse:   nurse_kanya / demo1234
-    supervisor:   nurse_mana / demo1234
-    observer:     nurse_somchai / demo1234
-    observer:     nurse_wanida / demo1234
-    observer:     nurse_prasit / demo1234
-    observer:     nurse_niramol / demo1234
-    observer:     nurse_samorn / demo1234
+    head_caregiver: nurse_siri / demo1234
+    head_caregiver: nurse_kanya / demo1234
+    head_caregiver: nurse_mana / demo1234
+    caregiver:     nurse_somchai / demo1234
+    caregiver:     nurse_wanida / demo1234
+    caregiver:     nurse_prasit / demo1234
+    caregiver:     nurse_niramol / demo1234
+    caregiver:     nurse_samorn / demo1234
 
 Patient credentials (created):
     patient_wichai / demo1234
@@ -64,6 +64,7 @@ if str(ROOT) not in sys.path:
 
 from app.core.security import get_password_hash
 from app.db.session import AsyncSessionLocal
+from app.roles import canonicalize_role
 from seed_device_extras import seed_additional_sim_devices
 from app.models import (
     ActivityTimeline,
@@ -323,7 +324,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_siri",
         "first_name": "ศิริพร",
         "last_name": "หัวหน้าวอร์ด",
-        "role": "head_nurse",
+        "role": "head_caregiver",
         "employee_code": "HN-001",
         "department": "Nursing",
         "employment_type": "full_time",
@@ -338,7 +339,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_kanya",
         "first_name": "กัญญา",
         "last_name": "รักษาไทย",
-        "role": "head_nurse",
+        "role": "head_caregiver",
         "employee_code": "HN-002",
         "department": "Nursing",
         "employment_type": "full_time",
@@ -353,7 +354,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_mana",
         "first_name": "มานะ",
         "last_name": "เวชกิจ",
-        "role": "supervisor",
+        "role": "head_caregiver",
         "employee_code": "SV-001",
         "department": "Care Operations",
         "employment_type": "full_time",
@@ -368,7 +369,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_somchai",
         "first_name": "สมชัย",
         "last_name": "พินิจ",
-        "role": "observer",
+        "role": "caregiver",
         "employee_code": "OB-001",
         "department": "Nursing",
         "employment_type": "full_time",
@@ -383,7 +384,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_wanida",
         "first_name": "วนิดา",
         "last_name": "ใจดี",
-        "role": "observer",
+        "role": "caregiver",
         "employee_code": "OB-002",
         "department": "Nursing",
         "employment_type": "full_time",
@@ -398,7 +399,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_prasit",
         "first_name": "ประสิทธิ์",
         "last_name": "รอดตาย",
-        "role": "observer",
+        "role": "caregiver",
         "employee_code": "OB-003",
         "department": "Nursing",
         "employment_type": "part_time",
@@ -413,7 +414,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_niramol",
         "first_name": "นิรมล",
         "last_name": "สุขสวัสดิ์",
-        "role": "observer",
+        "role": "caregiver",
         "employee_code": "OB-004",
         "department": "Nursing",
         "employment_type": "full_time",
@@ -428,7 +429,7 @@ STAFF_DATA: list[dict[str, Any]] = [
         "username": "nurse_samorn",
         "first_name": "สำราญ",
         "last_name": "มีชัย",
-        "role": "observer",
+        "role": "caregiver",
         "employee_code": "OB-005",
         "department": "Nursing",
         "employment_type": "part_time",
@@ -445,17 +446,17 @@ STAFF_DATA: list[dict[str, Any]] = [
 # PATIENT-CAREGIVER ASSIGNMENTS (who can see which patient)
 # ============================================================================
 
-# Head nurses see all patients in their ward
-# Supervisor sees critical patients
-# Observers see assigned patients
+# Head caregivers see all patients in their ward
+# Head caregiver sees critical patients
+# Caregivers see assigned patients
 
 PATIENT_CAREGIVER_ASSIGNMENTS: dict[str, list[str]] = {
-    # Head nurses - see most patients
+    # Head caregivers - see most patients
     "nurse_siri": ["วิชัย", "มาลี", "ประเสริฐ", "สมปอง", "บุญมี"],
     "nurse_kanya": ["นภา", "สมศักดิ์", "จันทร์เพ็ญ", "ประเสริฐ", "สมศักดิ์"],
-    # Supervisor - see critical and special care patients
+    # Head caregiver - see critical and special care patients
     "nurse_mana": ["วิชัย", "ประเสริฐ", "บุญมี", "สมศักดิ์"],
-    # Observers - assigned specific patients
+    # Caregivers - assigned specific patients
     "nurse_somchai": ["วิชัย", "มาลี"],
     "nurse_wanida": ["ประเสริฐ", "สมปอง"],
     "nurse_prasit": ["บุญมี", "นภา"],
@@ -694,6 +695,7 @@ async def seed_caregivers_and_users(
     hashed_pw = get_password_hash(DEMO_PASSWORD)
 
     for staff in STAFF_DATA:
+        db_role = canonicalize_role(staff["role"])
         # Create/update CareGiver
         q = await session.execute(
             select(CareGiver).where(
@@ -708,7 +710,7 @@ async def seed_caregivers_and_users(
                 workspace_id=workspace_id,
                 first_name=staff["first_name"],
                 last_name=staff["last_name"],
-                role=staff["role"],
+                role=db_role,
                 employee_code=staff["employee_code"],
                 department=staff["department"],
                 employment_type=staff["employment_type"],
@@ -726,7 +728,7 @@ async def seed_caregivers_and_users(
             # Update existing
             caregiver.first_name = staff["first_name"]
             caregiver.last_name = staff["last_name"]
-            caregiver.role = staff["role"]
+            caregiver.role = db_role
             caregiver.department = staff["department"]
             caregiver.specialty = staff["specialty"]
             caregiver.phone = staff["phone"]
@@ -744,14 +746,14 @@ async def seed_caregivers_and_users(
                 workspace_id=workspace_id,
                 username=staff["username"],
                 hashed_password=hashed_pw,
-                role=staff["role"],
+                role=db_role,
                 caregiver_id=caregiver.id,
                 is_active=True,
             )
             session.add(user)
         else:
             user.workspace_id = workspace_id
-            user.role = staff["role"]
+            user.role = db_role
             user.caregiver_id = caregiver.id
             user.hashed_password = hashed_pw
             user.is_active = True
@@ -938,7 +940,7 @@ async def seed_caregiver_patient_access(
                 workspace_id=workspace_id,
                 caregiver_id=caregiver.id,
                 patient_id=patient.id,
-                assigned_by_user_id=users["nurse_siri"].id,  # Head nurse assigns
+                assigned_by_user_id=users["nurse_siri"].id,  # Head caregiver assigns
                 is_active=True,
             )
             session.add(access)
@@ -1088,7 +1090,7 @@ async def seed_schedules_and_tasks(
     task_count = 0
     now = datetime.now(timezone.utc)
 
-    # Get observer users
+    # Get caregiver users
     observers = [
         users.get("nurse_somchai"),
         users.get("nurse_wanida"),
@@ -1128,7 +1130,7 @@ async def seed_schedules_and_tasks(
                 starts_at=starts_at,
                 ends_at=starts_at + timedelta(hours=1),
                 recurrence_rule=template["recurrence"],
-                assigned_role="observer",
+                assigned_role="caregiver",
                 assigned_user_id=observer.id,
                 notes=f"ตารางดูแลประจำ {template['title']}",
                 status="scheduled",
@@ -1148,7 +1150,7 @@ async def seed_schedules_and_tasks(
                 priority="high" if patient.care_level == "critical" else "normal",
                 due_at=starts_at,
                 status="pending",
-                assigned_role="observer",
+                assigned_role="caregiver",
                 assigned_user_id=observer.id,
                 created_by_user_id=head_nurse.id if head_nurse else None,
             )
@@ -1209,7 +1211,7 @@ async def seed_workflow_items(
                 workspace_id=workspace_id,
                 patient_id=patient.id,
                 issued_by_user_id=supervisor.id if supervisor else None,
-                target_role="observer",
+                target_role="caregiver",
                 target_user_id=observer.id,
                 title=spec["title"],
                 directive_text=spec["text"],
@@ -1224,7 +1226,7 @@ async def seed_workflow_items(
     message_specs = [
         {
             "sender": head_nurse,
-            "recipient_role": "observer",
+            "recipient_role": "caregiver",
             "recipient": observers[0],
             "subject": "เริ่มกะเช้า",
             "body": "เริ่มตรวจสอบผู้ป่วยห้อง 101-105 ก่อน หากมีอะไรผิดปกติแจ้งทันที",
@@ -1233,7 +1235,7 @@ async def seed_workflow_items(
         },
         {
             "sender": observers[0],
-            "recipient_role": "head_nurse",
+            "recipient_role": "head_caregiver",
             "recipient": head_nurse,
             "subject": "รายงานอาการ",
             "body": "คุณวิชัยมีอาการสั่นมากขึ้น แนะนำให้ปรับยา",
@@ -1242,7 +1244,7 @@ async def seed_workflow_items(
         },
         {
             "sender": supervisor,
-            "recipient_role": "head_nurse",
+            "recipient_role": "head_caregiver",
             "recipient": head_nurse2,
             "subject": "แนวทางการดูแล",
             "body": "เพิ่มความถี่ในการตรวจสอบผู้ป่วยระดับ critical เป็น 2 ชั่วโมง",
@@ -1251,7 +1253,7 @@ async def seed_workflow_items(
         },
         {
             "sender": observers[1],
-            "recipient_role": "supervisor",
+            "recipient_role": "head_caregiver",
             "recipient": supervisor,
             "subject": "พร้อมรับมอบหมาย",
             "body": "ฉันรับผิดชอบห้อง 106-110 เรียบร้อยแล้ว",
@@ -1260,7 +1262,7 @@ async def seed_workflow_items(
         },
         {
             "sender": head_nurse2,
-            "recipient_role": "observer",
+            "recipient_role": "caregiver",
             "recipient": observers[2],
             "subject": "ระวังการตกจากเก้าอี้",
             "body": "คุณประเสริฐมีประวัติตกจากเก้าอี้ ต้องมีคนช่วยตลอดเวลา",
@@ -1291,7 +1293,7 @@ async def seed_workflow_items(
 
     for i, patient in enumerate(patients[:6]):
         author = observers[i % len(observers)] if observers else head_nurse
-        target_role = "head_nurse" if i % 2 == 0 else "supervisor"
+        target_role = "head_caregiver"
 
         note = HandoverNote(
             workspace_id=workspace_id,
@@ -1636,12 +1638,12 @@ async def run_seed(reset: bool = False) -> None:
     print(f"Admin (preserved):")
     print(f"  username: admin")
     print(f"  password: {ADMIN_PASSWORD}")
-    print(f"\nHead Nurses (2):")
+    print(f"\nHead Caregivers (2):")
     print(f"  nurse_siri / {DEMO_PASSWORD}")
     print(f"  nurse_kanya / {DEMO_PASSWORD}")
-    print(f"\nSupervisor (1):")
+    print(f"\nHead Caregiver (1):")
     print(f"  nurse_mana / {DEMO_PASSWORD}")
-    print(f"\nObservers (5):")
+    print(f"\nCaregivers (5):")
     print(f"  nurse_somchai / {DEMO_PASSWORD}")
     print(f"  nurse_wanida / {DEMO_PASSWORD}")
     print(f"  nurse_prasit / {DEMO_PASSWORD}")

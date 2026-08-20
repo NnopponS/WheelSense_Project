@@ -37,7 +37,7 @@ from app.services.workflow_message_attachments import (
     finalize_pending_attachments,
 )
 
-CANONICAL_WORKFLOW_ROLES = {"admin", "head_nurse", "supervisor", "observer", "patient"}
+CANONICAL_WORKFLOW_ROLES = {"admin", "head_caregiver", "caregiver", "patient"}
 CANONICAL_WORKFLOW_ITEM_TYPES = {"task", "schedule", "directive"}
 
 WORKFLOW_AUDIT_ENTITY_TYPES = {
@@ -644,7 +644,7 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
 class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
     @staticmethod
     def _standalone_task_visible(task: CareTask, *, user_id: int, user_role: str) -> bool:
-        if user_role in {"admin", "head_nurse", "supervisor"}:
+        if user_role in {"admin", "head_caregiver"}:
             return True
         return bool(task.assigned_user_id == user_id or task.assigned_role == user_role)
 
@@ -743,7 +743,7 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
     ) -> list[CareTask]:
         patient_scope = _patient_scope_condition(CareTask, visible_patient_ids)
 
-        if user_role in {"admin", "head_nurse", "supervisor"}:
+        if user_role in {"admin", "head_caregiver"}:
             stmt = select(CareTask).where(CareTask.workspace_id == ws_id)
             if patient_scope is not None:
                 stmt = stmt.where(patient_scope)
@@ -955,7 +955,7 @@ def _user_can_access_message_row(
 def _user_can_delete_message_row(
     message: RoleMessage, user_id: int, user_role: str
 ) -> bool:
-    if user_role in ("admin", "head_nurse"):
+    if user_role in ("admin", "head_caregiver"):
         return True
     if message.sender_user_id == user_id:
         return True
@@ -1165,7 +1165,7 @@ class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNot
             stmt = stmt.where(patient_scope)
         if patient_id is not None:
             stmt = stmt.where(HandoverNote.patient_id == patient_id)
-        if role not in {"admin", "head_nurse", "supervisor"}:
+        if role not in {"admin", "head_caregiver"}:
             stmt = stmt.where(or_(HandoverNote.target_role.is_(None), HandoverNote.target_role == role))
         stmt = stmt.order_by(HandoverNote.created_at.desc()).limit(limit)
         res = await session.execute(stmt)
@@ -1174,7 +1174,7 @@ class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNot
 class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDirectiveUpdate]):
     @staticmethod
     def _is_directive_visible(directive: CareDirective, *, user_id: int, user_role: str) -> bool:
-        if user_role in {"admin", "head_nurse", "supervisor"}:
+        if user_role in {"admin", "head_caregiver"}:
             return True
         if directive.target_user_id is not None:
             return directive.target_user_id == user_id
@@ -1229,7 +1229,7 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
         patient_scope = _patient_scope_condition(CareDirective, visible_patient_ids)
         if patient_scope is not None:
             stmt = stmt.where(patient_scope)
-        if user_role not in {"admin", "head_nurse", "supervisor"}:
+        if user_role not in {"admin", "head_caregiver"}:
             stmt = stmt.where(
                 or_(
                     CareDirective.target_user_id == user_id,

@@ -5,20 +5,19 @@ export const API_BASE = "/api";
 export const ROUTES = {
   LOGIN: "/login",
   ADMIN: "/admin",
-  HEAD_NURSE: "/head-nurse",
-  SUPERVISOR: "/supervisor",
-  OBSERVER: "/observer",
+  HEAD_CAREGIVER: "/head-caregiver",
+  CAREGIVER: "/caregiver",
   PATIENT: "/patient",
-  // Clinical features moved to head-nurse role
-  PATIENTS: "/head-nurse/personnel",
-  PATIENT_DETAIL: (id: number) => `/head-nurse/personnel/${id}`,
+  // Clinical features under head-caregiver role
+  PATIENTS: "/head-caregiver/patients",
+  PATIENT_DETAIL: (id: number) => `/head-caregiver/patients/${id}`,
   DEVICES: "/admin/devices",
   // Monitoring, alerts moved to role-specific dashboards
   MONITORING: "/admin",
-  ALERTS: "/head-nurse/alerts",
+  ALERTS: "/head-caregiver/emergency",
   TIMELINE: "/admin",
-  // Personnel hub includes staff and patients in head-nurse role
-  CAREGIVERS: "/head-nurse/personnel",
+  // Personnel hub includes staff and patients in head-caregiver role
+  CAREGIVERS: "/head-caregiver/caregivers",
   CAREGIVER_DETAIL: (id: number) => `/admin/caregivers/${id}`,
   FACILITIES: "/admin/facility-management",
   PROFILE: "/account",

@@ -53,15 +53,11 @@ ROLE_SYSTEM_PROMPTS: dict[str, str] = {
         "Handle both general questions and WheelSense operations. "
         "For WheelSense-specific facts, rely on grounded data when available and never invent patient data."
     ),
-    "head_nurse": (
-        "You are EaseAI for a head nurse. "
+    "head_caregiver": (
+        "You are EaseAI for a head caregiver. "
         "Handle both general questions and ward operations. Prioritize patient safety and concise action."
     ),
-    "supervisor": (
-        "You are EaseAI for a medical supervisor. "
-        "Handle both general questions and clinical operations. Do not diagnose."
-    ),
-    "observer": (
+    "caregiver": (
         "You are EaseAI for floor staff. Handle both general questions and assigned-zone operations."
     ),
     "patient": (
@@ -81,7 +77,7 @@ GENERAL_ASSISTANT_SUFFIX = (
     "the published WheelSense MCP tools."
 )
 
-WORKSPACE_ACTION_MANAGER_ROLES = {"admin", "head_nurse"}
+WORKSPACE_ACTION_MANAGER_ROLES = {"admin", "head_caregiver"}
 
 
 @lru_cache(maxsize=1)
@@ -112,7 +108,7 @@ _ADMIN_ONLY_TOOLS: frozenset[str] = frozenset(
     }
 )
 
-# Tools head_nurse has that supervisor does not (management writes)
+# Tools head_caregiver has that caregiver does not (management writes)
 _HEAD_NURSE_EXTRA_TOOLS: frozenset[str] = frozenset(
     {
         "create_patient_record",
@@ -155,8 +151,8 @@ _HEAD_NURSE_EXTRA_TOOLS: frozenset[str] = frozenset(
     }
 )
 
-# Observer has supervisor's read tools + own-shift write ops
-# Vitals / timeline manual writes (REST: ROLE_CARE_NOTE_WRITERS — excludes supervisor).
+# Caregiver has head_caregiver's read tools + own-shift write ops
+# Vitals / timeline manual writes (REST: ROLE_CARE_NOTE_WRITERS — excludes head_caregiver).
 _CARE_NOTE_WRITER_TOOLS: frozenset[str] = frozenset(
     {
         "add_vital_reading",
@@ -204,6 +200,7 @@ _OBSERVER_READ: frozenset[str] = frozenset(
         "list_facilities",
         "get_facility_details",
         "get_floorplan_layout",
+        "get_floorplan_presence",
         "list_facility_floors",
         "get_patient_vitals",
         "get_patient_timeline",
@@ -233,15 +230,12 @@ def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
     forbidden = easeai_forbidden_tools(all_tools)
     patient_exclusive = patient_exclusive_tools(all_tools)
     head_nurse = all_tools - _ADMIN_ONLY_TOOLS - patient_exclusive
-    # Supervisor matches head_nurse minus operational/registry writes in _HEAD_NURSE_EXTRA_TOOLS
-    # and vitals/timeline note tools (supervisor is not in ROLE_CARE_NOTE_WRITERS).
-    supervisor = head_nurse - _HEAD_NURSE_EXTRA_TOOLS - _CARE_NOTE_WRITER_TOOLS
+    supervisor = set(head_nurse)
     observer = _OBSERVER_READ | _OBSERVER_ONLY_WRITE
     return {
         "admin": set(all_tools - forbidden - patient_exclusive),
-        "head_nurse": set(head_nurse),
-        "supervisor": set(supervisor),
-        "observer": set(observer - patient_exclusive),
+        "head_caregiver": set(head_nurse),
+        "caregiver": set(observer - patient_exclusive),
         "patient": {
             # Own data read
             "get_current_user_context",
@@ -258,6 +252,7 @@ def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
             "get_room_details",
             "get_facility_details",
             "get_floorplan_layout",
+        "get_floorplan_presence",
             # Room controls
             "control_room_smart_device",
             # Own schedule & tasks
@@ -287,7 +282,33 @@ def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
 
 
 def _system_prompt_for_role(role: str) -> str:
-    return ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS["observer"]) + GENERAL_ASSISTANT_SUFFIX
+    return ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS["caregiver"]) + GENERAL_ASSISTANT_SUFFIX
+
+
+# Cache: skip Copilot fallback after first auth failure to avoid wasting time.
+_copilot_unavailable: bool = False
+_copilot_unavailable_at: float = 0.0
+_COPILOT_UNAVAILABLE_TTL_SECONDS: float = 300.0  # retry Copilot after 5 minutes
+
+
+def _copilot_marked_unavailable() -> bool:
+    """Return True if Copilot was recently marked unavailable (auth failure)."""
+    global _copilot_unavailable, _copilot_unavailable_at
+    if not _copilot_unavailable:
+        return False
+    import time as _time
+    if _time.monotonic() - _copilot_unavailable_at > _COPILOT_UNAVAILABLE_TTL_SECONDS:
+        _copilot_unavailable = False
+        return False
+    return True
+
+
+def _mark_copilot_unavailable() -> None:
+    """Mark Copilot as unavailable for the next few minutes."""
+    global _copilot_unavailable, _copilot_unavailable_at
+    import time as _time
+    _copilot_unavailable = True
+    _copilot_unavailable_at = _time.monotonic()
 
 
 _AI_UNAVAILABLE_MARKERS = (
@@ -527,6 +548,7 @@ async def list_copilot_models(
     github_token: str | None = None,
 ) -> list[object]:
     from copilot import CopilotClient
+    _patch_copilot_model_billing_tolerance()
 
     config = build_copilot_client_config(github_token)
     if config is None:
@@ -536,6 +558,30 @@ async def list_copilot_models(
 
     async with CopilotClient(config) as client:
         return await client.list_models()
+
+
+def _patch_copilot_model_billing_tolerance() -> None:
+    """Tolerate missing 'multiplier' in Copilot ModelBilling (GitHub API drift).
+
+    The Copilot SDK 0.1.0 requires 'multiplier' in billing dicts, but GitHub's
+    API no longer sends it for some models. Default to 1.0 so model discovery
+    succeeds instead of falling back. Idempotent.
+    """
+    try:
+        from copilot.client import ModelBilling
+    except ImportError:
+        return
+    if getattr(ModelBilling.from_dict, "_wheelsense_patched", False):
+        return
+
+    @staticmethod
+    def _tolerant_from_dict(obj: object) -> object:
+        if not isinstance(obj, dict):
+            return ModelBilling(multiplier=1.0)
+        return ModelBilling(multiplier=float(obj.get("multiplier", 1.0)))
+
+    _tolerant_from_dict._wheelsense_patched = True  # type: ignore[attr-defined]
+    ModelBilling.from_dict = _tolerant_from_dict  # type: ignore[assignment]
 
 
 def _log_provider_attempts(attempts: list[ProviderAttempt]) -> None:
@@ -561,17 +607,21 @@ async def stream_ollama(
     *,
     model: str,
     oai_messages: list[dict[str, str]],
+    max_tokens: int | None = 300,
 ) -> AsyncIterator[str]:
     client = AsyncOpenAI(
         base_url=settings.ollama_base_url,
         api_key="ollama",
     )
     try:
-        stream = await client.chat.completions.create(
-            model=model,
-            messages=oai_messages,
-            stream=True,
-        )
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": oai_messages,
+            "stream": True,
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        stream = await client.chat.completions.create(**kwargs)
         async for chunk in stream:
             delta = chunk.choices[0].delta
             if delta and delta.content:
@@ -770,6 +820,7 @@ async def stream_copilot(
         logger.error(
             "No github token available for Copilot subprocess, and external CLI is unavailable."
         )
+        _mark_copilot_unavailable()
         yield "\n[GitHub Copilot is not connected for this Workspace. Please go to AI Settings and authenticate to connect.]\n"
         return
 
@@ -876,6 +927,9 @@ async def stream_copilot(
             ):
                 yield part
             return
+        # Mark Copilot as unavailable so we skip it in fallback for a while.
+        if "not authenticated" in str(exc).lower() or "auth" in str(exc).lower():
+            _mark_copilot_unavailable()
         logger.exception("copilot stream failed")
         yield "\n[AI service temporarily unavailable. Please try again.]\n"
 
@@ -940,7 +994,10 @@ async def collect_chat_reply_best_effort(
     if primary_provider == "copilot" and primary_model != "gpt-4.1":
         attempts.append(("copilot", "gpt-4.1"))
     if primary_provider == "ollama":
-        attempts.append(("copilot", "gpt-4.1"))
+        # Only add Copilot fallback if a usable token exists.
+        github_token = await get_workspace_copilot_token(db, workspace.id)
+        if has_copilot_connection(github_token) and not _copilot_marked_unavailable():
+            attempts.append(("copilot", "gpt-4.1"))
     else:
         attempts.append(("ollama", resolve_ollama_fallback_model()))
 
@@ -955,7 +1012,10 @@ async def collect_chat_reply_best_effort(
 
     provider_attempts: list[ProviderAttempt] = []
     last_reply = ""
+    import time as _time
     for index, (provider, model) in enumerate(unique_attempts, start=1):
+        logger.info("best_effort attempt %d/%d: provider=%s model=%s", index, len(unique_attempts), provider, model)
+        _t0 = _time.perf_counter()
         timer = start_provider_attempt(
             provider=provider,
             model=model,
@@ -975,6 +1035,7 @@ async def collect_chat_reply_best_effort(
             ):
                 parts.append(chunk)
         except Exception as exc:
+            logger.warning("best_effort attempt %d FAILED in %.2fs: %s", index, _time.perf_counter()-_t0, exc)
             provider_attempts.append(
                 timer.finish(
                     status="fallback" if has_next_attempt else "error",
@@ -986,6 +1047,7 @@ async def collect_chat_reply_best_effort(
             continue
 
         reply = "".join(parts).strip()
+        logger.info("best_effort attempt %d done in %.2fs: reply_len=%d unavailable=%s", index, _time.perf_counter()-_t0, len(reply), _is_unavailable_reply(reply))
         if reply and not _is_unavailable_reply(reply):
             provider_attempts.append(timer.finish(status="success"))
             _publish_provider_attempts(provider_attempts, provider_attempts_out)
@@ -1053,7 +1115,11 @@ async def collect_grounded_multi_tool_answer(
     """Summarize multiple MCP read results in one assistant reply."""
     blocks: list[str] = []
     for tool_name, tool_result in tool_results:
-        blocks.append(f"Tool `{tool_name}` JSON:\n{_safe_json(tool_result)}")
+        raw = _safe_json(tool_result)
+        # Truncate large tool results to keep synthesis fast.
+        if len(raw) > 2000:
+            raw = raw[:2000] + "\n... (truncated, showing first 2000 chars)"
+        blocks.append(f"Tool `{tool_name}` JSON:\n{raw}")
     grounded_messages = [
         ChatMessagePart(
             role="user",
@@ -1065,6 +1131,7 @@ async def collect_grounded_multi_tool_answer(
                 "If the latest user message is English, answer in English; if Thai, answer in Thai. "
                 "Use only the grounded tool results for WheelSense facts. "
                 "Synthesize across tools when needed. "
+                "Be concise: summarize key findings in 2-4 sentences, do not list every row. "
                 "Do not dump raw JSON unless the user explicitly asked for raw data."
             ),
         )

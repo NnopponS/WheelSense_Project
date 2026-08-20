@@ -1,4 +1,5 @@
 import { API_BASE } from "@/lib/constants";
+import { canonicalizeRole } from "@/lib/roles";
 
 /** Browser URL for downloading/opening a workflow message attachment (cookie auth). */
 export function workflowMessageAttachmentUrl(messageId: number, attachmentId: string): string {
@@ -10,7 +11,7 @@ export function canDeleteWorkflowMessage(
   msg: { sender_user_id: number; recipient_user_id: number | null },
 ): boolean {
   if (!me) return false;
-  if (me.role === "admin" || me.role === "head_nurse") return true;
+  if (me.role === "admin" || canonicalizeRole(me.role) === "head_caregiver") return true;
   if (msg.sender_user_id === me.id) return true;
   if (msg.recipient_user_id != null && msg.recipient_user_id === me.id) return true;
   return false;

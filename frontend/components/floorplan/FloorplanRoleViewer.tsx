@@ -578,9 +578,8 @@ export default function FloorplanRoleViewer({
     const seg = pathname.split("/").filter(Boolean)[0];
     if (
       seg === "admin" ||
-      seg === "head-nurse" ||
-      seg === "supervisor" ||
-      seg === "observer"
+      seg === "head-caregiver" ||
+      seg === "caregiver"
     ) {
       return `/${seg}`;
     }

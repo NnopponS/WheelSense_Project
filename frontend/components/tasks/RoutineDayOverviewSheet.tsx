@@ -35,13 +35,12 @@ import { ExternalLink, Pencil } from "lucide-react";
 
 const ROLE_TO_I18N: Record<string, TranslationKey> = {
   admin: "personnel.role.admin",
-  head_nurse: "personnel.role.headNurse",
-  supervisor: "personnel.role.supervisor",
-  observer: "personnel.role.observer",
+  head_caregiver: "personnel.role.supervisor",
+  caregiver: "personnel.role.observer",
   patient: "personnel.role.patient",
 };
 
-type FloorStaffRole = "observer" | "supervisor";
+type FloorStaffRole = "caregiver" | "head_caregiver";
 type RoleFilter = "all" | FloorStaffRole;
 
 function formatStaffRole(role: string, t: (key: TranslationKey) => string): string {
@@ -77,7 +76,7 @@ export function RoutineDayOverviewSheet({ open, onOpenChange }: RoutineDayOvervi
   /** When true, shift date follows the current UTC calendar day (updates after UTC midnight). */
   const followUtcTodayRef = useRef(true);
 
-  const canEditTemplates = me?.role === "admin" || me?.role === "head_nurse";
+  const canEditTemplates = me?.role === "admin" || me?.role === "head_caregiver";
 
   const workspaceQuery = useQuery({
     queryKey: ["shift-checklist", "workspace", shiftDate, "routine-day-sheet"],
@@ -199,7 +198,7 @@ export function RoutineDayOverviewSheet({ open, onOpenChange }: RoutineDayOvervi
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" variant="secondary" size="sm" className="gap-1.5" asChild>
                 <Link
-                  href={me?.role === "admin" ? "/admin/personnel?tab=staff" : "/head-nurse/staff"}
+                  href={me?.role === "admin" ? "/admin/personnel?tab=staff" : "/head-caregiver/personnel?tab=staff"}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   {t("tasks.dailyRoutineOpenStaffHub")}
@@ -233,8 +232,8 @@ export function RoutineDayOverviewSheet({ open, onOpenChange }: RoutineDayOvervi
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("tasks.dailyRoutineRoleFilterAll")}</SelectItem>
-                    <SelectItem value="observer">{t("personnel.role.observer")}</SelectItem>
-                    <SelectItem value="supervisor">{t("personnel.role.supervisor")}</SelectItem>
+                    <SelectItem value="caregiver">{t("personnel.role.observer")}</SelectItem>
+                    <SelectItem value="head_caregiver">{t("personnel.role.supervisor")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

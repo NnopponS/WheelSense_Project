@@ -18,7 +18,7 @@ import { MoreHorizontal } from "lucide-react";
 interface RoleShellProps {
   children: React.ReactNode;
   /** App root path for role guard (e.g., "/admin", "/head-nurse") */
-  appRoot: "/admin" | "/head-nurse" | "/supervisor" | "/observer" | "/patient";
+  appRoot: "/admin" | "/head-caregiver" | "/caregiver" | "/patient";
   /** Optional additional classes for main content area */
   mainClassName?: string;
 }

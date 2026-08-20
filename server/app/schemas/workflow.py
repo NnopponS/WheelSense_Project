@@ -7,10 +7,12 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.schemas.roles import CanonicalRole
+
 class WorkflowPersonOut(BaseModel):
     user_id: int
     username: str
-    role: str
+    role: CanonicalRole
     display_name: str
     person_type: str
     caregiver_id: Optional[int] = None
@@ -23,7 +25,7 @@ class WorkflowClaimRequest(BaseModel):
 
 class WorkflowHandoffRequest(BaseModel):
     target_mode: str = Field(pattern="^(role|user)$")
-    target_role: Optional[str] = None
+    target_role: Optional[CanonicalRole] = None
     target_user_id: Optional[int] = None
     note: str = ""
 
@@ -45,7 +47,7 @@ class CareScheduleCreate(BaseModel):
     starts_at: datetime
     ends_at: Optional[datetime] = None
     recurrence_rule: str = ""
-    assigned_role: Optional[str] = None
+    assigned_role: Optional[CanonicalRole] = None
     assigned_user_id: Optional[int] = None
     notes: str = ""
 
@@ -55,7 +57,7 @@ class CareScheduleUpdate(BaseModel):
     starts_at: Optional[datetime] = None
     ends_at: Optional[datetime] = None
     recurrence_rule: Optional[str] = None
-    assigned_role: Optional[str] = None
+    assigned_role: Optional[CanonicalRole] = None
     assigned_user_id: Optional[int] = None
     notes: Optional[str] = None
     status: Optional[str] = None
@@ -71,7 +73,7 @@ class CareScheduleOut(BaseModel):
     starts_at: datetime
     ends_at: Optional[datetime]
     recurrence_rule: str
-    assigned_role: Optional[str]
+    assigned_role: Optional[CanonicalRole]
     assigned_user_id: Optional[int]
     notes: str
     status: str
@@ -88,7 +90,7 @@ class CareTaskCreate(BaseModel):
     description: str = ""
     priority: str = "normal"
     due_at: Optional[datetime] = None
-    assigned_role: Optional[str] = None
+    assigned_role: Optional[CanonicalRole] = None
     assigned_user_id: Optional[int] = None
 
 class CareTaskUpdate(BaseModel):
@@ -97,7 +99,7 @@ class CareTaskUpdate(BaseModel):
     priority: Optional[str] = None
     due_at: Optional[datetime] = None
     status: Optional[str] = None
-    assigned_role: Optional[str] = None
+    assigned_role: Optional[CanonicalRole] = None
     assigned_user_id: Optional[int] = None
 
 class CareTaskOut(BaseModel):
@@ -112,7 +114,7 @@ class CareTaskOut(BaseModel):
     priority: str
     due_at: Optional[datetime]
     status: str
-    assigned_role: Optional[str]
+    assigned_role: Optional[CanonicalRole]
     assigned_user_id: Optional[int]
     created_by_user_id: Optional[int]
     completed_at: Optional[datetime]
@@ -136,7 +138,7 @@ class PendingWorkflowAttachmentUploadOut(BaseModel):
 
 
 class RoleMessageCreate(BaseModel):
-    recipient_role: Optional[str] = None
+    recipient_role: Optional[CanonicalRole] = None
     recipient_user_id: Optional[int] = None
     patient_id: Optional[int] = None
     workflow_item_type: Optional[str] = None
@@ -162,7 +164,7 @@ class RoleMessageOut(BaseModel):
     id: int
     workspace_id: int
     sender_user_id: int
-    recipient_role: Optional[str]
+    recipient_role: Optional[CanonicalRole]
     recipient_user_id: Optional[int]
     patient_id: Optional[int]
     workflow_item_type: Optional[str]
@@ -197,7 +199,7 @@ class RoleMessageOut(BaseModel):
 
 class HandoverNoteCreate(BaseModel):
     patient_id: Optional[int] = None
-    target_role: Optional[str] = None
+    target_role: Optional[CanonicalRole] = None
     shift_date: Optional[date] = None
     shift_label: str = ""
     priority: str = "routine"
@@ -209,7 +211,7 @@ class HandoverNoteOut(BaseModel):
     workspace_id: int
     patient_id: Optional[int]
     author_user_id: Optional[int]
-    target_role: Optional[str]
+    target_role: Optional[CanonicalRole]
     shift_date: Optional[date]
     shift_label: str
     priority: str
@@ -218,7 +220,7 @@ class HandoverNoteOut(BaseModel):
 
 class CareDirectiveCreate(BaseModel):
     patient_id: Optional[int] = None
-    target_role: Optional[str] = None
+    target_role: Optional[CanonicalRole] = None
     target_user_id: Optional[int] = None
     title: str
     directive_text: str
@@ -228,7 +230,7 @@ class CareDirectiveCreate(BaseModel):
 class CareDirectiveUpdate(BaseModel):
     title: Optional[str] = None
     directive_text: Optional[str] = None
-    target_role: Optional[str] = None
+    target_role: Optional[CanonicalRole] = None
     target_user_id: Optional[int] = None
     effective_from: Optional[datetime] = None
     effective_until: Optional[datetime] = None
@@ -244,7 +246,7 @@ class CareDirectiveOut(BaseModel):
     workspace_id: int
     patient_id: Optional[int]
     issued_by_user_id: Optional[int]
-    target_role: Optional[str]
+    target_role: Optional[CanonicalRole]
     target_user_id: Optional[int]
     title: str
     directive_text: str
@@ -362,7 +364,7 @@ class CareWorkflowJobStepOut(BaseModel):
 
 class CareWorkflowJobAssigneeOut(BaseModel):
     user_id: int
-    role_hint: Optional[str] = None
+    role_hint: Optional[CanonicalRole] = None
     person: Optional[WorkflowPersonOut] = None
 
 

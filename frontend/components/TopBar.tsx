@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, Search, Beaker, Volume2, VolumeX } from "lucide-react";
+import { Bot, Menu, Search, Beaker, Volume2, VolumeX } from "lucide-react";
 import { getAlertSoundEnabled, primeAlertAudioFromUserGesture, setAlertSoundEnabled } from "@/lib/alertSound";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
@@ -33,11 +33,13 @@ interface TopBarProps {
   onMenuClick?: () => void;
 }
 
-const ROLE_LABELS: Record<string, "shell.roleAdmin" | "shell.roleHeadNurse" | "shell.roleSupervisor" | "shell.roleObserver" | "shell.rolePatient"> = {
+const ROLE_LABELS: Record<string, "shell.roleAdmin" | "shell.roleHeadCaregiver" | "shell.roleCaregiver" | "shell.rolePatient"> = {
   admin: "shell.roleAdmin",
-  head_nurse: "shell.roleHeadNurse",
-  supervisor: "shell.roleSupervisor",
-  observer: "shell.roleObserver",
+  head_caregiver: "shell.roleHeadCaregiver",
+  head_nurse: "shell.roleHeadCaregiver",
+  supervisor: "shell.roleHeadCaregiver",
+  caregiver: "shell.roleCaregiver",
+  observer: "shell.roleCaregiver",
   patient: "shell.rolePatient",
 };
 
@@ -63,7 +65,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
       return `${t("notifications.drawerInboxImpersonationLead")} ${user.username ?? t("shell.impersonationUserPlaceholder")} — ${t("notifications.drawerInboxImpersonationTail")}`;
     }
     if (user.role === "admin") return t("notifications.drawerInboxAdminHint");
-    if (user.role === "head_nurse") return t("notifications.drawerInboxHeadNurseHint");
+    if (user.role === "head_caregiver" || user.role === "head_nurse" || user.role === "supervisor") return t("notifications.drawerInboxHeadNurseHint");
     return undefined;
   }, [impersonation.active, t, user]);
 
@@ -168,6 +170,17 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
             unreadCount={unreadCount}
             hasNewNotifications={hasNewNotifications}
           />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => window.dispatchEvent(new CustomEvent("wheelsense:open-ai"))}
+            aria-label={t("aiChat.openChat")}
+          >
+            <Bot className="h-5 w-5" aria-hidden />
+          </Button>
 
           {user ? (
             <div className="ml-1 flex min-w-0 items-center gap-2 border-l border-border pl-2 sm:ml-2 sm:pl-3">

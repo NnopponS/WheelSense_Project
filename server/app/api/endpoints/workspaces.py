@@ -42,7 +42,7 @@ async def create_workspace(
 async def activate_workspace(
     ws_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(RequireRole(["admin", "supervisor"])),
+    current_user: User = Depends(RequireRole(["admin", "head_caregiver"])),
 ):
     result = await db.execute(select(Workspace).where(Workspace.id == ws_id))
     workspace = result.scalar_one_or_none()

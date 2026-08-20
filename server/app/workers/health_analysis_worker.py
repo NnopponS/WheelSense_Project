@@ -22,7 +22,7 @@ _scheduler: AsyncIOScheduler | None = None
 
 
 async def _snapshot_actor(session: AsyncSession, workspace_id: int) -> User | None:
-    for role in ("admin", "head_nurse"):
+    for role in ("admin", "head_caregiver"):
         result = await session.execute(
             select(User)
             .where(

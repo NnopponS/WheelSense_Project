@@ -32,7 +32,7 @@ from app.services.workflow_message_attachments import (
 )
 
 
-STAFF_WIDE_ROLES = frozenset({"admin", "head_nurse"})
+STAFF_WIDE_ROLES = frozenset({"admin", "head_caregiver"})
 
 
 def _dedupe_int_ids(ids: list[int]) -> list[int]:

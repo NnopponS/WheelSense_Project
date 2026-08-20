@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.roles import CanonicalRole
+
 
 # ─── Routine Task Templates ──────────────────────────────────────────────────
 
@@ -17,7 +19,7 @@ class RoutineTaskCreate(BaseModel):
     category: str = Field("general", max_length=64)
     sort_order: int = Field(0)
     assigned_user_id: int | None = None
-    assigned_role: str | None = None
+    assigned_role: CanonicalRole | None = None
     is_active: bool = True
 
 
@@ -28,7 +30,7 @@ class RoutineTaskUpdate(BaseModel):
     category: str | None = None
     sort_order: int | None = None
     assigned_user_id: int | None = None
-    assigned_role: str | None = None
+    assigned_role: CanonicalRole | None = None
     is_active: bool | None = None
 
 
@@ -36,7 +38,7 @@ class RoutineTaskAssignedUser(BaseModel):
     user_id: int
     username: str
     display_name: str
-    role: str
+    role: CanonicalRole
 
 
 class RoutineTaskOut(BaseModel):
@@ -48,7 +50,7 @@ class RoutineTaskOut(BaseModel):
     category: str
     sort_order: int
     assigned_user_id: int | None
-    assigned_role: str | None
+    assigned_role: CanonicalRole | None
     created_by_user_id: int | None
     is_active: bool
     created_at: datetime
@@ -95,7 +97,7 @@ class DailyBoardUserRow(BaseModel):
     user_id: int
     username: str
     display_name: str
-    role: str
+    role: CanonicalRole
     total: int
     done: int
     skipped: int
@@ -121,7 +123,7 @@ class PatientFixRoutineCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=256)
     description: str = Field("", max_length=2048)
     patient_ids: list[int] = Field(default_factory=list)
-    target_roles: list[str] = Field(default_factory=list)
+    target_roles: list[CanonicalRole] = Field(default_factory=list)
     schedule_type: str = Field("daily", pattern="^(daily|weekly|custom)$")
     recurrence_rule: str = Field("", max_length=256)
     steps: list[RoutineStepTemplate] = Field(default_factory=list)
@@ -132,7 +134,7 @@ class PatientFixRoutineUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=256)
     description: str | None = None
     patient_ids: list[int] | None = None
-    target_roles: list[str] | None = None
+    target_roles: list[CanonicalRole] | None = None
     schedule_type: str | None = Field(None, pattern="^(daily|weekly|custom)$")
     recurrence_rule: str | None = None
     steps: list[RoutineStepTemplate] | None = None
@@ -151,7 +153,7 @@ class PatientFixRoutineOut(BaseModel):
     title: str
     description: str
     patient_ids: list[int]
-    target_roles: list[str]
+    target_roles: list[CanonicalRole]
     schedule_type: str
     recurrence_rule: str
     steps: list[Any]

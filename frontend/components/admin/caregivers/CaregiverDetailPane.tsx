@@ -48,6 +48,7 @@ import {
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
+import { canonicalizeRole } from "@/lib/roles";
 import { formatStaffRoleLabel } from "@/lib/staffRoleLabel";
 import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/profileImageProcess";
 
@@ -625,9 +626,8 @@ function UserAccountItem({
                 onChange={(e) => setRole(e.target.value as User["role"])}
               >
                 <option value="admin">{t("shell.roleAdmin")}</option>
-                <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
-                <option value="supervisor">{t("shell.roleSupervisor")}</option>
-                <option value="observer">{t("shell.roleObserver")}</option>
+                <option value="head_caregiver">{t("shell.roleSupervisor")}</option>
+                <option value="caregiver">{t("shell.roleObserver")}</option>
                 <option value="patient">{t("shell.rolePatient")}</option>
               </select>
             </div>
@@ -763,11 +763,8 @@ export default function CaregiverDetailPane({
   );
   const canManageAccounts = Boolean(user && hasCapability(user.role, "users.manage"));
   const canEditCaregiverPhoto = Boolean(user && hasCapability(user.role, "patients.manage"));
-  /** Ward-lead directory: useful for observers/supervisors and for head-nurse peer lookup (excludes self below). */
-  const showHeadNurseGuide =
-    caregiver.role === "observer" ||
-    caregiver.role === "supervisor" ||
-    caregiver.role === "head_nurse";
+  /** Ward-lead directory: useful for caregivers/head-caregivers and for head-caregiver peer lookup (excludes self below). */
+  const showHeadNurseGuide = caregiver.role === "caregiver" || canonicalizeRole(caregiver.role) === "head_caregiver";
 
   const roomsEndpoint = "/rooms";
   const { data: rooms, isLoading: roomsLoading } = useQuery({
@@ -831,8 +828,8 @@ export default function CaregiverDetailPane({
     retry: 3,
   });
   const headNurses = useMemo(() => {
-    const all = (allStaffCaregivers ?? []).filter((c) => c.role === "head_nurse");
-    if (caregiver.role === "head_nurse") {
+    const all = (allStaffCaregivers ?? []).filter((c) => canonicalizeRole(c.role) === "head_caregiver");
+    if (canonicalizeRole(caregiver.role) === "head_caregiver") {
       return all.filter((c) => c.id !== caregiver.id);
     }
     return all;
@@ -865,7 +862,7 @@ export default function CaregiverDetailPane({
     [linkedUserIds, staffSchedulesQuery.data],
   );
   const hasAnyHeadNurseInWorkspace = useMemo(
-    () => (allStaffCaregivers ?? []).some((c) => c.role === "head_nurse"),
+    () => (allStaffCaregivers ?? []).some((c) => canonicalizeRole(c.role) === "head_caregiver"),
     [allStaffCaregivers],
   );
   const refetchShifts = useCallback(() => refetchOrThrow(refetchShiftsBase), [refetchShiftsBase]);
@@ -907,7 +904,7 @@ export default function CaregiverDetailPane({
   const [profileDraft, setProfileDraft] = useState({
     first_name: caregiver.first_name ?? "",
     last_name: caregiver.last_name ?? "",
-    role: caregiver.role ?? "observer",
+    role: caregiver.role ?? "caregiver",
     employee_code: caregiver.employee_code ?? "",
     department: caregiver.department ?? "",
     specialty: caregiver.specialty ?? "",
@@ -931,7 +928,7 @@ export default function CaregiverDetailPane({
     setProfileDraft({
       first_name: caregiver.first_name ?? "",
       last_name: caregiver.last_name ?? "",
-      role: caregiver.role ?? "observer",
+      role: caregiver.role ?? "caregiver",
       employee_code: caregiver.employee_code ?? "",
       department: caregiver.department ?? "",
       specialty: caregiver.specialty ?? "",
@@ -1343,7 +1340,7 @@ export default function CaregiverDetailPane({
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("personnel.firstName")}</span><input className="input-field w-full text-sm" value={profileDraft.first_name} onChange={(e) => setProfileDraft((p) => ({ ...p, first_name: e.target.value }))} /></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("personnel.lastName")}</span><input className="input-field w-full text-sm" value={profileDraft.last_name} onChange={(e) => setProfileDraft((p) => ({ ...p, last_name: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={profileDraft.role} onChange={(e) => setProfileDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_nurse">{t("shell.roleHeadNurse")}</option><option value="supervisor">{t("shell.roleSupervisor")}</option><option value="observer">{t("shell.roleObserver")}</option></select></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={profileDraft.role} onChange={(e) => setProfileDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_caregiver">{t("shell.roleSupervisor")}</option><option value="caregiver">{t("shell.roleObserver")}</option></select></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.employeeCode")}</span><input className="input-field w-full text-sm" value={profileDraft.employee_code} onChange={(e) => setProfileDraft((p) => ({ ...p, employee_code: e.target.value }))} /></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.department")}</span><input className="input-field w-full text-sm" value={profileDraft.department} onChange={(e) => setProfileDraft((p) => ({ ...p, department: e.target.value }))} /></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.specialty")}</span><input className="input-field w-full text-sm" value={profileDraft.specialty} onChange={(e) => setProfileDraft((p) => ({ ...p, specialty: e.target.value }))} /></label>
@@ -1501,7 +1498,7 @@ export default function CaregiverDetailPane({
                   {headNursesLoading ? (
                     <div className="flex justify-center py-6"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
                   ) : headNurses.length === 0 ? (
-                    <p className="text-sm text-foreground-variant">{caregiver.role === "head_nurse" && hasAnyHeadNurseInWorkspace ? t("caregivers.headNursesPeerOnlySelf") : t("caregivers.headNursesEmpty")}</p>
+                    <p className="text-sm text-foreground-variant">{canonicalizeRole(caregiver.role) === "head_caregiver" && hasAnyHeadNurseInWorkspace ? t("caregivers.headNursesPeerOnlySelf") : t("caregivers.headNursesEmpty")}</p>
                   ) : (
                     <ul className="divide-y divide-outline-variant/10">
                       {headNurses.map((hn) => (
@@ -1576,7 +1573,7 @@ export default function CaregiverDetailPane({
                     {zones.map((z) => {
                       const room = z.room_id != null ? roomsById.get(z.room_id) ?? null : null;
                       const patientCount = z.room_id != null ? patientCountByRoomId.get(z.room_id) ?? 0 : 0;
-                      const mapHref = room && room.facility_id != null && room.floor_id != null ? `/head-nurse/floorplans?facility=${room.facility_id}&floor=${room.floor_id}&view=map&room=${room.id}` : null;
+                      const mapHref = room && room.facility_id != null && room.floor_id != null ? `/head-caregiver/floorplans?facility=${room.facility_id}&floor=${room.floor_id}&view=map&room=${room.id}` : null;
                       return (
                         <li key={z.id} className="rounded-xl border border-outline-variant/15 bg-surface-container-low/60 px-3 py-3 text-xs">
                           <div className="flex items-start justify-between gap-2">

@@ -9,6 +9,9 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.roles import canonicalize_role
+from app.schemas.roles import CanonicalRole
+
 _HOSTED_RELATIVE = re.compile(r"^/api/public/profile-images/[a-f0-9]{32}\.jpg$")
 
 def validate_optional_profile_image_url(v: Optional[str]) -> Optional[str]:
@@ -42,7 +45,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Data extracted from JWT."""
     username: Optional[str] = None
-    role: Optional[str] = None
+    role: Optional[CanonicalRole] = None
     session_id: Optional[str] = None
     actor_admin_id: Optional[int] = None
     scopes: list[str] = Field(default_factory=list)
@@ -51,13 +54,18 @@ class UserBase(BaseModel):
     """Base user attributes."""
     username: str = Field(min_length=3, max_length=128)
     role: str = Field(
-        pattern="^(admin|supervisor|head_nurse|observer|patient)$",
-        default="observer",
+        pattern="^(admin|head_caregiver|caregiver|head_nurse|supervisor|observer|patient)$",
+        default="caregiver",
     )
     is_active: bool = True
     caregiver_id: Optional[int] = None
     patient_id: Optional[int] = None
     profile_image_url: str = Field(default="", max_length=8192)
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v: str) -> str:
+        return canonicalize_role(v)
 
     @field_validator("profile_image_url")
     @classmethod
@@ -74,12 +82,17 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=128)
     password: Optional[str] = Field(None, min_length=6, max_length=128)
     role: Optional[str] = Field(
-        None, pattern="^(admin|supervisor|head_nurse|observer|patient)$"
+        None, pattern="^(admin|head_caregiver|caregiver|head_nurse|supervisor|observer|patient)$"
     )
     is_active: Optional[bool] = None
     caregiver_id: Optional[int] = None
     patient_id: Optional[int] = None
     profile_image_url: Optional[str] = Field(None, max_length=8192)
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v: Optional[str]) -> Optional[str]:
+        return canonicalize_role(v)
 
     @field_validator("profile_image_url")
     @classmethod
@@ -180,7 +193,7 @@ class LinkedCaregiverProfileOut(BaseModel):
     workspace_id: int
     first_name: str
     last_name: str
-    role: str
+    role: CanonicalRole
     employee_code: str
     department: str
     employment_type: str
@@ -246,7 +259,7 @@ class UserSearchOut(BaseModel):
     """Search result shape for person-target assignment controls."""
     id: int
     username: str
-    role: str
+    role: CanonicalRole
     is_active: bool = True
     caregiver_id: Optional[int] = None
     patient_id: Optional[int] = None

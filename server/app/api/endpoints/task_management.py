@@ -37,9 +37,9 @@ from app.schemas.task_management import (
 
 router = APIRouter()
 
-_HEAD_NURSE_ONLY = ["admin", "head_nurse"]
-_ROUTINE_LOG_WRITERS = ["admin", "head_nurse", "supervisor", "observer"]
-_PATIENT_ROUTINE_WRITERS = ["admin", "head_nurse", "observer"]
+_HEAD_NURSE_ONLY = ["admin", "head_caregiver"]
+_ROUTINE_LOG_WRITERS = ["admin", "head_caregiver", "caregiver"]
+_PATIENT_ROUTINE_WRITERS = ["admin", "head_caregiver", "caregiver"]
 
 # Bangkok is UTC+7; midnight Bangkok = 17:00 UTC previous day
 _BANGKOK_OFFSET = timedelta(hours=7)
@@ -349,8 +349,8 @@ async def update_routine_log(
     if not log:
         raise HTTPException(status_code=404, detail="Routine log not found")
 
-    # Observers and supervisors can only update their own log
-    if current_user.role in ("observer", "supervisor"):
+    # Caregivers and head caregivers can only update their own log
+    if current_user.role in ("caregiver", "head_caregiver"):
         if log.assigned_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Cannot update another user's log")
 
@@ -380,7 +380,7 @@ async def reset_routine_logs(
     ws: Workspace = Depends(get_current_user_workspace),
     _: User = Depends(RequireRole(_HEAD_NURSE_ONLY)),
 ):
-    """Head Nurse manually resets all logs to 'pending' for a given date."""
+    """Head caregiver manually resets all logs to 'pending' for a given date."""
     d = body.shift_date or _today_utc()
     await db.execute(
         update(RoutineTaskLog)
@@ -449,8 +449,8 @@ async def list_patient_routines(
     q = q.order_by(PatientFixRoutine.updated_at.desc())
     routines = (await db.execute(q)).scalars().all()
 
-    # Observers only see routines they created themselves
-    if current_user.role == "observer":
+    # Caregivers only see routines they created themselves
+    if current_user.role == "caregiver":
         routines = [r for r in routines if r.created_by_user_id == current_user.id]
 
     return [await _enrich_routine(db, r) for r in routines]

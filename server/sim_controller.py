@@ -486,7 +486,7 @@ class RoutineSimulator:
                 workspace_id=workspace_id,
                 patient_id=patient.id,
                 author_user_id=None,  # System generated
-                target_role="head_nurse",
+                target_role="head_caregiver",
                 shift_date=now.date(),
                 shift_label=random.choice(shift_labels),
                 priority=priorities[idx % len(priorities)],

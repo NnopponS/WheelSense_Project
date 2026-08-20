@@ -5,6 +5,7 @@ import { useTranslation } from "@/lib/i18n";
 import { api, ApiError } from "@/lib/api";
 import type { Caregiver } from "@/lib/types";
 import { X, Pencil, Loader2 } from "lucide-react";
+import { canonicalizeRole } from "@/lib/roles";
 
 type Props = {
   open: boolean;
@@ -13,7 +14,7 @@ type Props = {
   onSaved: (updated: Caregiver) => void;
 };
 
-type CaregiverRole = "admin" | "observer" | "supervisor" | "head_nurse";
+type CaregiverRole = "admin" | "observer" | "supervisor";
 type CaregiverDepartment = "nursing" | "rehab" | "pharmacy" | "operations" | "support";
 type EmploymentType = "full_time" | "part_time" | "contract" | "agency";
 type CaregiverSpecialty =
@@ -97,7 +98,7 @@ function hydrateForm(caregiver: Caregiver | null): FormState {
   return {
     first_name: caregiver.first_name ?? "",
     last_name: caregiver.last_name ?? "",
-    role: (caregiver.role?.toLowerCase() as CaregiverRole) || "observer",
+    role: (canonicalizeRole(caregiver.role?.toLowerCase() || "observer") as CaregiverRole),
     employee_code: caregiver.employee_code ?? "",
     department: (caregiver.department as CaregiverDepartment | "") ?? "",
     employment_type: (caregiver.employment_type as EmploymentType | "") ?? "",
@@ -211,7 +212,6 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
   const roleOptions = useMemo<SelectOption[]>(
     () => [
       { value: "admin", label: t("shell.roleAdmin") },
-      { value: "head_nurse", label: t("shell.roleHeadNurse") },
       { value: "supervisor", label: t("shell.roleSupervisor") },
       { value: "observer", label: t("shell.roleObserver") },
     ],

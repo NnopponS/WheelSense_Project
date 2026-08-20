@@ -1,4 +1,4 @@
-"""Shift checklist — observers/supervisors persist; admin & head nurse read workspace view."""
+"""Shift checklist — caregivers/head caregivers persist; admin & head caregiver read workspace view."""
 
 from __future__ import annotations
 
@@ -102,7 +102,7 @@ async def list_workspace_shift_checklists(
     shift_date: str | None = Query(default=None, description="Calendar date (UTC) YYYY-MM-DD"),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(["admin", "head_nurse"])),
+    _: User = Depends(RequireRole(["admin", "head_caregiver"])),
 ):
     d = _parse_shift_date(shift_date)
     return await shift_checklist_service.list_workspace_floor_staff(db, ws.id, d)
@@ -113,7 +113,7 @@ async def get_user_shift_checklist_template(
     user_id: int,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(["admin", "head_nurse"])),
+    _: User = Depends(RequireRole(["admin", "head_caregiver"])),
 ):
     await _get_same_workspace_user(db, ws.id, user_id)
     items = await shift_checklist_service.get_template_for_user(db, ws.id, user_id)
@@ -131,13 +131,13 @@ async def put_user_shift_checklist_template(
     body: ShiftChecklistTemplatePutIn,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(["admin", "head_nurse"])),
+    _: User = Depends(RequireRole(["admin", "head_caregiver"])),
 ):
     target = await _get_same_workspace_user(db, ws.id, user_id)
-    if target.role not in ("observer", "supervisor"):
+    if target.role not in ("caregiver", "head_caregiver"):
         raise HTTPException(
             status_code=400,
-            detail="Shift checklist templates apply to observer or supervisor accounts.",
+            detail="Shift checklist templates apply to caregiver or head caregiver accounts.",
         )
     raw = body.items
     if not raw:

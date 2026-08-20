@@ -20,9 +20,8 @@ import { Progress } from "@/components/ui/progress";
 
 const ROLE_TO_I18N: Record<string, TranslationKey> = {
   admin: "personnel.role.admin",
-  head_nurse: "personnel.role.headNurse",
-  supervisor: "personnel.role.supervisor",
-  observer: "personnel.role.observer",
+  head_caregiver: "personnel.role.supervisor",
+  caregiver: "personnel.role.observer",
   patient: "personnel.role.patient",
 };
 
@@ -37,7 +36,7 @@ export function ShiftChecklistWorkspaceClient() {
   const [shiftDate, setShiftDate] = useState(() => utcShiftDateString());
   const [sheetRow, setSheetRow] = useState<ShiftChecklistWorkspaceRow | null>(null);
 
-  const canEditTemplates = me?.role === "admin" || me?.role === "head_nurse";
+  const canEditTemplates = me?.role === "admin" || me?.role === "head_caregiver";
 
   const query = useQuery({
     queryKey: ["shift-checklist", "workspace", shiftDate],

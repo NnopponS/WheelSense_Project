@@ -7,6 +7,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.roles import CanonicalRole
+
 CalendarEventType = Literal["schedule", "task", "directive", "shift"]
 
 
@@ -21,7 +23,7 @@ class CalendarEventOut(BaseModel):
     status: str | None = None
     patient_id: int | None = None
     person_user_id: int | None = None
-    person_role: str | None = None
+    person_role: CanonicalRole | None = None
     can_edit: bool
     metadata: dict[str, Any] = Field(default_factory=dict)
 

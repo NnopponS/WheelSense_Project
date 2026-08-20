@@ -80,8 +80,8 @@ import type {
 } from "@/lib/api/task-scope-types";
 
 const EMPTY_SELECT = "__empty__";
-const STAFF_ROLE_OPTIONS = ["admin", "head_nurse", "supervisor", "observer"] as const;
-type ConsoleRole = "admin" | "head_nurse" | "supervisor" | "observer";
+const STAFF_ROLE_OPTIONS = ["admin", "head_caregiver", "caregiver"] as const;
+type ConsoleRole = "admin" | "head_caregiver" | "caregiver";
 type ConsoleTab = "queue" | "transfer" | "coordination" | "audit" | "reports";
 type WorkflowItemType = "task" | "schedule" | "directive";
 type AssignmentMode = "role" | "person";
@@ -196,7 +196,7 @@ const defaultTaskForm: TaskFormState = {
   priority: "normal",
   dueAt: "",
   assignmentMode: "role",
-  assignedRole: "observer",
+  assignedRole: "caregiver",
   assignedUserId: EMPTY_SELECT,
 };
 
@@ -209,7 +209,7 @@ const defaultScheduleForm: ScheduleFormState = {
   recurrenceRule: "",
   notes: "",
   assignmentMode: "role",
-  assignedRole: "observer",
+  assignedRole: "caregiver",
   assignedUserId: EMPTY_SELECT,
 };
 
@@ -218,14 +218,14 @@ const defaultDirectiveForm: DirectiveFormState = {
   title: "",
   directiveText: "",
   assignmentMode: "role",
-  targetRole: "observer",
+  targetRole: "caregiver",
   targetUserId: EMPTY_SELECT,
   effectiveFrom: "",
 };
 
 const defaultMessageForm: MessageFormState = {
   targetMode: "role",
-  recipientRole: "supervisor",
+  recipientRole: "head_caregiver",
   recipientUserId: EMPTY_SELECT,
   patientId: EMPTY_SELECT,
   subject: "",
@@ -234,7 +234,7 @@ const defaultMessageForm: MessageFormState = {
 
 const defaultHandoverForm: HandoverFormState = {
   patientId: EMPTY_SELECT,
-  targetRole: "supervisor",
+  targetRole: "head_caregiver",
   shiftDate: "",
   shiftLabel: "current shift",
   priority: "routine",
@@ -254,7 +254,7 @@ function tabFromSearch(value: string | null): ConsoleTab {
   return "queue";
 }
 
-/** Hub pages (`/head-nurse/tasks`, `/observer/tasks`) use `?tab=` for the top tab bar; inner console panels must use a different key. */
+/** Hub pages (`/head-caregiver/tasks`, `/caregiver/tasks`) use `?tab=` for the top tab bar; inner console panels must use a different key. */
 const WORKFLOW_CONSOLE_TAB_QP = "wtab";
 
 const LEGACY_CONSOLE_TAB_IN_TAB_QP = new Set(["transfer", "coordination", "audit", "reports"]);
@@ -696,15 +696,15 @@ export function OperationsConsole({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   /** Tasks hub embeds the console under `/{role}/tasks` — hide inner queue/transfer/… tabs; use standalone `/{role}/workflow` for full panels. */
-  const isWorkflowEmbeddedInTasksHub = /\/(head-nurse|observer|supervisor)\/tasks$/.test(pathname ?? "");
+  const isWorkflowEmbeddedInTasksHub = /\/(head-caregiver|caregiver)\/tasks$/.test(pathname ?? "");
   const activeTab: ConsoleTab = isWorkflowEmbeddedInTasksHub
     ? "queue"
     : consoleTabFromSearchParams(searchParams);
 
   const baseKey = [role, "workflow"] as const;
-  /** Matches `GET /api/analytics/wards/summary` — observer is not authorized for workspace-wide ward totals. */
+  /** Matches `GET /api/analytics/wards/summary` — caregiver is not authorized for workspace-wide ward totals. */
   const canLoadWardSummary =
-    role === "admin" || role === "head_nurse" || role === "supervisor";
+    role === "admin" || role === "head_caregiver";
   const [queueSearch, setQueueSearch] = useState("");
   const [queueTypeFilter, setQueueTypeFilter] = useState<"all" | WorkflowItemType>("all");
   const [queueStatusFilter, setQueueStatusFilter] = useState("all");
@@ -720,7 +720,7 @@ export function OperationsConsole({
   const [createError, setCreateError] = useState<string | null>(null);
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
   const [transferTargetMode, setTransferTargetMode] = useState<AssignmentMode>("role");
-  const [transferTargetRole, setTransferTargetRole] = useState("observer");
+  const [transferTargetRole, setTransferTargetRole] = useState("caregiver");
   const [transferTargetUserId, setTransferTargetUserId] = useState(EMPTY_SELECT);
   const [transferNote, setTransferNote] = useState("");
   const [coordinationError, setCoordinationError] = useState<string | null>(null);
@@ -1149,7 +1149,7 @@ export function OperationsConsole({
     onSuccess: async () => {
       setTransferDialog(null);
       setTransferTargetMode("role");
-      setTransferTargetRole("observer");
+      setTransferTargetRole("caregiver");
       setTransferTargetUserId(EMPTY_SELECT);
       setTransferNote("");
       await invalidateConsoleData();
@@ -1358,7 +1358,7 @@ export function OperationsConsole({
               onClick={() => {
                 setTransferDialog({ mode: "handoff", row: row.original });
                 setTransferTargetMode("role");
-                setTransferTargetRole("observer");
+                setTransferTargetRole("caregiver");
                 setTransferTargetUserId(EMPTY_SELECT);
                 setTransferNote("");
                 setCoordinationError(null);

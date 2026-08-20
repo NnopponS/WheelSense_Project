@@ -32,8 +32,8 @@ class User(Base):
     username = Column(String(128), unique=True, index=True, nullable=False)
     hashed_password = Column(String(256), nullable=False)
 
-    # admin, supervisor, head_nurse, observer, patient
-    role = Column(String(32), nullable=False, default="observer")
+    # admin, head_caregiver, caregiver, patient (legacy: supervisor, head_nurse, observer)
+    role = Column(String(32), nullable=False, default="caregiver")
 
     is_active = Column(Boolean, default=True)
 

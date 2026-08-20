@@ -37,7 +37,7 @@ from app.services.floorplans import (
 
 router = APIRouter()
 
-ROLE_FLOORPLAN_MANAGERS = ["admin", "head_nurse", "supervisor"]
+ROLE_FLOORPLAN_MANAGERS = ["admin", "head_caregiver"]
 
 
 def _to_floorplan_out(asset) -> FloorplanAssetOut:

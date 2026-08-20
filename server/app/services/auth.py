@@ -210,7 +210,7 @@ class UserService:
             linked_name = caregiver_name or patient_name or None
             if patient is not None or user.role == "patient":
                 row_kind = "patient"
-            elif caregiver is not None or user.role in {"admin", "head_nurse", "supervisor", "observer"}:
+            elif caregiver is not None or user.role in {"admin", "head_caregiver", "caregiver"}:
                 row_kind = "staff"
             else:
                 row_kind = "unlinked"

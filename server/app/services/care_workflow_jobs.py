@@ -27,7 +27,7 @@ from app.schemas.workflow import (
 )
 from app.services.workflow import audit_trail_service, _load_person_map
 
-STAFF_WIDE_ROLES = frozenset({"admin", "head_nurse", "supervisor"})
+STAFF_WIDE_ROLES = frozenset({"admin", "head_caregiver"})
 
 
 def _actor_may_edit_assigned_step(

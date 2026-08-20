@@ -28,7 +28,7 @@ import { useTranslation } from "@/lib/i18n";
 import type { User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STAFF_ROLE_FILTER = ["all", "admin", "head_nurse", "supervisor", "observer"] as const;
+const STAFF_ROLE_FILTER = ["all", "admin", "supervisor", "observer"] as const;
 
 type DraftStepRow = {
   key: string;

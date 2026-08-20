@@ -51,7 +51,7 @@ async def claim_service_request(
     request_id: int,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["observer", "supervisor"])),
+    current_user: User = Depends(RequireRole(["caregiver", "head_caregiver"])),
 ):
     return await service_request_service.claim_request(db, ws.id, current_user, request_id)
 
@@ -62,6 +62,6 @@ async def update_service_request(
     payload: ServiceRequestPatchIn,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin", "head_nurse", "observer", "supervisor"])),
+    current_user: User = Depends(RequireRole(["admin", "head_caregiver", "caregiver"])),
 ):
     return await service_request_service.patch_request(db, ws.id, current_user, request_id, payload)

@@ -12,7 +12,7 @@ type Props = {
   onCreated: () => void;
 };
 
-type CaregiverRole = "admin" | "observer" | "supervisor" | "head_nurse";
+type CaregiverRole = "admin" | "observer" | "supervisor";
 
 export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
   const { t } = useTranslation();
@@ -170,7 +170,6 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
               onChange={(e) => setRole(e.target.value as CaregiverRole)}
             >
               <option value="admin">{t("shell.roleAdmin")}</option>
-              <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
               <option value="supervisor">{t("shell.roleSupervisor")}</option>
               <option value="observer">{t("shell.roleObserver")}</option>
             </select>

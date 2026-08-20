@@ -102,10 +102,10 @@ from sqlalchemy import select
 
 router = APIRouter()
 
-# Observer may create patient-linked schedules/tasks for assigned patients (same DB checks as staff).
-ROLE_WORKFLOW_WRITE = ["admin", "head_nurse", "supervisor", "observer"]
-ROLE_DIRECTIVE_WRITE = ["admin", "head_nurse"]
-ROLE_AUDIT_QUERY = ["admin", "head_nurse", "supervisor", "observer"]
+# Caregiver may create patient-linked schedules/tasks for assigned patients (same DB checks as staff).
+ROLE_WORKFLOW_WRITE = ["admin", "head_caregiver", "caregiver"]
+ROLE_DIRECTIVE_WRITE = ["admin", "head_caregiver"]
+ROLE_AUDIT_QUERY = ["admin", "head_caregiver", "caregiver"]
 
 @router.get("/schedules", response_model=list[CareScheduleOut])
 async def list_schedules(
@@ -290,7 +290,7 @@ async def list_messaging_recipients(
         db,
         ws.id,
         kind="staff",
-        roles=["admin", "head_nurse", "supervisor", "observer"],
+        roles=["admin", "head_caregiver", "caregiver"],
         limit=200,
     )
     patient_rows = await UserService.search_users(

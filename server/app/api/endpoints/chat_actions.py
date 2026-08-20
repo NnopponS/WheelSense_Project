@@ -19,6 +19,7 @@ from app.agent_runtime.response_cards import (
 from app.models.chat import ChatConversation, ChatMessage
 from app.models.core import Workspace
 from app.models.users import User
+from app.roles import role_is_allowed
 from app.schemas.agent_runtime import ExecutionPlan
 from app.schemas.chat import ChatMessagePart
 from app.schemas.chat_actions import (
@@ -142,7 +143,7 @@ async def get_action(
     row = await ai_chat.get_chat_action(db, ws_id=workspace.id, action_id=action_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Chat action not found")
-    if user.role not in {"admin", "head_nurse"} and row.proposed_by_user_id != user.id:
+    if not role_is_allowed(user.role, {"admin", "head_caregiver"}) and row.proposed_by_user_id != user.id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
     return _chat_action_out(row)
 

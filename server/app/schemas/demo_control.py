@@ -5,12 +5,14 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.schemas.roles import CanonicalRole
+
 
 class DemoActorOut(BaseModel):
     actor_type: str
     actor_id: int
     display_name: str
-    role: Optional[str] = None
+    role: Optional[CanonicalRole] = None
     room_id: Optional[int] = None
     room_name: Optional[str] = None
     source: str = "manual"
@@ -39,7 +41,7 @@ class DemoWorkflowAdvanceRequest(BaseModel):
     action: str = Field(default="advance", min_length=1, max_length=32)
     target_mode: Optional[str] = None
     target_id: Optional[int | str] = None
-    target_role: Optional[str] = None
+    target_role: Optional[CanonicalRole] = None
     target_user_id: Optional[int] = None
     note: str = ""
 

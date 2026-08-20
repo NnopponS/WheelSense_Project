@@ -1,21 +1,21 @@
 import type { User } from "@/lib/types";
+import { canonicalizeRole } from "@/lib/roles";
 
 export type AppRole = User["role"];
 
 /** In-app path to the alerts inbox for the signed-in role. */
 export function alertsInboxPath(role: AppRole): string {
-  switch (role) {
-    case "observer":
-      return "/observer/alerts";
-    case "supervisor":
-      return "/supervisor/emergency";
+  switch (canonicalizeRole(role)) {
+    case "caregiver":
+      return "/caregiver/alerts";
+    case "head_caregiver":
+      return "/head-caregiver/emergency";
     case "patient":
       return "/patient";
     case "admin":
-    case "head_nurse":
-      return "/head-nurse/alerts";
+      return "/admin/alerts";
     default:
-      return "/head-nurse/alerts";
+      return "/head-caregiver/emergency";
   }
 }
 
@@ -28,34 +28,31 @@ export function alertsInboxUrl(role: AppRole, alertId?: number | null): string {
 }
 
 export function workflowTasksPath(role: AppRole): string {
-  switch (role) {
-    case "observer":
-      return "/observer/tasks";
-    case "supervisor":
-      return "/supervisor/tasks";
+  switch (canonicalizeRole(role)) {
+    case "caregiver":
+      return "/caregiver/tasks";
+    case "head_caregiver":
+      return "/head-caregiver/tasks";
     case "admin":
-    case "head_nurse":
-      return "/head-nurse/tasks";
+      return "/admin/tasks";
     case "patient":
       return "/patient";
     default:
-      return "/head-nurse/tasks";
+      return "/head-caregiver/tasks";
   }
 }
 
 export function staffMessagesPath(role: AppRole): string {
-  switch (role) {
+  switch (canonicalizeRole(role)) {
     case "admin":
       return "/admin/messages";
-    case "head_nurse":
-      return "/head-nurse/messages";
-    case "observer":
-      return "/observer/messages";
-    case "supervisor":
-      return "/supervisor/messages";
+    case "caregiver":
+      return "/caregiver/messages";
+    case "head_caregiver":
+      return "/head-caregiver/messages";
     case "patient":
       return "/patient/messages";
     default:
-      return "/head-nurse/messages";
+      return "/head-caregiver/messages";
   }
 }

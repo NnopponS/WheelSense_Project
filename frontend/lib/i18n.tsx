@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    WheelSense i18n — lightweight EN/TH translation system
@@ -62,6 +63,16 @@ const translations = {
   "nav.supervisor.support": { en: "Report Issue", th: "แจ้งปัญหา" },
   "nav.supervisor.account": { en: "Account", th: "บัญชี" },
 
+  "nav.headCaregiver.queue": { en: "Queue", th: "คิวงาน" },
+  "nav.headCaregiver.emergency": { en: "Emergency", th: "ฉุกเฉิน" },
+  "nav.headCaregiver.patients": { en: "Patients", th: "ผู้ป่วย" },
+  "nav.headCaregiver.caregivers": { en: "Caregivers", th: "ผู้ดูแล" },
+  "nav.headCaregiver.tasks": { en: "Assign Work", th: "มอบหมายงาน" },
+  "nav.headCaregiver.messages": { en: "Messages", th: "ข้อความ" },
+  "nav.headCaregiver.map": { en: "Locate Patient", th: "หาตำแหน่งผู้ป่วย" },
+  "nav.headCaregiver.support": { en: "Report Issue", th: "แจ้งปัญหา" },
+  "nav.headCaregiver.account": { en: "Account", th: "บัญชี" },
+
   "nav.observer.today": { en: "Today", th: "วันนี้" },
   "nav.observer.patients": { en: "Patients", th: "ผู้ป่วย" },
   "nav.observer.alerts": { en: "Alerts", th: "แจ้งเตือน" },
@@ -69,6 +80,15 @@ const translations = {
   "nav.observer.support": { en: "Request Help", th: "ขอความช่วยเหลือ" },
   "nav.observer.map": { en: "Map", th: "แผนที่" },
   "nav.observer.account": { en: "Account", th: "บัญชี" },
+
+  "nav.caregiver.today": { en: "Today", th: "วันนี้" },
+  "nav.caregiver.tasks": { en: "Tasks", th: "งาน" },
+  "nav.caregiver.patients": { en: "Patients", th: "ผู้ป่วย" },
+  "nav.caregiver.alerts": { en: "Alerts", th: "แจ้งเตือน" },
+  "nav.caregiver.handover": { en: "Handover", th: "ส่งเวร" },
+  "nav.caregiver.support": { en: "Request Help", th: "ขอความช่วยเหลือ" },
+  "nav.caregiver.map": { en: "Map", th: "แผนที่" },
+  "nav.caregiver.account": { en: "Account", th: "บัญชี" },
 
   "nav.patient.home": { en: "Home", th: "หน้าแรก" },
   "nav.patient.schedule": { en: "Schedule", th: "ตารางเวลา" },
@@ -531,8 +551,8 @@ const translations = {
   "auth.heroMetricUptime": { en: "Uptime", th: "พร้อมใช้งาน" },
   "auth.togglePasswordVisibility": { en: "Toggle password visibility", th: "แสดงหรือซ่อนรหัสผ่าน" },
   "auth.platformVersion": {
-    en: "WheelSense Smart Care Platform v1.0",
-    th: "WheelSense แพลตฟอร์มดูแลอัจฉริยะ v1.0",
+    en: `${PRODUCT_NAME} Smart Care Platform v1.0`,
+    th: `${PRODUCT_NAME} แพลตฟอร์มดูแลอัจฉริยะ v1.0`,
   },
   "demoControl.heroBadge": { en: "Manual testing suite", th: "ชุดทดสอบด้วยมือ" },
   "demoControl.heroTitle": { en: "Admin demo control panel", th: "แผงควบคุมเดโมผู้ดูแลระบบ" },
@@ -605,12 +625,14 @@ const translations = {
   },
   "shell.search": { en: "Search...", th: "ค้นหา..." },
   "shell.viewMode": { en: "View mode", th: "โหมดมุมมอง" },
-  "shell.platformName": { en: "WheelSense", th: "WheelSense" },
+  "shell.platformName": { en: PRODUCT_NAME, th: PRODUCT_NAME },
   "shell.platformSubtitle": { en: "Smart Care Platform", th: "แพลตฟอร์มดูแลอัจฉริยะ" },
   "shell.roleAdmin": { en: "Admin", th: "ผู้ดูแลระบบ" },
-  "shell.roleHeadNurse": { en: "Head nurse", th: "หัวหน้าพยาบาล" },
-  "shell.roleSupervisor": { en: "Supervisor", th: "ผู้เชี่ยวชาญ" },
-  "shell.roleObserver": { en: "Observer", th: "ผู้ดูแล" },
+  "shell.roleHeadCaregiver": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "shell.roleHeadNurse": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "shell.roleSupervisor": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "shell.roleCaregiver": { en: "Caregiver", th: "ผู้ดูแล" },
+  "shell.roleObserver": { en: "Caregiver", th: "ผู้ดูแล" },
   "shell.rolePatient": { en: "Patient", th: "ผู้ป่วย" },
   "shell.actAsAllRoles": { en: "All roles", th: "ทุกบทบาท" },
   "shell.actAsPanelTitle": { en: "Admin act-as", th: "แอดมินรับบทเป็น" },
@@ -1052,8 +1074,8 @@ const translations = {
   // ── Dashboard ────────────────────────────────────────────────────────
   "dash.title": { en: "Dashboard", th: "แดชบอร์ด" },
   "dash.subtitle": {
-    en: "WheelSense system overview",
-    th: "ภาพรวมระบบ WheelSense",
+    en: `${PRODUCT_NAME} system overview`,
+    th: `ภาพรวมระบบ ${PRODUCT_NAME}`,
   },
   "dash.totalPatients": { en: "Total Patients", th: "ผู้ป่วยทั้งหมด" },
   "dash.activeAlerts": { en: "Active Alerts", th: "การแจ้งเตือนที่ใช้งานอยู่" },
@@ -2128,7 +2150,7 @@ const translations = {
     en: "How sign-in works in this workspace, and which login account is tied to each staff or patient record.",
     th: "วิธีเข้าสู่ระบบในพื้นที่ทำงานนี้ และบัญชีล็อกอินเชื่อมกับบุคลากรหรือผู้ป่วยคนใด",
   },
-  "accountMgmt.authCardTitle": { en: "Authentication in WheelSense", th: "การยืนยันตัวตนใน WheelSense" },
+  "accountMgmt.authCardTitle": { en: `Authentication in ${PRODUCT_NAME}`, th: `การยืนยันตัวตนใน ${PRODUCT_NAME}` },
   "accountMgmt.authPrimary": {
     en: "Primary method: username and password. The login form posts to `/api/auth/login`; the Next proxy stores the returned JWT in an HttpOnly `ws_token` cookie and forwards it to the backend on later API calls.",
     th: "วิธีหลัก: ชื่อผู้ใช้และรหัสผ่าน ฟอร์มล็อกอินส่งไปที่ `/api/auth/login`; จากนั้น Next proxy จะเก็บ JWT ไว้ในคุกกี้ HttpOnly `ws_token` และส่งต่อไป backend สำหรับคำขอ API ถัดไป",
@@ -2247,9 +2269,11 @@ const translations = {
   "personnel.lineStaffRef": { en: "Staff #", th: "บุคลากร #" },
   "personnel.linePatientRef": { en: "Patient #", th: "ผู้ป่วย #" },
   "personnel.role.admin": { en: "Admin", th: "ผู้ดูแลระบบ" },
-  "personnel.role.headNurse": { en: "Head nurse", th: "หัวหน้าพยาบาล" },
-  "personnel.role.supervisor": { en: "Supervisor", th: "ผู้เชี่ยวชาญ" },
-  "personnel.role.observer": { en: "Observer", th: "ผู้ดูแล" },
+  "personnel.role.headCaregiver": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "personnel.role.headNurse": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "personnel.role.supervisor": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "personnel.role.caregiver": { en: "Caregiver", th: "ผู้ดูแล" },
+  "personnel.role.observer": { en: "Caregiver", th: "ผู้ดูแล" },
   "personnel.role.patient": { en: "Patient", th: "ผู้ป่วย" },
 
   // ── Admin settings (unified) ─────────────────────────────────────────
@@ -2581,20 +2605,20 @@ const translations = {
   },
   "caregivers.patientAccessRemove": { en: "Remove", th: "นำออก" },
   "caregivers.sectionHeadNurses": {
-    en: "Head nurses (reference)",
-    th: "หัวหน้าพยาบาล (อ้างอิง)",
+    en: "Supervisors (reference)",
+    th: "หัวหน้างาน (อ้างอิง)",
   },
   "caregivers.headNursesHint": {
-    en: "Contact or coordinate with head nurses for ward leadership and assignments.",
-    th: "ประสานงานหัวหน้าพยาบาลสำหรับภาระงานและการมอบหมายในหอผู้ป่วย",
+    en: "Contact or coordinate with supervisors for ward leadership and assignments.",
+    th: "ประสานงานหัวหน้างานสำหรับภาระงานและการมอบหมายในหอผู้ป่วย",
   },
   "caregivers.headNursesEmpty": {
-    en: "No head nurse staff records in this workspace yet.",
-    th: "ยังไม่มีบันทึกหัวหน้าพยาบาลในเวิร์กสเปซนี้",
+    en: "No supervisor staff records in this workspace yet.",
+    th: "ยังไม่มีบันทึกหัวหน้างานในเวิร์กสเปซนี้",
   },
   "caregivers.headNursesPeerOnlySelf": {
-    en: "No other head nurse profiles in this workspace (only this record matches).",
-    th: "ไม่มีโปรไฟล์หัวหน้าพยาบาลอื่นในเวิร์กสเปซนี้ (มีเพียงรายการนี้)",
+    en: "No other supervisor profiles in this workspace (only this record matches).",
+    th: "ไม่มีโปรไฟล์หัวหน้างานอื่นในเวิร์กสเปซนี้ (มีเพียงรายการนี้)",
   },
   "caregivers.sectionLinkedPatients": {
     en: "Patients in assigned rooms",
@@ -3018,8 +3042,8 @@ const translations = {
   "admin.ml.openCalibrationPage": { en: "Open ML Calibration", th: "เปิดหน้า ML Calibration" },
   "admin.ml.statusUnknown": { en: "Unknown", th: "ไม่ทราบ" },
   "admin.ml.sessionHardwareNote": {
-    en: "This button only calls your WheelSense backend. Pick a device that is already registered and sending telemetry (e.g. RSSI over MQTT). The browser does not pair over USB or Bluetooth to the M5StickC Plus2.",
-    th: "ปุ่มนี้เรียกเซิร์ฟเวอร์ WheelSense เท่านั้น เลือกอุปกรณ์ที่ลงทะเบียนและส่งข้อมูลแล้ว (เช่น RSSI ผ่าน MQTT) เบราว์เซอร์ไม่ได้จับคู่ USB หรือ Bluetooth กับ M5StickC Plus2",
+    en: `This button only calls your ${PRODUCT_NAME} backend. Pick a device that is already registered and sending telemetry (e.g. RSSI over MQTT). The browser does not pair over USB or Bluetooth to the M5StickC Plus2.`,
+    th: `ปุ่มนี้เรียกเซิร์ฟเวอร์ ${PRODUCT_NAME} เท่านั้น เลือกอุปกรณ์ที่ลงทะเบียนและส่งข้อมูลแล้ว (เช่น RSSI ผ่าน MQTT) เบราว์เซอร์ไม่ได้จับคู่ USB หรือ Bluetooth กับ M5StickC Plus2`,
   },
 
   // ── Profile ──────────────────────────────────────────────────────────
@@ -3064,7 +3088,7 @@ const translations = {
     th: "อัปโหลดรูปไม่สำเร็จ ลองอีกครั้ง",
   },
   "profile.avatar.errorUploadEndpointMissing": {
-    en: "The upload endpoint is missing on the API server (404). Restart the WheelSense backend so it loads the latest routes (e.g. uvicorn on port 8000), or check WHEELSENSE_API_ORIGIN points at the correct server.",
+    en: `The upload endpoint is missing on the API server (404). Restart the ${PRODUCT_NAME} backend so it loads the latest routes (e.g. uvicorn on port 8000), or check WHEELSENSE_API_ORIGIN points at the correct server.`,
     th: "เซิร์ฟเวอร์ API ไม่มี endpoint สำหรับอัปโหลดรูป (404) — รีสตาร์ท backend ให้โหลดโค้ดล่าสุด (เช่น uvicorn ที่พอร์ต 8000) หรือตรวจสอบว่า WHEELSENSE_API_ORIGIN ชี้ไปเซิร์ฟเวอร์ที่ถูกต้อง",
   },
   "profile.avatar.success": {
@@ -3400,9 +3424,11 @@ const translations = {
   "personnel.completedTasks": { en: "Completed", th: "เสร็จสิ้น" },
   "personnel.pendingTasks": { en: "Pending", th: "รอดำเนินการ" },
   "common.role": { en: "Role", th: "บทบาท" },
-  "common.headNurse": { en: "Head Nurse", th: "หัวหน้าพยาบาล" },
-  "common.supervisor": { en: "Supervisor", th: "ผู้เชี่ยวชาญ" },
-  "common.observer": { en: "Observer", th: "ผู้สังเกตการณ์" },
+  "common.headCaregiver": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "common.headNurse": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "common.supervisor": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "common.caregiver": { en: "Caregiver", th: "ผู้ดูแล" },
+  "common.observer": { en: "Caregiver", th: "ผู้ดูแล" },
   "common.all": { en: "All", th: "ทั้งหมด" },
   "tasks.critical": { en: "Critical", th: "วิกฤต" },
   "tasks.highPriority": { en: "High Priority", th: "ความสำคัญสูง" },
@@ -3457,8 +3483,8 @@ const translations = {
   "notifications.emptyTitle": { en: "No notifications", th: "ไม่มีการแจ้งเตือน" },
   "notifications.emptySubtitle": { en: "You're all caught up!", th: "คุณอ่านครบแล้ว" },
   "notifications.drawerInboxAdminHint": {
-    en: "Alert queue: Head Nurse / clinical inbox (shared with admins).",
-    th: "คิวแจ้งเตือน: Head Nurse / clinical (ใช้ร่วมกับผู้ดูแลระบบ)",
+    en: "Alert queue: Supervisor clinical inbox (shared with admins).",
+    th: "คิวแจ้งเตือนทางคลินิกของหัวหน้างาน (ใช้ร่วมกับผู้ดูแลระบบ)",
   },
   "notifications.drawerInboxHeadNurseHint": {
     en: "Clinical alert queue; admins use the same inbox in this workspace.",
@@ -4394,6 +4420,11 @@ const translations = {
   "supervisor.queue.view": { en: "View", th: "ดู" },
   "supervisor.queue.accept": { en: "Accept", th: "รับงาน" },
   "supervisor.queue.complete": { en: "Complete", th: "เสร็จสิ้น" },
+  "supervisor.queue.working": { en: "Working…", th: "กำลังดำเนินการ…" },
+  "supervisor.queue.actionFailed": {
+    en: "The action could not be completed. Try again.",
+    th: "ดำเนินการไม่สำเร็จ กรุณาลองอีกครั้ง",
+  },
   "supervisor.queue.untitledTask": { en: "Untitled task", th: "งานไม่มีชื่อ" },
   "supervisor.queue.allClear": { en: "All Clear", th: "ไม่มีรายการ" },
   "supervisor.queue.noItemsDesc": { en: "No urgent items require your attention right now.", th: "ไม่มีรายการด่วนที่ต้องดูแลในขณะนี้" },
@@ -5113,9 +5144,11 @@ const translations = {
   "admin.workflowMessaging.statusUnread": { en: "unread", th: "ยังไม่อ่าน" },
   "admin.workflowMessaging.markRead": { en: "Mark read", th: "ทำเครื่องหมายว่าอ่านแล้ว" },
   "admin.workflowMessaging.roleLabelAdmin": { en: "Admin", th: "ผู้ดูแลระบบ" },
-  "admin.workflowMessaging.roleLabelHeadNurse": { en: "Head nurse", th: "หัวหน้าพยาบาล" },
-  "admin.workflowMessaging.roleLabelSupervisor": { en: "Supervisor", th: "หัวหน้างาน" },
-  "admin.workflowMessaging.roleLabelObserver": { en: "Observer", th: "ผู้สังเกตการณ์" },
+  "admin.workflowMessaging.roleLabelHeadCaregiver": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "admin.workflowMessaging.roleLabelHeadNurse": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "admin.workflowMessaging.roleLabelSupervisor": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
+  "admin.workflowMessaging.roleLabelCaregiver": { en: "Caregiver", th: "ผู้ดูแล" },
+  "admin.workflowMessaging.roleLabelObserver": { en: "Caregiver", th: "ผู้ดูแล" },
   "admin.workflowMessaging.roleLabelPatient": { en: "Patient", th: "ผู้ป่วย" },
   "admin.workflowMessaging.userNumber": { en: "User #{id}", th: "ผู้ใช้หมายเลข {id}" },
   "admin.workflowMessaging.allRecipients": { en: "All recipients", th: "ผู้รับทั้งหมด" },

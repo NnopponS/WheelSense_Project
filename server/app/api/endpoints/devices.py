@@ -41,8 +41,8 @@ from app.services.device_management import NON_PUBLIC_DEVICE_CONFIG_KEYS
 
 router = APIRouter()
 
-ROLE_DEVICE_MANAGERS = ["admin", "head_nurse"]
-ROLE_DEVICE_COMMANDERS = ["admin", "head_nurse", "supervisor"]
+ROLE_DEVICE_MANAGERS = ["admin", "head_caregiver"]
+ROLE_DEVICE_COMMANDERS = ["admin", "head_caregiver"]
 
 def _sanitize_activity_details(payload: dict[str, Any]) -> dict[str, Any]:
     """Remove secrets and network-provisioning keys before persisting activity log details."""
@@ -60,7 +60,7 @@ async def list_device_activity(
     limit: int = 30,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: object = Depends(RequireRole(["admin", "head_nurse", "supervisor"])),
+    _: object = Depends(RequireRole(["admin", "head_caregiver"])),
 ):
     rows = await device_activity_service.list_recent(db, ws.id, limit=limit)
     return rows

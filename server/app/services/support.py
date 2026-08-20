@@ -24,7 +24,7 @@ from app.schemas.support import (
     SupportTicketPatchIn,
 )
 
-SUPPORT_MANAGER_ROLES = {"admin", "head_nurse"}
+SUPPORT_MANAGER_ROLES = {"admin", "head_caregiver"}
 _MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024
 
 
@@ -192,7 +192,7 @@ class SupportService:
         manager = _is_manager(user)
         restricted_fields = {"status", "assignee_user_id"}
         if not manager and restricted_fields.intersection(changes):
-            raise HTTPException(status_code=403, detail="Only admin/head_nurse can update ticket workflow fields")
+            raise HTTPException(status_code=403, detail="Only admin/head_caregiver can update ticket workflow fields")
 
         for key, value in changes.items():
             setattr(ticket, key, value)

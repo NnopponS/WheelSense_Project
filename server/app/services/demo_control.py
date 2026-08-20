@@ -21,7 +21,7 @@ from app.services.workflow import (
     schedule_service,
 )
 
-STAFF_ROLES = {"admin", "head_nurse", "supervisor", "observer"}
+STAFF_ROLES = {"admin", "head_caregiver", "caregiver"}
 
 DEMO_CONTROL_VISIBLE_ACTIONS: list[dict[str, str]] = [
     {
@@ -617,7 +617,7 @@ async def _run_show_demo(ws_id: int, actor_user_id: int, interval_ms: int) -> No
     async with AsyncSessionLocal() as session:
         state = await demo_control_service.list_actor_state(session, ws_id)
         patients = [actor for actor in state["actors"] if actor["actor_type"] == "patient"]
-        observers = [actor for actor in state["actors"] if actor["actor_type"] == "staff" and actor["role"] == "observer"]
+        observers = [actor for actor in state["actors"] if actor["actor_type"] == "staff" and actor["role"] == "caregiver"]
         if not patients or not observers:
             return
         first_patient = patients[0]
@@ -630,7 +630,7 @@ async def _run_show_demo(ws_id: int, actor_user_id: int, interval_ms: int) -> No
                 actor_id=observer["actor_id"],
                 room_id=patients[index % len(patients)]["room_id"],
                 updated_by_user_id=actor_user_id,
-                note="show_demo: observer dispatched",
+                note="show_demo: caregiver dispatched",
             )
 
     await asyncio.sleep(delay)
@@ -695,7 +695,7 @@ async def _run_show_demo(ws_id: int, actor_user_id: int, interval_ms: int) -> No
 async def _run_morning_rounds(ws_id: int, actor_user_id: int, interval_ms: int) -> None:
     delay = interval_ms / 1000
     async with AsyncSessionLocal() as session:
-        observers = await _list_staff_users(session, ws_id, "observer")
+        observers = await _list_staff_users(session, ws_id, "caregiver")
         patients = (
             await session.execute(
                 select(Patient)
@@ -748,7 +748,7 @@ async def _run_morning_rounds(ws_id: int, actor_user_id: int, interval_ms: int) 
 async def _run_handoff_pressure(ws_id: int, actor_user_id: int, interval_ms: int) -> None:
     delay = interval_ms / 1000
     async with AsyncSessionLocal() as session:
-        supervisor = await _first_staff_user(session, ws_id, "supervisor")
+        supervisor = await _first_staff_user(session, ws_id, "head_caregiver")
         if supervisor is None:
             return
         task = (
@@ -764,7 +764,7 @@ async def _run_handoff_pressure(ws_id: int, actor_user_id: int, interval_ms: int
                 item_id=task.id,
                 action="handoff",
                 actor_user_id=actor_user_id,
-                note="handoff_pressure: escalated to supervisor",
+                note="handoff_pressure: escalated to head_caregiver",
                 target_mode="user",
                 target_user_id=supervisor.id,
             )
@@ -785,9 +785,9 @@ async def _run_handoff_pressure(ws_id: int, actor_user_id: int, interval_ms: int
                 item_id=schedule.id,
                 action="handoff",
                 actor_user_id=actor_user_id,
-                note="handoff_pressure: moved schedule to head nurse",
+                note="handoff_pressure: moved schedule to head_caregiver",
                 target_mode="role",
-                target_role="head_nurse",
+                target_role="head_caregiver",
             )
 
 
@@ -816,7 +816,7 @@ async def _run_emergency_drill(ws_id: int, actor_user_id: int, interval_ms: int)
                 .limit(1)
             )
         ).scalar_one_or_none()
-        supervisor = await _first_staff_user(session, ws_id, "supervisor")
+        supervisor = await _first_staff_user(session, ws_id, "head_caregiver")
         if patient is None:
             return
         await demo_control_service.trigger_alert(
@@ -834,7 +834,7 @@ async def _run_emergency_drill(ws_id: int, actor_user_id: int, interval_ms: int)
                 actor_id=supervisor.id,
                 room_id=patient.room_id,
                 updated_by_user_id=actor_user_id,
-                note="emergency_drill: supervisor dispatched",
+                note="emergency_drill: head_caregiver dispatched",
             )
 
     await asyncio.sleep(delay)

@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.roles import CanonicalRole
+
 
 class SupportTicketCreateIn(BaseModel):
     title: str = Field(min_length=3, max_length=256)
@@ -49,7 +51,7 @@ class SupportTicketCommentOut(BaseModel):
     workspace_id: int
     ticket_id: int
     author_user_id: int | None
-    author_role: str
+    author_role: CanonicalRole
     body: str
     created_at: datetime
 
@@ -60,7 +62,7 @@ class SupportTicketOut(BaseModel):
     id: int
     workspace_id: int
     reporter_user_id: int | None
-    reporter_role: str
+    reporter_role: CanonicalRole
     title: str
     description: str
     category: str

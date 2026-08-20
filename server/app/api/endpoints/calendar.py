@@ -19,6 +19,7 @@ from app.api.dependencies import (
 )
 from app.models.core import Workspace
 from app.models.users import User
+from app.roles import role_is_allowed
 from app.schemas.calendar import CalendarEventOut
 from app.services.calendar import list_calendar_events
 
@@ -64,7 +65,7 @@ async def get_calendar_events(
 ):
     visible_patient_ids = (
         None
-        if current_user.role in {"admin", "head_nurse"}
+        if role_is_allowed(current_user.role, {"admin", "head_caregiver"})
         else await get_visible_patient_ids(db, ws.id, current_user)
     )
     # #region agent log

@@ -387,7 +387,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const pagePatientId = useMemo(() => {
-    const m = pathname?.match(/^\/(?:admin|head-nurse|supervisor|observer)\/patients\/(\d+)/);
+    const m = pathname?.match(/^\/(?:admin|head-caregiver|caregiver)\/patients\/(\d+)/);
     return m ? parseInt(m[1], 10) : null;
   }, [pathname]);
   const pageContext = useMemo(() => {
@@ -424,10 +424,8 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
     switch (user?.role) {
       case "admin":
         return [t("aiChat.quick.adminRisks"), t("aiChat.quick.adminAudit")];
-      case "head_nurse":
+      case "head_caregiver":
         return [t("aiChat.quick.headNurseActions"), t("aiChat.quick.headNurseAlerts")];
-      case "supervisor":
-        return [t("aiChat.quick.supervisorVitals"), t("aiChat.quick.supervisorDirectives")];
       case "patient":
         return [t("aiChat.quick.patientVitals"), t("aiChat.quick.patientUnwell")];
       default:
@@ -979,7 +977,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="ws-ai-fab fixed right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-elevated transition-smooth hover:bg-primary/90 sm:right-6 sm:h-14 sm:px-5"
+        className="ws-ai-fab fixed right-4 z-50 hidden h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-elevated transition-smooth hover:bg-primary/90 sm:right-6 sm:h-14 sm:px-5 lg:flex"
         aria-label={t("aiChat.openChat")}
       >
         <Bot className="h-5 w-5" />

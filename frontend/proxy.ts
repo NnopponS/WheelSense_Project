@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { canonicalizeRole } from "@/lib/roles";
+
 const ROLE_HOME: Record<string, string> = {
   admin: "/admin",
-  head_nurse: "/head-nurse",
-  supervisor: "/supervisor",
-  observer: "/observer",
+  head_caregiver: "/head-caregiver",
+  caregiver: "/caregiver",
   patient: "/patient",
 };
 
@@ -63,7 +64,7 @@ export function proxy(request: NextRequest) {
   }
 
   const payload = decodeJwtPayload(token);
-  const role = payload?.role ?? null;
+  const role = payload?.role ? canonicalizeRole(payload.role) : null;
   const exp = typeof payload?.exp === "number" ? payload.exp : null;
   if (exp !== null && exp * 1000 <= Date.now()) {
     return redirectToLogin(request, nextPath, true);
@@ -83,9 +84,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/head-nurse/:path*",
-    "/supervisor/:path*",
-    "/observer/:path*",
+    "/head-caregiver/:path*",
+    "/caregiver/:path*",
     "/patient/:path*",
     "/account/:path*",
   ],

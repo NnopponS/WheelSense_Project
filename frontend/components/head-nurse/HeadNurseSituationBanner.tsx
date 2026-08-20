@@ -85,7 +85,7 @@ export function HeadNurseSituationBanner({
       accent: "text-red-600",
       iconBg: "bg-red-500/15 text-red-600",
       icon: AlertTriangle,
-      href: "/head-nurse/alerts",
+      href: "/head-caregiver/alerts",
       hint:
         stats.criticalAlertCount > 0
           ? `${stats.criticalAlertCount} ${t("headNurse.situation.criticalSuffix")}`
@@ -97,7 +97,7 @@ export function HeadNurseSituationBanner({
       accent: "text-emerald-600",
       iconBg: "bg-emerald-500/15 text-emerald-600",
       icon: Users,
-      href: "/head-nurse/personnel?tab=staff",
+      href: "/head-caregiver/personnel?tab=staff",
     },
     {
       labelKey: "headNurse.situation.atRiskPatients",
@@ -105,7 +105,7 @@ export function HeadNurseSituationBanner({
       accent: "text-amber-700",
       iconBg: "bg-amber-500/15 text-amber-700",
       icon: HeartPulse,
-      href: "/head-nurse/personnel",
+      href: "/head-caregiver/personnel",
     },
     {
       labelKey: "headNurse.situation.unassignedTasks",
@@ -113,7 +113,7 @@ export function HeadNurseSituationBanner({
       accent: "text-sky-700",
       iconBg: "bg-sky-500/15 text-sky-700",
       icon: ClipboardList,
-      href: "/head-nurse/tasks",
+      href: "/head-caregiver/tasks",
     },
   ];
 

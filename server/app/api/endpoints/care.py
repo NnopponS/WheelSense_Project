@@ -15,7 +15,7 @@ from app.services.care import specialist_service
 
 router = APIRouter()
 
-ROLE_SPECIALIST_MANAGERS = ["admin", "head_nurse", "supervisor"]
+ROLE_SPECIALIST_MANAGERS = ["admin", "head_caregiver"]
 
 
 @router.get("/specialists", response_model=list[SpecialistOut])

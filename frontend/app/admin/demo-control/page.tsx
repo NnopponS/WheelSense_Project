@@ -80,7 +80,7 @@ export default function AdminDemoControlPage() {
   const users = useQuery<User[]>({
     queryKey: ["demo-control", "users", user?.workspace_id],
     queryFn: () =>
-      api.get(withWorkspaceScope("/users/search?roles=admin,head_nurse,supervisor,observer&limit=100", user?.workspace_id) as string),
+      api.get(withWorkspaceScope("/users/search?roles=admin,head_caregiver,caregiver&limit=100", user?.workspace_id) as string),
   }).data ?? [];
   const rooms = useQuery<Room[]>({
     queryKey: ["demo-control", "rooms", user?.workspace_id],

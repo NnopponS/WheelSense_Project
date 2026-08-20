@@ -522,7 +522,7 @@ async def test_caregiver_device_assign(
         workspace_id=ws,
         first_name="Ann",
         last_name="Nurse",
-        role="observer",
+        role="caregiver",
         phone="",
         email="",
     )
@@ -622,7 +622,7 @@ async def test_device_activity_forbidden_for_observer(
     obs = User(
         username="observer_device_activity",
         hashed_password=get_password_hash("p"),
-        role="observer",
+        role="caregiver",
         workspace_id=admin_user.workspace_id,
     )
     db_session.add(obs)
@@ -726,7 +726,7 @@ async def test_mobile_ingest_auto_registers_real_mobile_device(
 
 
 @pytest.mark.asyncio
-async def test_assign_patient_from_device_forbidden_for_supervisor(
+async def test_assign_patient_from_device_allowed_for_supervisor(
     db_session: AsyncSession,
     admin_user: User,
 ):
@@ -738,7 +738,7 @@ async def test_assign_patient_from_device_forbidden_for_supervisor(
     sup = User(
         username="supervisor_device_patient",
         hashed_password=get_password_hash("p"),
-        role="supervisor",
+        role="head_caregiver",
         workspace_id=admin_user.workspace_id,
     )
     db_session.add(sup)
@@ -782,7 +782,7 @@ async def test_assign_patient_from_device_forbidden_for_supervisor(
                 "/api/devices/WDEV-SUP/patient",
                 json={"patient_id": patient.id, "device_role": "wheelchair_sensor"},
             )
-            assert r.status_code == 403
+            assert r.status_code == 200
         app.dependency_overrides.clear()
 
 
@@ -906,7 +906,7 @@ async def test_post_device_caregiver_assign_and_unassign(
         workspace_id=ws,
         first_name="Sam",
         last_name="Staff",
-        role="observer",
+        role="caregiver",
         phone="",
         email="",
     )

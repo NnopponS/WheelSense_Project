@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.roles import CanonicalRole
+
 
 # ─── Subtask ─────────────────────────────────────────────────────────────────
 
@@ -67,7 +69,7 @@ class TaskCreate(BaseModel):
     patient_id: int | None = None
     assigned_user_id: int | None = None
     assigned_user_ids: list[int] = Field(default_factory=list)
-    assigned_role: str | None = None
+    assigned_role: CanonicalRole | None = None
     start_at: datetime | None = None  # optional datetime for task start time
     ends_at: datetime | None = None
     due_at: datetime | None = None
@@ -88,7 +90,7 @@ class TaskUpdate(BaseModel):
     status: str | None = Field(None, pattern="^(pending|in_progress|completed|cancelled|skipped)$")
     assigned_user_id: int | None = None
     assigned_user_ids: list[int] = Field(default_factory=list)
-    assigned_role: str | None = None
+    assigned_role: CanonicalRole | None = None
     subtasks: list[SubtaskItem] | None = None
     is_active: bool | None = None
 
@@ -107,7 +109,7 @@ class TaskOut(BaseModel):
     status: str
     assigned_user_id: int | None
     assigned_user_ids: list[int] = Field(default_factory=list)
-    assigned_role: str | None
+    assigned_role: CanonicalRole | None
     created_by_user_id: int | None
     completed_at: datetime | None
     subtasks: list[dict[str, Any]] = Field(default_factory=list)
@@ -162,7 +164,7 @@ class TaskBoardUserRow(BaseModel):
     user_id: int
     username: str
     display_name: str
-    role: str
+    role: CanonicalRole
     total: int
     in_progress: int
     completed: int

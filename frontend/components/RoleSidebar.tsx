@@ -34,9 +34,11 @@ interface RoleSidebarProps {
 
 const ROLE_LABEL_KEYS: Record<string, TranslationKey> = {
   admin: "shell.roleAdmin",
-  head_nurse: "shell.roleHeadNurse",
-  supervisor: "shell.roleSupervisor",
-  observer: "shell.roleObserver",
+  head_caregiver: "shell.roleHeadCaregiver",
+  head_nurse: "shell.roleHeadCaregiver",
+  supervisor: "shell.roleHeadCaregiver",
+  caregiver: "shell.roleCaregiver",
+  observer: "shell.roleCaregiver",
   patient: "shell.rolePatient",
 };
 

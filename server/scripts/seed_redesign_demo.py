@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Seed WheelSense with the 2026-04-20 redesign test cohort.
 
-Staff (5 users total, one password for all): admin, head_nurse, supervisor, observer, observer2.
+Staff (5 users total, one password for all): admin, head_caregiver, supervisor, caregiver, observer2.
 Patients (5): Emika, Somchai, Rattana, Krit, Wichai (user-provided profiles).
 
 Idempotent: safe to re-run. Pass --reset to wipe the workspace first.
@@ -34,6 +34,7 @@ if str(ROOT) not in sys.path:
 from app.config import settings
 from app.core.security import get_password_hash
 from app.db.session import AsyncSessionLocal
+from app.roles import canonicalize_role
 from app.models import (
     CareGiver,
     CareGiverPatientAccess,
@@ -67,7 +68,7 @@ STAFF: list[dict] = [
         "email": "admin@wheelsense.local",
     },
     {
-        "role": "head_nurse",
+        "role": "head_caregiver",
         "username": "headnurse",
         "first_name": "ศิริพร",
         "last_name": "หัวหน้าวอร์ด",
@@ -77,7 +78,7 @@ STAFF: list[dict] = [
         "email": "headnurse@wheelsense.local",
     },
     {
-        "role": "supervisor",
+        "role": "head_caregiver",
         "username": "supervisor",
         "first_name": "มานะ",
         "last_name": "เวชกิจ",
@@ -87,7 +88,7 @@ STAFF: list[dict] = [
         "email": "supervisor@wheelsense.local",
     },
     {
-        "role": "observer",
+        "role": "caregiver",
         "username": "observer1",
         "first_name": "สุดา",
         "last_name": "ใจดี",
@@ -97,7 +98,7 @@ STAFF: list[dict] = [
         "email": "observer1@wheelsense.local",
     },
     {
-        "role": "observer",
+        "role": "caregiver",
         "username": "observer2",
         "first_name": "วิมล",
         "last_name": "รักษ์ไทย",
@@ -425,7 +426,7 @@ async def seed_staff(session: AsyncSession, ws_id: int) -> dict[str, tuple[User,
     hashed = get_password_hash(DEMO_PASSWORD)
     out: dict[str, tuple[User, CareGiver | None]] = {}
     for cfg in STAFF:
-        role = cfg["role"]
+        role = canonicalize_role(cfg["role"])
         # Caregiver row (skip for pure admin — admin does not need a caregiver row for ops)
         caregiver = None
         if role != "admin":
@@ -604,7 +605,7 @@ async def assign_caregivers_to_patients(
     staff: dict[str, tuple[User, CareGiver | None]],
     patients: list[Patient],
 ) -> None:
-    """Give both observers visibility to all patients; supervisor + head_nurse too."""
+    """Give both caregivers visibility to all patients; head caregivers too."""
     targets = [
         staff.get(u) for u in ("headnurse", "supervisor", "observer1", "observer2")
     ]

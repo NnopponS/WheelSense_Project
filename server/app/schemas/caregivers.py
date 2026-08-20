@@ -5,14 +5,16 @@ from __future__ import annotations
 from datetime import date, time, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.roles import canonicalize_role
 
 # ── CareGiver ─────────────────────────────────────────────────────────────────
 
 class CareGiverCreate(BaseModel):
     first_name: str
     last_name: str
-    role: str  # admin | head_nurse | supervisor | observer
+    role: str  # admin | head_caregiver | caregiver
     employee_code: str = ""
     department: str = ""
     employment_type: str = ""
@@ -23,6 +25,11 @@ class CareGiverCreate(BaseModel):
     emergency_contact_name: str = ""
     emergency_contact_phone: str = ""
     photo_url: str = ""
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v: str) -> str:
+        return canonicalize_role(v)
 
 class CareGiverPatch(BaseModel):
     """Partial update for staff profile."""
@@ -41,6 +48,11 @@ class CareGiverPatch(BaseModel):
     emergency_contact_phone: str | None = None
     photo_url: str | None = None
     is_active: bool | None = None
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v: str | None) -> str | None:
+        return canonicalize_role(v)
 
 class CareGiverOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -61,6 +73,11 @@ class CareGiverOut(BaseModel):
     photo_url: str
     is_active: bool
     created_at: datetime
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v: str) -> str:
+        return canonicalize_role(v)
 
 # ── Zone ──────────────────────────────────────────────────────────────────────
 
@@ -93,6 +110,7 @@ class CaregiverPatientAccessOut(BaseModel):
     assigned_by_user_id: int | None
     is_active: bool
     created_at: datetime
+
     updated_at: datetime
 
 

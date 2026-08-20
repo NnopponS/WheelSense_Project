@@ -25,25 +25,25 @@ async def test_caregiver_patient_access_filters_patient_reads(
 
     caregiver = await client.post(
         "/api/caregivers",
-        json={"first_name": "Scope", "last_name": "Nurse", "role": "supervisor"},
+        json={"first_name": "Scope", "last_name": "Nurse", "role": "observer"},
     )
     assert caregiver.status_code == 201
     caregiver_id = caregiver.json()["id"]
 
-    supervisor = User(
+    observer = User(
         workspace_id=admin_user.workspace_id,
-        username="patient_scope_supervisor",
+        username="patient_scope_observer",
         hashed_password=get_password_hash("password123"),
-        role="supervisor",
+        role="observer",
         is_active=True,
         caregiver_id=caregiver_id,
     )
-    db_session.add(supervisor)
+    db_session.add(observer)
     await db_session.commit()
-    await db_session.refresh(supervisor)
-    supervisor_headers = make_token_headers(supervisor)
+    await db_session.refresh(observer)
+    observer_headers = make_token_headers(observer)
 
-    unassigned_list = await client.get("/api/patients", headers=supervisor_headers)
+    unassigned_list = await client.get("/api/patients", headers=observer_headers)
     assert unassigned_list.status_code == 200
     assert unassigned_list.json() == []
 
@@ -80,12 +80,12 @@ async def test_caregiver_patient_access_filters_patient_reads(
     assert via_caregiver.status_code == 200
     assert [row["patient_id"] for row in via_caregiver.json()] == [first_id]
 
-    supervisor_put = await client.put(
+    observer_put = await client.put(
         f"/api/patients/{first_id}/caregivers",
         json={"caregiver_ids": [caregiver_id]},
-        headers=supervisor_headers,
+        headers=observer_headers,
     )
-    assert supervisor_put.status_code == 403
+    assert observer_put.status_code == 403
 
     restore = await client.put(
         f"/api/patients/{first_id}/caregivers",
@@ -93,11 +93,11 @@ async def test_caregiver_patient_access_filters_patient_reads(
     )
     assert restore.status_code == 200
 
-    assigned_list = await client.get("/api/patients", headers=supervisor_headers)
+    assigned_list = await client.get("/api/patients", headers=observer_headers)
     assert assigned_list.status_code == 200
     assert [row["id"] for row in assigned_list.json()] == [first_id]
 
-    blocked = await client.get(f"/api/patients/{second_id}", headers=supervisor_headers)
+    blocked = await client.get(f"/api/patients/{second_id}", headers=observer_headers)
     assert blocked.status_code == 403
 
 
@@ -198,11 +198,13 @@ async def test_workflow_target_validation_rejects_invalid_roles_and_cross_worksp
 
 
 @pytest.mark.asyncio
-async def test_workflow_head_nurse_has_workspace_wide_patient_visibility(
+@pytest.mark.parametrize("role", ["head_nurse", "supervisor"])
+async def test_workflow_operational_lead_has_workspace_wide_patient_visibility(
     client: AsyncClient,
     db_session: AsyncSession,
     admin_user: User,
     make_token_headers,
+    role: str,
 ):
     first = await client.post("/api/patients", json={"first_name": "Task", "last_name": "One"})
     second = await client.post("/api/patients", json={"first_name": "Task", "last_name": "Two"})
@@ -213,35 +215,35 @@ async def test_workflow_head_nurse_has_workspace_wide_patient_visibility(
 
     caregiver = await client.post(
         "/api/caregivers",
-        json={"first_name": "Workflow", "last_name": "Lead", "role": "head_nurse"},
+        json={"first_name": "Workflow", "last_name": "Lead", "role": role},
     )
     assert caregiver.status_code == 201
     caregiver_id = caregiver.json()["id"]
 
-    head_nurse = User(
+    lead = User(
         workspace_id=admin_user.workspace_id,
-        username="workflow_limited_head_nurse",
+        username=f"workflow_lead_{role}",
         hashed_password=get_password_hash("password123"),
-        role="head_nurse",
+        role=role,
         is_active=True,
         caregiver_id=caregiver_id,
     )
-    db_session.add(head_nurse)
+    db_session.add(lead)
     await db_session.commit()
-    await db_session.refresh(head_nurse)
+    await db_session.refresh(lead)
 
     first_task = await client.post(
         "/api/workflow/tasks",
-        json={"title": "Visible task", "patient_id": first_id, "assigned_role": "head_nurse"},
+        json={"title": "Visible task", "patient_id": first_id, "assigned_role": role},
     )
     second_task = await client.post(
         "/api/workflow/tasks",
-        json={"title": "Hidden task", "patient_id": second_id, "assigned_role": "head_nurse"},
+        json={"title": "Hidden task", "patient_id": second_id, "assigned_role": role},
     )
     assert first_task.status_code == 201
     assert second_task.status_code == 201
 
-    scoped = await client.get("/api/workflow/tasks", headers=make_token_headers(head_nurse))
+    scoped = await client.get("/api/workflow/tasks", headers=make_token_headers(lead))
     assert scoped.status_code == 200
     assert {row["id"] for row in scoped.json()} == {
         first_task.json()["id"],

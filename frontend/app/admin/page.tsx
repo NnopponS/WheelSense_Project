@@ -38,7 +38,7 @@ type MenuGroup = {
 };
 
 /** Matches `RequireRole` on `GET /api/devices/activity` - avoid polling when the session cannot read fleet activity. */
-const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_nurse", "supervisor"]);
+const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_caregiver"]);
 
 const HARDWARE_ROWS: Array<{
   hardware: HardwareType;
@@ -152,8 +152,10 @@ export default function AdminDashboardPage() {
     const byRole = {
       admin: list.filter((u) => u.role === "admin").length,
       head_nurse: list.filter((u) => u.role === "head_nurse").length,
+      head_caregiver: list.filter((u) => u.role === "head_caregiver").length,
       supervisor: list.filter((u) => u.role === "supervisor").length,
       observer: list.filter((u) => u.role === "observer").length,
+      caregiver: list.filter((u) => u.role === "caregiver").length,
       patient: list.filter((u) => u.role === "patient").length,
     };
     return { total: list.length, active, inactive: list.length - active, byRole };

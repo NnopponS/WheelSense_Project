@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { Capability } from "./permissions";
 import type { TranslationKey } from "./i18n";
+import { canonicalizeRole } from "./roles";
 
 export interface NavItem {
   /** Translation key for the label */
@@ -118,163 +119,117 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
     },
   ],
 
-  /** Head Nurse role — Blueprint: Command Center, Alerts, Patients, Staff, Work, Messages, More */
-  head_nurse: [
+  /** Head Caregiver role — Blueprint: Queue, Patients, Tasks, Messages, More */
+  head_caregiver: [
     {
       items: [
         {
-          key: "nav.headNurse.commandCenter",
-          href: "/head-nurse",
+          key: "nav.headCaregiver.queue",
+          href: "/head-caregiver",
           icon: LayoutDashboard,
           badge: "alerts",
           mobilePriority: 1,
         },
         {
-          key: "nav.headNurse.alerts",
-          href: "/head-nurse/alerts",
-          icon: Bell,
-          badge: "alerts",
-          mobilePriority: 2,
-        },
-        {
-          key: "nav.headNurse.patients",
-          href: "/head-nurse/personnel",
-          icon: Users,
-          requiredCapability: "patients.read",
-          activeForPaths: ["/head-nurse/patients"],
-          mobilePriority: 3,
-        },
-        {
-          key: "nav.headNurse.staff",
-          href: "/head-nurse/staff",
-          icon: Users,
-          activeForPaths: ["/head-nurse/specialists", "/head-nurse/calendar"],
-          mobilePriority: 4,
-        },
-        {
-          key: "nav.headNurse.work",
-          href: "/head-nurse/tasks",
-          icon: ClipboardEdit,
-          requiredCapability: "workflow.manage",
-          activeForPaths: [
-            "/head-nurse/workflow",
-            "/head-nurse/shift-checklists",
-            "/head-nurse/timeline",
-            "/head-nurse/reports"
-          ],
-          mobilePriority: 5,
-        },
-        {
-          key: "nav.headNurse.messages",
-          href: "/head-nurse/messages",
-          icon: Inbox,
-          requiredCapability: "messages.manage",
-          group: "more",
-        },
-        { key: "nav.headNurse.map", href: "/head-nurse/floorplans", icon: MapPin, group: "more", activeForPaths: ["/head-nurse/monitoring"] },
-        { key: "nav.headNurse.support", href: "/head-nurse/support", icon: Bug, group: "more" },
-        { key: "nav.headNurse.account", href: "/head-nurse/settings", icon: Settings, group: "more" },
-      ],
-    },
-  ],
-
-  /** Supervisor role — Blueprint: Queue, Patients, Tasks, Messages, More */
-  supervisor: [
-    {
-      items: [
-        {
-          key: "nav.supervisor.queue",
-          href: "/supervisor",
-          icon: LayoutDashboard,
-          badge: "alerts",
-          mobilePriority: 1,
-        },
-        {
-          key: "nav.supervisor.emergency",
-          href: "/supervisor/emergency",
+          key: "nav.headCaregiver.emergency",
+          href: "/head-caregiver/emergency",
           icon: ShieldAlert,
           badge: "alerts",
           mobilePriority: 5,
         },
         {
-          key: "nav.supervisor.patients",
-          href: "/supervisor/personnel",
+          key: "nav.headCaregiver.patients",
+          href: "/head-caregiver/patients",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/supervisor/patients", "/supervisor/prescriptions"],
+          activeForPaths: ["/head-caregiver/prescriptions"],
           mobilePriority: 3,
         },
         {
-          key: "nav.supervisor.tasks",
-          href: "/supervisor/tasks",
+          key: "nav.headCaregiver.caregivers",
+          href: "/head-caregiver/caregivers",
+          icon: Users,
+          requiredCapability: "caregivers.read",
+          mobilePriority: 4,
+        },
+        {
+          key: "nav.headCaregiver.tasks",
+          href: "/head-caregiver/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
           activeForPaths: [
-            "/supervisor/workflow",
-            "/supervisor/calendar",
-            "/supervisor/directives",
+            "/head-caregiver/workflow",
+            "/head-caregiver/calendar",
+            "/head-caregiver/directives",
           ],
           mobilePriority: 2,
         },
         {
-          key: "nav.supervisor.messages",
-          href: "/supervisor/messages",
+          key: "nav.headCaregiver.messages",
+          href: "/head-caregiver/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
           mobilePriority: 4,
         },
-        { key: "nav.supervisor.map", href: "/supervisor/floorplans", icon: MapPin, group: "more", activeForPaths: ["/supervisor/monitoring"] },
-        { key: "nav.supervisor.support", href: "/supervisor/support", icon: Bug, group: "more" },
-        { key: "nav.supervisor.account", href: "/supervisor/settings", icon: Settings, group: "more" },
+        { key: "nav.headCaregiver.map", href: "/head-caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/head-caregiver/monitoring"] },
+        { key: "nav.headCaregiver.support", href: "/head-caregiver/support", icon: Bug, group: "more" },
+        { key: "nav.headCaregiver.account", href: "/head-caregiver/settings", icon: Settings, group: "more" },
       ],
     },
   ],
 
-  /** Observer role — Blueprint: Today, Patients, Alerts, Handover, More */
-  observer: [
+  // Legacy aliases — canonicalized at runtime via canonicalizeRole
+  head_nurse: [],
+  supervisor: [],
+
+  /** Caregiver role — Blueprint: Today, Patients, Alerts, Handover, More */
+  caregiver: [
     {
       items: [
         {
-          key: "nav.observer.today",
-          href: "/observer",
+          key: "nav.caregiver.today",
+          href: "/caregiver",
           icon: LayoutDashboard,
           mobilePriority: 1,
         },
         {
-          key: "nav.observer.tasks",
-          href: "/observer/tasks",
+          key: "nav.caregiver.tasks",
+          href: "/caregiver/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
           mobilePriority: 2,
         },
         {
-          key: "nav.observer.patients",
-          href: "/observer/personnel",
+          key: "nav.caregiver.patients",
+          href: "/caregiver/patients",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/observer/patients", "/observer/prescriptions"],
+          activeForPaths: ["/caregiver/prescriptions"],
           mobilePriority: 4,
         },
         {
-          key: "nav.observer.alerts",
-          href: "/observer/alerts",
+          key: "nav.caregiver.alerts",
+          href: "/caregiver/alerts",
           icon: Bell,
           badge: "alerts",
           mobilePriority: 3,
         },
         {
-          key: "nav.observer.handover",
-          href: "/observer/messages",
+          key: "nav.caregiver.handover",
+          href: "/caregiver/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
           mobilePriority: 5,
         },
-        { key: "nav.observer.support", href: "/observer/support", icon: Bug, group: "more" },
-        { key: "nav.observer.map", href: "/observer/floorplans", icon: MapPin, group: "more", activeForPaths: ["/observer/monitoring"] },
-        { key: "nav.observer.account", href: "/observer/settings", icon: Settings, group: "more" },
+        { key: "nav.caregiver.support", href: "/caregiver/support", icon: Bug, group: "more" },
+        { key: "nav.caregiver.map", href: "/caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/caregiver/monitoring"] },
+        { key: "nav.caregiver.account", href: "/caregiver/settings", icon: Settings, group: "more" },
       ],
     },
   ],
+
+  // Legacy alias — canonicalized at runtime
+  observer: [],
 
   /** Patient role — Blueprint: Home, Schedule, Medicine, Messages, Room */
   patient: [
@@ -335,7 +290,7 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
  * Get navigation configuration for a specific role
  */
 export function getNavConfig(role: string): RoleNavConfig {
-  return ROLE_NAV_CONFIGS[role] ?? [];
+  return ROLE_NAV_CONFIGS[canonicalizeRole(role)] ?? [];
 }
 
 /**

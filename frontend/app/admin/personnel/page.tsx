@@ -49,12 +49,8 @@ function personnelTabFromQuery(raw: string | null | undefined): ViewTab | null {
   return null;
 }
 
-const STAFF_ROLES: User["role"][] = ["admin", "head_nurse", "supervisor", "observer"];
-const NEW_STAFF_ROLES: Array<"head_nurse" | "supervisor" | "observer"> = [
-  "head_nurse",
-  "supervisor",
-  "observer",
-];
+const STAFF_ROLES: User["role"][] = ["admin", "head_caregiver", "caregiver"];
+const NEW_STAFF_ROLES: Array<"head_caregiver" | "caregiver"> = ["head_caregiver", "caregiver"];
 
 const PERSONNEL_QK = {
   caregivers: ["admin", "personnel", "caregivers"] as const,
@@ -64,9 +60,11 @@ const PERSONNEL_QK = {
 
 const USER_ROLE_TO_I18N: Record<string, TranslationKey> = {
   admin: "personnel.role.admin",
-  head_nurse: "personnel.role.headNurse",
+  head_nurse: "personnel.role.supervisor",
+  head_caregiver: "personnel.role.supervisor",
   supervisor: "personnel.role.supervisor",
   observer: "personnel.role.observer",
+  caregiver: "personnel.role.observer",
   patient: "personnel.role.patient",
 };
 
@@ -101,7 +99,7 @@ function PersonnelPageContent() {
   const [staffDialogOpen, setStaffDialogOpen] = useState(false);
   const [sfFirst, setSfFirst] = useState("");
   const [sfLast, setSfLast] = useState("");
-  const [sfRole, setSfRole] = useState<"head_nurse" | "supervisor" | "observer">("observer");
+  const [sfRole, setSfRole] = useState<"head_caregiver" | "caregiver">("caregiver");
   const [sfEmployeeCode, setSfEmployeeCode] = useState("");
   const [sfDepartment, setSfDepartment] = useState("Nursing");
   const [sfSpecialty, setSfSpecialty] = useState("");
@@ -158,7 +156,7 @@ function PersonnelPageContent() {
   const resetStaffForm = useCallback(() => {
     setSfFirst("");
     setSfLast("");
-    setSfRole("observer");
+    setSfRole("caregiver");
     setSfEmployeeCode("");
     setSfDepartment("Nursing");
     setSfSpecialty("");
@@ -197,8 +195,8 @@ function PersonnelPageContent() {
   const onPersonnelTabChange = useCallback(
     (v: ViewTab) => {
       setTab(v);
-      const basePath = pathname.includes("/head-nurse/personnel")
-        ? "/head-nurse/personnel"
+      const basePath = pathname.includes("/head-caregiver/patients")
+        ? "/head-caregiver/patients"
         : "/admin/personnel";
       const path = v === "staff" ? basePath : `${basePath}?tab=${encodeURIComponent(v)}`;
       router.replace(path, { scroll: false });

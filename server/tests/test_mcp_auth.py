@@ -69,7 +69,7 @@ async def mcp_observer_same_workspace(
     observer = User(
         username=f"mcp_observer_{secrets_module.token_hex(4)}",
         hashed_password=get_password_hash("observerpass"),
-        role="observer",
+        role="caregiver",
         workspace_id=ws.id,
     )
     db_session.add(observer)
@@ -444,20 +444,20 @@ async def test_role_mcp_scope_mapping():
     assert "admin.audit.read" in admin_scopes
 
     # Head nurse has clinical scopes but not admin-only
-    head_nurse_scopes = ROLE_MCP_SCOPES["head_nurse"]
+    head_nurse_scopes = ROLE_MCP_SCOPES["head_caregiver"]
     assert "patients.read" in head_nurse_scopes
     assert "patients.write" in head_nurse_scopes
     assert "admin.audit.read" in head_nurse_scopes
 
-    # Supervisor has read and alert manage but not patient write
-    supervisor_scopes = ROLE_MCP_SCOPES["supervisor"]
+    # Supervisor inherits the legacy operational-lead scopes.
+    supervisor_scopes = ROLE_MCP_SCOPES["head_caregiver"]
     assert "patients.read" in supervisor_scopes
-    assert "patients.write" not in supervisor_scopes
+    assert "patients.write" in supervisor_scopes
     assert "alerts.manage" in supervisor_scopes
     assert "admin.audit.read" in supervisor_scopes
 
     # Observer has read-only
-    observer_scopes = ROLE_MCP_SCOPES["observer"]
+    observer_scopes = ROLE_MCP_SCOPES["caregiver"]
     assert "patients.read" in observer_scopes
     assert "devices.read" in observer_scopes
     assert "patients.write" not in observer_scopes

@@ -46,7 +46,7 @@ from app.schemas.localization import (
 
 router = APIRouter()
 
-ROLE_LOCALIZATION_MANAGERS = ["admin", "head_nurse", "supervisor"]
+ROLE_LOCALIZATION_MANAGERS = ["admin", "head_caregiver"]
 
 
 @router.get("")

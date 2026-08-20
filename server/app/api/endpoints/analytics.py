@@ -19,7 +19,7 @@ async def get_alert_summary(
     session: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(
-        RequireRole(["admin", "supervisor", "head_nurse", "observer"])
+        RequireRole(["admin", "head_caregiver", "caregiver"])
     ),
 ):
     """Retrieve alert statistics and aggregations."""
@@ -31,7 +31,7 @@ async def get_vitals_averages(
     session: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(
-        RequireRole(["admin", "supervisor", "head_nurse", "observer"])
+        RequireRole(["admin", "head_caregiver", "caregiver"])
     ),
 ):
     """Retrieve average vitals for the workspace."""
@@ -41,7 +41,7 @@ async def get_vitals_averages(
 async def get_ward_summary(
     session: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin", "supervisor", "head_nurse"])),
+    current_user: User = Depends(RequireRole(["admin", "head_caregiver"])),
 ):
     """Retrieve ward overview statistics."""
     return await AnalyticsService.get_ward_summary(session, ws.id)

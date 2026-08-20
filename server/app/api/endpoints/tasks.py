@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -15,6 +15,7 @@ from app.api.dependencies import (
 )
 from app.models.core import Workspace
 from app.models.users import User
+from app.roles import role_is_allowed
 from app.schemas.tasks import (
     TaskBoardResponse,
     TaskCreate,
@@ -31,14 +32,14 @@ from app.services.workflow_message_attachments import (
 
 router = APIRouter()
 
-_HEAD_NURSE_ADMIN = frozenset({"admin", "head_nurse"})
-_TASK_EXECUTORS = frozenset({"admin", "head_nurse", "supervisor", "observer"})
+_HEAD_NURSE_ADMIN = frozenset({"admin", "head_caregiver"})
+_TASK_EXECUTORS = frozenset({"admin", "head_caregiver", "caregiver"})
 
 
 def _require_management_role(user: User) -> None:
-    """Raise 403 if user is not head_nurse or admin."""
-    if user.role not in _HEAD_NURSE_ADMIN:
-        raise HTTPException(403, detail="Only head nurse or admin can manage tasks")
+    """Raise 403 if user is not head_caregiver or admin."""
+    if not role_is_allowed(user.role, _HEAD_NURSE_ADMIN):
+        raise HTTPException(403, detail="Only head caregiver or admin can manage tasks")
 
 
 def _require_executor_role(user: User) -> None:
@@ -191,7 +192,7 @@ async def create_task(
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    """Create new task. Requires head_nurse or admin role."""
+    """Create new task. Requires head_caregiver or admin role."""
     _require_management_role(user)
     ws_id = workspace.id
     
@@ -212,7 +213,7 @@ async def update_task(
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    """Update task. Requires head_nurse or admin role."""
+    """Update task. Requires head_caregiver or admin role."""
     _require_management_role(user)
     ws_id = workspace.id
     
@@ -238,7 +239,7 @@ async def delete_task(
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    """Soft delete task. Requires head_nurse or admin role."""
+    """Soft delete task. Requires head_caregiver or admin role."""
     _require_management_role(user)
     ws_id = workspace.id
     
@@ -262,7 +263,7 @@ async def submit_report(
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    """Submit structured task report. Must be assignee or head_nurse/admin."""
+    """Submit structured task report. Must be assignee or head_caregiver/admin."""
     _require_executor_role(user)
     ws_id = workspace.id
     
@@ -310,7 +311,7 @@ async def reset_routine_tasks(
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    """Reset all routine tasks for a shift date. Requires head_nurse or admin role."""
+    """Reset all routine tasks for a shift date. Requires head_caregiver or admin role."""
     _require_management_role(user)
     ws_id = workspace.id
     

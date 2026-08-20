@@ -48,8 +48,8 @@ import { canDeleteWorkflowMessage, WORKFLOW_MESSAGE_MAX_ATTACHMENTS } from "@/li
 type RecipientTarget = "role" | "user";
 type MessageTab = "all" | "inbox" | "sent";
 
-const ROLE_OPTIONS = ["admin", "head_nurse", "supervisor", "observer", "patient"] as const;
-const RECIPIENT_FILTER_ROLES = ["admin", "head_nurse", "supervisor", "observer", "patient"] as const;
+const ROLE_OPTIONS = ["admin", "head_caregiver", "caregiver", "patient"] as const;
+const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "caregiver", "patient"] as const;
 type RecipientFilterRole = (typeof RECIPIENT_FILTER_ROLES)[number];
 
 const TARGET_USER_NONE = "__none__";
@@ -77,11 +77,9 @@ function workflowRoleDisplay(role: string, t: (key: TranslationKey) => string): 
   switch (role) {
     case "admin":
       return t("admin.workflowMessaging.roleLabelAdmin");
-    case "head_nurse":
-      return t("admin.workflowMessaging.roleLabelHeadNurse");
-    case "supervisor":
+    case "head_caregiver":
       return t("admin.workflowMessaging.roleLabelSupervisor");
-    case "observer":
+    case "caregiver":
       return t("admin.workflowMessaging.roleLabelObserver");
     case "patient":
       return t("admin.workflowMessaging.roleLabelPatient");
@@ -94,11 +92,9 @@ function recipientFilterRoleLabelKey(role: RecipientFilterRole): TranslationKey 
   switch (role) {
     case "admin":
       return "admin.workflowMessaging.roleLabelAdmin";
-    case "head_nurse":
-      return "admin.workflowMessaging.roleLabelHeadNurse";
-    case "supervisor":
+    case "head_caregiver":
       return "admin.workflowMessaging.roleLabelSupervisor";
-    case "observer":
+    case "caregiver":
       return "admin.workflowMessaging.roleLabelObserver";
     case "patient":
       return "admin.workflowMessaging.roleLabelPatient";
@@ -117,8 +113,8 @@ export function AdminWorkflowMailbox() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [recipientTarget, setRecipientTarget] = useState<RecipientTarget>("role");
-  const [recipientRole, setRecipientRole] = useState<(typeof ROLE_OPTIONS)[number]>("supervisor");
-  const [userFilterRole, setUserFilterRole] = useState<RecipientFilterRole>("head_nurse");
+  const [recipientRole, setRecipientRole] = useState<(typeof ROLE_OPTIONS)[number]>("head_caregiver");
+  const [userFilterRole, setUserFilterRole] = useState<RecipientFilterRole>("head_caregiver");
   const [recipientUserId, setRecipientUserId] = useState<string>(TARGET_USER_NONE);
   const [recipientSearch, setRecipientSearch] = useState("");
   const [subject, setSubject] = useState("");
@@ -166,8 +162,8 @@ export function AdminWorkflowMailbox() {
       setBody("");
       setPendingAttachments([]);
       setRecipientTarget("role");
-      setRecipientRole("supervisor");
-      setUserFilterRole("head_nurse");
+      setRecipientRole("head_caregiver");
+      setUserFilterRole("head_caregiver");
       setRecipientUserId(TARGET_USER_NONE);
       setRecipientSearch("");
       setComposeOpen(false);

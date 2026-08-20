@@ -18,6 +18,7 @@ from app.models.caregivers import CareGiverPatientAccess
 from app.models.core import Workspace
 from app.models.patients import PatientDeviceAssignment
 from app.models.users import User
+from app.roles import canonicalize_role, role_is_allowed
 from app.schemas.users import TokenData
 from app.services.auth import AuthService, UserService
 
@@ -158,10 +159,10 @@ async def get_current_workspace_id(
 
 class RequireRole:
     def __init__(self, allowed_roles: list[str]):
-        self.allowed_roles = allowed_roles
+        self.allowed_roles = frozenset(allowed_roles)
 
     def __call__(self, user: User = Depends(get_current_active_user)) -> User:
-        if user.role not in self.allowed_roles:
+        if not role_is_allowed(user.role, self.allowed_roles):
             raise HTTPException(
                 status_code=403,
                 detail="Operation not permitted",
@@ -171,9 +172,9 @@ class RequireRole:
 # --- Role groups (EaseAI RBAC) -------------------------------------------------
 # Canonical roles
 ROLE_ADMIN: Final[str] = "admin"
-ROLE_HEAD_NURSE: Final[str] = "head_nurse"
-ROLE_SUPERVISOR: Final[str] = "supervisor"
-ROLE_OBSERVER: Final[str] = "observer"
+ROLE_HEAD_NURSE: Final[str] = "head_caregiver"  # legacy name kept for import compatibility
+ROLE_SUPERVISOR: Final[str] = "head_caregiver"  # legacy name kept for import compatibility
+ROLE_OBSERVER: Final[str] = "caregiver"  # legacy name kept for import compatibility
 ROLE_PATIENT: Final[str] = "patient"
 
 # Clinical staff (excludes patient end-users for list/bulk operations)
@@ -182,7 +183,7 @@ ROLE_CLINICAL_STAFF = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_SUPERVISOR, ROLE_OBSERV
 ROLE_PATIENT_MANAGERS = [ROLE_ADMIN, ROLE_HEAD_NURSE]
 # Who may create/update credentials and account links
 ROLE_USER_MANAGERS = [ROLE_ADMIN, ROLE_HEAD_NURSE]
-# Read-only facility/caregiver for supervisor
+# Read-only facility/caregiver for head_caregiver
 ROLE_SUPERVISOR_READ = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_SUPERVISOR]
 # Facility/floor read access used by role-shared floorplan viewers.
 ROLE_FACILITY_READ = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_SUPERVISOR, ROLE_OBSERVER]
@@ -211,7 +212,7 @@ ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
         "reports.manage",
         "messages.manage",
     },
-    ROLE_HEAD_NURSE: {
+    "head_caregiver": {
         "users.manage",
         "patients.manage",
         "caregivers.manage",
@@ -222,16 +223,7 @@ ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
         "reports.manage",
         "messages.manage",
     },
-    ROLE_SUPERVISOR: {
-        "patients.read",
-        "caregivers.read",
-        "devices.read",
-        "alerts.manage",
-        "reports.read",
-        "messages.manage",
-        "facilities.read",
-    },
-    ROLE_OBSERVER: {
+    "caregiver": {
         "patients.read",
         "devices.read",
         "alerts.read",
@@ -246,6 +238,8 @@ ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
         "devices.read",
     },
 }
+# head_caregiver inherits all head_nurse capabilities (they are the same role now)
+ROLE_CAPABILITIES["head_caregiver"].update(ROLE_CAPABILITIES["head_caregiver"])
 
 ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
     ROLE_ADMIN: {
@@ -271,7 +265,7 @@ ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
         "vitals.write",
         "caregivers.write",
     },
-    ROLE_HEAD_NURSE: {
+    "head_caregiver": {
         "workspace.read",
         "patients.read",
         "patients.write",
@@ -292,23 +286,7 @@ ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
         "vitals.write",
         "caregivers.write",
     },
-    ROLE_SUPERVISOR: {
-        "workspace.read",
-        "patients.read",
-        "alerts.read",
-        "alerts.manage",
-        "devices.read",
-        "devices.command",
-        "rooms.read",
-        "room_controls.use",
-        "workflow.read",
-        "workflow.write",
-        "cameras.capture",
-        "admin.audit.read",
-        "medication.read",
-        "medication.write",
-    },
-    ROLE_OBSERVER: {
+    "caregiver": {
         "workspace.read",
         "patients.read",
         "alerts.read",
@@ -334,6 +312,8 @@ ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
         "medication.read",
     },
 }
+# head_caregiver and supervisor are the same role; no-op alias kept for clarity
+ROLE_TOKEN_SCOPES["head_caregiver"] = set(ROLE_TOKEN_SCOPES["head_caregiver"])
 
 def assert_patient_record_access(user: User, patient_id: int) -> None:
     """Staff may access any patient in workspace; patients only their own row."""
@@ -356,7 +336,7 @@ async def get_visible_patient_ids(
     user: User,
 ) -> set[int] | None:
     """Return None for admin-wide access, otherwise the explicit visible patient ids."""
-    if user.role in {ROLE_ADMIN, ROLE_HEAD_NURSE}:
+    if canonicalize_role(user.role) in {ROLE_ADMIN, "head_caregiver"}:
         return None
     if user.role == ROLE_PATIENT:
         patient_id = getattr(user, "patient_id", None)

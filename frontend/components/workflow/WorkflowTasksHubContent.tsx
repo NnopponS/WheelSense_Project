@@ -71,7 +71,7 @@ function taskMutationErrorMessage(
 }
 
 const QUERY = {
-  "head-nurse": {
+  head_caregiver: {
     tasks: ["head-nurse", "tasks", "board"] as const,
     patients: ["head-nurse", "tasks", "patients"] as const,
     taskLimit: 400,
@@ -79,9 +79,13 @@ const QUERY = {
       ["head-nurse", "tasks"],
       ["head-nurse", "dashboard", "tasks"],
       ["head-nurse", "workflow-jobs"],
+      ["supervisor", "tasks"],
+      ["supervisor", "dashboard", "tasks"],
+      ["supervisor", "calendar", "tasks"],
+      ["supervisor", "workflow-jobs"],
     ] as const,
   },
-  observer: {
+  caregiver: {
     tasks: ["observer", "tasks", "list"] as const,
     patients: ["observer", "tasks", "patients"] as const,
     taskLimit: 300,
@@ -93,20 +97,9 @@ const QUERY = {
       ["observer", "workflow-jobs"],
     ] as const,
   },
-  supervisor: {
-    tasks: ["supervisor", "tasks", "board"] as const,
-    patients: ["supervisor", "tasks", "patients"] as const,
-    taskLimit: 400,
-    invalidate: [
-      ["supervisor", "tasks"],
-      ["supervisor", "dashboard", "tasks"],
-      ["supervisor", "calendar", "tasks"],
-      ["supervisor", "workflow-jobs"],
-    ] as const,
-  },
 } as const;
 
-export type WorkflowTasksHubVariant = "head-nurse" | "observer" | "supervisor";
+export type WorkflowTasksHubVariant = "head_caregiver" | "caregiver";
 
 export interface WorkflowTasksHubContentProps {
   variant: WorkflowTasksHubVariant;
@@ -194,11 +187,11 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
       setSavingTaskIds((prev) => new Set(prev).add(taskId));
     },
     onSuccess: async () => {
-      if (variant === "observer") setTaskActionError(null);
+      if (variant === "caregiver") setTaskActionError(null);
       await invalidateAll();
     },
     onError: (err) => {
-      if (variant === "observer") setTaskActionError(taskMutationErrorMessage(err, t));
+      if (variant === "caregiver") setTaskActionError(taskMutationErrorMessage(err, t));
     },
     onSettled: (_d, _e, variables) => {
       setPendingTaskId(null);
@@ -288,7 +281,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
   }, [filteredTasks]);
 
   const effectiveLayout =
-    (variant === "head-nurse" || variant === "supervisor") && tasksLayout === "list"
+    variant === "head_caregiver" && tasksLayout === "list"
       ? "calendar"
       : tasksLayout;
 
@@ -298,7 +291,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
       setTaskActionError(null);
       await updateTaskMutation.mutateAsync({ taskId, status: "completed" });
     } catch {
-      if (variant === "observer") {
+      if (variant === "caregiver") {
         /* onError sets banner */
       }
     } finally {
@@ -324,7 +317,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("workflowTasks.hubBoardSubtitle")}</p>
         </div>
-        {variant === "observer" ? (
+        {variant === "caregiver" ? (
           <Button
             variant="outline"
             size="sm"
@@ -341,7 +334,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
         ) : null}
       </div>
 
-      {variant === "observer" && taskActionError ? (
+      {variant === "caregiver" && taskActionError ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{t("observer.tasks.errorTitle")}</AlertTitle>
@@ -450,7 +443,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
           <LayoutGrid className="mr-2 h-4 w-4" />
           {t("workflowTasks.kanban.viewBoard")}
         </Button>
-        {variant === "observer" ? (
+        {variant === "caregiver" ? (
           <Button
             type="button"
             variant={tasksLayout === "list" ? "default" : "outline"}
@@ -557,7 +550,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
         </div>
       ) : null}
 
-      {variant === "observer" && tasksLayout === "list" ? (
+      {variant === "caregiver" && tasksLayout === "list" ? (
         <ObserverTaskListPanel
           grouped={groupedFiltered}
           onComplete={handleCompleteTask}

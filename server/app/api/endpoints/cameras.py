@@ -78,7 +78,7 @@ async def delete_photo(
     photo_id: int,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _=Depends(RequireRole(["admin", "supervisor"]))
+    _=Depends(RequireRole(["admin", "head_caregiver"]))
 ):
     """Delete a photo and its disk file."""
     photo = await camera_service.delete_photo(db, ws_id=ws.id, photo_id=photo_id)

@@ -52,7 +52,7 @@ import { canDeleteWorkflowMessage, WORKFLOW_MESSAGE_MAX_ATTACHMENTS } from "@/li
 const EMPTY_SELECT = "__empty__";
 
 /** Matches `GET /workflow/messaging/recipients` (staff + patient accounts in workspace). */
-const RECIPIENT_FILTER_ROLES = ["admin", "head_nurse", "supervisor", "observer", "patient"] as const;
+const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "caregiver", "patient"] as const;
 type RecipientFilterRole = (typeof RECIPIENT_FILTER_ROLES)[number];
 
 const composeSchema = z.object({
@@ -65,7 +65,7 @@ const composeSchema = z.object({
 
 type ComposeValues = z.infer<typeof composeSchema>;
 
-export type StaffMailboxVariant = "head_nurse" | "supervisor" | "observer";
+export type StaffMailboxVariant = "head_caregiver" | "caregiver";
 
 type MessageRow = {
   id: number;
@@ -95,30 +95,21 @@ const VARIANT_CONFIG: Record<
     subtitleKey: TranslationKey;
   }
 > = {
-  head_nurse: {
+  head_caregiver: {
     invalidatePrefix: ["head-nurse", "messages"],
     messagesQueryKey: ["head-nurse", "messages", "list"],
     patientsQueryKey: ["head-nurse", "messages", "patients"],
     recipientsQueryKey: ["head-nurse", "messages", "recipients"],
-    defaultFilterRole: "supervisor",
+    defaultFilterRole: "head_caregiver",
     titleKey: "headNurse.messages.pageTitle",
     subtitleKey: "headNurse.messages.pageSubtitle",
   },
-  supervisor: {
-    invalidatePrefix: ["supervisor", "messages"],
-    messagesQueryKey: ["supervisor", "messages", "list"],
-    patientsQueryKey: ["supervisor", "messages", "patients"],
-    recipientsQueryKey: ["supervisor", "messages", "recipients"],
-    defaultFilterRole: "head_nurse",
-    titleKey: "supervisor.messages.pageTitle",
-    subtitleKey: "supervisor.messages.pageSubtitle",
-  },
-  observer: {
+  caregiver: {
     invalidatePrefix: ["observer", "messages"],
     messagesQueryKey: ["observer", "messages", "list"],
     patientsQueryKey: ["observer", "messages", "patients"],
     recipientsQueryKey: ["observer", "messages", "recipients"],
-    defaultFilterRole: "head_nurse",
+    defaultFilterRole: "head_caregiver",
     titleKey: "observer.messages.pageTitle",
     subtitleKey: "observer.messages.pageSubtitle",
   },
@@ -139,11 +130,9 @@ function recipientFilterRoleLabelKey(role: RecipientFilterRole): TranslationKey 
   switch (role) {
     case "admin":
       return "admin.workflowMessaging.roleLabelAdmin";
-    case "head_nurse":
-      return "admin.workflowMessaging.roleLabelHeadNurse";
-    case "supervisor":
+    case "head_caregiver":
       return "admin.workflowMessaging.roleLabelSupervisor";
-    case "observer":
+    case "caregiver":
       return "admin.workflowMessaging.roleLabelObserver";
     case "patient":
       return "admin.workflowMessaging.roleLabelPatient";

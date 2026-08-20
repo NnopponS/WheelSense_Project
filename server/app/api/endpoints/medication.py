@@ -29,7 +29,7 @@ from app.services.medication import pharmacy_order_service, prescription_service
 
 router = APIRouter()
 
-ROLE_MEDICATION_MANAGERS = ["admin", "head_nurse", "supervisor"]
+ROLE_MEDICATION_MANAGERS = ["admin", "head_caregiver"]
 
 
 @router.get("/prescriptions", response_model=list[PrescriptionOut])

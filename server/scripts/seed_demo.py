@@ -29,6 +29,7 @@ if str(ROOT) not in sys.path:
 from app.config import settings
 from app.core.security import get_password_hash
 from app.db.session import AsyncSessionLocal
+from app.roles import canonicalize_role
 from seed_device_extras import seed_additional_sim_devices
 from app.models import (
     ActivityTimeline,
@@ -521,10 +522,10 @@ DEMO_PATIENTS: list[dict] = [
 
 DEMO_STAFF: list[tuple[str, str, str, str]] = [
     ("admin", "demo_admin", "Ada", "Morgan"),
-    ("head_nurse", "demo_headnurse", "Helen", "Brooks"),
-    ("supervisor", "demo_supervisor", "Marcus", "Lee"),
-    ("observer", "demo_observer", "Nina", "Patel"),
-    ("observer", "demo_observer2", "Jason", "Kim"),
+    ("head_caregiver", "demo_headnurse", "Helen", "Brooks"),
+    ("head_caregiver", "demo_supervisor", "Marcus", "Lee"),
+    ("caregiver", "demo_observer", "Nina", "Patel"),
+    ("caregiver", "demo_observer2", "Jason", "Kim"),
 ]
 
 DEMO_STAFF_PROFILE_BY_USERNAME: dict[str, dict[str, str]] = {
@@ -1079,6 +1080,7 @@ async def seed_caregivers_and_users(
     users_by_role: dict[str, User] = {}
 
     for role, legacy_username, first_name, last_name in users_cfg:
+        db_role = canonicalize_role(role)
         username = _demo_account_username(first_name, last_name)
         profile = dict(DEMO_STAFF_PROFILE_BY_USERNAME[legacy_username])
         portrait_slug = profile.pop("portrait_slug")
@@ -1095,7 +1097,7 @@ async def seed_caregivers_and_users(
                 workspace_id=workspace_id,
                 first_name=first_name,
                 last_name=last_name,
-                role=role,
+                role=db_role,
                 employee_code=profile["employee_code"],
                 department=profile["department"],
                 employment_type=profile["employment_type"],
@@ -1113,7 +1115,7 @@ async def seed_caregivers_and_users(
         else:
             caregiver.first_name = first_name
             caregiver.last_name = last_name
-            caregiver.role = role
+            caregiver.role = db_role
             caregiver.employee_code = profile["employee_code"]
             caregiver.department = profile["department"]
             caregiver.employment_type = profile["employment_type"]
@@ -1131,7 +1133,7 @@ async def seed_caregivers_and_users(
             workspace_id=workspace_id,
             username=username,
             password=username,
-            role=role,
+            role=db_role,
             caregiver_id=caregiver.id,
             profile_image_url=caregiver.photo_url,
             legacy_usernames=(legacy_username,),
@@ -1488,18 +1490,18 @@ async def seed_alerts(
     devices: list[Device],
 ) -> int:
     now = datetime.now(timezone.utc)
-    observer_primary = caregivers_by_role.get("demo_observer") or caregivers_by_role.get("observer")
+    observer_primary = caregivers_by_role.get("demo_observer") or caregivers_by_role.get("caregiver")
     observer_secondary = caregivers_by_role.get("demo_observer2") or observer_primary
     statuses = (
         ("active", None),
         ("active", None),
         ("active", None),
-        ("acknowledged", caregivers_by_role.get("head_nurse")),
-        ("acknowledged", caregivers_by_role.get("supervisor")),
+        ("acknowledged", caregivers_by_role.get("head_caregiver")),
+        ("acknowledged", caregivers_by_role.get("head_caregiver")),
         ("acknowledged", observer_primary),
         ("acknowledged", observer_secondary),
-        ("resolved", caregivers_by_role.get("head_nurse")),
-        ("resolved", caregivers_by_role.get("supervisor")),
+        ("resolved", caregivers_by_role.get("head_caregiver")),
+        ("resolved", caregivers_by_role.get("head_caregiver")),
         ("resolved", observer_secondary),
     )
     severities = ("critical", "warning", "warning", "critical", "warning", "info")
@@ -1687,11 +1689,11 @@ async def seed_workflow(
     task_count = 0
     directive_count = 0
 
-    supervisor = users_by_role["supervisor"]
-    head_nurse = users_by_role["head_nurse"]
+    supervisor = users_by_role["demo_supervisor"]
+    head_nurse = users_by_role["head_caregiver"]
     observers = [
-        users_by_role.get("demo_observer") or users_by_role["observer"],
-        users_by_role.get("demo_observer2") or users_by_role["observer"],
+        users_by_role.get("demo_observer") or users_by_role["caregiver"],
+        users_by_role.get("demo_observer2") or users_by_role["caregiver"],
     ]
 
     # ── 10 richly-labelled clinical tasks (max 10 as required) ──────────────
@@ -1707,7 +1709,7 @@ async def seed_workflow(
         {
             "patient_idx": 1,
             "title": "Cardiac weight and edema check - Robert",
-            "description": "Record Robert's weight, edema status, and breathing effort. Notify head nurse for sudden weight gain.",
+            "description": "Record Robert's weight, edema status, and breathing effort. Notify head caregiver for sudden weight gain.",
             "priority": "high",
             "schedule_type": "monitoring",
             "hours_offset": 1,
@@ -1791,7 +1793,7 @@ async def seed_workflow(
             starts_at=now + timedelta(hours=td["hours_offset"]),
             ends_at=now + timedelta(hours=td["hours_offset"] + 1),
             recurrence_rule="FREQ=DAILY",
-            assigned_role="observer",
+            assigned_role="caregiver",
             assigned_user_id=observer.id,
             notes="Demo schedule",
             status="scheduled",
@@ -1810,7 +1812,7 @@ async def seed_workflow(
             priority=td["priority"],
             due_at=now + timedelta(hours=td["hours_offset"] + 1),
             status="pending",
-            assigned_role="observer",
+            assigned_role="caregiver",
             assigned_user_id=observer.id,
             created_by_user_id=head_nurse.id,
         )
@@ -1843,7 +1845,7 @@ async def seed_workflow(
             workspace_id=workspace_id,
             patient_id=patient.id,
             issued_by_user_id=supervisor.id,
-            target_role="observer",
+            target_role="caregiver",
             target_user_id=observer.id,
             title=dd["title"],
             directive_text=dd["text"],
@@ -1866,9 +1868,9 @@ async def seed_messages_and_handovers(
 ) -> tuple[int, int]:
     """Seed role messaging inboxes and handover notes for operational routes."""
     now = datetime.now(timezone.utc)
-    head_nurse = users_by_role["head_nurse"]
-    supervisor = users_by_role["supervisor"]
-    observer = users_by_role.get("demo_observer") or users_by_role["observer"]
+    head_nurse = users_by_role["head_caregiver"]
+    supervisor = users_by_role["demo_supervisor"]
+    observer = users_by_role.get("demo_observer") or users_by_role["caregiver"]
     observer_two = users_by_role.get("demo_observer2") or observer
 
     message_count = 0
@@ -1877,7 +1879,7 @@ async def seed_messages_and_handovers(
     message_specs: list[dict[str, object]] = [
         {
             "sender_user_id": head_nurse.id,
-            "recipient_role": "observer",
+            "recipient_role": "caregiver",
             "recipient_user_id": None,
             "subject": "Shift kickoff",
             "body": "Start morning checks and escalate any warning vitals.",
@@ -1886,7 +1888,7 @@ async def seed_messages_and_handovers(
         },
         {
             "sender_user_id": observer.id,
-            "recipient_role": "head_nurse",
+            "recipient_role": "head_caregiver",
             "recipient_user_id": head_nurse.id,
             "subject": "Room follow-up",
             "body": "Patient requested posture adjustment after medication round.",
@@ -1895,19 +1897,19 @@ async def seed_messages_and_handovers(
         },
         {
             "sender_user_id": supervisor.id,
-            "recipient_role": "head_nurse",
+            "recipient_role": "head_caregiver",
             "recipient_user_id": head_nurse.id,
             "subject": "Directive context",
-            "body": "Keep observer cadence at two-hour intervals for mobility risk patients.",
+            "body": "Keep caregiver cadence at two-hour intervals for mobility risk patients.",
             "patient_id": patients[2].id,
             "is_read": False,
         },
         {
             "sender_user_id": observer_two.id,
-            "recipient_role": "supervisor",
+            "recipient_role": "head_caregiver",
             "recipient_user_id": supervisor.id,
             "subject": "Escalation ready",
-            "body": "Second observer has taken over rounds on the east wing.",
+            "body": "Second caregiver has taken over rounds on the east wing.",
             "patient_id": patients[3].id,
             "is_read": False,
         },
@@ -1935,7 +1937,7 @@ async def seed_messages_and_handovers(
             workspace_id=workspace_id,
             patient_id=patients[idx].id,
             author_user_id=observer.id if idx % 2 == 0 else head_nurse.id,
-            target_role="head_nurse" if idx % 2 == 0 else "supervisor",
+            target_role="head_caregiver",
             shift_date=(now - timedelta(days=idx)).date(),
             shift_label="morning" if idx % 2 == 0 else "night",
             priority="routine" if idx < 2 else "urgent",
@@ -1957,7 +1959,7 @@ async def seed_future_domains(
 ) -> tuple[int, int, int]:
     """Seed specialists, prescriptions, and pharmacy orders for role routes."""
     now = datetime.now(timezone.utc)
-    supervisor = users_by_role["supervisor"]
+    supervisor = users_by_role["demo_supervisor"]
     specialist_count = 0
     prescription_count = 0
     pharmacy_order_count = 0
@@ -2066,10 +2068,10 @@ async def seed_sim_team_caregivers_and_users(
     return await seed_caregivers_and_users(session, workspace_id)
 
     users_cfg: list[tuple[str, str, str, str]] = [
-        ("head_nurse", "sim_headnurse", "Helen", "Brooks"),
-        ("supervisor", "sim_supervisor", "Marcus", "Lee"),
-        ("observer", "sim_observer1", "Nina", "Patel"),
-        ("observer", "sim_observer2", "Jason", "Kim"),
+        ("head_caregiver", "sim_headnurse", "Helen", "Brooks"),
+        ("head_caregiver", "sim_supervisor", "Marcus", "Lee"),
+        ("caregiver", "sim_observer1", "Nina", "Patel"),
+        ("caregiver", "sim_observer2", "Jason", "Kim"),
     ]
     profile_by_username = {
         "sim_headnurse": {
@@ -2207,7 +2209,7 @@ async def seed_sim_team_observer_access(
     caregivers_by_key: dict[str, CareGiver],
     patients: list[Patient],
 ) -> int:
-    """Grant both sim observers visibility to all seeded patients (non-admin roles need access rows)."""
+    """Grant both sim caregivers visibility to all seeded patients (non-admin roles need access rows)."""
     observer_keys = ("demo_observer", "demo_observer2", "nina.p", "jason.k", "sim_observer1", "sim_observer2")
     created = 0
     seen_caregiver_ids: set[int] = set()
@@ -2282,13 +2284,13 @@ async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
     print(f"Workspace id: {workspace_id} | name: {workspace_name}")
     print(f"Rooms: {len(rooms)} | Patients: {len(patients)} | Wheelchair devices + assignments: OK")
     print(f"Smart devices: {smart_devices_count} | Room-node mappings: {room_node_mappings}")
-    print(f"Observer patient access rows (new): {access_rows}")
+    print(f"Caregiver patient access rows (new): {access_rows}")
     print("\nStaff logins (password is the username):")
     print("  ada.m      (admin)")
-    print("  helen.b    (head_nurse)")
-    print("  marcus.l   (supervisor)")
-    print("  nina.p     (observer)")
-    print("  jason.k    (observer)")
+    print("  helen.b    (head_caregiver)")
+    print("  marcus.l   (head_caregiver)")
+    print("  nina.p     (caregiver)")
+    print("  jason.k    (caregiver)")
     print("\nPatient logins (password is the username):")
     for username in sorted(key for key in patient_users if "." in key):
         print(f"  {username}")
@@ -2360,10 +2362,10 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
     bootstrap_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "wheelsense2026")
     print(f"- bootstrap    : {bootstrap_username} / {bootstrap_password}")
     print("- admin        : ada.m / ada.m")
-    print("- head_nurse   : helen.b / helen.b")
-    print("- supervisor   : marcus.l / marcus.l")
-    print("- observer     : nina.p / nina.p")
-    print("- observer     : jason.k / jason.k")
+    print("- head_caregiver: helen.b / helen.b")
+    print("- head_caregiver: marcus.l / marcus.l")
+    print("- caregiver     : nina.p / nina.p")
+    print("- caregiver     : jason.k / jason.k")
     for username in sorted(key for key in patient_users if "." in key):
         print(f"- patient      : {username} / {username}")
 

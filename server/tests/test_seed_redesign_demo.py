@@ -14,6 +14,7 @@ from app.models import (
     Room,
     User,
 )
+from app.roles import canonicalize_role
 from scripts.seed_redesign_demo import (
     PATIENTS,
     STAFF,
@@ -128,7 +129,7 @@ async def test_seed_staff_have_correct_roles(db_session: AsyncSession) -> None:
 
     for cfg in STAFF:
         username = cfg["username"]
-        expected_role = cfg["role"]
+        expected_role = canonicalize_role(cfg["role"])
         user, caregiver = staff[username]
 
         # Verify user exists with correct role

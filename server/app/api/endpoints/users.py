@@ -49,7 +49,7 @@ async def search_users(
     kind: str | None = Query(default=None, pattern="^(staff|patient)$"),
     role: str | None = Query(
         default=None,
-        pattern="^(admin|head_nurse|supervisor|observer|patient)$",
+        pattern="^(admin|head_caregiver|caregiver|patient)$",
     ),
     roles: str | None = None,
     limit: int = Query(20, ge=1, le=100),

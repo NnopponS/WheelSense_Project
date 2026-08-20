@@ -7,6 +7,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.roles import CanonicalRole
+
 
 class FloorplanAssetOut(BaseModel):
     id: int
@@ -39,7 +41,7 @@ class RoomOccupantOut(BaseModel):
     actor_id: int
     display_name: str
     subtitle: str = ""
-    role: Optional[str] = None
+    role: Optional[CanonicalRole] = None
     patient_id: Optional[int] = None
     user_id: Optional[int] = None
     caregiver_id: Optional[int] = None

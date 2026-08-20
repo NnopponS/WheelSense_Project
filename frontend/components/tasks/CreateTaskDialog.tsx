@@ -42,13 +42,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 /** Workspace staff roles only (excludes patient). Used for /users/search and assignee pickers. */
-const STAFF_ROLE_VALUES = ["admin", "head_nurse", "supervisor", "observer"] as const;
+const STAFF_ROLE_VALUES = ["admin", "supervisor", "observer"] as const;
 type StaffRoleValue = (typeof STAFF_ROLE_VALUES)[number];
 const STAFF_ROLES_API_PARAM = STAFF_ROLE_VALUES.join(",");
 
 const STAFF_ROLE_LABEL_KEY: Record<StaffRoleValue, string> = {
   admin: "personnel.role.admin",
-  head_nurse: "personnel.role.headNurse",
   supervisor: "personnel.role.supervisor",
   observer: "personnel.role.observer",
 };

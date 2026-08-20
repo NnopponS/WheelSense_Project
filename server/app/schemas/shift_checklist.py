@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.roles import CanonicalRole
+
 
 class ShiftChecklistItem(BaseModel):
     id: str = Field(min_length=1, max_length=64)
@@ -35,7 +37,7 @@ class ShiftChecklistPutIn(BaseModel):
 class ShiftChecklistWorkspaceRowOut(BaseModel):
     user_id: int
     username: str
-    role: str
+    role: CanonicalRole
     shift_date: date
     items: list[ShiftChecklistItem]
     percent_complete: int = 0

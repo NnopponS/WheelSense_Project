@@ -5,44 +5,72 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   async redirects() {
     return [
+      // Legacy /staff/* redirects
       {
         source: "/staff/supervisor",
-        destination: "/supervisor",
+        destination: "/head-caregiver",
         permanent: false,
       },
       {
         source: "/staff/supervisor/:path*",
-        destination: "/supervisor/:path*",
+        destination: "/head-caregiver/:path*",
         permanent: false,
       },
       {
         source: "/staff/observer",
-        destination: "/observer",
+        destination: "/caregiver",
+        permanent: false,
+      },
+      // Old role routes → new canonical routes
+      {
+        source: "/supervisor",
+        destination: "/head-caregiver",
         permanent: false,
       },
       {
-        source: "/supervisor/workflow",
-        destination: "/supervisor/tasks",
+        source: "/supervisor/:path*",
+        destination: "/head-caregiver/:path*",
         permanent: false,
       },
       {
-        source: "/supervisor/directives",
-        destination: "/supervisor/tasks?wtab=directives",
+        source: "/head-nurse",
+        destination: "/head-caregiver",
         permanent: false,
       },
       {
-        source: "/supervisor/calendar",
-        destination: "/supervisor/tasks?tab=calendar",
+        source: "/head-nurse/:path*",
+        destination: "/head-caregiver/:path*",
         permanent: false,
       },
       {
-        source: "/head-nurse/workflow",
-        destination: "/head-nurse/tasks",
+        source: "/observer",
+        destination: "/caregiver",
         permanent: false,
       },
       {
-        source: "/observer/workflow",
-        destination: "/observer/tasks",
+        source: "/observer/:path*",
+        destination: "/caregiver/:path*",
+        permanent: false,
+      },
+      // Internal route normalizations
+      {
+        source: "/head-caregiver/workflow",
+        destination: "/head-caregiver/tasks",
+        permanent: false,
+      },
+      {
+        source: "/head-caregiver/directives",
+        destination: "/head-caregiver/tasks?wtab=directives",
+        permanent: false,
+      },
+      {
+        source: "/head-caregiver/calendar",
+        destination: "/head-caregiver/tasks?tab=calendar",
+        permanent: false,
+      },
+      {
+        source: "/caregiver/workflow",
+        destination: "/caregiver/tasks",
         permanent: false,
       },
     ];

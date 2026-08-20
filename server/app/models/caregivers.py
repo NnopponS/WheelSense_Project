@@ -33,7 +33,7 @@ class CareGiver(Base):
     )
     first_name = Column(String(64), nullable=False)
     last_name = Column(String(64), nullable=False)
-    role = Column(String(16), nullable=False)  # admin | head_nurse | supervisor | observer
+    role = Column(String(16), nullable=False)  # admin | head_caregiver | caregiver
     employee_code = Column(String(32), nullable=False, default="")
     department = Column(String(64), nullable=False, default="")
     employment_type = Column(String(32), nullable=False, default="")

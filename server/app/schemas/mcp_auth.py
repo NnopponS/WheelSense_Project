@@ -84,7 +84,7 @@ ROLE_MCP_SCOPES: dict[str, set[str]] = {
         MCP_SCOPE_VITALS_WRITE,
         MCP_SCOPE_CAREGIVERS_WRITE,
     },
-    "head_nurse": {
+    "head_caregiver": {
         MCP_SCOPE_WORKSPACE_READ,
         MCP_SCOPE_PATIENTS_READ,
         MCP_SCOPE_PATIENTS_WRITE,
@@ -105,23 +105,7 @@ ROLE_MCP_SCOPES: dict[str, set[str]] = {
         MCP_SCOPE_VITALS_WRITE,
         MCP_SCOPE_CAREGIVERS_WRITE,
     },
-    "supervisor": {
-        MCP_SCOPE_WORKSPACE_READ,
-        MCP_SCOPE_PATIENTS_READ,
-        MCP_SCOPE_ALERTS_READ,
-        MCP_SCOPE_ALERTS_MANAGE,
-        MCP_SCOPE_DEVICES_READ,
-        MCP_SCOPE_DEVICES_COMMAND,
-        MCP_SCOPE_ROOMS_READ,
-        MCP_SCOPE_ROOM_CONTROLS_USE,
-        MCP_SCOPE_WORKFLOW_READ,
-        MCP_SCOPE_WORKFLOW_WRITE,
-        MCP_SCOPE_CAMERAS_CAPTURE,
-        MCP_SCOPE_ADMIN_AUDIT_READ,
-        MCP_SCOPE_MEDICATION_READ,
-        MCP_SCOPE_MEDICATION_WRITE,
-    },
-    "observer": {
+    "caregiver": {
         MCP_SCOPE_WORKSPACE_READ,
         MCP_SCOPE_PATIENTS_READ,
         MCP_SCOPE_ALERTS_READ,
@@ -147,6 +131,10 @@ ROLE_MCP_SCOPES: dict[str, set[str]] = {
         MCP_SCOPE_MEDICATION_READ,
     },
 }
+# Legacy role aliases map to the same scopes as their canonical replacement
+for _legacy in ("head_nurse", "supervisor"):
+    ROLE_MCP_SCOPES[_legacy] = set(ROLE_MCP_SCOPES["head_caregiver"])
+ROLE_MCP_SCOPES["observer"] = set(ROLE_MCP_SCOPES["caregiver"])
 
 
 def resolve_mcp_scopes_for_role(role: str, requested_scopes: list[str] | None = None) -> set[str]:

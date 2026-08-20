@@ -17,7 +17,7 @@ from app.models.workflow import CareDirective, CareSchedule, CareTask
 from app.schemas.calendar import CalendarEventOut
 from app.services.json_array_sql import json_int_array_contains
 
-CALENDAR_EDITOR_ROLES = {"admin", "head_nurse"}
+CALENDAR_EDITOR_ROLES = {"admin", "head_caregiver"}
 
 
 def _agent_debug_ndjson(

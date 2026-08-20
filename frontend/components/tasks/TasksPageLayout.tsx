@@ -26,7 +26,7 @@ export interface TasksPageLayoutProps {
   /** Page subtitle/description */
   description: string;
   /** Role identifier for permissions */
-  role: "admin" | "head-nurse" | "supervisor" | "observer" | "patient";
+  role: "admin" | "head-caregiver" | "caregiver" | "patient";
   /** Whether user can create tasks */
   canCreate?: boolean;
   /** Whether user can manage (edit/delete/reassign) tasks */
