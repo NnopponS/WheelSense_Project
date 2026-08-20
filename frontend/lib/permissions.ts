@@ -68,20 +68,7 @@ const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
     "device_health.read",
   ]),
   head_caregiver: new Set(OPERATIONAL_LEAD_CAPABILITIES),
-  // Legacy aliases — canonicalized at runtime
-  head_nurse: new Set(OPERATIONAL_LEAD_CAPABILITIES),
-  supervisor: new Set(OPERATIONAL_LEAD_CAPABILITIES),
   caregiver: new Set<Capability>([
-    "patients.read",
-    "devices.read",
-    "alerts.read",
-    "messages.manage",
-    "self.read",
-    "workflow.manage",
-    "schedule.manage",
-    "device_health.read",
-  ]),
-  observer: new Set<Capability>([
     "patients.read",
     "devices.read",
     "alerts.read",
@@ -96,15 +83,15 @@ const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
 
 const APP_ROUTE_ROLES = {
   "/admin": new Set<AppRole>(["admin"]),
-  "/head-caregiver": new Set<AppRole>(["admin", "head_caregiver", "head_nurse", "supervisor"]),
-  "/caregiver": new Set<AppRole>(["admin", "caregiver", "observer"]),
+  "/head-caregiver": new Set<AppRole>(["admin", "head_caregiver"]),
+  "/caregiver": new Set<AppRole>(["admin", "caregiver"]),
   "/patient": new Set<AppRole>(["admin", "patient"]),
 } as const;
 
-export function hasCapability(role: AppRole, capability: Capability): boolean {
+export function hasCapability(role: string, capability: Capability): boolean {
   return ROLE_CAPABILITIES[canonicalizeRole(role) as AppRole].has(capability);
 }
 
-export function canAccessAppRole(role: AppRole, appRoot: keyof typeof APP_ROUTE_ROLES): boolean {
+export function canAccessAppRole(role: string, appRoot: keyof typeof APP_ROUTE_ROLES): boolean {
   return APP_ROUTE_ROLES[appRoot].has(canonicalizeRole(role) as AppRole);
 }

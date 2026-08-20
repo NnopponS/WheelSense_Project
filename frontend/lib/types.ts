@@ -13,7 +13,7 @@ export interface User {
   id: number;
   workspace_id: number;
   username: string;
-  role: "admin" | "head_caregiver" | "caregiver" | "head_nurse" | "supervisor" | "observer" | "patient";
+  role: "admin" | "head_caregiver" | "caregiver" | "patient";
   is_active: boolean;
   caregiver_id: number | null;
   patient_id: number | null;

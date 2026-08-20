@@ -30,12 +30,12 @@ export default function CaregiverAlertsPage() {
       </div>
 
       <FeatureDetailActions
-        title="Related views"
+        title={t("observer.alerts.relatedViews")}
         actions={[
-          { label: t("nav.dashboard"), description: "Next action", href: "/caregiver", icon: LayoutDashboard, tone: "primary" },
-          { label: t("nav.tasks"), description: "My work", href: "/caregiver/tasks", icon: ListTodo, tone: "warning" },
-          { label: t("nav.observer.myPatients"), description: "Find patient", href: "/caregiver/personnel", icon: Users, tone: "neutral" },
-          { label: t("nav.support"), description: "Help requests", href: "/caregiver/support", icon: ConciergeBell, tone: "neutral" },
+          { label: t("nav.dashboard"), description: t("observer.alerts.dashboardDesc"), href: "/caregiver", icon: LayoutDashboard, tone: "primary" },
+          { label: t("nav.tasks"), description: t("observer.alerts.tasksDesc"), href: "/caregiver/tasks", icon: ListTodo, tone: "warning" },
+          { label: t("nav.observer.myPatients"), description: t("observer.alerts.patientsDesc"), href: "/caregiver/personnel", icon: Users, tone: "neutral" },
+          { label: t("nav.support"), description: t("observer.alerts.supportDesc"), href: "/caregiver/support", icon: ConciergeBell, tone: "neutral" },
         ]}
       />
 

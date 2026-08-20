@@ -1,10 +1,9 @@
-import type { User } from "@/lib/types";
 import { canonicalizeRole } from "@/lib/roles";
 
-export type AppRole = User["role"];
+export type AppRole = import("@/lib/types").User["role"];
 
 /** In-app path to the alerts inbox for the signed-in role. */
-export function alertsInboxPath(role: AppRole): string {
+export function alertsInboxPath(role: string): string {
   switch (canonicalizeRole(role)) {
     case "caregiver":
       return "/caregiver/alerts";
@@ -20,14 +19,14 @@ export function alertsInboxPath(role: AppRole): string {
 }
 
 /** Alerts inbox URL with optional `?alert=` deep link (row id `ws-alert-{id}` on queue tables). */
-export function alertsInboxUrl(role: AppRole, alertId?: number | null): string {
+export function alertsInboxUrl(role: string, alertId?: number | null): string {
   const base = alertsInboxPath(role);
   if (alertId == null || !Number.isFinite(alertId)) return base;
   const q = new URLSearchParams({ alert: String(alertId) });
   return `${base}?${q.toString()}`;
 }
 
-export function workflowTasksPath(role: AppRole): string {
+export function workflowTasksPath(role: string): string {
   switch (canonicalizeRole(role)) {
     case "caregiver":
       return "/caregiver/tasks";
@@ -42,7 +41,7 @@ export function workflowTasksPath(role: AppRole): string {
   }
 }
 
-export function staffMessagesPath(role: AppRole): string {
+export function staffMessagesPath(role: string): string {
   switch (canonicalizeRole(role)) {
     case "admin":
       return "/admin/messages";

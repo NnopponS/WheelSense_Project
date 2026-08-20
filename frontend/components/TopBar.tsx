@@ -65,7 +65,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
       return `${t("notifications.drawerInboxImpersonationLead")} ${user.username ?? t("shell.impersonationUserPlaceholder")} — ${t("notifications.drawerInboxImpersonationTail")}`;
     }
     if (user.role === "admin") return t("notifications.drawerInboxAdminHint");
-    if (user.role === "head_caregiver" || user.role === "head_nurse" || user.role === "supervisor") return t("notifications.drawerInboxHeadNurseHint");
+    if (user.role === "head_caregiver") return t("notifications.drawerInboxHeadNurseHint");
     return undefined;
   }, [impersonation.active, t, user]);
 

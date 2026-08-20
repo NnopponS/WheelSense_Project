@@ -108,49 +108,6 @@ _ADMIN_ONLY_TOOLS: frozenset[str] = frozenset(
     }
 )
 
-# Tools head_caregiver has that caregiver does not (management writes)
-_HEAD_NURSE_EXTRA_TOOLS: frozenset[str] = frozenset(
-    {
-        "create_patient_record",
-        "update_patient",
-        "set_patient_mode",
-        "update_patient_room",
-        "assign_patient_device",
-        "unassign_patient_device",
-        "update_patient_caregivers",
-        "create_patient_contact",
-        "update_patient_contact",
-        "delete_patient_contact",
-        "register_device",
-        "update_device",
-        "assign_device_patient",
-        "create_room",
-        "update_room",
-        "create_facility",
-        "update_facility",
-        "list_facility_floors",
-        "create_facility_floor",
-        "update_facility_floor",
-        "create_caregiver",
-        "update_caregiver",
-        "update_caregiver_patients",
-        "create_prescription",
-        "update_prescription",
-        "request_pharmacy_order",
-        "update_pharmacy_order",
-        "update_support_ticket",
-        "update_service_request",
-        "list_workspace_shift_checklists",
-        "list_handover_notes",
-        "create_handover_note",
-        "create_care_directive",
-        "update_care_directive",
-        "claim_workflow_item",
-        "handoff_workflow_item",
-        "create_task_management_task",
-    }
-)
-
 # Caregiver has head_caregiver's read tools + own-shift write ops
 # Vitals / timeline manual writes (REST: ROLE_CARE_NOTE_WRITERS — excludes head_caregiver).
 _CARE_NOTE_WRITER_TOOLS: frozenset[str] = frozenset(
@@ -161,7 +118,7 @@ _CARE_NOTE_WRITER_TOOLS: frozenset[str] = frozenset(
     }
 )
 
-_OBSERVER_ONLY_WRITE: frozenset[str] = frozenset(
+_CAREGIVER_ONLY_WRITE: frozenset[str] = frozenset(
     {
         "create_workflow_task",
         "update_workflow_task_status",
@@ -181,7 +138,7 @@ _OBSERVER_ONLY_WRITE: frozenset[str] = frozenset(
     }
 )
 
-_OBSERVER_READ: frozenset[str] = frozenset(
+_CAREGIVER_READ: frozenset[str] = frozenset(
     {
         "get_current_user_context",
         "get_system_health",
@@ -229,13 +186,13 @@ def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
     all_tools = _all_mcp_workspace_tool_names()
     forbidden = easeai_forbidden_tools(all_tools)
     patient_exclusive = patient_exclusive_tools(all_tools)
-    head_nurse = all_tools - _ADMIN_ONLY_TOOLS - patient_exclusive
-    supervisor = set(head_nurse)
-    observer = _OBSERVER_READ | _OBSERVER_ONLY_WRITE
+    head_caregiver = all_tools - _ADMIN_ONLY_TOOLS - patient_exclusive
+    head_caregiver_copy = set(head_caregiver)
+    caregiver = _CAREGIVER_READ | _CAREGIVER_ONLY_WRITE
     return {
         "admin": set(all_tools - forbidden - patient_exclusive),
-        "head_caregiver": set(head_nurse),
-        "caregiver": set(observer - patient_exclusive),
+        "head_caregiver": set(head_caregiver),
+        "caregiver": set(caregiver - patient_exclusive),
         "patient": {
             # Own data read
             "get_current_user_context",

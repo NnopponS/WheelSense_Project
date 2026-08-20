@@ -617,17 +617,17 @@ async def _run_show_demo(ws_id: int, actor_user_id: int, interval_ms: int) -> No
     async with AsyncSessionLocal() as session:
         state = await demo_control_service.list_actor_state(session, ws_id)
         patients = [actor for actor in state["actors"] if actor["actor_type"] == "patient"]
-        observers = [actor for actor in state["actors"] if actor["actor_type"] == "staff" and actor["role"] == "caregiver"]
-        if not patients or not observers:
+        caregivers = [actor for actor in state["actors"] if actor["actor_type"] == "staff" and actor["role"] == "caregiver"]
+        if not patients or not caregivers:
             return
         first_patient = patients[0]
         second_patient = patients[1] if len(patients) > 1 else patients[0]
-        for index, observer in enumerate(observers[:2]):
+        for index, caregiver in enumerate(caregivers[:2]):
             await demo_control_service.move_actor(
                 session,
                 ws_id,
                 actor_type="staff",
-                actor_id=observer["actor_id"],
+                actor_id=caregiver["actor_id"],
                 room_id=patients[index % len(patients)]["room_id"],
                 updated_by_user_id=actor_user_id,
                 note="show_demo: caregiver dispatched",
@@ -695,7 +695,7 @@ async def _run_show_demo(ws_id: int, actor_user_id: int, interval_ms: int) -> No
 async def _run_morning_rounds(ws_id: int, actor_user_id: int, interval_ms: int) -> None:
     delay = interval_ms / 1000
     async with AsyncSessionLocal() as session:
-        observers = await _list_staff_users(session, ws_id, "caregiver")
+        caregivers = await _list_staff_users(session, ws_id, "caregiver")
         patients = (
             await session.execute(
                 select(Patient)
@@ -703,7 +703,7 @@ async def _run_morning_rounds(ws_id: int, actor_user_id: int, interval_ms: int) 
                 .order_by(Patient.id.asc())
             )
         ).scalars().all()
-        for index, observer in enumerate(observers):
+        for index, caregiver in enumerate(caregivers):
             if index >= len(patients):
                 break
             if patients[index].room_id is None:
@@ -712,7 +712,7 @@ async def _run_morning_rounds(ws_id: int, actor_user_id: int, interval_ms: int) 
                 session,
                 ws_id,
                 actor_type="staff",
-                actor_id=observer.id,
+                actor_id=caregiver.id,
                 room_id=patients[index].room_id,
                 updated_by_user_id=actor_user_id,
                 note="morning_rounds: assigned to occupied room",
@@ -748,8 +748,8 @@ async def _run_morning_rounds(ws_id: int, actor_user_id: int, interval_ms: int) 
 async def _run_handoff_pressure(ws_id: int, actor_user_id: int, interval_ms: int) -> None:
     delay = interval_ms / 1000
     async with AsyncSessionLocal() as session:
-        supervisor = await _first_staff_user(session, ws_id, "head_caregiver")
-        if supervisor is None:
+        head_caregiver = await _first_staff_user(session, ws_id, "head_caregiver")
+        if head_caregiver is None:
             return
         task = (
             await session.execute(
@@ -766,7 +766,7 @@ async def _run_handoff_pressure(ws_id: int, actor_user_id: int, interval_ms: int
                 actor_user_id=actor_user_id,
                 note="handoff_pressure: escalated to head_caregiver",
                 target_mode="user",
-                target_user_id=supervisor.id,
+                target_user_id=head_caregiver.id,
             )
 
     await asyncio.sleep(delay)
@@ -816,7 +816,7 @@ async def _run_emergency_drill(ws_id: int, actor_user_id: int, interval_ms: int)
                 .limit(1)
             )
         ).scalar_one_or_none()
-        supervisor = await _first_staff_user(session, ws_id, "head_caregiver")
+        head_caregiver = await _first_staff_user(session, ws_id, "head_caregiver")
         if patient is None:
             return
         await demo_control_service.trigger_alert(
@@ -826,12 +826,12 @@ async def _run_emergency_drill(ws_id: int, actor_user_id: int, interval_ms: int)
             actor_user_id=actor_user_id,
             alert_type="fall",
         )
-        if supervisor is not None and patient.room_id is not None:
+        if head_caregiver is not None and patient.room_id is not None:
             await demo_control_service.move_actor(
                 session,
                 ws_id,
                 actor_type="staff",
-                actor_id=supervisor.id,
+                actor_id=head_caregiver.id,
                 room_id=patient.room_id,
                 updated_by_user_id=actor_user_id,
                 note="emergency_drill: head_caregiver dispatched",

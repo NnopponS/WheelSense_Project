@@ -156,7 +156,7 @@ class CareGiverDeviceAssignment(Base):
         index=True,
     )
     device_id = Column(String(32), nullable=False, index=True)
-    device_role = Column(String(32), nullable=False)  # mobile_phone | polar_gateway | observer_device
+    device_role = Column(String(32), nullable=False)  # mobile_phone | polar_gateway | caregiver_device
     assigned_at = Column(DateTime(timezone=True), default=utcnow)
     unassigned_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)

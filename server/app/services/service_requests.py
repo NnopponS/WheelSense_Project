@@ -22,7 +22,7 @@ def _is_patient(user: User) -> bool:
     return user.role == "patient"
 
 
-def _is_head_nurse(user: User) -> bool:
+def _is_head_caregiver(user: User) -> bool:
     return role_is_allowed(user.role, {"head_caregiver"})
 
 
@@ -56,7 +56,7 @@ class ServiceRequestService:
                 ServiceRequest.workspace_id == ws_id,
                 ServiceRequest.patient_id == patient_id,
             )
-        elif _is_admin(user) or _is_head_nurse(user):
+        elif _is_admin(user) or _is_head_caregiver(user):
             stmt = select(ServiceRequest).where(ServiceRequest.workspace_id == ws_id)
             if status:
                 stmt = stmt.where(ServiceRequest.status == status)
@@ -196,7 +196,7 @@ class ServiceRequestService:
                     status_code=403,
                     detail="Only the staff member who claimed this request may update it",
                 )
-        elif _is_admin(user) or _is_head_nurse(user):
+        elif _is_admin(user) or _is_head_caregiver(user):
             pass
         else:
             raise HTTPException(status_code=403, detail="Operation not permitted")
@@ -218,7 +218,7 @@ class ServiceRequestService:
                 else None
             )
 
-        if changes and (_is_admin(user) or _is_head_nurse(user)):
+        if changes and (_is_admin(user) or _is_head_caregiver(user)):
             row.resolved_by_user_id = user.id
         elif changes and _is_floor_staff(user):
             row.resolved_by_user_id = user.id

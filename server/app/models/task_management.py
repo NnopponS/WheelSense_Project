@@ -103,7 +103,7 @@ class PatientFixRoutine(Base):
         default=list,
         server_default="[]",
     )
-    # JSONB array of role strings: ["observer", "supervisor"]
+    # JSONB array of role strings: ["caregiver", "head_caregiver"]
     target_roles = Column(
         JSON().with_variant(JSONB, "postgresql"),
         nullable=False,

@@ -151,10 +151,7 @@ export default function AdminDashboardPage() {
     const active = list.filter((u) => u.is_active).length;
     const byRole = {
       admin: list.filter((u) => u.role === "admin").length,
-      head_nurse: list.filter((u) => u.role === "head_nurse").length,
       head_caregiver: list.filter((u) => u.role === "head_caregiver").length,
-      supervisor: list.filter((u) => u.role === "supervisor").length,
-      observer: list.filter((u) => u.role === "observer").length,
       caregiver: list.filter((u) => u.role === "caregiver").length,
       patient: list.filter((u) => u.role === "patient").length,
     };

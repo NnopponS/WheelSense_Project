@@ -54,7 +54,7 @@ class UserBase(BaseModel):
     """Base user attributes."""
     username: str = Field(min_length=3, max_length=128)
     role: str = Field(
-        pattern="^(admin|head_caregiver|caregiver|head_nurse|supervisor|observer|patient)$",
+        pattern="^(admin|head_caregiver|caregiver|patient)$",
         default="caregiver",
     )
     is_active: bool = True
@@ -82,7 +82,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=128)
     password: Optional[str] = Field(None, min_length=6, max_length=128)
     role: Optional[str] = Field(
-        None, pattern="^(admin|head_caregiver|caregiver|head_nurse|supervisor|observer|patient)$"
+        None, pattern="^(admin|head_caregiver|caregiver|patient)$"
     )
     is_active: Optional[bool] = None
     caregiver_id: Optional[int] = None

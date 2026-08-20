@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 
-export default function HeadCaregiverPersonnelDetailRedirect({
+export default async function HeadCaregiverPersonnelDetailRedirect({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  redirect(`/head-caregiver/patients/${params.id}`);
+  const { id } = await params;
+  redirect(`/head-caregiver/patients/${encodeURIComponent(id)}`);
 }

@@ -32,6 +32,7 @@ from app.models.chat import WorkspaceAISettings
 from app.models.core import Device, Room, SmartDevice, Workspace
 from app.models.facility import Facility, Floor
 from app.models.patients import Patient, PatientContact, PatientDeviceAssignment
+from app.roles import role_is_allowed
 from app.models.caregivers import CareGiver, CareGiverPatientAccess
 from app.models.medication import Prescription, PharmacyOrder
 from app.models.workflow import (
@@ -311,11 +312,11 @@ def clinical_triage_prompt() -> str:
 
 
 @mcp.prompt(
-    name="observer-shift-assistant",
-    title="Observer Shift Assistant",
+    name="caregiver-shift-assistant",
+    title="Caregiver Shift Assistant",
     description="Playbook for floor staff tasking and alert follow-up.",
 )
-def observer_shift_prompt() -> str:
+def caregiver_shift_prompt() -> str:
     return "Focus on assigned patients, visible rooms, current tasks, and escalation hygiene."
 
 
@@ -1273,8 +1274,8 @@ async def create_task_management_task(
 ) -> dict[str, Any]:
     actor = require_actor_context()
     _require_scope("workflow.write")
-    if actor.role not in {"admin", "head_nurse"}:
-        raise PermissionError("Only admin and head nurse users can create Task Management tasks")
+    if not role_is_allowed(actor.role, {"admin", "head_caregiver"}):
+        raise PermissionError("Only admin and head caregiver users can create Task Management tasks")
     async with AsyncSessionLocal() as db:
         parsed_due_at = None
         if due_at:
@@ -1512,7 +1513,7 @@ async def get_message_recipients(limit: int = 50) -> list[dict[str, Any]]:
         users = await UserService.search_users(
             db,
             ws_id=actor.workspace_id,
-            roles=["admin", "head_nurse", "supervisor", "observer"],
+            roles=["admin", "head_caregiver", "caregiver"],
             limit=limit,
         )
         return [
@@ -1691,11 +1692,28 @@ async def get_facility_details(facility_id: int) -> dict[str, Any]:
     ),
     structured_output=True,
 )
-async def get_floorplan_layout(facility_id: int, floor_id: int) -> dict[str, Any]:
+async def get_floorplan_layout(facility_id: int | None = None, floor_id: int | None = None) -> dict[str, Any]:
     actor = require_actor_context()
     _require_scope("rooms.read")
     async with AsyncSessionLocal() as db:
         from app.services.floorplans import FloorplanLayoutService
+
+        # Auto-resolve first facility/floor when not provided.
+        if facility_id is None or floor_id is None:
+            fac_row = (await db.execute(
+                select(Facility).where(Facility.workspace_id == actor.workspace_id).order_by(Facility.id).limit(1)
+            )).scalar_one_or_none()
+            if fac_row:
+                facility_id = facility_id or fac_row.id
+            if floor_id is None:
+                floor_row = (await db.execute(
+                    select(Floor).where(Floor.workspace_id == actor.workspace_id).order_by(Floor.id).limit(1)
+                )).scalar_one_or_none()
+                if floor_row:
+                    floor_id = floor_row.id
+
+        if floor_id is None:
+            raise ValueError("No floors found in workspace")
 
         floor = await db.get(Floor, floor_id)
         if not floor or floor.workspace_id != actor.workspace_id:
@@ -1712,6 +1730,50 @@ async def get_floorplan_layout(facility_id: int, floor_id: int) -> dict[str, Any
             "layout": layout.layout_json if layout else None,
             "has_layout": layout is not None,
         }
+
+
+@mcp.tool(
+    name="get_floorplan_presence",
+    description="Get live floorplan presence (patients, devices, predictions) for a facility floor.",
+    annotations=mcp_types.ToolAnnotations(
+        title="Get Floorplan Presence",
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
+async def get_floorplan_presence(facility_id: int | None = None, floor_id: int | None = None) -> dict[str, Any]:
+    actor = require_actor_context()
+    _require_scope("rooms.read")
+    async with AsyncSessionLocal() as db:
+        from app.services.floorplans import floorplan_presence_service
+
+        # Auto-resolve first facility/floor when not provided.
+        if facility_id is None or floor_id is None:
+            fac_row = (await db.execute(
+                select(Facility).where(Facility.workspace_id == actor.workspace_id).order_by(Facility.id).limit(1)
+            )).scalar_one_or_none()
+            if fac_row:
+                facility_id = facility_id or fac_row.id
+            if floor_id is None:
+                floor_row = (await db.execute(
+                    select(Floor).where(Floor.workspace_id == actor.workspace_id).order_by(Floor.id).limit(1)
+                )).scalar_one_or_none()
+                if floor_row:
+                    floor_id = floor_row.id
+
+        if floor_id is None:
+            raise ValueError("No floors found in workspace")
+
+        return await floorplan_presence_service.build_presence(
+            db,
+            ws_id=actor.workspace_id,
+            facility_id=facility_id,
+            floor_id=floor_id,
+            visible_patient_ids=await get_visible_patient_ids(db, actor.workspace_id, _actor_user()),
+        )
 
 
 @mcp.tool(
@@ -2033,7 +2095,15 @@ async def list_messages(limit: int = 30) -> list[dict[str, Any]]:
                 RoleMessage.workspace_id == actor.workspace_id,
             ).order_by(RoleMessage.created_at.desc()).limit(limit)
         )).scalars().all()
-        return [{"id": r.id, "subject": r.subject, "body": r.body, "sender_role": r.sender_role, "recipient_role": r.recipient_role, "is_read": r.is_read, "created_at": str(r.created_at)} for r in rows]
+        # Resolve sender display name via User row (model has sender_user_id, not sender_role).
+        sender_ids = {r.sender_user_id for r in rows if r.sender_user_id}
+        senders: dict[int, str] = {}
+        if sender_ids:
+            sender_rows = (await db.execute(
+                select(User).where(User.id.in_(sender_ids))
+            )).scalars().all()
+            senders = {u.id: (getattr(u, "display_name", None) or u.username) for u in sender_rows}
+        return [{"id": r.id, "subject": r.subject, "body": r.body, "sender_user_id": r.sender_user_id, "sender_name": senders.get(r.sender_user_id, "unknown"), "recipient_role": r.recipient_role, "is_read": r.is_read, "created_at": str(r.created_at)} for r in rows]
 
 
 @mcp.tool(name="mark_message_read", description="Mark a workflow message as read.",
@@ -2180,7 +2250,7 @@ async def acknowledge_care_directive(directive_id: int, note: str = "") -> dict[
 async def get_audit_trail(limit: int = 50, entity_type: str | None = None) -> list[dict[str, Any]]:
     actor = require_actor_context()
     _require_scope("admin.audit.read")
-    if actor.role not in {"admin", "head_nurse", "supervisor", "observer"}:
+    if not role_is_allowed(actor.role, {"admin", "head_caregiver", "caregiver"}):
         raise PermissionError("Audit trail query is restricted to staff roles")
     async with AsyncSessionLocal() as db:
         visible = await get_visible_patient_ids(db, actor.workspace_id, _actor_user())
@@ -2506,8 +2576,8 @@ async def list_staff(limit: int = 50) -> list[dict[str, Any]]:
 async def create_caregiver(first_name: str, last_name: str, role: str) -> dict[str, Any]:
     actor = require_actor_context()
     _require_scope("caregivers.write")
-    if actor.role not in {"admin", "head_nurse"}:
-        raise PermissionError("Only admin or head_nurse can create caregiver profiles")
+    if not role_is_allowed(actor.role, {"admin", "head_caregiver"}):
+        raise PermissionError("Only admin or head_caregiver can create caregiver profiles")
     from app.services.base import CRUDBase
     cg_service = CRUDBase[CareGiver, CareGiverCreate, CareGiverPatch](CareGiver)
     async with AsyncSessionLocal() as db:
@@ -2717,7 +2787,7 @@ async def update_caregiver_patients(caregiver_id: int, patient_ids: list[int]) -
 # BATCH F — Medication
 # ---------------------------------------------------------------------------
 
-@mcp.tool(name="list_prescriptions", description="List prescriptions for a patient or all visible patients.",
+@mcp.tool(name="list_prescriptions", description="List prescriptions (medications) for a patient or all visible patients.",
           annotations=mcp_types.ToolAnnotations(title="List Prescriptions", readOnlyHint=True))
 async def list_prescriptions(patient_id: int | None = None, limit: int = 50) -> list[dict[str, Any]]:
     actor = require_actor_context()
@@ -2735,8 +2805,8 @@ async def list_prescriptions(patient_id: int | None = None, limit: int = 50) -> 
 async def create_prescription(patient_id: int, drug_name: str, dosage: str, frequency: str, notes: str | None = None) -> dict[str, Any]:
     actor = require_actor_context()
     _require_scope("medication.write")
-    if actor.role not in {"admin", "head_nurse"}:
-        raise PermissionError("Only admin or head_nurse can create prescriptions")
+    if not role_is_allowed(actor.role, {"admin", "head_caregiver"}):
+        raise PermissionError("Only admin or head_caregiver can create prescriptions")
     async with AsyncSessionLocal() as db:
         payload = PrescriptionCreate(patient_id=patient_id, drug_name=drug_name, dosage=dosage, frequency=frequency, notes=notes)
         px = await prescription_service.create(db, actor.workspace_id, payload)
@@ -2838,8 +2908,8 @@ async def create_support_ticket(title: str, description: str, category: str = "g
 async def update_support_ticket(ticket_id: int, status: str | None = None, assignee_user_id: int | None = None) -> dict[str, Any]:
     actor = require_actor_context()
     _require_scope("workflow.write")
-    if actor.role not in {"admin", "head_nurse"}:
-        raise PermissionError("Only admin or head_nurse can update ticket workflow fields")
+    if not role_is_allowed(actor.role, {"admin", "head_caregiver"}):
+        raise PermissionError("Only admin or head_caregiver can update ticket workflow fields")
     async with AsyncSessionLocal() as db:
         user = (await db.execute(select(User).where(User.id == actor.user_id))).scalar_one_or_none()
         if not user:
@@ -2890,7 +2960,7 @@ async def create_service_request(service_type: str, note: str, title: str | None
         return {"id": req.id, "service_type": req.service_type, "status": req.status}
 
 
-@mcp.tool(name="update_service_request", description="Update a service request status (admin/head_nurse).",
+@mcp.tool(name="update_service_request", description="Update a service request status (admin/head_caregiver).",
           annotations=mcp_types.ToolAnnotations(title="Update Service Request", readOnlyHint=False, destructiveHint=False))
 async def update_service_request(request_id: int, status: str, resolution_note: str | None = None) -> dict[str, Any]:
     actor = require_actor_context()
@@ -2961,8 +3031,8 @@ async def list_workspace_shift_checklists(shift_date: str | None = None) -> list
     from datetime import date
     actor = require_actor_context()
     _require_scope("workflow.read")
-    if actor.role not in {"admin", "head_nurse"}:
-        raise PermissionError("Only admin or head_nurse can view workspace shift checklists")
+    if not role_is_allowed(actor.role, {"admin", "head_caregiver"}):
+        raise PermissionError("Only admin or head_caregiver can view workspace shift checklists")
     today = date.fromisoformat(shift_date) if shift_date else date.today()
     async with AsyncSessionLocal() as db:
         rows = await shift_checklist_service.list_workspace_floor_staff(db, actor.workspace_id, today)
@@ -3272,7 +3342,7 @@ async def add_timeline_event(patient_id: int, event_type: str, description: str,
 async def create_alert(alert_type: str, description: str, severity: str = "medium", patient_id: int | None = None, device_id: int | None = None) -> dict[str, Any]:
     actor = require_actor_context()
     _require_scope("alerts.manage")
-    if actor.role not in {"admin", "head_nurse", "supervisor", "observer", "patient"}:
+    if not role_is_allowed(actor.role, {"admin", "head_caregiver", "caregiver", "patient"}):
         raise PermissionError("Role cannot create alerts")
     async with AsyncSessionLocal() as db:
         payload = AlertCreate(alert_type=alert_type, description=description, severity=severity, patient_id=patient_id, device_id=device_id)
@@ -3313,7 +3383,7 @@ async def get_alert_details(alert_id: int) -> dict[str, Any]:
         return {"id": alert.id, "alert_type": alert.alert_type, "description": alert.description, "severity": alert.severity, "status": alert.status, "patient_id": alert.patient_id, "device_id": alert.device_id, "created_at": str(alert.created_at), "acknowledged_at": str(alert.acknowledged_at) if alert.acknowledged_at else None, "resolved_at": str(alert.resolved_at) if alert.resolved_at else None}
 
 
-@mcp.tool(name="list_all_alerts", description="List all alerts (active and resolved) for admin/head_nurse review.",
+@mcp.tool(name="list_all_alerts", description="List all alerts (active and resolved) for admin/head_caregiver review.",
           annotations=mcp_types.ToolAnnotations(title="List All Alerts", readOnlyHint=True))
 async def list_all_alerts(status: str | None = None, severity: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
     actor = require_actor_context()
@@ -3360,6 +3430,7 @@ _WORKSPACE_TOOL_REGISTRY: dict[str, Callable[..., Awaitable[Any]]] = {
     "send_device_command": send_device_command,
     "get_facility_details": get_facility_details,
     "get_floorplan_layout": get_floorplan_layout,
+    "get_floorplan_presence": get_floorplan_presence,
     "execute_python_code": execute_python_code,
     # --- BATCH A: Patient Management ---
     "update_patient": update_patient,

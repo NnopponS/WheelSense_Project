@@ -122,7 +122,7 @@ async def resolve_current_user_from_token(
 
 
 def resolve_effective_token_scopes(role: str, requested_scopes: list[str] | None = None) -> set[str]:
-    allowed = set(ROLE_TOKEN_SCOPES.get(role, set()))
+    allowed = set(ROLE_TOKEN_SCOPES.get(canonicalize_role(role), set()))
     requested = {scope for scope in (requested_scopes or []) if scope}
     if not requested:
         return allowed
@@ -238,8 +238,6 @@ ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
         "devices.read",
     },
 }
-# head_caregiver inherits all head_nurse capabilities (they are the same role now)
-ROLE_CAPABILITIES["head_caregiver"].update(ROLE_CAPABILITIES["head_caregiver"])
 
 ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
     ROLE_ADMIN: {
@@ -312,8 +310,6 @@ ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
         "medication.read",
     },
 }
-# head_caregiver and supervisor are the same role; no-op alias kept for clarity
-ROLE_TOKEN_SCOPES["head_caregiver"] = set(ROLE_TOKEN_SCOPES["head_caregiver"])
 
 def assert_patient_record_access(user: User, patient_id: int) -> None:
     """Staff may access any patient in workspace; patients only their own row."""
