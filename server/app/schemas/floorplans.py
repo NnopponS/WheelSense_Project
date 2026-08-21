@@ -122,6 +122,7 @@ class FloorplanRoomShape(BaseModel):
     device_id: Optional[int] = None
     node_device_id: Optional[str] = Field(default=None, max_length=128)
     power_kw: Optional[float] = Field(default=None, ge=0)
+    room_type: Optional[str] = Field(default=None, max_length=64)
 
 
 class FloorplanLayoutPayload(BaseModel):

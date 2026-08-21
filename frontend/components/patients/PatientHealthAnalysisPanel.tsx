@@ -3,14 +3,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity,
-  AlertTriangle,
   Droplets,
   Flame,
   Footprints,
   Heart,
   HeartPulse,
-  RefreshCw,
   Route,
   ShieldAlert,
   TrendingUp,
@@ -28,6 +25,15 @@ import { api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
 import type { PatientHealthAnalysis, HealthRiskSeverity } from "@/lib/patientHealthAnalysis";
 import { cn } from "@/lib/utils";
+import {
+  AnomalyCard,
+  HealthMetricCard,
+  HealthPlanCard,
+  RiskBadge,
+  SectionHeader,
+  riskToneFromLevel,
+  riskToneFromSeverity,
+} from "@/components/shared/health/HealthPrimitives";
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
@@ -212,19 +218,6 @@ function buildTrendSeries(
     });
 }
 
-function metricLabel(key: string, t: (key: string) => string) {
-  const labels: Record<string, string> = {
-    heart_rate_bpm: t("patient.health.metric.heartRate"),
-    spo2: "SpO\u2082",
-    steps: t("patient.health.metric.steps"),
-    distance_m: t("patient.health.metric.distance"),
-    calories_kcal: t("patient.health.metric.calories"),
-    rr_interval_ms: t("patient.health.metric.rrInterval"),
-    bmi: "BMI",
-  };
-  return labels[key] ?? key.replace(/_/g, " ");
-}
-
 type StatusDot = "normal" | "warning" | "critical" | "unknown";
 
 function statusDot(severity?: HealthRiskSeverity): StatusDot {
@@ -232,53 +225,6 @@ function statusDot(severity?: HealthRiskSeverity): StatusDot {
   if (severity === "warning") return "warning";
   if (severity === "info") return "normal";
   return "unknown";
-}
-
-function StatusDotBadge({ status, label }: { status: StatusDot; label: string }) {
-  const colors: Record<StatusDot, string> = {
-    normal: "text-emerald-600",
-    warning: "text-amber-600",
-    critical: "text-red-600",
-    unknown: "text-muted-foreground",
-  };
-  const dots: Record<StatusDot, string> = {
-    normal: "bg-emerald-500",
-    warning: "bg-amber-500",
-    critical: "bg-red-500",
-    unknown: "bg-muted-foreground/50",
-  };
-  return (
-    <span className={cn("flex items-center gap-1 text-xs font-medium", colors[status])}>
-      <span className={cn("h-2 w-2 rounded-full", dots[status])} />
-      {label}
-    </span>
-  );
-}
-
-function ActivityNotConnected({ t }: { t: (key: string) => string }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-1 py-3 text-center">
-      <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">{t("patient.health.notConnected")}</span>
-      <p className="text-[11px] text-muted-foreground">{t("patient.health.sensorNotLinked")}</p>
-    </div>
-  );
-}
-
-function severityChip(severity: HealthRiskSeverity, t: (key: string) => string) {
-  if (severity === "critical")
-    return <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-red-700">{t("patient.health.severity.critical")}</span>;
-  if (severity === "warning")
-    return <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700">{t("patient.health.severity.warning")}</span>;
-  if (severity === "watch")
-    return <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-sky-700">{t("patient.health.severity.watch")}</span>;
-  return <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">{t("patient.health.severity.info")}</span>;
-}
-
-function riskBannerColors(level: PatientHealthAnalysis["risk_level"]) {
-  if (level === "critical") return { banner: "bg-red-50 border-red-200", badge: "bg-red-500 text-white", icon: "text-red-500", text: "text-red-700", sub: "text-red-600/80" };
-  if (level === "warning") return { banner: "bg-amber-50 border-amber-200", badge: "bg-amber-500 text-white", icon: "text-amber-500", text: "text-amber-800", sub: "text-amber-700/80" };
-  if (level === "watch") return { banner: "bg-sky-50 border-sky-200", badge: "bg-sky-500 text-white", icon: "text-sky-500", text: "text-sky-800", sub: "text-sky-700/80" };
-  return { banner: "bg-emerald-50 border-emerald-200", badge: "bg-emerald-500 text-white", icon: "text-emerald-500", text: "text-emerald-800", sub: "text-emerald-700/80" };
 }
 
 function riskLevelLabel(level: PatientHealthAnalysis["risk_level"], t: (key: string) => string) {
@@ -294,77 +240,6 @@ function qualityText(value: PatientHealthAnalysis["data_quality"], t: (key: stri
   return t("patient.health.quality.insufficient");
 }
 
-/* ── Vitals baseline card (HR / SpO2) ───────────────────────────────────── */
-function VitalCard({
-  metricKey,
-  metric,
-  t,
-}: {
-  metricKey: string;
-  metric?: PatientHealthAnalysis["baseline"][string];
-  t: (key: string) => string;
-}) {
-  const dot = statusDot(metric?.status);
-  const dotLabel = dot === "normal" ? t("patient.health.status.normal") : dot === "warning" ? t("patient.health.status.caution") : dot === "critical" ? t("patient.health.status.critical") : t("patient.health.status.noData");
-  const Icon = metricKey === "heart_rate_bpm" ? Heart : Droplets;
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-        <Icon className="h-5 w-5 text-primary" aria-hidden />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted-foreground">{metricLabel(metricKey, t)}</p>
-        <p className="mt-0.5 text-xl font-bold tabular-nums leading-none text-foreground">
-          {metric?.value ?? "—"}
-          <span className="ml-1 text-xs font-normal text-muted-foreground">{metric?.unit ?? ""}</span>
-        </p>
-        <div className="mt-1.5"><StatusDotBadge status={dot} label={dotLabel} /></div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Activity card (Calories / Distance) ────────────────────────────────── */
-function ActivityCard({
-  icon,
-  label,
-  value,
-  unit,
-  connected,
-  t,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | null;
-  unit: string;
-  connected: boolean;
-  t: (key: string) => string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        {connected ? (
-          <>
-            <p className="mt-0.5 text-xl font-bold tabular-nums leading-none text-foreground">
-              {value != null ? value.toLocaleString() : "—"}
-              <span className="ml-1 text-xs font-normal text-muted-foreground">{unit}</span>
-            </p>
-            <div className="mt-1.5">
-              <StatusDotBadge status="normal" label={t("patient.health.live")} />
-            </div>
-          </>
-        ) : (
-          <ActivityNotConnected t={t} />
-        )}
-      </div>
-    </div>
-  );
-}
-
 /* ── Recommendation action card (ref: Health Plan Optimization row) ────────── */
 function HealthTrendChart({
   metric,
@@ -377,37 +252,37 @@ function HealthTrendChart({
 }) {
   const hasData = data.some((point) => point[metric.key] != null);
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-      <div className="mb-3">
-        <p className="text-sm font-semibold text-foreground">{t(metric.labelKey)}</p>
-        <p className="text-[11px] text-muted-foreground">{metric.unit}</p>
+    <div className="rounded-xl border border-border/60 bg-card p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm font-bold text-foreground">{t(metric.labelKey)}</p>
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{metric.unit}</span>
       </div>
       {hasData ? (
-        <div className="h-44">
+        <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.55} />
+            <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                minTickGap={18}
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                minTickGap={20}
+                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                width={36}
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                width={32}
+                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
               />
               <Tooltip
                 cursor={{ stroke: metric.stroke, strokeOpacity: 0.2 }}
                 contentStyle={{
-                  borderRadius: 10,
+                  borderRadius: 8,
                   border: "1px solid hsl(var(--border))",
                   background: "hsl(var(--card))",
                   color: "hsl(var(--foreground))",
-                  fontSize: 12,
+                  fontSize: 11,
                 }}
                 formatter={(value) => [`${value} ${metric.unit}`, t(metric.labelKey)]}
               />
@@ -415,7 +290,7 @@ function HealthTrendChart({
                 type="monotone"
                 dataKey={metric.key}
                 stroke={metric.stroke}
-                strokeWidth={2}
+                strokeWidth={1.5}
                 dot={false}
                 connectNulls
               />
@@ -423,32 +298,10 @@ function HealthTrendChart({
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="flex h-44 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/10 text-xs text-muted-foreground">
+        <div className="flex h-36 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/10 text-xs text-muted-foreground">
           {t("patient.health.trendsEmpty")}
         </div>
       )}
-    </div>
-  );
-}
-
-function RecommendationCard({ item, t }: { item: PatientHealthAnalysis["recommendations"][number]; t: (key: string) => string }) {
-  const isUrgent = item.priority === "critical";
-  const isMod = item.priority === "warning";
-  return (
-    <div className={cn(
-      "flex flex-col justify-between gap-3 rounded-xl border p-4",
-      isUrgent ? "border-red-200 bg-red-50/60" : isMod ? "border-amber-200 bg-amber-50/60" : "border-border/60 bg-muted/20"
-    )}>
-      <div>
-        <p className={cn("text-sm font-semibold leading-snug", isUrgent ? "text-red-800" : isMod ? "text-amber-800" : "text-foreground")}>
-          {item.title}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">{item.rationale}</p>
-      </div>
-      <div className="flex items-center justify-between gap-2">
-        {severityChip(item.priority, t)}
-        <span className="text-[11px] font-medium text-foreground/70 text-right leading-tight">{item.suggested_action}</span>
-      </div>
     </div>
   );
 }
@@ -532,19 +385,6 @@ export function PatientHealthAnalysisPanel({
       ),
     [imuTrendQuery.data, trendRange, vitalsTrendQuery.data],
   );
-  const aiProvider =
-    aiSettingsQuery.data?.provider ??
-    aiSettingsQuery.data?.workspace_default_provider ??
-    aiHealthQuery.data?.default_provider ??
-    null;
-  const aiModel =
-    aiSettingsQuery.data?.model ?? aiSettingsQuery.data?.workspace_default_model ?? null;
-  const aiConfigured =
-    aiProvider === "copilot"
-      ? aiHealthQuery.data?.copilot_configured
-      : aiProvider === "ollama"
-        ? aiHealthQuery.data?.ollama_configured
-        : undefined;
 
   async function refreshAnalysis() {
     setIsRefreshing(true);
@@ -581,235 +421,168 @@ export function PatientHealthAnalysisPanel({
     );
   }
 
-  const colors = riskBannerColors(data.risk_level);
   const activity = data.activity ?? { steps: null, distance_m: null, calories_kcal: null, polar_connected: false, source: "none" };
   const activityConnected = activity.source !== "none";
   const baseline = data.baseline ?? {};
 
+  const riskTone = riskToneFromLevel(data.risk_level);
+  const concerns = data.risk_factors.slice(0, 4).map((f) => f.label);
+
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-5", className)}>
 
-      {/* ── 1. Predictive Anomaly Banner ──────────────────────────────────── */}
-      <div className={cn("relative overflow-hidden rounded-2xl border p-5", colors.banner)}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/70 shadow-sm">
-              <AlertTriangle className={cn("h-4 w-4", colors.icon)} aria-hidden />
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/60">{t("patient.health.predictiveAnomaly")}</p>
-              <h3 className="mt-0.5 text-lg font-bold leading-snug text-foreground">
-                {data.trend_summary}
-                <span className={cn("ml-2 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold", colors.badge)}>
-                  {riskLevelLabel(data.risk_level, t)}
-                </span>
-              </h3>
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-wrap justify-end gap-2">
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] font-semibold text-foreground shadow-sm transition-colors hover:bg-white disabled:opacity-60"
-              onClick={() => void refreshAnalysis()}
-              disabled={isRefreshing || query.isFetching}
-            >
-              <RefreshCw className={cn("h-3.5 w-3.5", (isRefreshing || query.isFetching) && "animate-spin")} />
-              {isRefreshing || query.isFetching ? t("patient.health.refreshingAi") : t("patient.health.refreshAi")}
-            </button>
-            <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", colors.badge)}>
-              {t("patient.health.aiRiskAssessment")}
-            </span>
-          </div>
+      {/* ── 1. Predicting Anomaly ─────────────────────────────────────────── */}
+      <AnomalyCard
+        title={data.trend_summary}
+        riskTone={riskTone}
+        riskLabel={riskLevelLabel(data.risk_level, t)}
+        concerns={concerns}
+        riskScore={data.overall_score}
+        analysisWindow={`${data.window_hours}h`}
+        confidence={qualityText(data.data_quality, t)}
+        updatedAt={new Date(data.generated_at).toLocaleString()}
+        secondaryCta={isRefreshing || query.isFetching ? t("patient.health.refreshingAi") : t("patient.health.refreshAi")}
+        onSecondaryCta={() => void refreshAnalysis()}
+        secondaryCtaBusy={isRefreshing || query.isFetching}
+      />
+
+      {data.data_quality === "insufficient" && (
+        <div className="rounded-lg border border-amber-400/40 bg-amber-50/80 px-3 py-2 text-xs text-amber-800">
+          {t("patient.health.needRecentVitals")}
         </div>
+      )}
 
-        {/* Score metrics row */}
-        <div className="mt-4 flex flex-wrap gap-6 border-t border-black/5 pt-4">
-          <div>
-            <p className="text-[11px] text-muted-foreground">{t("patient.health.riskScore")}</p>
-            <p className="mt-0.5 text-2xl font-bold tabular-nums leading-none text-foreground">
-              {data.overall_score}<span className="text-sm font-normal text-muted-foreground">/100</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] text-muted-foreground">{t("patient.health.dataQuality")}</p>
-            <p className="mt-0.5 text-2xl font-bold tabular-nums leading-none text-foreground">
-              {qualityText(data.data_quality, t)}
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] text-muted-foreground">{t("patient.health.analysisWindow")}</p>
-            <p className="mt-0.5 text-2xl font-bold tabular-nums leading-none text-foreground">
-              {data.window_hours}<span className="text-sm font-normal text-muted-foreground"> {t("patient.health.hoursShort")}</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] text-muted-foreground">{t("patient.health.aiProvider")}</p>
-            <p className="mt-0.5 text-sm font-bold leading-tight text-foreground">
-              {aiProvider ? `${aiProvider}${aiModel ? ` / ${aiModel}` : ""}` : "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] text-muted-foreground">{t("patient.health.aiStatus")}</p>
-            <p className="mt-0.5 text-sm font-bold leading-tight text-foreground">
-              {aiConfigured === true
-                ? t("patient.health.configured")
-                : aiConfigured === false
-                  ? t("patient.health.notConfigured")
-                  : "-"}
-            </p>
-          </div>
-          <div className="ml-auto flex items-end">
-            <p className="text-[10px] text-muted-foreground">
-              <Activity className="mr-1 inline h-3 w-3" aria-hidden />
-              {new Date(data.generated_at).toLocaleString()}
-            </p>
-          </div>
-        </div>
-
-        {data.data_quality === "insufficient" && (
-          <div className="mt-3 rounded-lg border border-amber-400/40 bg-amber-50/80 px-3 py-2 text-xs text-amber-800">
-            {t("patient.health.needRecentVitals")}
-          </div>
-        )}
-      </div>
-
-      {/* ── 2. Personalized Health Baseline ───────────────────────────────── */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
-        <div className="flex items-center justify-between gap-3 border-b border-border/50 px-5 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-              <HeartPulse className="h-4 w-4 text-primary" aria-hidden />
-            </div>
-            <h2 className="font-semibold text-foreground">{t("patient.health.baselineTitle")}</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            {activity.polar_connected && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{t("patient.health.polarConnected")}</span>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {t("patient.health.updated")}: {new Date(data.generated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4">
-          <VitalCard metricKey="heart_rate_bpm" metric={baseline["heart_rate_bpm"]} t={t} />
-          <VitalCard metricKey="spo2" metric={baseline["spo2"]} t={t} />
-          <ActivityCard
-            icon={<Flame className="h-5 w-5 text-primary" aria-hidden />}
-            label={t("patient.health.caloriesEstimated")}
-            value={activity.calories_kcal}
-            unit="kcal"
-            connected={activityConnected}
-            t={t}
+      {/* ── 2. Daily Health Summary ──────────────────────────────────────── */}
+      <div className="space-y-3">
+        <SectionHeader title={t("patient.health.baselineTitle")} subtitle={t("patient.health.trendsDesc")} icon={HeartPulse} />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <HealthMetricCard
+            label={t("patient.health.metric.heartRate")}
+            value={baseline["heart_rate_bpm"]?.value ?? null}
+            unit={baseline["heart_rate_bpm"]?.unit ?? "bpm"}
+            icon={Heart}
+            status={statusDot(baseline["heart_rate_bpm"]?.status)}
+            trend={baseline["heart_rate_bpm"]?.trend === "up" ? "↑ Above baseline" : baseline["heart_rate_bpm"]?.trend === "down" ? "↓ Below baseline" : undefined}
+            trendDirection={baseline["heart_rate_bpm"]?.trend}
           />
-          <ActivityCard
-            icon={<Route className="h-5 w-5 text-primary" aria-hidden />}
+          <HealthMetricCard
+            label="SpO₂"
+            value={baseline["spo2"]?.value ?? null}
+            unit={baseline["spo2"]?.unit ?? "%"}
+            icon={Droplets}
+            status={statusDot(baseline["spo2"]?.status)}
+            trend={baseline["spo2"]?.trend === "down" ? "↓ Below baseline" : baseline["spo2"]?.trend === "up" ? "↑ Above baseline" : undefined}
+            trendDirection={baseline["spo2"]?.trend}
+          />
+          <HealthMetricCard
+            label={t("patient.health.caloriesEstimated")}
+            value={activityConnected ? (activity.calories_kcal != null ? activity.calories_kcal.toLocaleString() : null) : null}
+            unit="kcal"
+            icon={Flame}
+            status={activityConnected ? "normal" : "unknown"}
+            trend={activityConnected ? "Today" : t("patient.health.notConnected")}
+          />
+          <HealthMetricCard
             label={t("patient.health.distanceToday")}
-            value={activity.distance_m != null ? Math.round(activity.distance_m) : null}
+            value={activityConnected ? (activity.distance_m != null ? Math.round(activity.distance_m).toLocaleString() : null) : null}
             unit="m"
-            connected={activityConnected}
-            t={t}
+            icon={Route}
+            status={activityConnected ? "normal" : "unknown"}
+            trend={activityConnected ? (activity.distance_m != null && activity.distance_m < 100 ? "Below baseline" : "Today") : t("patient.health.notConnected")}
           />
         </div>
         {activityConnected && activity.steps != null && (
-          <div className="flex items-center gap-2 border-t border-border/40 px-5 py-2.5">
-            <Footprints className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-            <p className="text-xs text-muted-foreground">
-              {t("patient.health.stepsToday")}: <span className="font-semibold text-foreground">{activity.steps.toLocaleString()}</span>
-              <span className="ml-2 text-[10px] uppercase tracking-wide">{t("patient.health.via")} {activity.source}</span>
-            </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Footprints className="h-3.5 w-3.5" aria-hidden />
+            {t("patient.health.stepsToday")}: <span className="font-semibold text-foreground">{activity.steps.toLocaleString()}</span>
+            <span className="text-[10px] uppercase tracking-wide">{t("patient.health.via")} {activity.source}</span>
+            {activity.polar_connected && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{t("patient.health.polarConnected")}</span>}
           </div>
         )}
       </div>
 
-      {/* ── 3. Risk Factors + Recommendations ────────────────────────────── */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-border/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-              <TrendingUp className="h-4 w-4 text-primary" aria-hidden />
+      {/* ── 3. Health Trends ─────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <SectionHeader
+          title={t("patient.health.trendsTitle")}
+          subtitle={t("patient.health.trendsDesc")}
+          icon={TrendingUp}
+          action={
+            <div className="flex flex-wrap gap-1 rounded-full border border-border/60 bg-muted/20 p-1">
+              {TREND_RANGE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
+                    trendRange === option.value
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-background hover:text-foreground",
+                  )}
+                  onClick={() => setTrendRange(option.value)}
+                >
+                  {t(option.labelKey)}
+                </button>
+              ))}
             </div>
-            <div>
-              <h2 className="font-semibold text-foreground">{t("patient.health.trendsTitle")}</h2>
-              <p className="text-xs text-muted-foreground">{t("patient.health.trendsDesc")}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-1 rounded-full border border-border/60 bg-muted/20 p-1">
-            {TREND_RANGE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-                  trendRange === option.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-background hover:text-foreground",
-                )}
-                onClick={() => setTrendRange(option.value)}
-              >
-                {t(option.labelKey)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="grid gap-3 p-5 md:grid-cols-2">
+          }
+        />
+        <div className="grid gap-3 md:grid-cols-2">
           {TREND_METRICS.map((metric) => (
             <HealthTrendChart key={metric.key} metric={metric} data={trendSeries} t={t} />
           ))}
         </div>
       </div>
 
-      {!compact && (
-        <>
-          {/* Risk factors */}
-          {data.risk_factors.length > 0 && (
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
-              <div className="flex items-center gap-2 border-b border-border/50 px-5 py-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50">
-                  <ShieldAlert className="h-4 w-4 text-red-500" aria-hidden />
-                </div>
-                <h2 className="font-semibold text-foreground">{t("patient.health.riskFactors")}</h2>
-                <span className="ml-auto rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700">
-                  {data.risk_factors.length}
-                </span>
-              </div>
-              <div className="divide-y divide-border/40">
-                {data.risk_factors.slice(0, 5).map((factor) => (
-                  <div key={`${factor.label}-${factor.evidence}`} className="flex items-start gap-3 px-5 py-3.5">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-medium text-foreground">{factor.label}</p>
-                        {severityChip(factor.severity, t)}
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">{factor.evidence}</p>
-                    </div>
-                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{factor.source}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {/* ── 4. Optimize Daily Health Plan ────────────────────────────────── */}
+      {!compact && data.recommendations.length > 0 && (
+        <div className="space-y-3">
+          <SectionHeader
+            title={t("patient.health.recommendations")}
+            subtitle={t("patient.health.personalizedCareActions")}
+            icon={TrendingUp}
+          />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {data.recommendations.slice(0, 6).map((item) => (
+              <HealthPlanCard
+                key={item.title}
+                title={item.title}
+                rationale={item.rationale}
+                recommendation={item.suggested_action}
+                priority={riskToneFromSeverity(item.priority)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
-          {/* Recommendations */}
-          {data.recommendations.length > 0 && (
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-border/50 px-5 py-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <TrendingUp className="h-4 w-4 text-primary" aria-hidden />
+      {/* ── 5. Risk Factors ──────────────────────────────────────────────── */}
+      {!compact && data.risk_factors.length > 0 && (
+        <div className="space-y-3">
+          <SectionHeader
+            title={t("patient.health.riskFactors")}
+            icon={ShieldAlert}
+            action={
+              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700">
+                {data.risk_factors.length}
+              </span>
+            }
+          />
+          <div className="rounded-xl border border-border/60 bg-card divide-y divide-border/40">
+            {data.risk_factors.slice(0, 5).map((factor) => (
+              <div key={`${factor.label}-${factor.evidence}`} className="flex items-start gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">{factor.label}</p>
+                    <RiskBadge tone={riskToneFromSeverity(factor.severity)} size="xs" />
                   </div>
-                  <h2 className="font-semibold text-foreground">{t("patient.health.recommendations")}</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">{factor.evidence}</p>
                 </div>
-                <span className="text-xs font-semibold text-primary">{t("patient.health.personalizedCareActions")}</span>
+                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{factor.source}</span>
               </div>
-              <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
-                {data.recommendations.slice(0, 6).map((item) => (
-                  <RecommendationCard key={item.title} item={item} t={t} />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}

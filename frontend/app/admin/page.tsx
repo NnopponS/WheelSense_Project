@@ -5,13 +5,15 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
-  AlertTriangle,
   ArrowRight,
   Bell,
   Building2,
   CheckCircle2,
+  ChevronRight,
   ClipboardList,
+  HeartPulse,
   Settings,
+  ShieldAlert,
   Tablet,
   Users,
 } from "lucide-react";
@@ -25,15 +27,21 @@ import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefau
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { useTranslation } from "@/lib/i18n";
 import type { Device, HardwareType, SmartDevice } from "@/lib/types";
-import type { ListAlertsResponse, ListDeviceActivityResponse, ListUsersResponse } from "@/lib/api/task-scope-types";
+import type { PatientHealthAnalysis } from "@/lib/patientHealthAnalysis";
+import type { ListAlertsResponse, ListDeviceActivityResponse, ListUsersResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { CsvExportButton } from "@/components/shared/CsvExportButton";
 import DashboardMapLauncher from "@/components/dashboard/DashboardMapLauncher";
 import { AppPage } from "@/components/layout/AppPage";
-import { MetricCard } from "@/components/shared/MetricCard";
-import { PriorityBanner } from "@/components/shared/PriorityBanner";
-import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge";
+import {
+  HealthMetricCard,
+  RiskBadge,
+  SectionHeader,
+  riskToneFromLevel,
+  type RiskTone,
+} from "@/components/shared/health/HealthPrimitives";
+import { cn } from "@/lib/utils";
 
 type HealthStatus = "healthy" | "warning";
 
@@ -50,19 +58,17 @@ const HARDWARE_ROWS: Array<{
   { hardware: "mobile_phone", label: "Mobile phones" },
 ];
 
-function healthTone(status: HealthStatus): StatusTone {
-  return status === "healthy" ? "success" : "warning";
-}
-
-function healthLabel(status: HealthStatus, t: (key: string) => string) {
-  return status === "healthy" ? t("admin.system.statusHealthy") : t("admin.system.statusNeedsReview");
-}
-
 function formatTemplate(template: string, values: Record<string, string | number>): string {
   return Object.entries(values).reduce(
     (output, [key, value]) => output.replaceAll(`{${key}}`, String(value)),
     template,
   );
+}
+
+function greetingForHour(hour: number, t: (key: string) => string): string {
+  if (hour < 12) return t("admin.greeting.morning");
+  if (hour < 18) return t("admin.greeting.afternoon");
+  return t("admin.greeting.evening");
 }
 
 export default function AdminDashboardPage() {
@@ -125,6 +131,12 @@ export default function AdminDashboardPage() {
     staleTime: 15_000,
     refetchInterval: 15_000,
   });
+  const { data: patientsData } = useQuery({
+    queryKey: ["admin", "dashboard", "patients"],
+    queryFn: () => api.listPatients({ limit: 200, is_active: true }),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
 
   const fleetByType = useMemo(
     () =>
@@ -171,6 +183,50 @@ export default function AdminDashboardPage() {
     () => alerts.filter((alert) => alert.status === "active" && alert.severity === "critical"),
     [alerts],
   );
+
+  const patients = (patientsData ?? []) as ListPatientsResponse;
+  const activePatientCount = patients.filter((p) => p.is_active).length;
+
+  // Fetch health analysis for up to 12 active patients to find anomalies
+  const patientsForHealth = useMemo(() => patients.filter((p) => p.is_active).slice(0, 12), [patients]);
+  const healthAnalyses = useQuery({
+    queryKey: ["admin", "dashboard", "patient-health", patientsForHealth.map((p) => p.id)],
+    queryFn: async () => {
+      const results = await Promise.all(
+        patientsForHealth.map((p) =>
+          api.getPatientHealthAnalysis(p.id).catch(() => null),
+        ),
+      );
+      return patientsForHealth.map((p, i) => ({
+        patient: p,
+        analysis: results[i] as PatientHealthAnalysis | null,
+      }));
+    },
+    enabled: patientsForHealth.length > 0,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+  const patientsNeedingAttention = useMemo(() => {
+    const list = healthAnalyses.data ?? [];
+    return list
+      .filter((item) => item.analysis && item.analysis.risk_level !== "normal")
+      .sort((a, b) => {
+        const order = { critical: 0, warning: 1, watch: 2, normal: 3 };
+        return (order[a.analysis!.risk_level] ?? 3) - (order[b.analysis!.risk_level] ?? 3);
+      });
+  }, [healthAnalyses.data]);
+
+  const activeAnomalyCount = patientsNeedingAttention.filter(
+    (p) => p.analysis?.risk_level === "critical" || p.analysis?.risk_level === "warning",
+  ).length;
+
+  const avgHealthScore = useMemo(() => {
+    const list = (healthAnalyses.data ?? []).filter((item) => item.analysis);
+    if (list.length === 0) return null;
+    const sum = list.reduce((acc, item) => acc + (item.analysis?.overall_score ?? 0), 0);
+    return Math.round(sum / list.length);
+  }, [healthAnalyses.data]);
 
   const hasRecentDeviceSignal = useMemo(() => {
     const fiveMinutesAgo = nowMs - 5 * 60 * 1000;
@@ -241,39 +297,14 @@ export default function AdminDashboardPage() {
     [fleetByType, latestActivity, smartStats.online, smartStats.total, totalDevicesOffline, totalDevicesOnline, totalFleet, userStats.active, userStats.byRole.patient, userStats.total],
   );
 
+  const greetingHour = new Date(nowMs).getHours();
+  const adminName = user?.username ?? "Admin";
+  const todayDate = new Date(nowMs).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+
   return (
     <AppPage
-      eyebrow={t("admin.system.badge")}
       title={t("admin.system.title")}
-      description={t("admin.system.subtitle")}
-      className="animate-fade-in space-y-4 pb-6"
-      priority={
-        <PriorityBanner
-          tone={criticalAlerts.length > 0 ? "critical" : totalDevicesOffline > 0 ? "warning" : "success"}
-          title={
-            criticalAlerts.length > 0
-              ? formatTemplate(t("admin.system.priorityCriticalTitle"), { count: criticalAlerts.length })
-              : totalDevicesOffline > 0
-                ? formatTemplate(t("admin.system.priorityOfflineTitle"), { count: totalDevicesOffline })
-                : t("admin.system.priorityHealthyTitle")
-          }
-          description={
-            criticalAlerts.length > 0
-              ? t("admin.system.priorityCriticalDescription")
-              : totalDevicesOffline > 0
-                ? t("admin.system.priorityOfflineDescription")
-                : t("admin.system.priorityHealthyDescription")
-          }
-          action={
-            <Button asChild variant={criticalAlerts.length > 0 ? "destructive" : "outline"}>
-              <Link href={criticalAlerts.length > 0 ? "/admin/alerts" : "/admin/devices"}>
-                {criticalAlerts.length > 0 ? t("nav.alerts") : t("admin.system.reviewIssue")}
-                <ArrowRight className="h-5 w-5" aria-hidden="true" />
-              </Link>
-            </Button>
-          }
-        />
-      }
+      className="animate-fade-in space-y-5 pb-6"
       actions={
         <>
           <CsvExportButton
@@ -303,67 +334,126 @@ export default function AdminDashboardPage() {
         </>
       }
     >
+      {/* ── Greeting Header ─────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          {greetingForHour(greetingHour, t)}, {adminName}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {criticalAlerts.length > 0
+            ? formatTemplate(t("admin.system.priorityCriticalDescription"), { count: criticalAlerts.length })
+            : activeAnomalyCount > 0
+              ? `${activeAnomalyCount} patients need attention today.`
+              : t("admin.system.priorityHealthyDescription")}
+          <span className="mx-2 text-border">·</span>
+          {todayDate}
+        </p>
+      </div>
+
+      {/* ── Top Metric Cards ────────────────────────────────────────────── */}
       <section className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          compact
-          label={t("admin.system.users")}
-          value={userStats.active}
-          description={t("admin.system.activeAccount")}
-          icon={Users}
-          href="/admin/users"
+        <HealthMetricCard
+          label="Patients Needing Attention"
+          value={patientsNeedingAttention.length}
+          icon={HeartPulse}
+          status={patientsNeedingAttention.length > 0 ? "warning" : "normal"}
+          trend={`${activePatientCount} active patients`}
         />
-        <MetricCard
-          compact
-          label={t("admin.system.fleetOnline")}
-          value={`${totalDevicesOnline}/${totalFleet}`}
-          description={t("admin.system.onlineLower")}
-          icon={Tablet}
-          href="/admin/devices"
-          status={totalDevicesOffline > 0 ? { label: t("admin.system.statusNeedsReview"), tone: "warning" } : undefined}
+        <HealthMetricCard
+          label="Active Anomalies"
+          value={activeAnomalyCount}
+          icon={ShieldAlert}
+          status={activeAnomalyCount > 0 ? "critical" : "normal"}
+          trend={activeAnomalyCount > 0 ? "Requires review" : "All clear"}
         />
-        <MetricCard
-          compact
-          label={t("admin.openAlerts")}
-          value={criticalAlerts.length}
-          description={t("admin.system.activeLower")}
-          icon={Bell}
-          href="/admin/alerts"
-          status={criticalAlerts.length > 0 ? { label: t("admin.system.statusNeedsReview"), tone: "critical" } : undefined}
-        />
-        <MetricCard
-          compact
-          label={t("admin.system.recentEvents")}
-          value={latestActivity.length}
-          description={t("admin.system.todayLower")}
+        <HealthMetricCard
+          label="Avg. Health Score"
+          value={avgHealthScore ?? "—"}
+          unit={avgHealthScore != null ? "/100" : undefined}
           icon={Activity}
-          href="/admin/audit"
+          status={avgHealthScore != null && avgHealthScore < 60 ? "warning" : "normal"}
+          trend={avgHealthScore != null ? "Across monitored patients" : "No data yet"}
+        />
+        <HealthMetricCard
+          label="Devices Online"
+          value={`${totalDevicesOnline}/${totalFleet}`}
+          icon={Tablet}
+          status={totalDevicesOffline > 0 ? "warning" : "normal"}
+          trend={totalDevicesOffline > 0 ? `${totalDevicesOffline} offline` : "All online"}
         />
       </section>
 
+      {/* ── Needs Attention: Patient Anomalies ──────────────────────────── */}
+      {patientsNeedingAttention.length > 0 ? (
+        <div className="space-y-3">
+          <SectionHeader
+            title="Needs Attention"
+            subtitle="Patients with active health anomalies ranked by risk"
+            icon={ShieldAlert}
+            action={
+              <Link href="/admin/personnel?tab=patients" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+                View all patients <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            }
+          />
+          <div className="grid gap-3 lg:grid-cols-2">
+            {patientsNeedingAttention.slice(0, 6).map(({ patient, analysis }) => {
+              if (!analysis) return null;
+              const tone = riskToneFromLevel(analysis.risk_level);
+              const patientPath = `/admin/patients/${patient.id}`;
+              return (
+                <Link
+                  key={patient.id}
+                  href={patientPath}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 transition-all hover:border-foreground/20 hover:shadow-sm",
+                  )}
+                >
+                  <RiskBadge tone={tone} size="md" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-foreground truncate">
+                      {patient.first_name} {patient.last_name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground truncate">{analysis.trend_summary}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-lg font-bold tabular-nums text-foreground">{analysis.overall_score}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Risk Score</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ) : healthAnalyses.isLoading ? (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-muted/40" />
+          ))}
+        </div>
+      ) : null}
+
+      {/* ── Operations + Health Overview ────────────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-        <Card className="border-border/70">
-          <CardHeader className="flex-row items-baseline justify-between gap-2 pb-2 space-y-0">
-            <CardTitle className="text-base">{t("admin.system.systemHealth")}</CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {formatTemplate(t("admin.system.coreServicesHealthy"), { healthy: healthyCoreCount, total: coreHealthRows.length })}
-            </span>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
+        {/* System Health */}
+        <div className="rounded-xl border border-border/60 bg-card">
+          <div className="border-b border-border/40 px-5 py-4">
+            <SectionHeader title={t("admin.system.systemHealth")} icon={CheckCircle2} />
+          </div>
+          <div className="space-y-1.5 p-5">
             {coreHealthRows.map((row) =>
               row.status === "warning" ? (
-                <div key={row.key} className="rounded-lg border border-warning/30 bg-warning-bg/50 px-3 py-2.5">
+                <div key={row.key} className="rounded-lg border border-amber/30 bg-amber-50/50 px-3 py-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-                      <span className="truncate text-sm font-medium text-foreground">{row.label}</span>
-                    </div>
-                    <StatusBadge label={healthLabel(row.status, t)} tone={healthTone(row.status)} />
+                    <span className="truncate text-sm font-medium text-foreground">{row.label}</span>
+                    <RiskBadge tone="warning" size="xs" label={t("admin.system.statusNeedsReview")} />
                   </div>
-                  <p className="mt-1 pl-6 text-xs text-muted-foreground">{row.detail}</p>
+                  <p className="mt-1 pl-0 text-xs text-muted-foreground">{row.detail}</p>
                 </div>
               ) : (
                 <div key={row.key} className="flex items-center gap-2 px-3 py-1.5">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
                   <span className="text-sm text-foreground">{row.label}</span>
                 </div>
               ),
@@ -377,14 +467,15 @@ export default function AdminDashboardPage() {
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="border-border/70">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("admin.system.recentActivity")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        {/* Recent Activity */}
+        <div className="rounded-xl border border-border/60 bg-card">
+          <div className="border-b border-border/40 px-5 py-4">
+            <SectionHeader title={t("admin.system.recentActivity")} icon={Activity} />
+          </div>
+          <div className="space-y-2 p-5">
             {latestActivity.length ? (
               <>
                 <div className="divide-y divide-border/60">
@@ -410,10 +501,11 @@ export default function AdminDashboardPage() {
             ) : (
               <p className="text-sm text-muted-foreground">{t("admin.system.noRecentActivity")}</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
+      {/* ── Facility + Quick Actions ────────────────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-2">
         <DashboardMapLauncher
           variant="card"
@@ -425,11 +517,11 @@ export default function AdminDashboardPage() {
           deviceCount={`${totalDevicesOnline}/${totalFleet}`}
         />
 
-        <Card className="border-border/70">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("admin.system.quickActions")}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-border/60 bg-card">
+          <div className="border-b border-border/40 px-5 py-4">
+            <SectionHeader title={t("admin.system.quickActions")} icon={ClipboardList} />
+          </div>
+          <div className="grid grid-cols-2 gap-2 p-5">
             <Button asChild variant="outline" size="sm" className="justify-start">
               <Link href="/admin/users">
                 <Users className="h-4 w-4" aria-hidden="true" />
@@ -454,8 +546,8 @@ export default function AdminDashboardPage() {
                 {t("admin.system.viewAuditLog")}
               </Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </AppPage>
   );

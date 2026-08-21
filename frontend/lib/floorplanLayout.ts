@@ -8,6 +8,7 @@ export type FloorplanRoomShape = {
   device_id: number | null;
   node_device_id?: string | null;
   power_kw: number | null;
+  room_type?: string | null;
 };
 
 export interface FloorplanLayoutResponse {
@@ -25,6 +26,7 @@ export interface FloorplanLayoutResponse {
       device_id?: number | null;
       node_device_id?: string | null;
       power_kw?: number | null;
+      room_type?: string | null;
     }>;
   };
   updated_at: string | null;
@@ -68,6 +70,7 @@ export function normalizeFloorplanRooms(
     device_id: r.device_id ?? null,
     node_device_id: r.node_device_id ?? null,
     power_kw: r.power_kw ?? null,
+    room_type: r.room_type ?? null,
   }));
 }
 
@@ -97,6 +100,36 @@ export function bootstrapRoomsFromDbFloor(
       device_id: null,
       node_device_id: null,
       power_kw: null,
+      room_type: null,
     };
   });
+}
+
+/**
+ * Canonical semantic room types for the floor-plan editor.
+ * Used as metadata only; the UI should not introduce strong colors per type.
+ */
+export const FLOORPLAN_ROOM_TYPES = [
+  "resident_room",
+  "bathroom",
+  "dining",
+  "nurses_station",
+  "therapy",
+  "lounge",
+  "shared_area",
+  "staff_room",
+  "other",
+] as const;
+
+export type FloorplanRoomType = (typeof FLOORPLAN_ROOM_TYPES)[number];
+
+export function isFloorplanRoomType(value: unknown): value is FloorplanRoomType {
+  return typeof value === "string" && (FLOORPLAN_ROOM_TYPES as readonly string[]).includes(value);
+}
+
+/** Normalize an arbitrary room_type string into a known type (defaults to "other"). */
+export function normalizeRoomType(value: unknown): FloorplanRoomType {
+  if (isFloorplanRoomType(value)) return value;
+  if (typeof value === "string" && value.trim().length === 0) return "other";
+  return "other";
 }

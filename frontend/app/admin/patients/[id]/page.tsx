@@ -15,13 +15,9 @@ import type {
 } from "@/lib/types";
 import {
   Phone,
-  User,
   CalendarDays,
   Plus,
   MapPin,
-  Ruler,
-  Droplets,
-  Weight,
 } from "lucide-react";
 import Link from "next/link";
 import SearchableListboxPicker, {
@@ -726,8 +722,8 @@ export default function PatientDetailPage() {
         </TabsList>
         <TabsContent value="profile" className="mt-0 space-y-5">
 
-          {/* ── HERO HEADER ───────────────────────────────────────────────── */}
-          <section className="relative overflow-hidden rounded-2xl border border-outline-variant/20 bg-gradient-to-br from-surface-container to-surface shadow-sm">
+          {/* ── COMPACT PROFILE HEADER ─────────────────────────────────────── */}
+          <section className="rounded-xl border border-border/60 bg-card p-5">
             {/* edit-about toolbar */}
             {canEditPatient && (
               <div className="absolute right-4 top-4 z-10">
@@ -742,33 +738,30 @@ export default function PatientDetailPage() {
               </div>
             )}
 
-            <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:p-6">
-              {/* Avatar column */}
-              <div className="flex shrink-0 flex-col items-center gap-2">
-                <div className="relative h-28 w-28 overflow-hidden rounded-2xl border-2 border-outline-variant/25 bg-gradient-to-br from-primary/20 to-primary/5 shadow-md sm:h-32 sm:w-32">
-                  {canEditPatient && (
-                    <label htmlFor={patientPhotoInputId} className={`absolute inset-0 z-[5] cursor-pointer ${patientPhotoBusy ? "pointer-events-none" : ""}`} aria-hidden="true" />
-                  )}
-                  {patientPhotoUrl ? (
-                    <Image src={patientPhotoUrl} alt={`${patient.first_name} ${patient.last_name}`} fill unoptimized className="object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-primary/50">
-                      {patient.first_name?.[0]}{patient.last_name?.[0]}
-                    </div>
-                  )}
-                  {canEditPatient && patientPhotoUrl && (
-                    <button type="button" className="absolute right-1 top-1 z-10 min-h-11 rounded-lg bg-black/60 px-3 py-2 text-sm font-semibold text-white hover:bg-black/75 disabled:opacity-50" disabled={patientPhotoBusy} onClick={() => void onRemovePatientPhoto()}>{t("profile.avatar.removePhoto")}</button>
-                  )}
-                </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {/* Avatar */}
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted/30 sm:h-20 sm:w-20">
                 {canEditPatient && (
-                  <label htmlFor={patientPhotoInputId} className="flex min-h-11 cursor-pointer items-center rounded-lg px-3 text-center text-sm font-medium text-primary hover:bg-primary/10">{t("profile.avatar.localFileLabel")}</label>
+                  <label htmlFor={patientPhotoInputId} className={`absolute inset-0 z-[5] cursor-pointer ${patientPhotoBusy ? "pointer-events-none" : ""}`} aria-hidden="true" />
                 )}
-                <input id={patientPhotoInputId} type="file" accept="image/*" disabled={patientPhotoBusy} onChange={(e) => void onPickPatientPhoto(e)} className="sr-only" />
-                {patientPhotoErr && <p className="text-center text-sm text-destructive">{patientPhotoErr}</p>}
-                <span className="rounded-md bg-surface-container-high px-2 py-1 font-mono text-xs text-foreground-variant">#{patient.id}</span>
+                {patientPhotoUrl ? (
+                  <Image src={patientPhotoUrl} alt={`${patient.first_name} ${patient.last_name}`} fill unoptimized className="object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xl font-bold text-primary/50">
+                    {patient.first_name?.[0]}{patient.last_name?.[0]}
+                  </div>
+                )}
+                {canEditPatient && patientPhotoUrl && (
+                  <button type="button" className="absolute right-0.5 top-0.5 z-10 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white hover:bg-black/75 disabled:opacity-50" disabled={patientPhotoBusy} onClick={() => void onRemovePatientPhoto()}>{t("profile.avatar.removePhoto")}</button>
+                )}
               </div>
+              {canEditPatient && (
+                <label htmlFor={patientPhotoInputId} className="hidden cursor-pointer items-center rounded-lg px-2 text-center text-xs font-medium text-primary hover:bg-primary/10 sm:flex">{t("profile.avatar.localFileLabel")}</label>
+              )}
+              <input id={patientPhotoInputId} type="file" accept="image/*" disabled={patientPhotoBusy} onChange={(e) => void onPickPatientPhoto(e)} className="sr-only" />
+              {patientPhotoErr && <p className="text-center text-sm text-destructive">{patientPhotoErr}</p>}
 
-              {/* Info column */}
+              {/* Identity + status chips */}
               <div className="min-w-0 flex-1">
                 {isEditingAbout ? (
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -786,38 +779,27 @@ export default function PatientDetailPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="flex flex-wrap items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{patient.first_name} {patient.last_name}</h1>
-                        <p className="mt-0.5 text-sm text-foreground-variant">
-                          {age != null ? `${age} ${t("patients.years")}` : "—"} · {genderLabel}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Status badges */}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold care-${patient.care_level}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${patient.care_level === "critical" ? "bg-critical" : patient.care_level === "special" ? "bg-warning" : "bg-success"}`} />
+                    <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl">{patient.first_name} {patient.last_name}</h1>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {age != null ? `${age} ${t("patients.years")}` : "—"} · {genderLabel}
+                      {patient.room_id != null && roomDetail ? ` · ${roomDetail.name?.trim() || `Room #${roomDetail.id}`}` : ""}
+                    </p>
+                    {/* Compact status chips */}
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${patient.is_active ? "bg-emerald-50 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${patient.is_active ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                        {patient.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
+                      </span>
+                      <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground capitalize">{patient.mobility_type}</span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${patient.care_level === "critical" ? "bg-red-50 text-red-700" : patient.care_level === "special" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${patient.care_level === "critical" ? "bg-red-500" : patient.care_level === "special" ? "bg-amber-500" : "bg-emerald-500"}`} />
                         {patient.care_level}
                       </span>
-                      <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-medium text-foreground-variant">{patient.mobility_type}</span>
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${patient.is_active ? "bg-success-bg text-success" : "bg-surface-container text-outline"}`}>{patient.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
-                      {patient.blood_type && <span className="rounded-full border border-outline-variant/30 px-3 py-1 text-xs font-mono font-medium text-foreground">{patient.blood_type}</span>}
-                    </div>
-                    {/* Room row */}
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-foreground-variant">
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        {patient.room_id == null ? (
-                          <span>{t("patients.noRoom")}</span>
-                        ) : roomDetail ? (
-                          <span className="font-medium text-foreground">{roomDetail.name?.trim() || `Room #${roomDetail.id}`}{roomDetail.floor_name ? ` · ${roomDetail.floor_name}` : ""}</span>
-                        ) : (
-                          <span>#{patient.room_id}</span>
-                        )}
-                      </span>
+                      {patient.blood_type && <span className="rounded-full border border-border/40 px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground">{patient.blood_type}</span>}
                       {patient.room_id != null && (
-                        <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary/10" onClick={() => setPatientMapOpen(true)}>{t("patients.roomOpenFacility")}</button>
+                        <button type="button" className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/10" onClick={() => setPatientMapOpen(true)}>
+                          <MapPin className="mr-1 inline h-3 w-3" />{t("patients.roomOpenFacility")}
+                        </button>
                       )}
                     </div>
                   </>
@@ -826,23 +808,16 @@ export default function PatientDetailPage() {
               </div>
             </div>
 
-            {/* ── Vital Stats Bar ─────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 gap-px border-t border-outline-variant/15 bg-outline-variant/10 sm:grid-cols-5">
-              {[
-                { icon: CalendarDays, label: t("patients.detailDob"), value: patient.date_of_birth ? new Date(patient.date_of_birth + "T12:00:00").toLocaleDateString(localeTag, { year: "numeric", month: "short", day: "numeric" }) : "—" },
-                { icon: Ruler, label: t("patients.heightCm"), value: patient.height_cm != null ? `${patient.height_cm} cm` : "—" },
-                { icon: Weight, label: t("patients.weightKg"), value: patient.weight_kg != null ? `${patient.weight_kg} kg` : "—" },
-                { icon: User, label: t("patients.detailBmi"), value: bmi != null ? `${bmi}` : "—", sub: bmi != null ? bmiLabel : undefined },
-                { icon: Droplets, label: t("patients.bloodType"), value: patient.blood_type || "—" },
-              ].map(({ icon: Icon, label, value, sub }) => (
-                <div key={label} className="flex flex-col items-center gap-0.5 bg-surface/80 px-3 py-3 text-center">
-                  <Icon className="mb-0.5 h-3.5 w-3.5 text-primary/70" />
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-variant">{label}</span>
-                  <span className="text-sm font-semibold text-foreground tabular-nums">{value}</span>
-                  {sub && <span className="text-[10px] text-foreground-variant">{sub}</span>}
-                </div>
-              ))}
-            </div>
+            {/* ── Compact vital stats bar ──────────────────────────────────── */}
+            {!isEditingAbout && (
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-border/40 pt-3 text-xs">
+                <span className="text-muted-foreground">{t("patients.detailDob")}: <span className="font-semibold text-foreground">{patient.date_of_birth ? new Date(patient.date_of_birth + "T12:00:00").toLocaleDateString(localeTag, { year: "numeric", month: "short", day: "numeric" }) : "—"}</span></span>
+                <span className="text-muted-foreground">{t("patients.heightCm")}: <span className="font-semibold text-foreground">{patient.height_cm != null ? `${patient.height_cm} cm` : "—"}</span></span>
+                <span className="text-muted-foreground">{t("patients.weightKg")}: <span className="font-semibold text-foreground">{patient.weight_kg != null ? `${patient.weight_kg} kg` : "—"}</span></span>
+                <span className="text-muted-foreground">{t("patients.detailBmi")}: <span className="font-semibold text-foreground">{bmi != null ? `${bmi}` : "—"}</span>{bmiLabel ? <span className="text-muted-foreground"> ({bmiLabel})</span> : null}</span>
+                <span className="text-muted-foreground">{t("patients.bloodType")}: <span className="font-semibold text-foreground">{patient.blood_type || "—"}</span></span>
+              </div>
+            )}
           </section>
 
           {/* ── AI HEALTH ANALYSIS (blank when AI offline) ────────────────── */}

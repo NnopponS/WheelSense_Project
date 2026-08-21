@@ -296,56 +296,62 @@ function FacilityManagementPageContent() {
         { label: t("nav.facilities") },
       ]}
       actions={
-        <div className="flex items-center gap-2">
-          {selectedFacility && (
-            <Badge variant="outline" className="text-sm">
-              <MapPin className="mr-1 h-3 w-3" />
-              {selectedFacility.name}
-              {selectedFloor && (
-                <>
-                  <ChevronRight className="mx-1 h-3 w-3" />
-                  {selectedFloor.name || `${t("floorplan.floor")} ${selectedFloor.floor_number}`}
-                </>
-              )}
-            </Badge>
-          )}
-        </div>
+        activeTab === "editor" ? null : (
+          <div className="flex items-center gap-2">
+            {selectedFacility && (
+              <Badge variant="outline" className="text-sm">
+                <MapPin className="mr-1 h-3 w-3" />
+                {selectedFacility.name}
+                {selectedFloor && (
+                  <>
+                    <ChevronRight className="mx-1 h-3 w-3" />
+                    {selectedFloor.name || `${t("floorplan.floor")} ${selectedFloor.floor_number}`}
+                  </>
+                )}
+              </Badge>
+            )}
+          </div>
+        )
       }
     >
 
-      {/* Stats */}
-      <div className="rounded-lg border border-border/70 bg-card p-3 shadow-sm sm:p-4">
-        <div className="grid gap-3 md:grid-cols-3">
-          <FacilityMetric
-            label={t("facilityMgmt.statsFacilities")}
-            value={stats.totalFacilities}
-            icon={Building2}
-            tone="blue"
-          />
-          <FacilityMetric
-            label={t("facilityMgmt.statsFloors")}
-            value={stats.totalFloors}
-            icon={Layers}
-            tone="green"
-          />
-          <FacilityMetric
-            label={t("facilityMgmt.statsSelectedScope")}
-            value={stats.selectedFacilityName ?? t("facilityMgmt.statsNoSelection")}
-            detail={stats.selectedFloorName}
-            icon={Home}
-            tone="violet"
-          />
+      {/* Stats — hidden in Floor plan editor mode to reduce vertical clutter */}
+      {activeTab !== "editor" ? (
+        <div className="rounded-lg border border-border/70 bg-card p-3 shadow-sm sm:p-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <FacilityMetric
+              label={t("facilityMgmt.statsFacilities")}
+              value={stats.totalFacilities}
+              icon={Building2}
+              tone="blue"
+            />
+            <FacilityMetric
+              label={t("facilityMgmt.statsFloors")}
+              value={stats.totalFloors}
+              icon={Layers}
+              tone="green"
+            />
+            <FacilityMetric
+              label={t("facilityMgmt.statsSelectedScope")}
+              value={stats.selectedFacilityName ?? t("facilityMgmt.statsNoSelection")}
+              detail={stats.selectedFloorName}
+              icon={Home}
+              tone="violet"
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FacilityTab)} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FacilityTab)} className={activeTab === "editor" ? "space-y-3" : "space-y-6"}>
         <TabsList className="grid w-full grid-cols-3 lg:w-auto">
-          <TabsTrigger value="facilities">{t("facilityMgmt.tabFacilities")}</TabsTrigger>
-          <TabsTrigger value="floors" disabled={!selectedFacilityId}>
+          <TabsTrigger value="facilities" className="data-[state=active]:font-semibold data-[state=active]:text-primary">
+            {t("facilityMgmt.tabFacilities")}
+          </TabsTrigger>
+          <TabsTrigger value="floors" disabled={!selectedFacilityId} className="data-[state=active]:font-semibold data-[state=active]:text-primary">
             {t("facilityMgmt.tabFloors")}
           </TabsTrigger>
-          <TabsTrigger value="editor" disabled={!selectedFloorId}>
+          <TabsTrigger value="editor" disabled={!selectedFloorId} className="data-[state=active]:font-semibold data-[state=active]:text-primary">
             {t("facilityMgmt.tabFloorPlan")}
           </TabsTrigger>
         </TabsList>
@@ -568,7 +574,7 @@ function FacilityManagementPageContent() {
         </TabsContent>
 
         {/* Floor plan — single implementation (shared FloorplansPanel) */}
-        <TabsContent value="editor" className="space-y-6">
+        <TabsContent value="editor" className="space-y-3">
           {!selectedFacilityId ? (
             <Card>
               <CardContent className="space-y-4 py-12 text-center">
@@ -588,7 +594,7 @@ function FacilityManagementPageContent() {
               </CardContent>
             </Card>
           ) : floorplanExternalScope ? (
-            <FloorplansPanel embedded externalScope={floorplanExternalScope} />
+            <FloorplansPanel externalScope={floorplanExternalScope} />
           ) : null}
         </TabsContent>
       </Tabs>
