@@ -126,7 +126,6 @@ export function TasksPageLayout({
     <AppPage
       title={title}
       description={description}
-      width="full"
       breadcrumbs={[
         { label: t("nav.dashboard"), href: `/${role.replace("_", "-")}` },
         { label: t("nav.tasks") },
