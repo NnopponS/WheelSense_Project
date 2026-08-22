@@ -37,6 +37,7 @@ import random
 import json
 import logging
 import threading
+import math
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
@@ -151,9 +152,17 @@ class PatientState:
     mobility_type: str
     
     # Vital tracking
-    last_heart_rate: int = 75
+    last_heart_rate: float = 75.0
     last_spo2: int = 98
     consecutive_abnormal_hr: int = 0
+    consecutive_tachy: int = 0
+    consecutive_brady: int = 0
+    
+    # Resting baselines and history
+    resting_heart_rate: float | None = None
+    resting_rmssd: float | None = None
+    hr_history: deque = field(default_factory=lambda: deque(maxlen=12))
+    rmssd_history: deque = field(default_factory=lambda: deque(maxlen=12))
     
     # Movement tracking
     time_in_current_room: int = 0
@@ -166,7 +175,9 @@ class PatientState:
     def __post_init__(self):
         # Set initial vitals based on care level
         ranges = VITAL_RANGES.get(self.care_level, VITAL_RANGES["normal"])
-        self.last_heart_rate = random.randint(*ranges["heart_rate"])
+        lo, hi = ranges["heart_rate"]
+        self.last_heart_rate = float(random.randint(lo, hi))
+        self.resting_heart_rate = (lo + hi) / 2.0
         self.last_spo2 = random.randint(*ranges["spo2"])
 
 
@@ -187,54 +198,88 @@ class VitalSimulator:
     def __init__(self, config: dict):
         self.config = config
     
+    def _generate_hr_window(self, base_hr: float, n: int = 30) -> list[float]:
+        """Generate n roughly one-per-second HR samples around base_hr."""
+        return [max(40.0, min(160.0, base_hr + random.uniform(-3.0, 3.0))) for _ in range(n)]
+
+    def _hr_to_rr(self, hr: float) -> float:
+        """Convert bpm to RR interval (ms) with a small respiratory variation."""
+        rr = 60000.0 / hr if hr > 0 else 800.0
+        return max(400.0, min(1500.0, rr + random.uniform(-40.0, 40.0)))
+
+    def _rmssd(self, rr_intervals: list[float]) -> float:
+        """Root mean square of successive RR differences (ms)."""
+        if len(rr_intervals) < 2:
+            return 0.0
+        diffs = [(rr_intervals[i + 1] - rr_intervals[i]) ** 2 for i in range(len(rr_intervals) - 1)]
+        return math.sqrt(sum(diffs) / len(diffs))
+
     def generate_for_patient(self, patient_state: PatientState) -> dict[str, Any]:
         """Generate vitals appropriate for patient's care level."""
         care_level = patient_state.care_level
         ranges = VITAL_RANGES.get(care_level, VITAL_RANGES["normal"])
-        
-        # Heart rate with trend continuity and variability
+
+        # Target HR with care-level variability and trend continuity
         hr_variability = ranges["heart_rate_variability"]
         hr_change = random.randint(-hr_variability, hr_variability)
-        heart_rate = max(40, min(160, patient_state.last_heart_rate + hr_change))
-        
+        target_hr = max(40.0, min(160.0, patient_state.last_heart_rate + hr_change))
+
         # Occasionally introduce spikes for critical patients
         if care_level == "critical" and random.random() < 0.15:
-            heart_rate = random.randint(100, 135)
-        
+            target_hr = random.uniform(100.0, 135.0)
+
+        # Generate one 30-second window of beat-to-beat HR/RR
+        hr_window = self._generate_hr_window(target_hr)
+        rr_window = [self._hr_to_rr(hr) for hr in hr_window]
+        mean_hr = sum(hr_window) / len(hr_window)
+        rmssd = self._rmssd(rr_window)
+
         # SpO2 with care-level appropriate ranges
         spo2_change = random.randint(-2, 2)
         spo2 = max(85, min(100, patient_state.last_spo2 + spo2_change))
-        
+
         # Critical patients have lower baseline SpO2
         if care_level == "critical":
             spo2 = min(spo2, random.randint(88, 95))
         elif care_level == "special":
             spo2 = min(spo2, random.randint(92, 97))
-        
-        # RR interval inversely related to heart rate
-        rr_interval = int(60000 / heart_rate) if heart_rate > 0 else 800
-        rr_interval += random.randint(-50, 50)
-        rr_interval = max(400, min(1500, rr_interval))
-        
+
         # Sensor battery (gradual drain)
         battery = max(20, 100 - (patient_state.total_moves_today * 2))
-        
-        # Update patient state
-        patient_state.last_heart_rate = heart_rate
+
+        # Update history and state
+        patient_state.last_heart_rate = mean_hr
         patient_state.last_spo2 = spo2
-        
+        patient_state.hr_history.append(mean_hr)
+        patient_state.rmssd_history.append(rmssd)
+
+        # Update resting baselines when the patient has been stable
+        if abs(mean_hr - patient_state.resting_heart_rate) <= 5.0:
+            recent_hr = list(patient_state.hr_history)[-5:]
+            recent_rmssd = list(patient_state.rmssd_history)[-5:]
+            if len(recent_hr) >= 3:
+                patient_state.resting_heart_rate = sum(recent_hr) / len(recent_hr)
+            if len(recent_rmssd) >= 3:
+                patient_state.resting_rmssd = sum(recent_rmssd) / len(recent_rmssd)
+
         return {
-            "heart_rate_bpm": heart_rate,
-            "rr_interval_ms": rr_interval,
+            "heart_rate_bpm": round(mean_hr),
+            "rr_interval_ms": round(rr_window[-1]),
+            "rmssd": round(rmssd, 2),
+            "mean_hr": round(mean_hr, 2),
             "spo2": spo2,
             "sensor_battery": battery,
         }
     
     def generate_fall_vitals(self, patient_state: PatientState) -> dict[str, Any]:
         """Generate vitals indicating a fall event."""
+        hr = float(random.randint(100, 140))  # Elevated from stress
+        rr = float(random.randint(500, 700))
         return {
             "heart_rate_bpm": random.randint(100, 140),  # Elevated from stress
             "rr_interval_ms": random.randint(500, 700),
+            "rmssd": round(self._rmssd([rr - 20, rr, rr + 20]), 2),
+            "mean_hr": round(hr, 2),
             "spo2": max(85, patient_state.last_spo2 - random.randint(3, 8)),
             "sensor_battery": random.randint(50, 100),
         }
@@ -334,27 +379,71 @@ class AlertSimulator:
         """Check vitals against thresholds and return alert configs."""
         alerts = []
         care_level = patient_state.care_level
-        
-        # Heart rate checks
-        hr = vitals.get("heart_rate_bpm", 75)
-        if hr > self.thresholds["heart_rate_high"]:
-            patient_state.consecutive_abnormal_hr += 1
-            if patient_state.consecutive_abnormal_hr >= 2:  # Require 2 consecutive
+
+        # Use mean HR when available; fall back to the single sample.
+        mean_hr = float(vitals.get("mean_hr") or vitals.get("heart_rate_bpm", 75))
+        hr = float(vitals.get("heart_rate_bpm", mean_hr))
+        rmssd = float(vitals.get("rmssd") or 0.0)
+        rest = float(patient_state.resting_heart_rate or mean_hr)
+        rest_rmssd = float(patient_state.resting_rmssd or rmssd or 1.0)
+
+        # 1. Tachycardia: mean HR >= min(rest + 40, 130)
+        tachy_threshold = min(rest + 40.0, 130.0)
+        if mean_hr >= tachy_threshold:
+            patient_state.consecutive_tachy += 1
+            if patient_state.consecutive_tachy >= 2:
+                severity = "critical" if mean_hr >= 130 else "warning"
                 alerts.append({
-                    "alert_type": "abnormal_hr",
-                    "severity": "critical" if hr > 120 else "warning",
-                    "title": f"High Heart Rate: {hr} BPM",
-                    "description": f"Patient showing elevated heart rate ({hr} BPM). Care level: {care_level}.",
+                    "alert_type": "tachycardia",
+                    "severity": severity,
+                    "title": f"Tachycardia: {mean_hr:.0f} BPM",
+                    "description": f"Mean HR {mean_hr:.0f} BPM at or above threshold {tachy_threshold:.0f} (rest {rest:.0f}).",
                 })
-        elif hr < self.thresholds["heart_rate_low"]:
-            patient_state.consecutive_abnormal_hr += 1
-            if patient_state.consecutive_abnormal_hr >= 2:
+        else:
+            patient_state.consecutive_tachy = 0
+
+        # 2. Bradycardia: mean HR <= max(rest - 25, 40)
+        brady_threshold = max(rest - 25.0, 40.0)
+        if mean_hr <= brady_threshold:
+            patient_state.consecutive_brady += 1
+            if patient_state.consecutive_brady >= 2:
+                severity = "critical" if mean_hr <= 40 else "warning"
                 alerts.append({
-                    "alert_type": "abnormal_hr",
-                    "severity": "critical" if hr < 45 else "warning",
-                    "title": f"Low Heart Rate: {hr} BPM",
-                    "description": f"Patient showing low heart rate ({hr} BPM). Care level: {care_level}.",
+                    "alert_type": "bradycardia",
+                    "severity": severity,
+                    "title": f"Bradycardia: {mean_hr:.0f} BPM",
+                    "description": f"Mean HR {mean_hr:.0f} BPM at or below threshold {brady_threshold:.0f} (rest {rest:.0f}).",
                 })
+        else:
+            patient_state.consecutive_brady = 0
+
+        # 3. Sudden drop: >= 30 bpm below the last 30 s, and that stretch was near rest
+        hr_values = list(patient_state.hr_history)
+        previous_hr = hr_values[-2] if len(hr_values) >= 2 else mean_hr
+        if (
+            len(hr_values) >= 2
+            and (previous_hr - mean_hr) >= 30.0
+            and abs(previous_hr - rest) <= 10.0
+        ):
+            alerts.append({
+                "alert_type": "sudden_hr_drop",
+                "severity": "warning",
+                "title": f"Sudden HR Drop: {mean_hr:.0f} BPM",
+                "description": f"Heart rate fell {previous_hr - mean_hr:.0f} BPM from the previous {previous_hr:.0f} BPM near rest.",
+            })
+
+        # 4. Irregular: HR still near rest, RMSSD <= 50% of rest RMSSD
+        if abs(mean_hr - rest) <= 10.0 and rmssd <= 0.5 * rest_rmssd and rmssd > 0:
+            alerts.append({
+                "alert_type": "irregular_hr",
+                "severity": "info",
+                "title": f"Irregular Heart Rhythm",
+                "description": f"RMSSD {rmssd:.1f} ms is well below resting RMSSD {rest_rmssd:.1f} ms while HR is near rest.",
+            })
+
+        # Legacy aggregate counter for threshold-style callers
+        if alerts:
+            patient_state.consecutive_abnormal_hr += 1
         else:
             patient_state.consecutive_abnormal_hr = 0
         
