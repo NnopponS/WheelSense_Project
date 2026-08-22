@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import csv
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import text
@@ -29,6 +30,11 @@ def _load_rows() -> list[dict]:
         return list(csv.DictReader(f))
 
 
+def _parse_ts(value: str) -> datetime:
+    value = value.replace("+00", "+00:00").replace(" ", "T")
+    return datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
+
+
 def _transform(row: dict) -> dict:
     data = parse_data(row.get("data", ""))
     data.setdefault("simulated", True)
@@ -37,7 +43,7 @@ def _transform(row: dict) -> dict:
     return {
         "workspace_id": int(row["workspace_id"]),
         "patient_id": int(row["patient_id"]),
-        "timestamp": row["timestamp"],
+        "timestamp": _parse_ts(row["timestamp"]),
         "event_type": row["event_type"],
         "room_id": int(row["room_id"]) if row["room_id"].isdigit() else None,
         "room_name": row["room_name"],
