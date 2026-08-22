@@ -1,16 +1,8 @@
 "use client";
 
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { percentToCanvasUnits, type FloorplanRoomShape } from "@/lib/floorplanLayout";
 
@@ -31,14 +23,6 @@ export type FloorplanRoomMeta = {
   presenceHrefs?: (string | null)[];
   /** Same length as presenceDots: hosted profile image URL or null (initials fallback) */
   presenceAvatarUrls?: (string | null)[];
-};
-
-export type FloorplanCanvasHandle = {
-  zoomIn: () => void;
-  zoomOut: () => void;
-  resetZoom: () => void;
-  fitToRooms: () => void;
-  getZoom: () => number;
 };
 
 const CANVAS_BASE_VIEW = 1000;
@@ -104,7 +88,7 @@ function PresenceFace({ label, avatarUrl }: { label: string; avatarUrl: string |
   return <span className="leading-none">{initialsFromPresenceLabel(label)}</span>;
 }
 
-/** One-time camera: frame all rooms with generous padding so the floor feels like the main object. */
+/** One-time camera: frame all rooms with padding (matches admin floorplan editor UX vs full 5000 canvas). */
 function computeFitViewToRooms(rooms: FloorplanRoomShape[]): { zoom: number; pan: { x: number; y: number } } {
   if (rooms.length === 0) return { zoom: 1, pan: { x: 0, y: 0 } };
   let minX = Infinity;
@@ -117,21 +101,20 @@ function computeFitViewToRooms(rooms: FloorplanRoomShape[]): { zoom: number; pan
     maxX = Math.max(maxX, r.x + r.w);
     maxY = Math.max(maxY, r.y + r.h);
   }
-  // Generous padding (~5% of canvas on each side) so rooms don't touch edges.
-  const pad = percentToCanvasUnits(5);
-  const bw = Math.max(maxX - minX + pad * 2, MIN_ROOM_SIZE);
-  const bh = Math.max(maxY - minY + pad * 2, MIN_ROOM_SIZE);
-  // Use the larger dimension to determine zoom so everything fits.
+  const pad = percentToCanvasUnits(2);
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(CANVAS_BOUNDS, maxX + pad);
+  maxY = Math.min(CANVAS_BOUNDS, maxY + pad);
+  const bw = Math.max(maxX - minX, MIN_ROOM_SIZE);
+  const bh = Math.max(maxY - minY, MIN_ROOM_SIZE);
   const side = Math.max(bw, bh);
   let zoom = CANVAS_BASE_VIEW / side;
-  // Don't zoom in beyond 1.5x on fit — rooms shouldn't be enormous.
-  zoom = Math.min(zoom, 1.5);
   zoom = clampZoom(zoom);
   const viewBoxSize = CANVAS_BASE_VIEW / zoom;
-  // Center the bounding box in the viewport.
+  const maxPan = Math.max(0, CANVAS_BOUNDS - viewBoxSize);
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
-  const maxPan = Math.max(0, CANVAS_BOUNDS - viewBoxSize);
   const panX = Math.max(0, Math.min(maxPan, cx - viewBoxSize / 2));
   const panY = Math.max(0, Math.min(maxPan, cy - viewBoxSize / 2));
   return { zoom, pan: { x: panX, y: panY } };
@@ -197,7 +180,17 @@ type DragState =
     }
   | null;
 
-const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
+export default function FloorplanCanvas({
+  rooms,
+  onRoomsChange,
+  selectedId,
+  onSelect,
+  readOnly = false,
+  enableZoom,
+  compact = false,
+  roomMetaById = {},
+  fitContentOnMount = false,
+}: {
   rooms: FloorplanRoomShape[];
   onRoomsChange: (next: FloorplanRoomShape[]) => void;
   selectedId: string | null;
@@ -211,32 +204,7 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
   roomMetaById?: Record<string, FloorplanRoomMeta | null | undefined>;
   /** After first non-empty layout, set zoom/pan to frame all rooms (does not refit on every edit). */
   fitContentOnMount?: boolean;
-  /** Show the grid background. Defaults to true. */
-  showGrid?: boolean;
-  /** Snap room move/resize to the grid. Defaults to true. */
-  snapToGrid?: boolean;
-  /** Hide the built-in zoom controls (when the parent renders its own toolbar). */
-  hideZoomControls?: boolean;
-  /** Called whenever zoom changes, so parents can display the current zoom level. */
-  onZoomChange?: (zoom: number) => void;
-}>(function FloorplanCanvas(
-  {
-    rooms,
-    onRoomsChange,
-    selectedId,
-    onSelect,
-    readOnly = false,
-    enableZoom,
-    compact = false,
-    roomMetaById = {},
-    fitContentOnMount = false,
-    showGrid = true,
-    snapToGrid = true,
-    hideZoomControls = false,
-    onZoomChange,
-  },
-  ref,
-) {
+}) {
   const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -244,7 +212,6 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
   const draftRoomsRef = useRef(rooms);
   const dragRef = useRef<DragState>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [hoverId, setHoverId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const didFitContentOnMount = useRef(false);
@@ -257,40 +224,6 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
       y: Math.max(0, Math.min(maxPan, pan.y)),
     }),
     [maxPan, pan.x, pan.y],
-  );
-
-  // Keep a ref to the latest rooms so the imperative fit can use the current set.
-  const roomsRef = useRef(rooms);
-  useEffect(() => {
-    roomsRef.current = rooms;
-  }, [rooms]);
-
-  // Notify parent of zoom changes so toolbar can display the current percentage.
-  useEffect(() => {
-    onZoomChange?.(zoom);
-  }, [zoom, onZoomChange]);
-
-  const fitToRooms = useCallback((sourceRooms?: FloorplanRoomShape[]) => {
-    const list = sourceRooms ?? roomsRef.current;
-    if (!list.length) return;
-    const next = computeFitViewToRooms(list);
-    setZoom(next.zoom);
-    setPan(next.pan);
-  }, []);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      zoomIn: () => setZoom((z) => clampZoom(z + ZOOM_STEP)),
-      zoomOut: () => setZoom((z) => clampZoom(z - ZOOM_STEP)),
-      resetZoom: () => {
-        setZoom(1);
-        setPan({ x: 0, y: 0 });
-      },
-      fitToRooms: () => fitToRooms(),
-      getZoom: () => zoom,
-    }),
-    [fitToRooms, zoom],
   );
 
   useEffect(() => {
@@ -323,10 +256,6 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
       y: transformed.y,
     };
   }, []);
-
-  function maybeSnap(room: FloorplanRoomShape): FloorplanRoomShape {
-    return snapToGrid ? snapRoom(room) : clampRoom(room);
-  }
 
   function startMove(room: FloorplanRoomShape, event: React.PointerEvent) {
     if (readOnly) return;
@@ -375,12 +304,12 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
   const commitSelection = useCallback(
     (id: string) => {
       const committed = draftRoomsRef.current.map((room) =>
-        room.id === id ? (snapToGrid ? snapRoom(room) : clampRoom(room)) : room,
+        room.id === id ? snapRoom(room) : room,
       );
       setDraftRooms(committed);
       onRoomsChange(committed);
     },
-    [onRoomsChange, snapToGrid],
+    [onRoomsChange],
   );
 
   function onSvgPointerDown(event: React.PointerEvent<SVGSVGElement>) {
@@ -403,7 +332,7 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
     if (drag.kind === "move") {
       const dx = point.x - drag.point0.x;
       const dy = point.y - drag.point0.y;
-      const moved = maybeSnap({
+      const moved = snapRoom({
         ...drag.room0,
         x: drag.room0.x + dx,
         y: drag.room0.y + dy,
@@ -415,7 +344,7 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
     }
 
     if (drag.kind === "resize") {
-      const resized = maybeSnap(applyResize(drag.corner, drag.orig, point.x, point.y));
+      const resized = snapRoom(applyResize(drag.corner, drag.orig, point.x, point.y));
       setDraftRooms((prev) =>
         prev.map((room) => (room.id === drag.id ? resized : room)),
       );
@@ -489,16 +418,16 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
   }, [zoomEnabled]);
 
   return (
-    <div className={`flex h-full w-full flex-col ${compact ? "text-sm" : ""}`}>
-      {zoomEnabled && !hideZoomControls ? (
-        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm text-foreground">
+    <div className={`space-y-2 ${compact ? "text-sm" : ""}`}>
+      {zoomEnabled && (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
           <button
             type="button"
             className="inline-flex items-center justify-center p-2 rounded-lg border border-outline-variant/40 bg-surface-container-low hover:bg-surface-container-high"
             aria-label={t("floorplan.zoomOut")}
             onClick={() => setZoom((z) => clampZoom(z - ZOOM_STEP))}
           >
-            <span aria-hidden className="text-base leading-none">−</span>
+            <Minus className="w-4 h-4" />
           </button>
           <span className="tabular-nums font-medium min-w-[3.25rem] text-center">
             {Math.round(zoom * 100)}%
@@ -509,38 +438,36 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
             aria-label={t("floorplan.zoomIn")}
             onClick={() => setZoom((z) => clampZoom(z + ZOOM_STEP))}
           >
-            <span aria-hidden className="text-base leading-none">+</span>
+            <Plus className="w-4 h-4" />
           </button>
           <button
             type="button"
             className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-outline-variant/40 bg-surface-container-low hover:bg-surface-container-high text-xs"
             aria-label={t("floorplan.zoomReset")}
-            onClick={() => {
-              setZoom(1);
-              setPan({ x: 0, y: 0 });
-            }}
+            onClick={() => setZoom(1)}
           >
+            <RotateCcw className="w-3.5 h-3.5" />
             {t("floorplan.zoomReset")}
           </button>
           <span className="text-xs text-foreground-variant">{t("floorplan.zoomWheelHint")}</span>
         </div>
-      ) : null}
+      )}
 
       <div
         ref={viewportRef}
-        className={`relative flex-1 overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container-low/40 ${
+        className={`overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container-low/40 ${
           compact
-            ? "min-h-[280px]"
-            : "min-h-[480px]"
+            ? "max-h-[min(44vh,420px)] min-h-[280px]"
+            : "max-h-[min(85vh,960px)] min-h-[min(78vh,720px)]"
         }`}
       >
         <svg
           ref={svgRef}
           viewBox={`${effectivePan.x} ${effectivePan.y} ${viewBoxSize} ${viewBoxSize}`}
           preserveAspectRatio="xMidYMid meet"
-          className={`h-full w-full select-none bg-surface-container-low/80 ${
-            readOnly ? "cursor-default" : "cursor-grab active:cursor-grabbing"
-          }`}
+          className={`w-full rounded-xl border-2 border-dashed border-outline-variant/40 bg-surface-container-low/80 select-none ${
+            compact ? "min-h-[280px]" : "min-h-[560px]"
+          } ${readOnly ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
           onPointerDown={onSvgPointerDown}
           onPointerMove={onSvgPointerMove}
           onPointerUp={onSvgPointerUp}
@@ -552,15 +479,10 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
             </pattern>
           </defs>
 
-          {showGrid ? (
-            <rect x={0} y={0} width={CANVAS_BOUNDS} height={CANVAS_BOUNDS} fill="url(#ws-grid)" />
-          ) : (
-            <rect x={0} y={0} width={CANVAS_BOUNDS} height={CANVAS_BOUNDS} fill="transparent" />
-          )}
+          <rect x={0} y={0} width={CANVAS_BOUNDS} height={CANVAS_BOUNDS} fill="url(#ws-grid)" />
 
           {(isDragging ? draftRooms : rooms).map((room) => {
             const selected = selectedId === room.id;
-            const hovered = !readOnly && hoverId === room.id && !selected;
             const meta = roomMetaById[room.id] ?? null;
             const tone = roomToneClasses(meta?.tone);
             const chips = meta?.chips?.slice(0, compact ? 2 : 3) ?? [];
@@ -569,49 +491,20 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
             const presenceHrefs = meta?.presenceHrefs?.slice(0, compact ? 2 : 3) ?? [];
             const presenceAvatarUrls = meta?.presenceAvatarUrls?.slice(0, compact ? 2 : 3) ?? [];
 
-            // Visual states:
-            // - read-only: tone-driven (monitoring surfaces)
-            // - default: neutral light surface, medium-subtle gray border, readable dark name
-            // - hover: slightly stronger blue border, subtle blue tint, grab cursor
-            // - selected: WheelSense primary blue border, subtle blue fill, resize handles, stronger name weight
-            let fill: string;
-            let stroke: string;
-            let strokeWidth: number;
-            if (readOnly) {
-              fill = tone.fill;
-              stroke = selected ? "rgb(37, 99, 235)" : tone.border;
-              strokeWidth = selected ? 5 : 3;
-            } else if (selected) {
-              fill = "rgba(37, 99, 235, 0.08)";
-              stroke = "rgb(37, 99, 235)";
-              strokeWidth = 3;
-            } else if (hovered) {
-              fill = "rgba(37, 99, 235, 0.04)";
-              stroke = "rgba(37, 99, 235, 0.50)";
-              strokeWidth = 2;
-            } else {
-              fill = "rgba(148, 163, 184, 0.08)";
-              stroke = "rgba(100, 116, 139, 0.45)";
-              strokeWidth = 1.5;
-            }
-
             return (
               <g
                 key={room.id}
                 onPointerDown={(event) => event.stopPropagation()}
-                onPointerEnter={() => setHoverId(room.id)}
-                onPointerLeave={() => setHoverId((id) => (id === room.id ? null : id))}
-                style={{ cursor: readOnly ? "pointer" : selected ? "move" : "grab" }}
               >
                 <rect
                   x={room.x}
                   y={room.y}
                   width={room.w}
                   height={room.h}
-                  rx={6}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={strokeWidth}
+                  rx={18}
+                  fill={readOnly ? tone.fill : "rgba(59, 130, 246, 0.12)"}
+                  stroke={selected ? "rgb(37, 99, 235)" : readOnly ? tone.border : "rgba(37, 99, 235, 0.4)"}
+                  strokeWidth={selected ? 5 : 3}
                   onPointerDown={(event) => {
                     if (readOnly) {
                       onSelect(room.id);
@@ -622,10 +515,10 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
                 />
 
                 <foreignObject
-                  x={room.x + 12}
-                  y={room.y + 12}
-                  width={Math.max(28, room.w - 24)}
-                  height={Math.max(28, room.h - 24)}
+                  x={room.x + 10}
+                  y={room.y + 10}
+                  width={Math.max(24, room.w - 20)}
+                  height={Math.max(24, room.h - 20)}
                   onPointerDown={(event) => {
                     event.stopPropagation();
                     if (readOnly) {
@@ -637,9 +530,7 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
                 >
                   <div className="flex h-full flex-col justify-between gap-1.5 overflow-hidden">
                     <div className="min-w-0">
-                      <p className={`truncate ${compact ? "text-[11px]" : "text-[13px]"} ${selected ? "font-bold" : "font-semibold"} text-slate-900`}>
-                        {room.label}
-                      </p>
+                      <p className="truncate text-xs font-semibold text-slate-900">{room.label}</p>
                       {detail ? <p className="mt-0.5 truncate text-[10px] text-slate-600">{detail}</p> : null}
                     </div>
                     <div className="space-y-1">
@@ -674,18 +565,21 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
                           })}
                         </div>
                       ) : null}
-                      {chips.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {chips.map((chip) => (
-                            <span
-                              key={`${room.id}-${chip.label}`}
-                              className={`inline-flex max-w-full items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${tone.chip}`}
-                            >
-                              {chip.label}
-                            </span>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-1">
+                      {chips.map((chip) => (
+                        <span
+                          key={`${room.id}-${chip.label}`}
+                          className={`inline-flex max-w-full items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${tone.chip}`}
+                        >
+                          {chip.label}
+                        </span>
+                      ))}
+                      {chips.length === 0 ? (
+                        <span className="inline-flex rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[9px] font-medium text-slate-700">
+                          layout
+                        </span>
                       ) : null}
+                      </div>
                     </div>
                   </div>
                 </foreignObject>
@@ -698,16 +592,14 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
                       { corner: "sw", x: room.x, y: room.y + room.h, cursor: "nesw-resize" },
                       { corner: "se", x: room.x + room.w, y: room.y + room.h, cursor: "nwse-resize" },
                     ] as const).map((handle) => (
-                      <rect
+                      <circle
                         key={`${room.id}-${handle.corner}`}
-                        x={handle.x - 6}
-                        y={handle.y - 6}
-                        width={12}
-                        height={12}
-                        rx={2}
+                        cx={handle.x}
+                        cy={handle.y}
+                        r={10}
                         fill="rgb(37, 99, 235)"
                         stroke="white"
-                        strokeWidth={2}
+                        strokeWidth={3}
                         style={{ cursor: handle.cursor }}
                         onPointerDown={(event) => startResize(handle.corner, room, event)}
                       />
@@ -721,6 +613,4 @@ const FloorplanCanvas = forwardRef<FloorplanCanvasHandle, {
       </div>
     </div>
   );
-});
-
-export default FloorplanCanvas;
+}

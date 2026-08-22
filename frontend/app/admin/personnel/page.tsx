@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, ChevronRight, Search, Shield, UserCog, UserPlus, Users } from "lucide-react";
+import { Activity, ArrowRight, Search, Shield, UserCog, UserPlus, Users } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,13 +41,11 @@ import {
   withPatientListReturnTo,
 } from "@/lib/patientListContext";
 import type { Caregiver, Patient, User as AppUser } from "@/lib/types";
-import type { PatientHealthAnalysis } from "@/lib/patientHealthAnalysis";
 import type {
   ListCaregiversResponse,
   ListPatientsResponse,
   ListUsersResponse,
 } from "@/lib/api/task-scope-types";
-import { RiskBadge, FilterChip, riskToneFromLevel } from "@/components/shared/health/HealthPrimitives";
 
 type ViewTab = "staff" | "patients" | "accounts";
 type User = ListUsersResponse[number];
@@ -158,27 +156,6 @@ function PersonnelPageContent() {
     queryKey: ["admin", "personnel", "rooms"],
     queryFn: () => api.listRooms(),
   });
-
-  // Patient health analysis for the patients tab — fetch for visible active patients
-  const activePatientIdsForHealth = useMemo(
-    () => (patientsQuery.data ?? []).filter((p: ListPatientsResponse[number]) => p.is_active).slice(0, 24).map((p: ListPatientsResponse[number]) => p.id),
-    [patientsQuery.data],
-  );
-  const patientHealthQuery = useQuery({
-    queryKey: ["admin", "personnel", "patient-health", activePatientIdsForHealth],
-    queryFn: async () => {
-      const results = await Promise.all(
-        activePatientIdsForHealth.map((id) => api.getPatientHealthAnalysis(id).catch(() => null)),
-      );
-      const map = new Map<number, PatientHealthAnalysis | null>();
-      activePatientIdsForHealth.forEach((id, i) => map.set(id, results[i] as PatientHealthAnalysis | null));
-      return map;
-    },
-    enabled: activePatientIdsForHealth.length > 0 && tab === "patients",
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
-  const patientHealthMap = patientHealthQuery.data ?? new Map<number, PatientHealthAnalysis | null>();
 
   const invalidatePersonnel = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: [...PERSONNEL_QK.caregivers] });
@@ -600,86 +577,66 @@ function PersonnelPageContent() {
               </TabsContent>
 
               <TabsContent value="patients" className="m-0 space-y-2">
-                {/* Risk filter chips */}
-                <div className="flex flex-wrap gap-2 pb-1">
-                  <FilterChip
-                    label="All"
-                    count={patientRows.length}
-                    active={patientStatusFilter === "all"}
-                    onClick={() => setPatientStatusFilter("all")}
-                  />
-                  <FilterChip
-                    label="Active"
-                    count={patients.filter((p) => p.is_active).length}
-                    active={patientStatusFilter === "active"}
-                    onClick={() => setPatientStatusFilter("active")}
-                  />
-                  <FilterChip
-                    label="Inactive"
-                    count={patients.filter((p) => !p.is_active).length}
-                    active={patientStatusFilter === "inactive"}
-                    onClick={() => setPatientStatusFilter("inactive")}
-                  />
-                </div>
                 {patientRows.map((row) => {
                   const linkedAccount = accountByPatientId.get(row.id);
                   const fullName = personName(row.first_name, row.last_name, `Patient #${row.id}`);
-                  const health = patientHealthMap.get(row.id);
-                  const riskTone = health ? riskToneFromLevel(health.risk_level) : null;
-                  const hr = health?.baseline?.["heart_rate_bpm"]?.value;
-                  const spo2 = health?.baseline?.["spo2"]?.value;
-                  const score = health?.overall_score;
-                  const patientDetailHref = withPatientListReturnTo(
-                    getPatientDetailPath(me?.role || "admin", row.id),
-                    currentPatientListHref,
-                  );
                   return (
-                  <Link
+                  <div
                     key={row.id}
-                    href={patientDetailHref}
-                    onClick={() => rememberPatientListScroll(currentPatientListHref)}
-                    className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3.5 transition-all hover:border-foreground/20 hover:shadow-sm"
+                    className="flex items-center justify-between rounded-xl border border-border p-3"
                   >
-                    <UserAvatar
-                      username={fullName}
-                      profileImageUrl={row.photo_url || linkedAccount?.profile_image_url || null}
-                      sizePx={40}
-                      fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-foreground truncate">{fullName}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {row.nickname ? `${row.nickname} · ` : ""}#{row.id}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <UserAvatar
+                        username={fullName}
+                        profileImageUrl={row.photo_url || linkedAccount?.profile_image_url || null}
+                        sizePx={44}
+                        fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+                      />
+                      <div>
+                        <p className="font-medium">{fullName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {t("personnel.role.patient")} #{row.id}
+                          {row.nickname ? ` - ${row.nickname}` : ""}
+                        </p>
+                      </div>
                     </div>
-                    {/* Compact health metrics */}
-                    {hr != null ? (
-                      <div className="hidden shrink-0 text-center sm:block">
-                        <p className="text-sm font-bold tabular-nums text-foreground">{hr}</p>
-                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">bpm</p>
-                      </div>
-                    ) : null}
-                    {spo2 != null ? (
-                      <div className="hidden shrink-0 text-center sm:block">
-                        <p className="text-sm font-bold tabular-nums text-foreground">{spo2}</p>
-                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">SpO₂</p>
-                      </div>
-                    ) : null}
-                    {score != null ? (
-                      <div className="hidden shrink-0 text-center md:block">
-                        <p className="text-sm font-bold tabular-nums text-foreground">{score}</p>
-                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Score</p>
-                      </div>
-                    ) : null}
-                    {riskTone ? (
-                      <RiskBadge tone={riskTone} size="xs" />
-                    ) : (
+                    <div className="flex items-center gap-2">
                       <Badge variant={row.is_active ? "success" : "outline"}>
                         {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
-                    )}
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                  </Link>
+                      <Button asChild variant="outline" size="sm">
+                        <Link
+                          href={withPatientListReturnTo(
+                            getPatientDetailPath(me?.role || "admin", row.id),
+                            currentPatientListHref,
+                          )}
+                          onClick={() => rememberPatientListScroll(currentPatientListHref)}
+                        >
+                          {t("personnel.rowOpen")}
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <Link
+                          href={withPatientListReturnTo(
+                            `${getPatientDetailPath(me?.role || "admin", row.id)}?tab=care#timeline`,
+                            currentPatientListHref,
+                          )}
+                          onClick={() => rememberPatientListScroll(currentPatientListHref)}
+                        >
+                          <Activity className="h-3.5 w-3.5" />
+                          {t("nav.timeline")}
+                        </Link>
+                      </Button>
+                      {canManageAccounts ? (
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`${getAccountManagementPath(me?.role || "admin")}?kind=patient&q=${encodeURIComponent(linkedAccount?.username || String(row.id))}`}>
+                            {linkedAccount ? t("personnel.accountLinked") : t("personnel.accountCreate")}
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
                 )})}
                 {patientRows.length === 0 ? (
                   <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
