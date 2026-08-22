@@ -5,7 +5,6 @@ import { useTranslation } from "@/lib/i18n";
 import { api, ApiError } from "@/lib/api";
 import type { Caregiver } from "@/lib/types";
 import { X, Pencil, Loader2 } from "lucide-react";
-import { canonicalizeRole } from "@/lib/roles";
 
 type Props = {
   open: boolean;
@@ -14,7 +13,7 @@ type Props = {
   onSaved: (updated: Caregiver) => void;
 };
 
-type CaregiverRole = "admin" | "observer" | "supervisor";
+type CaregiverRole = "admin" | "caregiver" | "head_caregiver";
 type CaregiverDepartment = "nursing" | "rehab" | "pharmacy" | "operations" | "support";
 type EmploymentType = "full_time" | "part_time" | "contract" | "agency";
 type CaregiverSpecialty =
@@ -47,38 +46,11 @@ type SelectOption = {
   label: string;
 };
 
-const DEPARTMENT_OPTIONS: SelectOption[] = [
-  { value: "", label: "Not set" },
-  { value: "nursing", label: "Nursing" },
-  { value: "rehab", label: "Rehab" },
-  { value: "pharmacy", label: "Pharmacy" },
-  { value: "operations", label: "Operations" },
-  { value: "support", label: "Support" },
-];
-
-const EMPLOYMENT_TYPE_OPTIONS: SelectOption[] = [
-  { value: "", label: "Not set" },
-  { value: "full_time", label: "Full time" },
-  { value: "part_time", label: "Part time" },
-  { value: "contract", label: "Contract" },
-  { value: "agency", label: "Agency" },
-];
-
-const SPECIALTY_OPTIONS: SelectOption[] = [
-  { value: "", label: "Not set" },
-  { value: "general_care", label: "General care" },
-  { value: "fall_risk", label: "Fall risk" },
-  { value: "mobility_support", label: "Mobility support" },
-  { value: "vitals_monitoring", label: "Vitals monitoring" },
-  { value: "medication_support", label: "Medication support" },
-  { value: "rehab_support", label: "Rehab support" },
-];
-
 function emptyForm(): FormState {
   return {
     first_name: "",
     last_name: "",
-    role: "observer",
+    role: "caregiver",
     employee_code: "",
     department: "",
     employment_type: "",
@@ -98,7 +70,7 @@ function hydrateForm(caregiver: Caregiver | null): FormState {
   return {
     first_name: caregiver.first_name ?? "",
     last_name: caregiver.last_name ?? "",
-    role: (canonicalizeRole(caregiver.role?.toLowerCase() || "observer") as CaregiverRole),
+    role: (caregiver.role?.toLowerCase() as CaregiverRole) || "caregiver",
     employee_code: caregiver.employee_code ?? "",
     department: (caregiver.department as CaregiverDepartment | "") ?? "",
     employment_type: (caregiver.employment_type as EmploymentType | "") ?? "",
@@ -212,8 +184,41 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
   const roleOptions = useMemo<SelectOption[]>(
     () => [
       { value: "admin", label: t("shell.roleAdmin") },
-      { value: "supervisor", label: t("shell.roleSupervisor") },
-      { value: "observer", label: t("shell.roleObserver") },
+      { value: "head_caregiver", label: t("shell.roleHeadCaregiver") },
+      { value: "caregiver", label: t("shell.roleCaregiver") },
+    ],
+    [t],
+  );
+  const departmentOptions = useMemo<SelectOption[]>(
+    () => [
+      { value: "", label: t("caregivers.option.notSet") },
+      { value: "nursing", label: t("caregivers.department.nursing") },
+      { value: "rehab", label: t("caregivers.department.rehab") },
+      { value: "pharmacy", label: t("caregivers.department.pharmacy") },
+      { value: "operations", label: t("caregivers.department.operations") },
+      { value: "support", label: t("caregivers.department.support") },
+    ],
+    [t],
+  );
+  const employmentTypeOptions = useMemo<SelectOption[]>(
+    () => [
+      { value: "", label: t("caregivers.option.notSet") },
+      { value: "full_time", label: t("caregivers.employment.fullTime") },
+      { value: "part_time", label: t("caregivers.employment.partTime") },
+      { value: "contract", label: t("caregivers.employment.contract") },
+      { value: "agency", label: t("caregivers.employment.agency") },
+    ],
+    [t],
+  );
+  const specialtyOptions = useMemo<SelectOption[]>(
+    () => [
+      { value: "", label: t("caregivers.option.notSet") },
+      { value: "general_care", label: t("caregivers.specialty.generalCare") },
+      { value: "fall_risk", label: t("caregivers.specialty.fallRisk") },
+      { value: "mobility_support", label: t("caregivers.specialty.mobilitySupport") },
+      { value: "vitals_monitoring", label: t("caregivers.specialty.vitalsMonitoring") },
+      { value: "medication_support", label: t("caregivers.specialty.medicationSupport") },
+      { value: "rehab_support", label: t("caregivers.specialty.rehabSupport") },
     ],
     [t],
   );
@@ -285,7 +290,7 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
             type="button"
             className="rounded-lg p-1.5 hover:bg-surface-container-high transition-smooth"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -293,32 +298,32 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <FormSection
-            title="Identity"
-            description="Basic identity and profile details used throughout the staff directory."
+            title={t("caregivers.editIdentityTitle")}
+            description={t("caregivers.editIdentityDescription")}
           >
             <div className="grid gap-4 md:grid-cols-2">
               <TextField
                 id="edit-cg-first"
-                label="First name *"
+                label={t("caregivers.firstNameRequired")}
                 value={form.first_name}
                 onChange={(value) => update({ first_name: value })}
               />
               <TextField
                 id="edit-cg-last"
-                label="Last name *"
+                label={t("caregivers.lastNameRequired")}
                 value={form.last_name}
                 onChange={(value) => update({ last_name: value })}
               />
               <TextField
                 id="edit-cg-employee-code"
-                label="Employee code"
+                label={t("caregivers.employeeCode")}
                 value={form.employee_code}
                 onChange={(value) => update({ employee_code: value })}
                 placeholder="EMP-001"
               />
               <TextField
                 id="edit-cg-photo-url"
-                label="Photo URL"
+                label={t("caregivers.photoUrl")}
                 value={form.photo_url}
                 onChange={(value) => update({ photo_url: value })}
                 type="url"
@@ -328,8 +333,8 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
           </FormSection>
 
           <FormSection
-            title="Work Profile"
-            description="Role and professional profile used for routing, privileges, and staffing context."
+            title={t("caregivers.editWorkTitle")}
+            description={t("caregivers.editWorkDescription")}
           >
             <div className="grid gap-4 md:grid-cols-2">
               <SelectField
@@ -341,30 +346,30 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
               />
               <SelectField
                 id="edit-cg-department"
-                label="Department"
+                label={t("caregivers.department")}
                 value={form.department}
                 onChange={(value) => update({ department: value as FormState["department"] })}
-                options={DEPARTMENT_OPTIONS}
+                options={departmentOptions}
               />
               <SelectField
                 id="edit-cg-employment-type"
-                label="Employment type"
+                label={t("caregivers.employmentType")}
                 value={form.employment_type}
                 onChange={(value) =>
                   update({ employment_type: value as FormState["employment_type"] })
                 }
-                options={EMPLOYMENT_TYPE_OPTIONS}
+                options={employmentTypeOptions}
               />
               <SelectField
                 id="edit-cg-specialty"
-                label="Specialty"
+                label={t("caregivers.specialty")}
                 value={form.specialty}
                 onChange={(value) => update({ specialty: value as FormState["specialty"] })}
-                options={SPECIALTY_OPTIONS}
+                options={specialtyOptions}
               />
               <TextField
                 id="edit-cg-license"
-                label="License number"
+                label={t("caregivers.licenseNumber")}
                 value={form.license_number}
                 onChange={(value) => update({ license_number: value })}
                 placeholder="RN-12345"
@@ -373,13 +378,13 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
           </FormSection>
 
           <FormSection
-            title="Contact"
-            description="Primary contact details for staff communication."
+            title={t("caregivers.editContactTitle")}
+            description={t("caregivers.editContactDescription")}
           >
             <div className="grid gap-4 md:grid-cols-2">
               <TextField
                 id="edit-cg-phone"
-                label="Phone"
+                label={t("caregivers.phone")}
                 value={form.phone}
                 onChange={(value) => update({ phone: value })}
                 type="tel"
@@ -387,7 +392,7 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
               />
               <TextField
                 id="edit-cg-email"
-                label="Email"
+                label={t("caregivers.email")}
                 value={form.email}
                 onChange={(value) => update({ email: value })}
                 type="email"
@@ -397,20 +402,20 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
           </FormSection>
 
           <FormSection
-            title="Emergency"
-            description="Fallback contact used when the staff member cannot be reached."
+            title={t("caregivers.editEmergencyTitle")}
+            description={t("caregivers.editEmergencyDescription")}
           >
             <div className="grid gap-4 md:grid-cols-2">
               <TextField
                 id="edit-cg-emergency-name"
-                label="Emergency contact name"
+                label={t("caregivers.emergencyContactName")}
                 value={form.emergency_contact_name}
                 onChange={(value) => update({ emergency_contact_name: value })}
-                placeholder="Family contact"
+                placeholder={t("caregivers.familyContactPlaceholder")}
               />
               <TextField
                 id="edit-cg-emergency-phone"
-                label="Emergency contact phone"
+                label={t("caregivers.emergencyContactPhone")}
                 value={form.emergency_contact_phone}
                 onChange={(value) => update({ emergency_contact_phone: value })}
                 type="tel"
@@ -420,8 +425,8 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
           </FormSection>
 
           <FormSection
-            title="Status"
-            description="Activate or deactivate the staff account without removing the profile."
+            title={t("caregivers.editStatusTitle")}
+            description={t("caregivers.editStatusDescription")}
           >
             <div className="flex items-center gap-2">
               <input

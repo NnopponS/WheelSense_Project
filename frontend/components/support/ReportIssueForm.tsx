@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AppPage } from "@/components/layout/AppPage";
 import {
   Select,
   SelectContent,
@@ -20,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bug } from "lucide-react";
 
 type CreatedTicket = {
   id: number;
@@ -89,18 +89,18 @@ export default function ReportIssueForm({ audience = "staff" }: { audience?: "st
   });
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 animate-fade-in">
-      <div className="flex items-center gap-2">
-        <Bug className="h-8 w-8 text-primary" />
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            {copy("support.reportTitle", "support.patientReportTitle")}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {copy("support.reportSubtitle", "support.patientReportSubtitle")}
-          </p>
-        </div>
-      </div>
+    <AppPage
+      width="reading"
+      title={copy("support.reportTitle", "support.patientReportTitle")}
+      description={copy("support.reportSubtitle", "support.patientReportSubtitle")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: user?.role ? `/${String(user.role).replace("_", "-")}` : "/",
+        },
+        { label: t("nav.support") },
+      ]}
+    >
 
       {created ? (
         <Card>
@@ -215,7 +215,11 @@ export default function ReportIssueForm({ audience = "staff" }: { audience?: "st
                   />
                 </div>
               </div>
-              {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
+              {submitError ? (
+                <p className="rounded-lg border border-critical/30 bg-critical-bg p-3 text-sm text-critical-foreground" role="alert">
+                  {submitError}
+                </p>
+              ) : null}
               <Button type="submit" disabled={form.formState.isSubmitting || !endpoint}>
                 {form.formState.isSubmitting
                   ? t("common.loading")
@@ -225,6 +229,6 @@ export default function ReportIssueForm({ audience = "staff" }: { audience?: "st
           </CardContent>
         </Card>
       )}
-    </div>
+    </AppPage>
   );
 }

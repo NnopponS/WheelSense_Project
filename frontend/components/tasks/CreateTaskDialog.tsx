@@ -42,14 +42,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 /** Workspace staff roles only (excludes patient). Used for /users/search and assignee pickers. */
-const STAFF_ROLE_VALUES = ["admin", "supervisor", "observer"] as const;
+const STAFF_ROLE_VALUES = ["admin", "head_caregiver", "caregiver"] as const;
 type StaffRoleValue = (typeof STAFF_ROLE_VALUES)[number];
 const STAFF_ROLES_API_PARAM = STAFF_ROLE_VALUES.join(",");
 
 const STAFF_ROLE_LABEL_KEY: Record<StaffRoleValue, string> = {
   admin: "personnel.role.admin",
-  supervisor: "personnel.role.supervisor",
-  observer: "personnel.role.observer",
+  head_caregiver: "personnel.role.headNurse",
+  caregiver: "personnel.role.observer",
 };
 
 // ── Validation Schema ────────────────────────────────────────────────────────
@@ -842,11 +842,11 @@ export function CreateTaskDialog({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="text">Text</SelectItem>
-                              <SelectItem value="number">Number</SelectItem>
-                              <SelectItem value="select">Select</SelectItem>
-                              <SelectItem value="textarea">Textarea</SelectItem>
-                              <SelectItem value="boolean">Boolean</SelectItem>
+                              <SelectItem value="text">{t("tasks.fieldType.text")}</SelectItem>
+                              <SelectItem value="number">{t("tasks.fieldType.number")}</SelectItem>
+                              <SelectItem value="select">{t("tasks.fieldType.select")}</SelectItem>
+                              <SelectItem value="textarea">{t("tasks.fieldType.textarea")}</SelectItem>
+                              <SelectItem value="boolean">{t("tasks.fieldType.boolean")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button

@@ -4,6 +4,7 @@ import asyncio
 import base64
 import json
 import logging
+import math
 import os
 import time
 import uuid
@@ -40,6 +41,7 @@ from app.models.telemetry import (
     MotionTrainingData,
     NodeStatusTelemetry,
     PhotoRecord,
+    AudioRecord,
     RoomPrediction,
     RSSIReading,
 )
@@ -50,6 +52,7 @@ logger = logging.getLogger("wheelsense.mqtt")
 # Key: "{workspace_id}:{patient_id}" — one localization state per patient (mobile + wheelchair share it).
 _room_tracker: dict[str, dict] = {}
 _photo_buffers: dict[str, dict] = {}
+_audio_buffers: dict[str, dict] = {}
 _fall_cooldown: dict[str, float] = {}
 # Monotonic clock of last mobile telemetry per device — detect offline→online to re-push MQTT config.
 _mobile_last_telemetry_mono: dict[str, float] = {}
@@ -106,6 +109,7 @@ FALL_AZ_THRESHOLD = 3.0
 FALL_VELOCITY_THRESHOLD = 0.05
 
 PHOTO_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "photos")
+AUDIO_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "audio")
 
 
 async def _lookup_patient_for_device(session, ws_id: int, device_id: str) -> int | None:
@@ -163,6 +167,7 @@ async def mqtt_listener():
                 await client.subscribe("WheelSense/camera/+/status")
                 await client.subscribe("WheelSense/camera/+/photo")
                 await client.subscribe("WheelSense/camera/+/frame")
+                await client.subscribe("WheelSense/audio/+/mic")
                 await client.subscribe("WheelSense/+/ack")
                 await client.subscribe("WheelSense/camera/+/ack")
 
@@ -198,6 +203,8 @@ async def mqtt_listener():
                             await _handle_photo_chunk(message.payload)
                         elif topic.endswith("/frame"):
                             await _handle_camera_frame(topic, message.payload)
+                        elif topic.startswith("WheelSense/audio/") and topic.endswith("/mic"):
+                            await _handle_audio_chunk(message.payload)
                     except Exception:
                         logger.exception("Error handling MQTT message on %s", topic)
 
@@ -1002,7 +1009,55 @@ async def _track_room_transition(
     state["candidate_streak"] = 0
 
 
+def _validate_e84_node_status_payload(data: dict) -> None:
+    if "protocolVersion" not in data:
+        return
+
+    version = data["protocolVersion"]
+    if type(version) is not int or version != 1:
+        raise ValueError("unsupported protocolVersion")
+
+    timestamp_us = data.get("timestampUs")
+    if timestamp_us is not None and (
+        type(timestamp_us) is not int or not 0 <= timestamp_us <= 0xFFFFFFFFFFFFFFFF
+    ):
+        raise ValueError("timestampUs must be an unsigned 64-bit integer")
+
+    numeric_fields = {
+        "environment": ("temperatureC", "humidityPct", "pressureHpa"),
+        "imu": ("accelX", "accelY", "accelZ", "gyroX", "gyroY", "gyroZ"),
+    }
+    for section_name, fields in numeric_fields.items():
+        section = data.get(section_name)
+        if section is None:
+            continue
+        if not isinstance(section, dict):
+            raise ValueError(f"{section_name} must be an object")
+        for field in fields:
+            if field not in section:
+                continue
+            value = section[field]
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError(f"{section_name}.{field} must be a finite number")
+
+    environment = data.get("environment")
+    if isinstance(environment, dict):
+        humidity = environment.get("humidityPct")
+        if humidity is not None and not 0 <= humidity <= 100:
+            raise ValueError("environment.humidityPct must be between 0 and 100")
+        valid_mask = environment.get("validMask")
+        if valid_mask is not None and (
+            type(valid_mask) is not int or not 0 <= valid_mask <= 0xFFFFFFFF
+        ):
+            raise ValueError("environment.validMask must be an unsigned 32-bit integer")
+
+    for field in ("displayOrientation", "audioStatus", "deviceHealth"):
+        if field in data and not isinstance(data[field], str):
+            raise ValueError(f"{field} must be a string")
+
+
 def _normalize_node_status_payload(data: dict) -> dict:
+    _validate_e84_node_status_payload(data)
     battery = data.get("battery")
     battery_pct = data.get("battery_pct")
     battery_v = data.get("battery_v")
@@ -1164,6 +1219,96 @@ async def _handle_camera_frame(topic: str, payload: bytes, save_dir: str | None 
     await _persist_photo_bytes(device_id, photo_id, payload, save_dir)
 
 
+async def _persist_audio_bytes(
+    device_id: str,
+    clip_id: str,
+    payload: bytes,
+    sample_rate: int,
+    channels: int,
+    session_id: str,
+    save_dir: str | None,
+):
+    target_dir = save_dir or AUDIO_SAVE_DIR
+    os.makedirs(target_dir, exist_ok=True)
+    ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_device_id = _sanitize_filename(device_id)
+    safe_clip_id = _sanitize_filename(clip_id)
+    filename = f"{safe_device_id}_{ts_str}_{safe_clip_id}.pcm"
+    filepath = os.path.join(target_dir, filename)
+    resolved_path = os.path.normpath(filepath)
+    resolved_target = os.path.normpath(target_dir)
+    if not resolved_path.startswith(resolved_target):
+        logger.error("Path traversal attempt detected: %s", filepath)
+        raise ValueError("Invalid filename: path traversal detected")
+    with open(resolved_path, "wb") as handle:
+        handle.write(payload)
+    logger.info("Audio assembled: %s (%d bytes)", filepath, len(payload))
+
+    duration_s: float | None = None
+    if sample_rate and channels:
+        duration_s = len(payload) / (sample_rate * channels * 2)  # 16-bit PCM
+
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            logger.warning("Discarding audio for unregistered device: %s", device_id)
+            return
+
+        session.add(
+            AudioRecord(
+                workspace_id=device.workspace_id,
+                device_id=device.device_id,
+                clip_id=clip_id,
+                direction="mic",
+                session_id=session_id,
+                filepath=filepath,
+                file_size=len(payload),
+                duration_s=duration_s,
+                sample_rate=sample_rate,
+                channels=channels,
+            )
+        )
+        await session.commit()
+
+
+async def _handle_audio_chunk(payload: bytes, save_dir: str | None = None):
+    data = json.loads(payload)
+    clip_id = data.get("clip_id", "")
+    device_id = data.get("device_id", "")
+    chunk_index = data.get("chunk_index", 0)
+    total_chunks = data.get("total_chunks", 1)
+    chunk_data = base64.b64decode(data.get("data", ""))
+    sample_rate = int(data.get("sample_rate", 0) or 0)
+    channels = int(data.get("channels", 1) or 1)
+    session_id = str(data.get("session_id", "") or "")
+
+    if clip_id not in _audio_buffers:
+        _audio_buffers[clip_id] = {
+            "chunks": {},
+            "total": total_chunks,
+            "device_id": device_id,
+            "sample_rate": sample_rate,
+            "channels": channels,
+            "session_id": session_id,
+        }
+
+    buf = _audio_buffers[clip_id]
+    buf["chunks"][chunk_index] = chunk_data
+    logger.debug("Audio chunk %d/%d for %s", chunk_index + 1, total_chunks, clip_id)
+    if len(buf["chunks"]) == buf["total"]:
+        assembled = b"".join(buf["chunks"][i] for i in range(buf["total"]))
+        await _persist_audio_bytes(
+            buf["device_id"],
+            clip_id,
+            assembled,
+            buf["sample_rate"],
+            buf["channels"],
+            buf["session_id"],
+            save_dir,
+        )
+        del _audio_buffers[clip_id]
+
+
 async def _handle_device_ack(payload: bytes):
     try:
         data = json.loads(payload)
@@ -1231,6 +1376,7 @@ async def _handle_camera_registration(payload: bytes):
 
 async def _handle_camera_status(payload: bytes):
     data = json.loads(payload)
+    status = _normalize_node_status_payload(data)
     device_id = data.get("device_id", "")
     if not device_id:
         return
@@ -1254,7 +1400,7 @@ async def _handle_camera_status(payload: bytes):
         await remove_ble_stubs_superseded_by_camera_payload(
             session, device.workspace_id, device_id, data
         )
-        await _upsert_node_status_snapshot(session, device, _normalize_node_status_payload(data))
+        await _upsert_node_status_snapshot(session, device, status)
         await session.commit()
 
 

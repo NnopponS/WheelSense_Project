@@ -140,6 +140,9 @@ class _FakeBleGatewayService implements BleGatewayService {
   }
 
   @override
+  Future<void> disconnectM5(String deviceId) async {}
+
+  @override
   Future<void> writeM5Command({
     required GatewayConfig config,
     required String deviceId,

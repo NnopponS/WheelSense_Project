@@ -379,6 +379,10 @@ class TaskService:
         await session.commit()
         await session.refresh(task)
 
+        from app.services.device_management import dispatch_assign_task_to_room_node
+
+        await dispatch_assign_task_to_room_node(session, task)
+
         await self._enrich_tasks(session, ws_id, [task])
         await self._sync_subtask_patient_calendars(
             ws_id, actor_user_id, actor_user_role, task.id

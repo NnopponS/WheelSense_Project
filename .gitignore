@@ -54,6 +54,15 @@ postgres-data/
 mosquitto/data/
 mosquitto/log/
 
+# DB backups (pg_dump / volume snapshots) - never commit, may contain PHI
+backups/
+backups/**
+*.sql.gz
+*.pgdump
+*.dump
+*.db
+pgdata-*.tar.gz
+
 # Android SDK (local install under mobile-app; do not commit)
 mobile-app/.android-sdk/
 
@@ -123,3 +132,6 @@ Thesis/goal-assets/
 Thesis/IEEE-conference-WheelSense/
 Thesis/THESIS_CURRENT_REPAIR_COMMAND.md
 Thesis/oldsession.md
+
+# graft's local repository settings — not committed.
+/.graft/

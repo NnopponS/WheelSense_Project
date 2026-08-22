@@ -65,3 +65,24 @@ Node status extensions:
 - Optional battery fields when hardware ADC is configured:
   - `battery_pct`
   - `battery_voltage_v`
+
+## Room task assignment (E84 MicroPython node / room display)
+
+Server → node on `WheelSense/camera/{device_id}/control`:
+
+- `command = "assign_task"`
+- `task_id` (string), `task_title`, `room_name`, `caregiver_name`
+- `command_id` from the dispatch row
+
+The server publishes this when a task with an assignee is created for a patient
+whose roster room (`Patient.room_id`) is bound to a node (`Room.node_device_id`).
+The node persists the task, shows it on the CM55 display, and waits for the
+assigned caregiver to be detected nearby (BLE `staff_detected` event).
+
+Node → server on `WheelSense/camera/{device_id}/ack` (reusing the assignment
+`command_id`):
+
+- `message = "task_confirmed"` — caregiver confirmed on the touchscreen; the
+  server moves the task from `pending` to `in_progress`
+- `message = "task_dismissed"` — caregiver dismissed the prompt; task stays
+  `pending`

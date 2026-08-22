@@ -77,7 +77,7 @@ import { useTranslation } from "@/lib/i18n";
 
 interface TaskDetailModalProps {
   task: TaskOut;
-  role?: "admin" | "head-caregiver" | "caregiver" | "patient";
+  role?: "admin" | "head_caregiver" | "caregiver" | "patient";
   isOpen: boolean;
   onClose: () => void;
   reports?: TaskReportOut[];
@@ -196,7 +196,7 @@ function buildReportSchema(fields: ReportTemplateField[]): z.ZodObject<Record<st
 
 export function TaskDetailModal({
   task,
-  role = "head-caregiver",
+  role = "head_caregiver",
   isOpen,
   onClose,
   reports = [],
@@ -394,12 +394,12 @@ export function TaskDetailModal({
     switch (role) {
       case "admin":
         return `/admin/patients/${task.patient_id}`;
-      case "head-caregiver":
-        return `/head-caregiver/patients/${task.patient_id}`;
+      case "head_caregiver":
+        return `/head-caregiver/personnel/${task.patient_id}`;
       case "caregiver":
-        return `/caregiver/patients/${task.patient_id}`;
+        return `/caregiver/personnel/${task.patient_id}`;
       default:
-        return `/head-caregiver/patients/${task.patient_id}`;
+        return `/head-caregiver/personnel/${task.patient_id}`;
     }
   })();
 

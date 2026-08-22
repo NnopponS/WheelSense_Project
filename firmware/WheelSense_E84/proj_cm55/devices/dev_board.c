@@ -43,7 +43,7 @@
 
 #include "protocol/protocol.h"
 #include "protocol/pb_encode.h"
-#include "clock.h"
+#include "ws_clock.h"
 #include "common.h"
 
 /*******************************************************************************

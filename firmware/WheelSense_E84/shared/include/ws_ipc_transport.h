@@ -6,27 +6,50 @@
 #include "ws_status.h"
 #include "ws_ipc_queue.h"
 
+#if defined(WS_TARGET_MTB_IPC) && (WS_TARGET_MTB_IPC == 1)
+#include "mtb_ipc.h"
+#endif
+
 /*
- * WheelSense IPC transport — real cross-core shared memory queue.
+ * WheelSense IPC transport.
  *
- * Uses CY_SECTION_SHAREDMEM to place the queue in shared memory accessible
- * by both CM33 NS and CM55. The sender (CM33 NS) enqueues; the receiver
- * (CM55) dequeues. A simple flag-based notification is used instead of
- * interrupts for Phase 1 simplicity — the receiver polls.
- *
- * The shared queue is placed in the .cy_sharedmem section which the linker
- * script maps to the inter-core shared SRAM region.
+ * Target builds use Infineon's MTB-IPC semaphore-protected queue. Host builds
+ * retain the deterministic in-process queue used by the CTest suites.
  */
 
 /* Shared queue instance — placed in shared memory by the linker. */
+#if defined(WS_TARGET_MTB_IPC) && (WS_TARGET_MTB_IPC == 1)
+typedef struct
+{
+    uint16_t frame_size;
+    uint8_t frame[WS_IPC_QUEUE_FRAME_SIZE];
+} ws_ipc_target_item_t;
+
+typedef struct
+{
+    mtb_ipc_shared_t ipc;
+    mtb_ipc_queue_data_t queue[2];
+    union
+    {
+        uint64_t align;
+        uint8_t bytes[sizeof(ws_ipc_target_item_t) * WS_IPC_QUEUE_MAX_CAPACITY];
+    } pool[2];
+    ws_ipc_queue_counters_t counters[2];
+    uint32_t last_sequence[2];
+    uint8_t has_last_sequence[2];
+    volatile uint32_t diagnostic_sender_init_status;
+    volatile uint32_t diagnostic_boot_send_status;
+} ws_ipc_shared_queue_t;
+#else
 typedef struct
 {
     ws_ipc_queue_t queue;
 } ws_ipc_shared_queue_t;
+#endif
 
 /*
  * Initialize the shared queue. Called by the sender core (CM33 NS).
- * The shared_queue pointer must point to shared memory (CY_SECTION_SHAREDMEM).
+ * The pointer must refer to the shared CM33/CM55 SOCMEM section.
  */
 ws_status_t ws_ipc_transport_sender_init(ws_ipc_shared_queue_t *shared);
 

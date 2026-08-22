@@ -45,7 +45,7 @@
 #include "xensiv_bgt60trxx_mtb.h"
 #include "protocol/protocol.h"
 #include "protocol/pb_encode.h"
-#include "clock.h"
+#include "ws_clock.h"
 #include "dev_bgt60trxx_settings.h"
 #include "dev_bgt60trxx.h"
 #include "xensiv_bgt60trxx_platform.h"

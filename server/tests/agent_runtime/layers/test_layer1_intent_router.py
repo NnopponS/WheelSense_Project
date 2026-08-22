@@ -16,7 +16,7 @@ class TestLayer1IntentRouter:
     def test_route_rejects_empty_message(self) -> None:
         emitter = PipelineEventEmitter(capacity=8)
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=1, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=1, workspace_id=1)
         result = route(corr, actor, "   ", emitter=emitter)
         assert isinstance(result, RejectDecision)
         assert result.reason_code == "empty_message"
@@ -24,7 +24,7 @@ class TestLayer1IntentRouter:
     def test_route_rejects_overlong_message(self) -> None:
         emitter = PipelineEventEmitter(capacity=8)
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=1, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=1, workspace_id=1)
         long_msg = "a" * 4001
         result = route(corr, actor, long_msg, emitter=emitter)
         assert isinstance(result, RejectDecision)
@@ -33,7 +33,7 @@ class TestLayer1IntentRouter:
     def test_route_accepts_normal_message(self) -> None:
         emitter = PipelineEventEmitter(capacity=8)
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=1, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=1, workspace_id=1)
         result = route(corr, actor, "show me today alerts", emitter=emitter)
         assert isinstance(result, IntentDecision)
         assert result.confidence >= 0.0
@@ -41,7 +41,7 @@ class TestLayer1IntentRouter:
     def test_route_emits_event_with_correlation(self) -> None:
         emitter = PipelineEventEmitter(capacity=8)
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=1, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=1, workspace_id=1)
         route(corr, actor, "hi", emitter=emitter)
         events = emitter.events_for(corr.id)
         assert len(events) >= 1
@@ -67,7 +67,7 @@ class TestLayer1IntentRouter:
     def test_route_strips_message_before_length_check(self) -> None:
         emitter = PipelineEventEmitter(capacity=8)
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=1, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=1, workspace_id=1)
         padded = "  hello  "
         result = route(corr, actor, padded, emitter=emitter)
         assert isinstance(result, IntentDecision)

@@ -36,8 +36,16 @@ from app.services.tasks import STAFF_WIDE_ROLES
 from app.services.workflow import _user_can_delete_message_row
 
 
-def test_legacy_head_nurse_role_normalizes_to_supervisor() -> None:
+def test_legacy_head_nurse_role_normalizes_to_head_caregiver() -> None:
     assert canonicalize_role("head_nurse") == "head_caregiver"
+
+
+def test_legacy_supervisor_role_normalizes_to_head_caregiver() -> None:
+    assert canonicalize_role("supervisor") == "head_caregiver"
+
+
+def test_legacy_observer_role_normalizes_to_caregiver() -> None:
+    assert canonicalize_role("observer") == "caregiver"
 
 
 def test_canonical_and_unrelated_roles_are_unchanged() -> None:
@@ -47,46 +55,51 @@ def test_canonical_and_unrelated_roles_are_unchanged() -> None:
 
 def test_role_gate_compares_canonical_and_legacy_operational_lead_names() -> None:
     assert role_is_allowed("head_caregiver", {"head_caregiver"})
-    assert role_is_allowed("head_caregiver", {"head_caregiver"})
+    assert role_is_allowed("head_nurse", {"head_caregiver"})
+    assert role_is_allowed("supervisor", {"head_caregiver"})
     assert not role_is_allowed("head_caregiver", {"admin"})
 
 
-def test_user_write_schemas_accept_legacy_input_but_emit_supervisor() -> None:
-    assert UserCreate(username="legacy_user", password="secret1", role="head_caregiver").role == "head_caregiver"
-    assert UserUpdate(role="head_caregiver").role == "head_caregiver"
+def test_user_write_schemas_accept_legacy_input_but_emit_head_caregiver() -> None:
+    assert UserCreate(username="legacy_user", password="secret1", role="head_nurse").role == "head_caregiver"
+    assert UserCreate(username="legacy_user2", password="secret1", role="supervisor").role == "head_caregiver"
+    assert UserUpdate(role="head_nurse").role == "head_caregiver"
+    assert UserUpdate(role="supervisor").role == "head_caregiver"
 
 
-def test_caregiver_write_schemas_accept_legacy_input_but_emit_supervisor() -> None:
-    assert CareGiverCreate(first_name="Legacy", last_name="Lead", role="head_caregiver").role == "head_caregiver"
-    assert CareGiverPatch(role="head_caregiver").role == "head_caregiver"
+def test_caregiver_write_schemas_accept_legacy_input_but_emit_head_caregiver() -> None:
+    assert CareGiverCreate(first_name="Legacy", last_name="Lead", role="head_nurse").role == "head_caregiver"
+    assert CareGiverCreate(first_name="Legacy", last_name="Lead", role="supervisor").role == "head_caregiver"
+    assert CareGiverPatch(role="head_nurse").role == "head_caregiver"
+    assert CareGiverPatch(role="supervisor").role == "head_caregiver"
 
 
-def test_workflow_role_fields_accept_legacy_input_but_emit_supervisor() -> None:
+def test_workflow_role_fields_accept_legacy_input_but_emit_head_caregiver() -> None:
     now = __import__("datetime").datetime.now(__import__("datetime").UTC)
     person = WorkflowPersonOut(
         user_id=1,
         username="lead",
-        role="head_caregiver",
+        role="head_nurse",
         display_name="Lead",
         person_type="caregiver",
     )
     assert person.role == "head_caregiver"
-    assert WorkflowHandoffRequest(target_mode="role", target_role="head_caregiver").target_role == "head_caregiver"
-    assert CareScheduleCreate(title="Round", starts_at=now, assigned_role="head_caregiver").assigned_role == "head_caregiver"
-    assert RoleMessageCreate(recipient_role="head_caregiver", body="Update").recipient_role == "head_caregiver"
-    assert CareWorkflowJobAssigneeOut(user_id=1, role_hint="head_caregiver").role_hint == "head_caregiver"
+    assert WorkflowHandoffRequest(target_mode="role", target_role="head_nurse").target_role == "head_caregiver"
+    assert CareScheduleCreate(title="Round", starts_at=now, assigned_role="supervisor").assigned_role == "head_caregiver"
+    assert RoleMessageCreate(recipient_role="head_nurse", body="Update").recipient_role == "head_caregiver"
+    assert CareWorkflowJobAssigneeOut(user_id=1, role_hint="supervisor").role_hint == "head_caregiver"
 
 
-def test_task_and_support_role_fields_emit_supervisor() -> None:
+def test_task_and_support_role_fields_emit_head_caregiver() -> None:
     now = __import__("datetime").datetime.now(__import__("datetime").UTC)
-    assert TaskCreate(task_type="specific", title="Check", assigned_role="head_caregiver").assigned_role == "head_caregiver"
-    assert RoutineTaskCreate(title="Round", assigned_role="head_caregiver").assigned_role == "head_caregiver"
-    assert PatientFixRoutineCreate(title="Routine", target_roles=["head_caregiver"]).target_roles == ["head_caregiver"]
+    assert TaskCreate(task_type="specific", title="Check", assigned_role="head_nurse").assigned_role == "head_caregiver"
+    assert RoutineTaskCreate(title="Round", assigned_role="supervisor").assigned_role == "head_caregiver"
+    assert PatientFixRoutineCreate(title="Routine", target_roles=["head_nurse"]).target_roles == ["head_caregiver"]
     assert TaskBoardUserRow(
         user_id=1,
         username="lead",
         display_name="Lead",
-        role="head_caregiver",
+        role="head_nurse",
         total=0,
         in_progress=0,
         completed=0,
@@ -99,7 +112,7 @@ def test_task_and_support_role_fields_emit_supervisor() -> None:
         user_id=1,
         username="lead",
         display_name="Lead",
-        role="head_caregiver",
+        role="supervisor",
         total=0,
         done=0,
         skipped=0,
@@ -112,45 +125,45 @@ def test_task_and_support_role_fields_emit_supervisor() -> None:
         workspace_id=1,
         ticket_id=1,
         author_user_id=1,
-        author_role="head_caregiver",
+        author_role="head_nurse",
         body="Update",
         created_at=now,
     ).author_role == "head_caregiver"
 
 
-def test_demo_role_fields_emit_supervisor() -> None:
-    assert DemoActorOut(actor_type="user", actor_id=1, display_name="Lead", role="head_caregiver").role == "head_caregiver"
-    request = DemoWorkflowAdvanceRequest(target_mode="role", target_role="head_caregiver")
+def test_demo_role_fields_emit_head_caregiver() -> None:
+    assert DemoActorOut(actor_type="user", actor_id=1, display_name="Lead", role="head_nurse").role == "head_caregiver"
+    request = DemoWorkflowAdvanceRequest(target_mode="role", target_role="supervisor")
     assert request.target_role == "head_caregiver"
 
 
-def test_supervisor_inherits_legacy_head_nurse_role_gates() -> None:
+def test_head_caregiver_passes_role_gate_with_legacy_names() -> None:
     user = SimpleNamespace(role="head_caregiver")
     assert RequireRole(["admin", "head_caregiver"])(user) is user
+    # Legacy head_nurse/supervisor should also pass a gate that accepts head_caregiver
+    assert RequireRole(["head_caregiver"])(SimpleNamespace(role="head_nurse")) is not None
 
 
-def test_supervisor_still_fails_admin_only_role_gate() -> None:
+def test_head_caregiver_still_fails_admin_only_role_gate() -> None:
     with pytest.raises(HTTPException) as exc:
         RequireRole(["admin"])(SimpleNamespace(role="head_caregiver"))
     assert exc.value.status_code == 403
 
 
-def test_supervisor_policy_is_head_nurse_union_without_admin_only_capability() -> None:
-    assert ROLE_CAPABILITIES["head_caregiver"] >= ROLE_CAPABILITIES["head_caregiver"]
+def test_head_caregiver_lacks_admin_only_capabilities() -> None:
     assert "facilities.manage" not in ROLE_CAPABILITIES["head_caregiver"]
-    assert ROLE_TOKEN_SCOPES["head_caregiver"] == ROLE_TOKEN_SCOPES["head_caregiver"]
-    assert ROLE_MCP_SCOPES["head_caregiver"] == ROLE_MCP_SCOPES["head_caregiver"]
+    assert "audit.read" not in ROLE_CAPABILITIES["head_caregiver"]
+    assert "reports.manage" in ROLE_CAPABILITIES["head_caregiver"]
 
 
-def test_supervisor_mcp_tools_match_head_nurse_but_exclude_forbidden_tools() -> None:
+def test_head_caregiver_mcp_tools_exclude_admin_and_patient_exclusive_tools() -> None:
     allowlist = get_role_mcp_tool_allowlist()
-    supervisor = allowlist["head_caregiver"]
-    assert supervisor == allowlist["head_caregiver"]
-    assert supervisor.isdisjoint(_ADMIN_ONLY_TOOLS)
-    assert supervisor.isdisjoint(patient_exclusive_tools(supervisor))
+    head_caregiver_tools = allowlist["head_caregiver"]
+    assert head_caregiver_tools.isdisjoint(_ADMIN_ONLY_TOOLS)
+    assert head_caregiver_tools.isdisjoint(patient_exclusive_tools(head_caregiver_tools))
 
 
-def test_supervisor_inherits_operational_lead_service_policies() -> None:
+def test_head_caregiver_inherits_operational_lead_service_policies() -> None:
     for roles in (
         ROLE_DEVICE_MANAGERS,
         WORKSPACE_ACTION_MANAGER_ROLES,

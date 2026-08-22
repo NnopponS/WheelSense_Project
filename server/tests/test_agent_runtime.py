@@ -341,7 +341,7 @@ class TestIntentClassifierRegex:
         assert match.tool_name == "create_task_management_task"
         assert match.arguments["title"] == "Blood test room 401"
         assert match.arguments["priority"] == "high"
-        assert match.arguments["assigned_role"] == "head_nurse"
+        assert match.arguments["assigned_role"] == "head_caregiver"
         assert match.arguments["due_at"] == "2026-05-15T17:00:00+00:00"
         assert match.arguments["checklist"] == [
             "collect blood sample",

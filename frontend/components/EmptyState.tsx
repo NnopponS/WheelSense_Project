@@ -1,27 +1,28 @@
 import type { ComponentType } from "react";
+import type { ReactNode } from "react";
+import { DataState } from "@/components/layout/DataState";
 
 interface EmptyStateProps {
   icon: ComponentType<{ className?: string }>;
   message: string;
   description?: string;
+  action?: ReactNode;
 }
 
 export default function EmptyState({
   icon: Icon,
   message,
   description,
+  action,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
-      <div className="w-16 h-16 rounded-2xl bg-surface-container-low flex items-center justify-center mb-4">
-        <Icon className="w-8 h-8 opacity-40" />
-      </div>
-      <p className="text-sm font-medium">{message}</p>
-      {description && (
-        <p className="text-xs text-outline mt-1 max-w-xs text-center">
-          {description}
-        </p>
-      )}
-    </div>
+    <DataState
+      kind="empty"
+      title={message}
+      description={description}
+      icon={Icon}
+      action={action}
+      className="animate-fade-in"
+    />
   );
 }

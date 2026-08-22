@@ -5,54 +5,21 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   async redirects() {
     return [
-      // Legacy /staff/* redirects
       {
-        source: "/staff/supervisor",
+        source: "/staff/head-caregiver",
         destination: "/head-caregiver",
         permanent: false,
       },
       {
-        source: "/staff/supervisor/:path*",
+        source: "/staff/head-caregiver/:path*",
         destination: "/head-caregiver/:path*",
         permanent: false,
       },
       {
-        source: "/staff/observer",
+        source: "/staff/caregiver",
         destination: "/caregiver",
         permanent: false,
       },
-      // Old role routes → new canonical routes
-      {
-        source: "/supervisor",
-        destination: "/head-caregiver",
-        permanent: false,
-      },
-      {
-        source: "/supervisor/:path*",
-        destination: "/head-caregiver/:path*",
-        permanent: false,
-      },
-      {
-        source: "/head-nurse",
-        destination: "/head-caregiver",
-        permanent: false,
-      },
-      {
-        source: "/head-nurse/:path*",
-        destination: "/head-caregiver/:path*",
-        permanent: false,
-      },
-      {
-        source: "/observer",
-        destination: "/caregiver",
-        permanent: false,
-      },
-      {
-        source: "/observer/:path*",
-        destination: "/caregiver/:path*",
-        permanent: false,
-      },
-      // Internal route normalizations
       {
         source: "/head-caregiver/workflow",
         destination: "/head-caregiver/tasks",
@@ -66,6 +33,11 @@ const nextConfig: NextConfig = {
       {
         source: "/head-caregiver/calendar",
         destination: "/head-caregiver/tasks?tab=calendar",
+        permanent: false,
+      },
+      {
+        source: "/head-caregiver/workflow",
+        destination: "/head-caregiver/tasks",
         permanent: false,
       },
       {

@@ -104,6 +104,24 @@ class PhotoRecord(Base):
     timestamp = Column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class AudioRecord(Base):
+    """Two-way audio clip (mic capture from device or speaker playback to device)."""
+    __tablename__ = "audio_records"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    device_id = Column(String(32), nullable=False, index=True)
+    clip_id = Column(String(64), nullable=False, unique=True, index=True)
+    direction = Column(String(8), nullable=False, default="mic")  # mic | speaker
+    session_id = Column(String(64), nullable=False, default="", index=True)
+    filepath = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    duration_s = Column(Float, nullable=True)
+    sample_rate = Column(Integer, nullable=True)
+    channels = Column(SmallInteger, nullable=True)
+    timestamp = Column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class NodeStatusTelemetry(Base):
     __tablename__ = "node_status_telemetry"
 

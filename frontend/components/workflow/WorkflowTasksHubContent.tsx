@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addMinutes, format, isPast, parseISO } from "date-fns";
 import {
   AlertCircle,
@@ -71,39 +71,42 @@ function taskMutationErrorMessage(
 }
 
 const QUERY = {
-  head_caregiver: {
-    tasks: ["head-nurse", "tasks", "board"] as const,
-    patients: ["head-nurse", "tasks", "patients"] as const,
+  "head-nurse": {
+    tasks: ["head_caregiver", "tasks", "board"] as const,
+    patients: ["head_caregiver", "tasks", "patients"] as const,
     taskLimit: 400,
     invalidate: [
-      ["head-nurse", "tasks"],
-      ["head-nurse", "dashboard", "tasks"],
-      ["head-nurse", "workflow-jobs"],
-      ["supervisor", "tasks"],
-      ["supervisor", "dashboard", "tasks"],
-      ["supervisor", "calendar", "tasks"],
-      ["supervisor", "workflow-jobs"],
+      ["head_caregiver", "tasks"],
       ["head_caregiver", "dashboard", "tasks"],
-      ["head_caregiver", "emergency"],
+      ["head_caregiver", "workflow-jobs"],
     ] as const,
   },
-  caregiver: {
-    tasks: ["observer", "tasks", "list"] as const,
-    patients: ["observer", "tasks", "patients"] as const,
+  observer: {
+    tasks: ["caregiver", "tasks", "list"] as const,
+    patients: ["caregiver", "tasks", "patients"] as const,
     taskLimit: 300,
     invalidate: [
-      ["observer", "tasks"],
-      ["observer", "dashboard", "tasks"],
-      ["observer", "patients"],
-      ["observer", "patient-detail"],
-      ["observer", "workflow-jobs"],
+      ["caregiver", "tasks"],
       ["caregiver", "dashboard", "tasks"],
       ["caregiver", "patients"],
+      ["caregiver", "patient-detail"],
+      ["caregiver", "workflow-jobs"],
+    ] as const,
+  },
+  supervisor: {
+    tasks: ["head_caregiver", "tasks", "board"] as const,
+    patients: ["head_caregiver", "tasks", "patients"] as const,
+    taskLimit: 400,
+    invalidate: [
+      ["head_caregiver", "tasks"],
+      ["head_caregiver", "dashboard", "tasks"],
+      ["head_caregiver", "calendar", "tasks"],
+      ["head_caregiver", "workflow-jobs"],
     ] as const,
   },
 } as const;
 
-export type WorkflowTasksHubVariant = "head_caregiver" | "caregiver";
+export type WorkflowTasksHubVariant = "head-nurse" | "observer" | "supervisor";
 
 export interface WorkflowTasksHubContentProps {
   variant: WorkflowTasksHubVariant;
@@ -138,6 +141,39 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
   const isLoading = tasksQuery.isLoading;
   const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
 
+  // region agent log
+  useEffect(() => {
+    const linked = tasks.filter((t) => t.workflow_job_id != null).length;
+    const filtered = tasks.filter((task) => {
+      if (selectedStatus !== "all" && task.status !== selectedStatus) return false;
+      if (selectedPatientId !== ALL_FILTER && task.patient_id !== Number(selectedPatientId)) {
+        return false;
+      }
+      return true;
+    });
+    void fetch("http://127.0.0.1:7687/ingest/3079ba95-d656-44c3-9953-dc1c569178f1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4d0de1" },
+      body: JSON.stringify({
+        sessionId: "4d0de1",
+        hypothesisId: "H2-H3",
+        location: "WorkflowTasksHubContent.tsx:tasks",
+        message: "tasks + filters",
+        data: {
+          variant,
+          tasksLen: tasks.length,
+          workflowLinked: linked,
+          filteredLen: filtered.length,
+          selectedStatus,
+          selectedPatientId,
+          tasksFetchStatus: tasksQuery.fetchStatus,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, [tasks, variant, selectedStatus, selectedPatientId, tasksQuery.fetchStatus]);
+  // endregion
+
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,
     [patientsQuery.data],
@@ -158,11 +194,11 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
       setSavingTaskIds((prev) => new Set(prev).add(taskId));
     },
     onSuccess: async () => {
-      if (variant === "caregiver") setTaskActionError(null);
+      if (variant === "observer") setTaskActionError(null);
       await invalidateAll();
     },
     onError: (err) => {
-      if (variant === "caregiver") setTaskActionError(taskMutationErrorMessage(err, t));
+      if (variant === "observer") setTaskActionError(taskMutationErrorMessage(err, t));
     },
     onSettled: (_d, _e, variables) => {
       setPendingTaskId(null);
@@ -252,7 +288,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
   }, [filteredTasks]);
 
   const effectiveLayout =
-    variant === "head_caregiver" && tasksLayout === "list"
+    (variant === "head-nurse" || variant === "supervisor") && tasksLayout === "list"
       ? "calendar"
       : tasksLayout;
 
@@ -262,7 +298,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
       setTaskActionError(null);
       await updateTaskMutation.mutateAsync({ taskId, status: "completed" });
     } catch {
-      if (variant === "caregiver") {
+      if (variant === "observer") {
         /* onError sets banner */
       }
     } finally {
@@ -288,7 +324,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("workflowTasks.hubBoardSubtitle")}</p>
         </div>
-        {variant === "caregiver" ? (
+        {variant === "observer" ? (
           <Button
             variant="outline"
             size="sm"
@@ -305,7 +341,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
         ) : null}
       </div>
 
-      {variant === "caregiver" && taskActionError ? (
+      {variant === "observer" && taskActionError ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{t("observer.tasks.errorTitle")}</AlertTitle>
@@ -414,7 +450,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
           <LayoutGrid className="mr-2 h-4 w-4" />
           {t("workflowTasks.kanban.viewBoard")}
         </Button>
-        {variant === "caregiver" ? (
+        {variant === "observer" ? (
           <Button
             type="button"
             variant={tasksLayout === "list" ? "default" : "outline"}
@@ -521,7 +557,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
         </div>
       ) : null}
 
-      {variant === "caregiver" && tasksLayout === "list" ? (
+      {variant === "observer" && tasksLayout === "list" ? (
         <ObserverTaskListPanel
           grouped={groupedFiltered}
           onComplete={handleCompleteTask}

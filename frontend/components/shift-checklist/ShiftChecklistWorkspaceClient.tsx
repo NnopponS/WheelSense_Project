@@ -20,8 +20,9 @@ import { Progress } from "@/components/ui/progress";
 
 const ROLE_TO_I18N: Record<string, TranslationKey> = {
   admin: "personnel.role.admin",
-  head_caregiver: "personnel.role.supervisor",
-  caregiver: "personnel.role.observer",
+  head_nurse: "personnel.role.headNurse",
+  supervisor: "personnel.role.supervisor",
+  observer: "personnel.role.observer",
   patient: "personnel.role.patient",
 };
 

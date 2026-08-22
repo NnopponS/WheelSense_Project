@@ -82,4 +82,112 @@ target_compile_definitions(test_feature_matrix_host PRIVATE
 )
 target_compile_options(test_feature_matrix_host PRIVATE ${WS_COMPILE_FLAGS})
 
+# --- P3.1 Environment service contract test ---
+add_executable(test_environment_contract
+    test_environment_contract.c
+    ${SHARED_SOURCE_DIR}/ws_environment.c
+)
+target_include_directories(test_environment_contract PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_environment_contract PRIVATE ${WS_COMPILE_FLAGS})
+add_test(NAME ws_environment_contract COMMAND test_environment_contract)
+
+# --- P3.1 Orientation service contract test ---
+add_executable(test_orientation_contract
+    test_orientation_contract.c
+    ${SHARED_SOURCE_DIR}/ws_imu_orientation.c
+)
+target_include_directories(test_orientation_contract PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_orientation_contract PRIVATE ${WS_COMPILE_FLAGS})
+add_test(NAME ws_orientation_contract COMMAND test_orientation_contract)
+
+# --- P3.2 Environment conversion tests ---
+add_executable(test_environment_conversion
+    test_environment_conversion.c
+    ${SHARED_SOURCE_DIR}/ws_environment.c
+)
+target_include_directories(test_environment_conversion PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_environment_conversion PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_environment_conversion PRIVATE m)
+add_test(NAME ws_environment_conversion COMMAND test_environment_conversion)
+
+# --- P3.3 Orientation state machine tests ---
+add_executable(test_orientation_state
+    test_orientation_state.c
+    ${SHARED_SOURCE_DIR}/ws_imu_orientation.c
+)
+target_include_directories(test_orientation_state PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_orientation_state PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_orientation_state PRIVATE m)
+add_test(NAME ws_orientation_state COMMAND test_orientation_state)
+
+# --- P3.5 Sensor schedule and recovery tests (host-only) ---
+add_executable(test_sensor_schedule
+    test_sensor_schedule.c
+    ${SHARED_SOURCE_DIR}/ws_environment.c
+)
+target_include_directories(test_sensor_schedule PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_sensor_schedule PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_sensor_schedule PRIVATE m)
+add_test(NAME ws_sensor_schedule COMMAND test_sensor_schedule)
+
+# --- P2G UI state, navigation, and event replay tests (host-only) ---
+add_executable(test_ui_state
+    test_ui_state.c
+    ${SHARED_SOURCE_DIR}/ws_ui_state.c
+    ${SHARED_SOURCE_DIR}/ws_ipc_messages.c
+    ${SHARED_SOURCE_DIR}/ws_protocol.c
+    ${SHARED_SOURCE_DIR}/ws_ble_payloads.c
+)
+target_include_directories(test_ui_state PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_ui_state PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_ui_state PRIVATE m)
+add_test(NAME ws_ui_state COMMAND test_ui_state)
+
+add_executable(test_node_ui_contract
+    test_node_ui_contract.c
+    ${SHARED_SOURCE_DIR}/ws_ui_state.c
+    ${SHARED_SOURCE_DIR}/ws_ipc_messages.c
+    ${SHARED_SOURCE_DIR}/ws_protocol.c
+    ${SHARED_SOURCE_DIR}/ws_ble_payloads.c
+)
+target_include_directories(test_node_ui_contract PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_node_ui_contract PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_node_ui_contract PRIVATE m)
+add_test(NAME ws_node_ui_contract COMMAND test_node_ui_contract)
+
+add_executable(test_node_contract
+    test_node_contract.c
+    ${SHARED_SOURCE_DIR}/ws_node_contract.c
+)
+target_include_directories(test_node_contract PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_node_contract PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_node_contract PRIVATE m)
+add_test(NAME ws_node_contract COMMAND test_node_contract)
+
+# --- P2F LVGL state contract tests (host-side, no LVGL dependency) ---
+add_executable(test_lvgl_state_contract
+    test_lvgl_state_contract.c
+    ${SHARED_SOURCE_DIR}/ws_ui_state.c
+    ${SHARED_SOURCE_DIR}/ws_ipc_messages.c
+    ${SHARED_SOURCE_DIR}/ws_protocol.c
+    ${SHARED_SOURCE_DIR}/ws_ble_payloads.c
+)
+target_include_directories(test_lvgl_state_contract PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_lvgl_state_contract PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_lvgl_state_contract PRIVATE m)
+add_test(NAME ws_lvgl_state_contract COMMAND test_lvgl_state_contract)
+
+# --- P3.6 UI/diagnostic consumption host state tests ---
+add_executable(test_ui_diagnostic_consumption
+    test_ui_diagnostic_consumption.c
+    ${SHARED_SOURCE_DIR}/ws_ui_state.c
+    ${SHARED_SOURCE_DIR}/ws_ipc_messages.c
+    ${SHARED_SOURCE_DIR}/ws_protocol.c
+    ${SHARED_SOURCE_DIR}/ws_ble_payloads.c
+)
+target_include_directories(test_ui_diagnostic_consumption PRIVATE ${SHARED_INCLUDE_DIR})
+target_compile_options(test_ui_diagnostic_consumption PRIVATE ${WS_COMPILE_FLAGS})
+target_link_libraries(test_ui_diagnostic_consumption PRIVATE m)
+add_test(NAME ws_ui_diagnostic_consumption COMMAND test_ui_diagnostic_consumption)
+
 enable_testing()

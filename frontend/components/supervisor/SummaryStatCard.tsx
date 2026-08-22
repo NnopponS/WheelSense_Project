@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 type Tone = "critical" | "warning" | "success" | "info";
 
 const toneClassMap: Record<Tone, string> = {
-  critical: "bg-red-500/12 text-red-700 dark:text-red-300",
-  warning: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
-  success: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
-  info: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
+  critical: "bg-critical-bg text-critical",
+  warning: "bg-warning-bg text-warning",
+  success: "bg-success-bg text-success",
+  info: "bg-info-bg text-info",
 };
 
 export function SummaryStatCard({

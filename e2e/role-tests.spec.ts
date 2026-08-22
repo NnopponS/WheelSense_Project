@@ -3,35 +3,33 @@ import { test, expect, Page } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const API_URL = process.env.API_URL || 'http://localhost:8000';
 
-// Test credentials for each role
+// Test credentials for each role (usernames preserved from seed data;
+// roles are canonical after the role-rename migration).
 const TEST_USERS = {
-  admin: { username: 'admin_test', password: 'admin123', role: 'admin' },
-  head_nurse: { username: 'headnurse_test', password: 'nurse123', role: 'head_nurse' },
-  supervisor: { username: 'supervisor_test', password: 'super123', role: 'supervisor' },
-  observer: { username: 'observer_test', password: 'observer123', role: 'observer' },
-  patient: { username: 'patient_test', password: 'patient123', role: 'patient' },
+  admin: { username: 'ada.m', password: 'ada.m', role: 'admin' },
+  head_caregiver: { username: 'helen.b', password: 'helen.b', role: 'head_caregiver' },
+  caregiver: { username: 'nina.p', password: 'nina.p', role: 'caregiver' },
+  patient: { username: 'daniel.c', password: 'daniel.c', role: 'patient' },
 };
 
 async function login(page: Page, username: string, password: string) {
   await page.goto(`${BASE_URL}/login`);
-  await page.waitForSelector('input[name="username"]', { timeout: 10000 });
-  await page.fill('input[name="username"]', username);
-  await page.fill('input[name="password"]', password);
-  await page.click('button[type="submit"]');
-  await page.waitForTimeout(3000);
+  await page.getByRole('textbox', { name: 'Username' }).fill(username);
+  await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await page.getByRole('button', { name: 'Sign In' }).click();
+  await expect(page).not.toHaveURL(/\/login(?:\?|$)/);
 }
 
-async function checkPageLoaded(page: Page, expectedPath: string, expectedText: string) {
+async function checkPageLoaded(page: Page, expectedPath: string) {
   await expect(page).toHaveURL(new RegExp(expectedPath));
-  const bodyText = await page.textContent('body');
-  expect(bodyText).toContain(expectedText);
+  await expect(page.getByRole('main')).toBeVisible();
 }
 
 test.describe('Role-Based Access Tests', () => {
-  
+
   test('Admin - Dashboard access', async ({ page }) => {
     await login(page, TEST_USERS.admin.username, TEST_USERS.admin.password);
-    await checkPageLoaded(page, '/admin', 'Dashboard');
+    await checkPageLoaded(page, '/admin');
   });
 
   test('Admin - Users page', async ({ page }) => {
@@ -58,56 +56,35 @@ test.describe('Role-Based Access Tests', () => {
     expect(bodyText?.toLowerCase()).toMatch(/patients?|residents?/);
   });
 
-  test('Head Nurse - Dashboard access', async ({ page }) => {
-    await login(page, TEST_USERS.head_nurse.username, TEST_USERS.head_nurse.password);
-    await checkPageLoaded(page, '/head-nurse', 'Dashboard');
+  test('Head Caregiver - Dashboard access', async ({ page }) => {
+    await login(page, TEST_USERS.head_caregiver.username, TEST_USERS.head_caregiver.password);
+    await checkPageLoaded(page, '/head-caregiver');
   });
 
-  test('Head Nurse - Alerts page', async ({ page }) => {
-    await login(page, TEST_USERS.head_nurse.username, TEST_USERS.head_nurse.password);
-    await page.goto(`${BASE_URL}/head-nurse/alerts`);
-    await page.waitForTimeout(2000);
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.toLowerCase()).toMatch(/alerts?|notifications?/);
-  });
-
-  test('Head Nurse - Tasks page', async ({ page }) => {
-    await login(page, TEST_USERS.head_nurse.username, TEST_USERS.head_nurse.password);
-    await page.goto(`${BASE_URL}/head-nurse/tasks`);
-    await page.waitForTimeout(2000);
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.toLowerCase()).toMatch(/tasks?|workflows?/);
-  });
-
-  test('Supervisor - Dashboard access', async ({ page }) => {
-    await login(page, TEST_USERS.supervisor.username, TEST_USERS.supervisor.password);
-    await checkPageLoaded(page, '/supervisor', 'Dashboard');
-  });
-
-  test('Supervisor - Emergency page', async ({ page }) => {
-    await login(page, TEST_USERS.supervisor.username, TEST_USERS.supervisor.password);
-    await page.goto(`${BASE_URL}/supervisor/emergency`);
+  test('Head Caregiver - Emergency page', async ({ page }) => {
+    await login(page, TEST_USERS.head_caregiver.username, TEST_USERS.head_caregiver.password);
+    await page.goto(`${BASE_URL}/head-caregiver/emergency`);
     await page.waitForTimeout(2000);
     const bodyText = await page.textContent('body');
     expect(bodyText?.toLowerCase()).toMatch(/emergency|alerts?|critical/);
   });
 
-  test('Supervisor - Monitoring page', async ({ page }) => {
-    await login(page, TEST_USERS.supervisor.username, TEST_USERS.supervisor.password);
-    await page.goto(`${BASE_URL}/supervisor/monitoring`);
+  test('Head Caregiver - Monitoring page', async ({ page }) => {
+    await login(page, TEST_USERS.head_caregiver.username, TEST_USERS.head_caregiver.password);
+    await page.goto(`${BASE_URL}/head-caregiver/floorplans`);
     await page.waitForTimeout(2000);
     const bodyText = await page.textContent('body');
-    expect(bodyText?.toLowerCase()).toMatch(/monitor|overview|status/);
+    expect(bodyText?.toLowerCase()).toMatch(/floor|map|location|zone/);
   });
 
-  test('Observer - Dashboard access', async ({ page }) => {
-    await login(page, TEST_USERS.observer.username, TEST_USERS.observer.password);
-    await checkPageLoaded(page, '/observer', 'Dashboard');
+  test('Caregiver - Dashboard access', async ({ page }) => {
+    await login(page, TEST_USERS.caregiver.username, TEST_USERS.caregiver.password);
+    await checkPageLoaded(page, '/caregiver');
   });
 
-  test('Observer - Floorplan page', async ({ page }) => {
-    await login(page, TEST_USERS.observer.username, TEST_USERS.observer.password);
-    await page.goto(`${BASE_URL}/observer/floorplan`);
+  test('Caregiver - Floorplan page', async ({ page }) => {
+    await login(page, TEST_USERS.caregiver.username, TEST_USERS.caregiver.password);
+    await page.goto(`${BASE_URL}/caregiver/floorplans`);
     await page.waitForTimeout(2000);
     const bodyText = await page.textContent('body');
     expect(bodyText?.toLowerCase()).toMatch(/floorplan|map|layout/);
@@ -115,35 +92,33 @@ test.describe('Role-Based Access Tests', () => {
 
   test('Patient - Dashboard access', async ({ page }) => {
     await login(page, TEST_USERS.patient.username, TEST_USERS.patient.password);
-    await checkPageLoaded(page, '/patient', 'Dashboard');
+    await checkPageLoaded(page, '/patient');
   });
 
 });
 
 test.describe('Login Page Tests', () => {
-  
+
   test('Login page loads correctly', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
-    await expect(page).toHaveTitle(/login|sign in/i);
-    await expect(page.locator('input[name="username"]')).toBeVisible();
-    await expect(page.locator('input[name="password"]')).toBeVisible();
-    await expect(page.locator('button[type="submit"]')).toBeVisible();
+    await expect(page).toHaveTitle('Ease AI — Smart Wheelchair Care Platform');
+    await expect(page.getByRole('textbox', { name: 'Username' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Password' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
   });
 
   test('Invalid credentials show error', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[name="username"]', 'invalid_user');
-    await page.fill('input[name="password"]', 'wrong_password');
-    await page.click('button[type="submit"]');
-    await page.waitForTimeout(2000);
-    const bodyText = await page.textContent('body');
-    expect(bodyText?.toLowerCase()).toMatch(/invalid|error|incorrect|failed/);
+    await page.getByRole('textbox', { name: 'Username' }).fill('invalid_user');
+    await page.getByRole('textbox', { name: 'Password' }).fill('wrong_password');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await expect(page.getByText(/invalid|error|incorrect|failed/i)).toBeVisible();
   });
 
 });
 
 test.describe('API Health Tests', () => {
-  
+
   test('API health endpoint', async ({ request }) => {
     const response = await request.get(`${API_URL}/api/health`);
     expect(response.status()).toBe(200);
@@ -161,22 +136,22 @@ test.describe('API Health Tests', () => {
 });
 
 test.describe('Cross-Role Access Control', () => {
-  
-  test('Observer cannot access admin pages', async ({ page }) => {
-    await login(page, TEST_USERS.observer.username, TEST_USERS.observer.password);
+
+  test('Caregiver cannot access admin pages', async ({ page }) => {
+    await login(page, TEST_USERS.caregiver.username, TEST_USERS.caregiver.password);
     await page.goto(`${BASE_URL}/admin/users`);
     await page.waitForTimeout(2000);
-    // Should be redirected to observer home or show access denied
+    // Should be redirected to caregiver home or show access denied
     const url = page.url();
     expect(url).not.toContain('/admin/users');
   });
 
-  test('Patient cannot access head-nurse pages', async ({ page }) => {
+  test('Patient cannot access head-caregiver pages', async ({ page }) => {
     await login(page, TEST_USERS.patient.username, TEST_USERS.patient.password);
-    await page.goto(`${BASE_URL}/head-nurse/alerts`);
+    await page.goto(`${BASE_URL}/head-caregiver/emergency`);
     await page.waitForTimeout(2000);
     const url = page.url();
-    expect(url).not.toContain('/head-nurse');
+    expect(url).not.toContain('/head-caregiver');
   });
 
 });

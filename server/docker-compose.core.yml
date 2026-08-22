@@ -20,6 +20,9 @@ services:
 
   wheelsense-platform-server:
     container_name: wheelsense-platform-server
+    labels:
+      org.opencontainers.image.title: "Ease AI Server"
+      org.opencontainers.image.description: "Ease AI platform API and device services"
     build:
       context: .
       dockerfile: Dockerfile
@@ -27,6 +30,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      APP_NAME: ${APP_NAME:-Ease AI Server}
       SECRET_KEY: ${SECRET_KEY:-wheelsense-local-dev-secret-key}
       MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
       MQTT_PORT: ${MQTT_PORT:-1883}
@@ -62,6 +66,9 @@ services:
 
   wheelsense-agent-runtime:
     container_name: wheelsense-agent-runtime
+    labels:
+      org.opencontainers.image.title: "Ease AI Agent Runtime"
+      org.opencontainers.image.description: "Ease AI constrained assistant runtime"
     build:
       context: .
       dockerfile: Dockerfile
@@ -92,12 +99,19 @@ services:
       EASEAI_PIPELINE_V2: ${EASEAI_PIPELINE_V2:-true}
       AGENT_ROUTING_MODE: ${AGENT_ROUTING_MODE:-llm_tools}
       AGENT_LLM_ROUTER_MODEL: ${AGENT_LLM_ROUTER_MODEL:-}
+      # AI-primary mode: bypass deterministic answer locks so the ADR 0015 LLM
+      # tool router runs as the primary decision-maker. Only page-context and
+      # identity fast paths remain. Set `true` to restore legacy locked answers.
+      EASEAI_DETERMINISTIC_ANSWER_LOCK_ENABLED: ${EASEAI_DETERMINISTIC_ANSWER_LOCK_ENABLED:-false}
     depends_on:
       wheelsense-platform-server:
         condition: service_started
 
   wheelsense-platform-web:
     container_name: wheelsense-platform-web
+    labels:
+      org.opencontainers.image.title: "Ease AI Web"
+      org.opencontainers.image.description: "Ease AI clinical operations web interface"
     build:
       context: ../frontend
       dockerfile: Dockerfile
@@ -109,6 +123,12 @@ services:
     depends_on:
       wheelsense-platform-server:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     develop:
       watch:
         - action: rebuild

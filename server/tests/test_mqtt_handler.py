@@ -1,14 +1,21 @@
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 import json
 from datetime import datetime, UTC
 
 from app.models.core import Device, Workspace
 from app.models.core import DeviceCommandDispatch
 from app.models.patients import Patient, PatientDeviceAssignment
-from app.models.telemetry import IMUTelemetry, MotionTrainingData, RSSIReading, RoomPrediction
+from app.models.telemetry import (
+    IMUTelemetry,
+    MotionTrainingData,
+    NodeStatusTelemetry,
+    RSSIReading,
+    RoomPrediction,
+)
 from app.models.vitals import VitalReading
+from app.services.device_management import build_device_history
 from tests.conftest import _get_session_factory
 
 _SessionFactory = _get_session_factory()
@@ -21,7 +28,7 @@ from app.mqtt_handler import (
     _handle_device_ack,
     _handle_camera_registration,
     _handle_camera_status,
-    mqtt_listener
+    _handle_photo_chunk,
 )
 
 
@@ -685,6 +692,121 @@ async def test_handle_camera_status(active_workspace):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_e84_status_rejects_unsupported_version_before_persistence(active_workspace):
+    payload = {
+        "device_id": "E84_REJECT_VERSION",
+        "protocolVersion": 99,
+        "environment": {"temperatureC": 25.0},
+    }
+
+    with pytest.raises(ValueError, match="protocolVersion"):
+        await _handle_camera_status(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        rows = (
+            await session.execute(
+                select(NodeStatusTelemetry).where(
+                    NodeStatusTelemetry.device_id == "E84_REJECT_VERSION"
+                )
+            )
+        ).scalars().all()
+        assert rows == []
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_e84_status_v1_persists_in_registered_workspace_and_history(active_workspace):
+    device_id = "E84_STATUS_V1"
+    payload = {
+        "device_id": device_id,
+        "workspace_id": active_workspace.id + 1000,
+        "protocolVersion": 1,
+        "timestampUs": 123456789,
+        "environment": {
+            "temperatureC": 25.2,
+            "humidityPct": 61.5,
+            "pressureHpa": 1008.4,
+            "validMask": 7,
+        },
+        "imu": {
+            "accelX": 0.0,
+            "accelY": 9.80665,
+            "accelZ": 0.0,
+            "gyroX": 0.0,
+            "gyroY": 0.0,
+            "gyroZ": 0.0,
+        },
+        "displayOrientation": "landscape",
+        "audioStatus": "ready",
+        "deviceHealth": "ready",
+    }
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id=device_id,
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+            )
+        )
+        await session.commit()
+
+    await _handle_camera_status(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        row = (
+            await session.execute(
+                select(NodeStatusTelemetry).where(NodeStatusTelemetry.device_id == device_id)
+            )
+        ).scalar_one()
+        assert row.workspace_id == active_workspace.id
+        assert row.payload == payload
+        history = await build_device_history(
+            session, active_workspace.id, device_id, hours=1, limit=10
+        )
+        assert history["node"][0]["payload"] == payload
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@pytest.mark.parametrize(
+    "extension",
+    [
+        {"protocolVersion": True},
+        {"protocolVersion": 1, "timestampUs": -1},
+        {"protocolVersion": 1, "environment": []},
+        {"protocolVersion": 1, "environment": {"humidityPct": 101}},
+        {"protocolVersion": 1, "environment": {"temperatureC": float("nan")}},
+        {"protocolVersion": 1, "environment": {"validMask": 2**32}},
+        {"protocolVersion": 1, "imu": {"accelX": "invalid"}},
+    ],
+)
+async def test_e84_status_rejects_malformed_extension_before_persistence(
+    active_workspace, extension
+):
+    device_id = "E84_REJECT_MALFORMED"
+    payload = {"device_id": device_id, **extension}
+
+    with pytest.raises(ValueError):
+        await _handle_camera_status(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        rows = (
+            await session.execute(
+                select(NodeStatusTelemetry).where(NodeStatusTelemetry.device_id == device_id)
+            )
+        ).scalars().all()
+        assert rows == []
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 async def test_camera_status_merges_ble_stub_when_registration_missed(active_workspace):
     async with _SessionFactory() as session:
         session.add(
@@ -786,3 +908,790 @@ async def test_mqtt_listener(mock_sleep, mock_mqtt):
     from app.mqtt_handler import mqtt_listener
     with pytest.raises(InterruptedError):
         await mqtt_listener()
+
+
+# --- Phase 7: Photo chunk assembly tests -------------------------------------
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_photo_chunk_single_chunk_assembles_and_persists(active_workspace, tmp_path):
+    """A single-chunk photo should be assembled and persisted immediately."""
+    import base64
+
+    device_id = "CAM_PHOTO_1"
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id=device_id,
+            workspace_id=active_workspace.id,
+            device_type="camera",
+            hardware_type="node",
+        ))
+        await session.commit()
+
+    photo_id = "photo-single-1"
+    chunk_data = b"\x89PNG\r\n\x1a\nfake-png-header"
+    payload = {
+        "photo_id": photo_id,
+        "device_id": device_id,
+        "chunk_index": 0,
+        "total_chunks": 1,
+        "data": base64.b64encode(chunk_data).decode(),
+    }
+
+    await _handle_photo_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved = list(tmp_path.glob("*"))
+    assert len(saved) >= 1, f"Expected at least 1 saved file, got {saved}"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_photo_chunk_multi_chunk_assembles_in_order(active_workspace, tmp_path):
+    """Multi-chunk photo should assemble chunks in index order and persist."""
+    import base64
+
+    device_id = "CAM_PHOTO_2"
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id=device_id,
+            workspace_id=active_workspace.id,
+            device_type="camera",
+            hardware_type="node",
+        ))
+        await session.commit()
+
+    photo_id = "photo-multi-1"
+    chunk0 = b"PART0-"
+    chunk1 = b"PART1-"
+    chunk2 = b"PART2"
+    total = 3
+
+    for i, chunk in enumerate([chunk0, chunk1, chunk2]):
+        payload = {
+            "photo_id": photo_id,
+            "device_id": device_id,
+            "chunk_index": i,
+            "total_chunks": total,
+            "data": base64.b64encode(chunk).decode(),
+        }
+        await _handle_photo_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved_files = list(tmp_path.glob("*"))
+    assert len(saved_files) >= 1, f"Expected at least 1 saved file, got {saved_files}"
+    saved_data = saved_files[0].read_bytes()
+    assert saved_data == chunk0 + chunk1 + chunk2
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_photo_chunk_out_of_order_assembles_correctly(active_workspace, tmp_path):
+    """Chunks arriving out of order should still assemble in index order."""
+    import base64
+
+    device_id = "CAM_PHOTO_3"
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id=device_id,
+            workspace_id=active_workspace.id,
+            device_type="camera",
+            hardware_type="node",
+        ))
+        await session.commit()
+
+    photo_id = "photo-ooo-1"
+    chunks = [b"AAA", b"BBB", b"CCC"]
+    order = [1, 0, 2]
+
+    for idx in order:
+        payload = {
+            "photo_id": photo_id,
+            "device_id": device_id,
+            "chunk_index": idx,
+            "total_chunks": len(chunks),
+            "data": base64.b64encode(chunks[idx]).decode(),
+        }
+        await _handle_photo_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved_files = list(tmp_path.glob("*"))
+    assert len(saved_files) >= 1
+    assert saved_files[0].read_bytes() == b"AAABBBCCC"
+
+
+@pytest.mark.asyncio
+async def test_photo_chunk_partial_does_not_persist(tmp_path):
+    """A partial photo (missing chunks) should not persist until all arrive."""
+    import base64
+
+    photo_id = "photo-partial-1"
+    payload = {
+        "photo_id": photo_id,
+        "device_id": "CAM_PHOTO_4",
+        "chunk_index": 0,
+        "total_chunks": 3,
+        "data": base64.b64encode(b"only-first").decode(),
+    }
+
+    await _handle_photo_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved_files = list(tmp_path.glob("*"))
+    assert len(saved_files) == 0, "Partial photo should not be persisted"
+
+
+# --- Phase 7: E84 status field compatibility tests ----------------------------
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_e84_status_v1_with_all_optional_fields_persists(active_workspace):
+    """E84 v1 status with all optional fields (IMU, audio, display, health) persists."""
+    device_id = "E84_FULL_OPTIONAL"
+    payload = {
+        "device_id": device_id,
+        "protocolVersion": 1,
+        "timestampUs": 999999,
+        "environment": {
+            "temperatureC": 22.5,
+            "humidityPct": 55.0,
+            "pressureHpa": 1013.25,
+            "validMask": 7,
+        },
+        "imu": {
+            "accelX": 0.1,
+            "accelY": 9.8,
+            "accelZ": 0.2,
+            "gyroX": 0.01,
+            "gyroY": 0.02,
+            "gyroZ": 0.03,
+        },
+        "displayOrientation": "portrait",
+        "audioStatus": "ready",
+        "deviceHealth": "ready",
+    }
+
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id=device_id,
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+            )
+        )
+        await session.commit()
+
+    await _handle_camera_status(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        row = (
+            await session.execute(
+                select(NodeStatusTelemetry).where(NodeStatusTelemetry.device_id == device_id)
+            )
+        ).scalar_one()
+        assert row.workspace_id == active_workspace.id
+        assert row.payload["protocolVersion"] == 1
+        assert row.payload["environment"]["temperatureC"] == 22.5
+        assert row.payload["imu"]["accelY"] == 9.8
+        assert row.payload["displayOrientation"] == "portrait"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_e84_status_v1_minimal_fields_persists(active_workspace):
+    """E84 v1 status with only required fields (no optional sections) persists."""
+    device_id = "E84_MINIMAL"
+    payload = {
+        "device_id": device_id,
+        "protocolVersion": 1,
+    }
+
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id=device_id,
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+            )
+        )
+        await session.commit()
+
+    await _handle_camera_status(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        row = (
+            await session.execute(
+                select(NodeStatusTelemetry).where(NodeStatusTelemetry.device_id == device_id)
+            )
+        ).scalar_one()
+        assert row.payload["protocolVersion"] == 1
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_e84_status_v1_partial_environment_valid_mask(active_workspace):
+    """E84 v1 with partial environment (only temperature valid) persists with correct mask."""
+    device_id = "E84_PARTIAL_ENV"
+    payload = {
+        "device_id": device_id,
+        "protocolVersion": 1,
+        "environment": {
+            "temperatureC": 25.0,
+            "humidityPct": 50.0,
+            "pressureHpa": 1000.0,
+            "validMask": 1,  # only temperature valid
+        },
+    }
+
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id=device_id,
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+            )
+        )
+        await session.commit()
+
+    await _handle_camera_status(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        row = (
+            await session.execute(
+                select(NodeStatusTelemetry).where(NodeStatusTelemetry.device_id == device_id)
+            )
+        ).scalar_one()
+        assert row.payload["environment"]["validMask"] == 1
+
+
+# --- Phase 7: Device ack edge cases -------------------------------------------
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_device_ack_with_invalid_json_does_not_crash(active_workspace):
+    """Invalid JSON on ack topic should be handled gracefully."""
+    await _handle_device_ack(b"not valid json")
+    # No assertion needed � just verify it doesn't raise
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_device_ack_without_command_id_is_ignored(active_workspace):
+    """An ack without command_id should be silently ignored."""
+    payload = json.dumps({"device_id": "DEV_1", "status": "ok"}).encode()
+    await _handle_device_ack(payload)
+    # No assertion needed � just verify it doesn't raise or create rows
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_device_ack_for_unknown_command_id_is_safe(active_workspace):
+    """An ack for a non-existent command_id should not crash."""
+    payload = json.dumps({
+        "command_id": "nonexistent-uuid",
+        "device_id": "DEV_1",
+        "status": "ok",
+    }).encode()
+    await _handle_device_ack(payload)
+    # No assertion needed � just verify it doesn't raise
+
+# --- Phase 7: BLE payload compatibility tests ---------------------------------
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+async def test_ble_telemetry_with_missing_mac_uses_node_name_fallback(mock_predict, active_workspace):
+    """BLE telemetry RSSI entry without 'mac' falls back to node-name-based BLE_* ID (not MAC-based)."""
+    mock_client = AsyncMock()
+    mock_predict.return_value = None
+    payload = {
+        "device_id": "WCHAIR_NO_MAC",
+        "device_type": "wheelchair",
+        "hardware_type": "wheelchair",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "rssi": [
+            {"node": "WSN_001", "rssi": -70},
+        ],
+    }
+
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id="WCHAIR_NO_MAC",
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+        # Without mac, the fallback uses the node name, not a MAC-based ID
+        ble = (
+            await session.execute(select(Device).where(Device.device_id == "BLE_WSN001"))
+        ).scalar_one_or_none()
+        assert ble is not None, "Node-name fallback should create BLE_WSN001"
+        assert ble.config.get("ble_mac") == ""
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+async def test_ble_telemetry_with_valid_mac_auto_registers(mock_predict, active_workspace):
+    """BLE telemetry with valid mac auto-registers a BLE_* node."""
+    mock_client = AsyncMock()
+    mock_predict.return_value = None
+    payload = {
+        "device_id": "WCHAIR_VALID_MAC",
+        "device_type": "wheelchair",
+        "hardware_type": "wheelchair",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "rssi": [
+            {"node": "WSN_002", "rssi": -65, "mac": "aa:bb:cc:dd:ee:ff"},
+        ],
+    }
+
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id="WCHAIR_VALID_MAC",
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+        ble = (
+            await session.execute(select(Device).where(Device.device_id == "BLE_AABBCCDDEEFF"))
+        ).scalar_one_or_none()
+        assert ble is not None
+        assert ble.workspace_id == active_workspace.id
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_camera_registration_with_invalid_ble_mac_format_does_not_crash(active_workspace):
+    """Camera registration with malformed ble_mac should not crash or merge incorrectly."""
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id="BLE_AABBCCDDEEFF",
+            workspace_id=active_workspace.id,
+            device_type="camera",
+            hardware_type="node",
+            display_name="WSN_003",
+            config={"ble_mac": "aa:bb:cc:dd:ee:ff", "ble_node_id": "WSN_003"},
+        ))
+        await session.commit()
+
+    payload = {
+        "device_id": "CAM_BAD_MAC",
+        "node_id": "WSN_003",
+        "ip_address": "10.0.0.2",
+        "firmware": "3.0.0",
+        "ble_mac": "not-a-mac-address",
+    }
+    await _handle_camera_registration(json.dumps(payload).encode())
+    # Test passes if no exception is raised
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+async def test_canonical_cam_suppresses_new_ble_stub_for_same_mac(mock_predict, active_workspace):
+    """When a CAM_* row already has ble_mac, a new BLE_* stub for the same MAC is suppressed."""
+    mock_client = AsyncMock()
+    mock_predict.return_value = None
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id="CAM_EXISTING",
+            workspace_id=active_workspace.id,
+            device_type="camera",
+            hardware_type="node",
+            config={"ble_mac": "11:22:33:44:55:66"},
+        ))
+        await session.commit()
+
+    payload = {
+        "device_id": "WCHAIR_SUPPRESS",
+        "device_type": "wheelchair",
+        "hardware_type": "wheelchair",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "rssi": [
+            {"node": "WSN_004", "rssi": -60, "mac": "11:22:33:44:55:66"},
+        ],
+    }
+
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id="WCHAIR_SUPPRESS",
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+        ble = (
+            await session.execute(select(Device).where(Device.device_id == "BLE_112233445566"))
+        ).scalar_one_or_none()
+        assert ble is None, "Canonical CAM should suppress new BLE stub for same MAC"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+async def test_ble_telemetry_empty_rssi_array_does_not_crash(mock_predict, active_workspace):
+    """An empty rssi[] array should be handled gracefully."""
+    mock_client = AsyncMock()
+    mock_predict.return_value = None
+    payload = {
+        "device_id": "WCHAIR_EMPTY_RSSI",
+        "device_type": "wheelchair",
+        "hardware_type": "wheelchair",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "rssi": [],
+    }
+
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id="WCHAIR_EMPTY_RSSI",
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+    # No assertion needed - just verify it doesn't raise
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_camera_registration_without_ble_mac_creates_cam_only(active_workspace):
+    """Camera registration without ble_mac should create CAM_* without BLE merge."""
+    payload = {
+        "device_id": "CAM_NO_BLE",
+        "node_id": "WSN_005",
+        "ip_address": "10.0.0.3",
+        "firmware": "3.0.0",
+    }
+    await _handle_camera_registration(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+        cam = (
+            await session.execute(select(Device).where(Device.device_id == "CAM_NO_BLE"))
+        ).scalar_one_or_none()
+        assert cam is not None
+        assert cam.device_type == "camera"
+        ble = (
+            await session.execute(select(Device).where(Device.device_id.like("BLE_%")))
+        ).scalars().all()
+        assert len(ble) == 0
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+async def test_ble_telemetry_duplicate_mac_does_not_create_duplicate_stub(mock_predict, active_workspace):
+    """Sending the same BLE MAC twice should not create duplicate BLE_* devices."""
+    mock_client = AsyncMock()
+    mock_predict.return_value = None
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id="WCHAIR_DUP",
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    payload = {
+        "device_id": "WCHAIR_DUP",
+        "device_type": "wheelchair",
+        "hardware_type": "wheelchair",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "rssi": [
+            {"node": "WSN_006", "rssi": -55, "mac": "ff:ee:dd:cc:bb:aa"},
+        ],
+    }
+
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+        ble = (
+            await session.execute(select(Device).where(Device.device_id == "BLE_FFEEDDCCBBAA"))
+        ).scalars().all()
+        assert len(ble) == 1, "Duplicate MAC should not create duplicate BLE stub"
+
+
+# --- Phase 4/5: Two-way audio chunk tests -------------------------------------
+
+from app.mqtt_handler import _handle_audio_chunk
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_audio_chunk_single_chunk_assembles_and_persists(active_workspace, tmp_path):
+    """A single-chunk mic audio clip should be assembled and persisted immediately."""
+    import base64
+
+    device_id = "WHEEL_AUDIO_1"
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id=device_id,
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    clip_id = "clip-single-1"
+    pcm_data = b"\x00\x01\x02\x03\x04\x05\x06\x07fake-pcm"
+    payload = {
+        "clip_id": clip_id,
+        "device_id": device_id,
+        "chunk_index": 0,
+        "total_chunks": 1,
+        "data": base64.b64encode(pcm_data).decode(),
+        "sample_rate": 16000,
+        "channels": 1,
+        "session_id": "session-audio-1",
+    }
+
+    await _handle_audio_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved = list(tmp_path.glob("*.pcm"))
+    assert len(saved) == 1, f"Expected 1 saved .pcm file, got {saved}"
+    assert saved[0].read_bytes() == pcm_data
+
+    from app.models.telemetry import AudioRecord
+    from sqlalchemy import select
+    async with _SessionFactory() as session:
+        rec = (
+            await session.execute(select(AudioRecord).where(AudioRecord.clip_id == clip_id))
+        ).scalar_one_or_none()
+        assert rec is not None, "AudioRecord should be persisted"
+        assert rec.direction == "mic"
+        assert rec.session_id == "session-audio-1"
+        assert rec.sample_rate == 16000
+        assert rec.channels == 1
+        assert rec.file_size == len(pcm_data)
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_audio_chunk_multi_chunk_assembles_in_order(active_workspace, tmp_path):
+    """Multi-chunk mic audio should assemble chunks in index order and persist."""
+    import base64
+
+    device_id = "WHEEL_AUDIO_2"
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id=device_id,
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    clip_id = "clip-multi-1"
+    chunks = [b"PCM0-", b"PCM1-", b"PCM2"]
+    for i, chunk in enumerate(chunks):
+        payload = {
+            "clip_id": clip_id,
+            "device_id": device_id,
+            "chunk_index": i,
+            "total_chunks": len(chunks),
+            "data": base64.b64encode(chunk).decode(),
+            "sample_rate": 16000,
+            "channels": 1,
+            "session_id": "session-audio-2",
+        }
+        await _handle_audio_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved = list(tmp_path.glob("*.pcm"))
+    assert len(saved) == 1, f"Expected 1 assembled file, got {saved}"
+    assert saved[0].read_bytes() == b"PCM0-PCM1-PCM2"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_audio_chunk_out_of_order_assembles_correctly(active_workspace, tmp_path):
+    """Out-of-order audio chunks should still assemble in index order."""
+    import base64
+
+    device_id = "WHEEL_AUDIO_3"
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id=device_id,
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    clip_id = "clip-out-of-order-1"
+    chunks = [b"AAA-", b"BBB-", b"CCC"]
+    order = [2, 0, 1]
+    for i in order:
+        payload = {
+            "clip_id": clip_id,
+            "device_id": device_id,
+            "chunk_index": i,
+            "total_chunks": len(chunks),
+            "data": base64.b64encode(chunks[i]).decode(),
+            "sample_rate": 16000,
+            "channels": 1,
+            "session_id": "session-audio-3",
+        }
+        await _handle_audio_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved = list(tmp_path.glob("*.pcm"))
+    assert len(saved) == 1
+    assert saved[0].read_bytes() == b"AAA-BBB-CCC"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_audio_chunk_partial_does_not_persist(tmp_path):
+    """Partial audio chunks (not all received) should not persist a file or DB row."""
+    import base64
+
+    clip_id = "clip-partial-1"
+    payload = {
+        "clip_id": clip_id,
+        "device_id": "WHEEL_AUDIO_PARTIAL",
+        "chunk_index": 0,
+        "total_chunks": 3,
+        "data": base64.b64encode(b"only-one-chunk").decode(),
+        "sample_rate": 16000,
+        "channels": 1,
+        "session_id": "session-partial",
+    }
+
+    await _handle_audio_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    saved = list(tmp_path.glob("*.pcm"))
+    assert len(saved) == 0, "Partial audio should not persist a file"
+
+    from app.models.telemetry import AudioRecord
+    from sqlalchemy import select
+    async with _SessionFactory() as session:
+        rec = (
+            await session.execute(select(AudioRecord).where(AudioRecord.clip_id == clip_id))
+        ).scalar_one_or_none()
+        assert rec is None, "Partial audio should not create an AudioRecord"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_audio_chunk_unregistered_device_discarded(tmp_path):
+    """Audio from an unregistered device should be discarded (no DB row, no file)."""
+    import base64
+
+    clip_id = "clip-unregistered-1"
+    payload = {
+        "clip_id": clip_id,
+        "device_id": "GHOST_DEVICE_AUDIO",
+        "chunk_index": 0,
+        "total_chunks": 1,
+        "data": base64.b64encode(b"ghost-pcm").decode(),
+        "sample_rate": 16000,
+        "channels": 1,
+        "session_id": "session-ghost",
+    }
+
+    await _handle_audio_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    from app.models.telemetry import AudioRecord
+    from sqlalchemy import select
+    async with _SessionFactory() as session:
+        rec = (
+            await session.execute(select(AudioRecord).where(AudioRecord.clip_id == clip_id))
+        ).scalar_one_or_none()
+        assert rec is None, "Unregistered device audio should be discarded"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_audio_chunk_stereo_persists_channels_and_sample_rate(active_workspace, tmp_path):
+    """Stereo audio with non-default sample rate should persist metadata correctly."""
+    import base64
+
+    device_id = "WHEEL_AUDIO_STEREO"
+    async with _SessionFactory() as session:
+        session.add(Device(
+            device_id=device_id,
+            workspace_id=active_workspace.id,
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+        ))
+        await session.commit()
+
+    clip_id = "clip-stereo-1"
+    pcm_data = b"\x00\x01\x02\x03\x04stereo-pcm"
+    payload = {
+        "clip_id": clip_id,
+        "device_id": device_id,
+        "chunk_index": 0,
+        "total_chunks": 1,
+        "data": base64.b64encode(pcm_data).decode(),
+        "sample_rate": 48000,
+        "channels": 2,
+        "session_id": "session-stereo",
+    }
+
+    await _handle_audio_chunk(json.dumps(payload).encode(), save_dir=str(tmp_path))
+
+    from app.models.telemetry import AudioRecord
+    from sqlalchemy import select
+    async with _SessionFactory() as session:
+        rec = (
+            await session.execute(select(AudioRecord).where(AudioRecord.clip_id == clip_id))
+        ).scalar_one_or_none()
+        assert rec is not None
+        assert rec.sample_rate == 48000
+        assert rec.channels == 2
+        assert rec.duration_s is not None and rec.duration_s > 0
+
+
+@pytest.mark.asyncio
+async def test_publish_speaker_audio_calls_mqtt_publish():
+    """publish_speaker_audio should publish to WheelSense/audio/{device_id}/speaker."""
+    import base64
+    from unittest.mock import AsyncMock, patch
+    from app.services.mqtt_publish import publish_speaker_audio
+
+    pcm = b"\x00\x01\x02\x03\x04speaker-pcm"
+    with patch("app.services.mqtt_publish.mqtt_publish_json", new=AsyncMock()) as mock_pub:
+        await publish_speaker_audio(
+            "WHEEL_SPK_1",
+            "clip-spk-1",
+            pcm,
+            sample_rate=16000,
+            channels=1,
+            session_id="session-spk",
+        )
+        mock_pub.assert_awaited_once()
+        topic, payload = mock_pub.call_args.args
+        assert topic == "WheelSense/audio/WHEEL_SPK_1/speaker"
+        assert payload["clip_id"] == "clip-spk-1"
+        assert payload["sample_rate"] == 16000
+        assert payload["channels"] == 1
+        assert payload["session_id"] == "session-spk"
+        assert base64.b64decode(payload["data"]) == pcm

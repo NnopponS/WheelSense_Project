@@ -1,5 +1,5 @@
 import ReportIssueForm from "@/components/support/ReportIssueForm";
 
-export default function CaregiverSupportPage() {
+export default function ObserverSupportPage() {
   return <ReportIssueForm />;
 }

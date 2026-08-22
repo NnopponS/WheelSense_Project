@@ -22,8 +22,8 @@ constexpr const char* ACK_UUID = "8f6e0005-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr const char* ROOM_CONFIG_UUID = "8f6e0006-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr const char* TIME_SYNC_UUID = "8f6e0007-b5a3-f393-e0a9-e50e24dcca9e";
 
-constexpr uint32_t TELEMETRY_INTERVAL_MS = 1000;
-constexpr uint32_t TELEMETRY_IDLE_INTERVAL_MS = 5000;
+constexpr uint32_t TELEMETRY_INTERVAL_MS = 50;
+constexpr uint32_t TELEMETRY_IDLE_INTERVAL_MS = 100;
 constexpr uint8_t COMMAND_TARGET = 1;
 constexpr uint8_t ROOM_TARGET = 2;
 constexpr uint8_t TIME_TARGET = 3;
@@ -51,7 +51,7 @@ constexpr uint16_t COLOR_PANEL_2 = 0x18E3;
 constexpr uint16_t COLOR_HEADER = 0x10A2;
 constexpr uint16_t COLOR_HEADER_INNER = 0x18E3;
 constexpr uint16_t COLOR_DIM = 0x7BEF;
-constexpr uint32_t DISPLAY_UPDATE_INTERVAL_MS = 500;
+constexpr uint32_t DISPLAY_UPDATE_INTERVAL_MS = 200;
 constexpr uint32_t STATIC_DISPLAY_UPDATE_INTERVAL_MS = 1000;
 constexpr uint32_t BUTTON_SCAN_INTERVAL_MS = 20;
 constexpr uint32_t BUTTON_DEBOUNCE_MS = 120;
@@ -73,6 +73,7 @@ String roomName;
 float wheelRadiusM = 0.30f;
 bool centralConnected = false;
 uint16_t activeConnId = 0;
+uint16_t activeMtu = 512;
 bool recording = false;
 String actionLabel;
 uint32_t telemetrySeq = 0;
@@ -226,6 +227,36 @@ String trimText(String text, uint8_t maxChars) {
   return text.substring(0, maxChars - 2) + "..";
 }
 
+// Diff-redraw: erase only the previous glyphs, then print the new value.
+// Avoids full-screen clears that caused visible flicker.
+struct TextField {
+  char prev[40] = "";
+  uint16_t prevColor = 0;
+};
+
+void resetField(TextField& f) {
+  f.prev[0] = '\0';
+  f.prevColor = 0;
+}
+
+void drawChangedText(TextField& f, const String& next, int x, int y, uint8_t size, uint16_t color, uint16_t eraseColor, uint8_t datum = TL_DATUM) {
+  const char* s = next.c_str();
+  if (f.prev[0] != '\0' && f.prevColor == color && strcmp(f.prev, s) == 0) {
+    return;
+  }
+  display.setTextSize(size);
+  display.setTextDatum(datum);
+  if (f.prev[0] != '\0') {
+    display.setTextColor(eraseColor);
+    display.drawString(f.prev, x, y);
+  }
+  strlcpy(f.prev, s, sizeof(f.prev));
+  f.prevColor = color;
+  display.setTextColor(color);
+  display.drawString(f.prev, x, y);
+  display.setTextDatum(TL_DATUM);
+}
+
 void initPowerAndButtons() {
   pinMode(HOLD_PIN, OUTPUT);
   digitalWrite(HOLD_PIN, HIGH);
@@ -324,12 +355,34 @@ void drawBootScreen(const char* subtitle, uint8_t progressPct) {
   const int barX = 18;
   const int barY = 110;
   const int barW = w - 36;
-  const int fillW = constrain(static_cast<int>((barW * progressPct) / 100), 0, barW);
   display.drawRoundRect(barX, barY, barW, 12, 5, COLOR_DIM);
-  display.fillRoundRect(barX, barY, fillW, 12, 5, COLOR_PRIMARY);
+  const int fillW = constrain(static_cast<int>((barW * progressPct) / 100), 0, barW);
+  if (fillW > 0) {
+    display.fillRect(barX, barY + 1, fillW, 10, COLOR_PRIMARY);
+  }
 }
 
-void drawCalibrationScreen(uint32_t remainingMs) {
+// Incremental bar update: no full-screen redraw while booting.
+int bootLastFillW = -1;
+
+void updateBootProgress(uint8_t progressPct) {
+  const int w = display.width();
+  const int barX = 18;
+  const int barY = 110;
+  const int barW = w - 36;
+  const int fillW = constrain(static_cast<int>((barW * progressPct) / 100), 0, barW);
+  if (fillW == bootLastFillW) {
+    return;
+  }
+  if (bootLastFillW < 0 || fillW < bootLastFillW) {
+    display.fillRect(barX, barY + 1, fillW, 10, COLOR_BG);
+  } else {
+    display.fillRect(barX + bootLastFillW, barY + 1, fillW - bootLastFillW, 10, COLOR_PRIMARY);
+  }
+  bootLastFillW = fillW;
+}
+
+void drawCalibrationScreenStatic() {
   clearDisplay();
   drawHeader("Calibrate 0");
   display.fillRoundRect(8, 36, display.width() - 16, 72, 7, COLOR_PANEL);
@@ -340,26 +393,30 @@ void drawCalibrationScreen(uint32_t remainingMs) {
   display.setTextSize(1);
   display.setTextColor(COLOR_DIM);
   display.drawString("Place device flat for zero gyro", 18, 70);
+  display.drawRoundRect(18, 90, display.width() - 36, 10, 5, COLOR_DIM);
+  drawFooter("", "Auto start", "");
+}
+
+void updateCalibrationProgress(uint32_t remainingMs) {
+  static TextField secField;
   const uint32_t clampedRemaining = remainingMs > 3000 ? 3000 : remainingMs;
   const uint32_t done = 3000 - clampedRemaining;
   const int totalW = display.width() - 36;
   const int barW = map(static_cast<long>(done), 0, 3000, 0, totalW);
-  display.drawRoundRect(18, 90, totalW, 10, 5, COLOR_DIM);
-  display.fillRoundRect(18, 90, barW, 10, 5, COLOR_PRIMARY);
-  display.setTextColor(COLOR_WARNING);
-  display.drawString(String((remainingMs + 999) / 1000) + " sec", 190, 72);
-  drawFooter("", "Auto start", "");
+  display.fillRect(19, 91, barW > 0 ? barW : 1, 8, COLOR_PRIMARY);
+  drawChangedText(secField, String((remainingMs + 999) / 1000) + "s", 190, 70, 1, COLOR_WARNING, COLOR_PANEL);
 }
 
 void showBootSequence(const char* subtitle) {
+  drawBootScreen(subtitle, 0);
   const uint32_t started = millis();
   while (millis() - started < BOOT_DURATION_MS) {
     const uint32_t elapsed = millis() - started;
     uint8_t progress = static_cast<uint8_t>((elapsed * 100) / BOOT_DURATION_MS);
-    drawBootScreen(subtitle, progress);
+    updateBootProgress(progress);
     delay(60);
   }
-  drawBootScreen(subtitle, 100);
+  updateBootProgress(100);
 }
 
 void drawMenu() {
@@ -423,70 +480,173 @@ void drawStatusChip(int x, int y, int w, const String& label, uint16_t fillColor
   display.setTextDatum(TL_DATUM);
 }
 
-void drawMetricRow(int y, const char* label, const String& value, uint16_t valueColor) {
-  const int w = display.width();
-  const int rowH = 20;
-  display.fillRoundRect(4, y, w - 8, rowH, 4, COLOR_PANEL);
+struct ChipField {
+  char prev[12] = "";
+  uint16_t prevFill = 0;
+  bool prevDark = false;
+  bool drawn = false;
+};
+
+int8_t dashboardDrawnPage = -1;
+ChipField chipConn, chipImu, chipBat, chipRec;
+TextField dashLink, dashSpeed, dashDist, dashAccel;
+TextField dashAx, dashAy, dashAz, dashGx, dashGy, dashGz, dashBat, dashVolt, dashBle;
+TextField dashHistMax;
+
+constexpr int kSpeedHistoryBars = 55;
+float speedHistory[kSpeedHistoryBars] = {0};
+int speedHistorySize = 0;
+
+void pushSpeedHistory(float v) {
+  if (speedHistorySize < kSpeedHistoryBars) {
+    speedHistory[speedHistorySize++] = v;
+  } else {
+    memmove(speedHistory, speedHistory + 1, sizeof(float) * (kSpeedHistoryBars - 1));
+    speedHistory[kSpeedHistoryBars - 1] = v;
+  }
+}
+
+void resetDashboardFields() {
+  struct { ChipField* c; } chips[] = {&chipConn, &chipImu, &chipBat, &chipRec};
+  for (auto& e : chips) {
+    e.c->prev[0] = '\0';
+    e.c->prevFill = 0;
+    e.c->prevDark = false;
+    e.c->drawn = false;
+  }
+  TextField* fields[] = {&dashLink, &dashSpeed, &dashDist, &dashAccel,
+                         &dashAx, &dashAy, &dashAz, &dashGx, &dashGy, &dashGz,
+                         &dashBat, &dashVolt, &dashBle};
+  for (TextField* f : fields) {
+    resetField(*f);
+  }
+}
+
+void drawChipDiff(ChipField& chip, int x, int y, int w, const String& label, uint16_t fillColor, bool darkText) {
+  if (chip.drawn && chip.prevFill == fillColor && chip.prevDark == darkText && strcmp(chip.prev, label.c_str()) == 0) {
+    return;
+  }
+  drawStatusChip(x, y, w, label, fillColor, darkText);
+  strlcpy(chip.prev, label.c_str(), sizeof(chip.prev));
+  chip.prevFill = fillColor;
+  chip.prevDark = darkText;
+  chip.drawn = true;
+}
+
+void drawMetricRowStatic(int y, const char* label) {
+  display.fillRoundRect(4, y, display.width() - 8, 20, 4, COLOR_PANEL);
   display.setTextDatum(ML_DATUM);
   display.setTextSize(1);
   display.setTextColor(COLOR_CYAN);
-  display.drawString(label, 10, y + rowH / 2);
-  display.setTextDatum(MR_DATUM);
-  display.setTextColor(valueColor);
-  display.setTextSize(value.length() > 12 ? 1 : 2);
-  display.drawString(value, w - 10, y + rowH / 2);
-  display.setTextSize(1);
+  display.drawString(label, 10, y + 10);
   display.setTextDatum(TL_DATUM);
 }
 
-void drawDashboard() {
+void drawDashboardStatic() {
   const int w = display.width();
   clearDisplay();
-  drawHeader(dashboardPage == 0 ? "Dashboard" : "IMU Raw");
+  resetDashboardFields();
+  drawHeader(dashboardPage == 0 ? "Dashboard" : (dashboardPage == 1 ? "IMU Raw" : "Speed History"));
 
   if (dashboardPage == 0) {
-    int y = 30;
-    drawStatusChip(4, y, 58, centralConnected ? "PHONE" : "PAIR", centralConnected ? COLOR_PRIMARY : COLOR_WARNING, true);
-    drawStatusChip(64, y, 46, sensorFrame.imuValid ? "IMU" : "NOIMU", sensorFrame.imuValid ? COLOR_PRIMARY : COLOR_ERROR, sensorFrame.imuValid);
-    drawStatusChip(112, y, 42, sensorFrame.batteryPercent >= 0 ? "BAT" : "--", sensorFrame.batteryPercent >= 20 ? COLOR_PRIMARY : COLOR_WARNING, true);
-    drawStatusChip(156, y, w - 160, recording ? "REC" : "BLE", recording ? COLOR_WARNING : (centralConnected ? COLOR_PRIMARY : COLOR_PANEL_2), recording || centralConnected);
-    y += 16;
-
-    display.setTextDatum(TL_DATUM);
-    display.setTextSize(1);
-    display.setTextColor(centralConnected ? COLOR_PRIMARY : COLOR_WARNING);
-    String linkText = centralConnected ? "Flutter phone connected" : "Flutter > Pair > Scan BLE";
-    display.drawString(trimText(linkText, 36), 4, y);
-    y += 12;
-
-    drawMetricRow(y, "Speed", fmtFloat(velocityMs, 2) + " m/s", COLOR_PRIMARY);
-    y += 23;
-    drawMetricRow(y, "Dist", fmtFloat(distanceM, 2) + " m", COLOR_PRIMARY);
-    y += 23;
-    drawMetricRow(y, "Accel", fmtFloat(accelMs2, 2) + " m/s2", COLOR_PRIMARY);
-  } else {
-    int y = 32;
-    display.fillRoundRect(4, y, w - 8, 84, 6, COLOR_PANEL);
+    const int y = 46;
+    display.fillRect(4, y - 2, w - 8, 14, COLOR_PANEL);
+    drawMetricRowStatic(60, "Speed");
+    drawMetricRowStatic(83, "Dist");
+    drawMetricRowStatic(106, "Accel");
+  } else if (dashboardPage == 1) {
+    display.fillRoundRect(4, 32, w - 8, 84, 6, COLOR_PANEL);
     display.setTextSize(1);
     display.setTextDatum(TL_DATUM);
+    display.setTextColor(COLOR_DIM);
+    display.drawString("AX:", 10, 36);
+    display.drawString("AY:", w / 2, 36);
+    display.drawString("AZ:", 10, 52);
+    display.drawString("GX:", w / 2, 52);
+    display.drawString("GY:", 10, 68);
+    display.drawString("GZ:", w / 2, 68);
     display.setTextColor(COLOR_TEXT);
-    display.drawString("AX: " + fmtFloat(sensorFrame.ax, 3), 10, y + 4);
-    display.drawString("AY: " + fmtFloat(sensorFrame.ay, 3), w / 2, y + 4);
-    display.drawString("AZ: " + fmtFloat(sensorFrame.az, 3), 10, y + 16);
+    display.drawString("Bat:", 10, 84);
+    display.drawString("Name:", 10, 98);
     display.setTextColor(COLOR_CYAN);
-    display.drawString("GX: " + fmtFloat(sensorFrame.gx, 1), w / 2, y + 16);
-    display.drawString("GY: " + fmtFloat(sensorFrame.gy, 1), 10, y + 28);
-    display.drawString("GZ: " + fmtFloat(sensorFrame.gz, 1), w / 2, y + 28);
-    display.setTextColor(COLOR_TEXT);
-    display.drawString("Bat: " + (sensorFrame.batteryPercent >= 0 ? String(sensorFrame.batteryPercent) + "%" : String("--")), 10, y + 44);
-    display.drawString(sensorFrame.batteryVoltageMv > 0 ? fmtFloat(sensorFrame.batteryVoltageMv / 1000.0f, 2) + "V" : "V n/a", w / 2, y + 44);
-    display.drawString("Name: " + trimText(deviceName, 22), 10, y + 58);
+    display.drawString("BLE:", 10, 112);
+  } else if (dashboardPage == 2) {
+    display.fillRoundRect(4, 30, w - 8, 88, 6, COLOR_PANEL);
+    display.setTextSize(1);
+    display.setTextDatum(TL_DATUM);
     display.setTextColor(COLOR_CYAN);
-    display.drawString("BLE: " + String(centralConnected ? "Connected" : "Advertising"), 10, y + 72);
-    display.drawString("Seq: " + String(telemetrySeq), w / 2, y + 72);
+    display.drawString("Speed m/s (last ~11s)", 12, 34);
+    display.setTextColor(COLOR_DIM);
+    display.drawFastHLine(12, 110, w - 24, COLOR_DIM);
   }
 
   drawFooter("M5:PAIR", "Side:PAGE", "Power:MENU");
+  dashboardDrawnPage = static_cast<int8_t>(dashboardPage);
+}
+
+void updateDashboardDynamic() {
+  const int w = display.width();
+  pushSpeedHistory(fabsf(velocityMs));
+  if (dashboardPage == 0) {
+    drawChipDiff(chipConn, 4, 30, 58, centralConnected ? "PHONE" : "PAIR",
+                 centralConnected ? COLOR_PRIMARY : COLOR_WARNING, true);
+    drawChipDiff(chipImu, 64, 30, 46, sensorFrame.imuValid ? "IMU" : "NOIMU",
+                 sensorFrame.imuValid ? COLOR_PRIMARY : COLOR_ERROR, sensorFrame.imuValid);
+    drawChipDiff(chipBat, 112, 30, 42, sensorFrame.batteryPercent >= 0 ? "BAT" : "--",
+                 sensorFrame.batteryPercent >= 20 ? COLOR_PRIMARY : COLOR_WARNING, true);
+    drawChipDiff(chipRec, 156, 30, w - 160, recording ? "REC" : "BLE",
+                 recording ? COLOR_WARNING : (centralConnected ? COLOR_PRIMARY : COLOR_PANEL_2),
+                 recording || centralConnected);
+
+    drawChangedText(dashLink,
+                    trimText(centralConnected ? "Flutter phone connected" : "Flutter > Pair > Scan BLE", 36),
+                    10, 46, 1, centralConnected ? COLOR_PRIMARY : COLOR_WARNING, COLOR_PANEL);
+    drawChangedText(dashSpeed, fmtFloat(velocityMs, 2) + " m/s", w - 10, 70, 2, COLOR_PRIMARY, COLOR_PANEL, MR_DATUM);
+    drawChangedText(dashDist, fmtFloat(distanceM, 2) + " m", w - 10, 93, 2, COLOR_PRIMARY, COLOR_PANEL, MR_DATUM);
+    drawChangedText(dashAccel, fmtFloat(accelMs2, 2) + " m/s2", w - 10, 116, 2, COLOR_PRIMARY, COLOR_PANEL, MR_DATUM);
+  } else if (dashboardPage == 1) {
+    const int x1 = 34;
+    const int x2 = w / 2 + 24;
+    drawChangedText(dashAx, fmtFloat(sensorFrame.ax, 3), x1, 36, 1, COLOR_TEXT, COLOR_PANEL);
+    drawChangedText(dashAy, fmtFloat(sensorFrame.ay, 3), x2, 36, 1, COLOR_TEXT, COLOR_PANEL);
+    drawChangedText(dashAz, fmtFloat(sensorFrame.az, 3), x1, 52, 1, COLOR_TEXT, COLOR_PANEL);
+    drawChangedText(dashGx, fmtFloat(sensorFrame.gx, 1), x2, 52, 1, COLOR_CYAN, COLOR_PANEL);
+    drawChangedText(dashGy, fmtFloat(sensorFrame.gy, 1), x1, 68, 1, COLOR_CYAN, COLOR_PANEL);
+    drawChangedText(dashGz, fmtFloat(sensorFrame.gz, 1), x2, 68, 1, COLOR_CYAN, COLOR_PANEL);
+    drawChangedText(dashBat,
+                    (sensorFrame.batteryPercent >= 0 ? String(sensorFrame.batteryPercent) + "%" : String("--"))
+                        + " " + (sensorFrame.batteryVoltageMv > 0 ? fmtFloat(sensorFrame.batteryVoltageMv / 1000.0f, 2) + "V" : String("n/a")),
+                    44, 84, 1, COLOR_TEXT, COLOR_PANEL);
+    drawChangedText(dashVolt, trimText(deviceName, 22), 44, 98, 1, COLOR_TEXT, COLOR_PANEL);
+    drawChangedText(dashBle, centralConnected ? "Connected" : "Advertising", 40, 112, 1, COLOR_CYAN, COLOR_PANEL);
+  } else if (dashboardPage == 2) {
+    float maxV = 0.5f;
+    for (int i = 0; i < speedHistorySize; ++i) {
+      if (speedHistory[i] > maxV) {
+        maxV = speedHistory[i];
+      }
+    }
+    const int plotBottom = 108;
+    const int plotTop = 46;
+    const int plotH = plotBottom - plotTop;
+    for (int i = 0; i < speedHistorySize; ++i) {
+      const int x = 8 + i * 4;
+      display.fillRect(x, plotTop, 3, plotH, COLOR_PANEL);
+      const int barH = static_cast<int>((speedHistory[i] / maxV) * plotH);
+      if (barH > 0) {
+        display.fillRect(x, plotBottom - barH, 3, barH, COLOR_PRIMARY);
+      }
+    }
+    drawChangedText(dashHistMax, "peak " + fmtFloat(maxV, 2) + " m/s", 12, 113, 1, COLOR_DIM, COLOR_PANEL);
+    drawChangedText(dashSpeed, fmtFloat(velocityMs, 2) + " m/s", w - 12, 34, 1, COLOR_TEXT, COLOR_PANEL, MR_DATUM);
+  }
+}
+
+void drawDashboard() {
+  if (dashboardDrawnPage != static_cast<int8_t>(dashboardPage)) {
+    drawDashboardStatic();
+  }
+  updateDashboardDynamic();
 }
 
 void drawPairScreen() {
@@ -542,6 +702,9 @@ void redrawScreen(bool force = false) {
     return;
   }
   lastDisplayMs = now;
+  if (force && screenMode == ScreenMode::dashboard) {
+    dashboardDrawnPage = -1;
+  }
   switch (screenMode) {
     case ScreenMode::dashboard:
       drawDashboard();
@@ -778,14 +941,10 @@ void calibrateImu() {
   float sumZ = 0.0f;
   int samples = 0;
   const uint32_t startMs = millis();
-  uint32_t lastCalDrawMs = 0;
+  drawCalibrationScreenStatic();
   while (millis() - startMs < 3000) {
     const uint32_t elapsed = millis() - startMs;
-    const uint32_t clampedElapsed = elapsed > 3000 ? 3000 : elapsed;
-    if (lastCalDrawMs == 0 || millis() - lastCalDrawMs >= 100) {
-      drawCalibrationScreen(3000 - clampedElapsed);
-      lastCalDrawMs = millis();
-    }
+    updateCalibrationProgress(3000 - (elapsed > 3000 ? 3000 : elapsed));
     SensorFrame frame;
     bool ok = false;
     if (imuDriver == ImuDriver::mpu6886) {
@@ -935,6 +1094,7 @@ class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer*) override {
     centralConnected = true;
     pairMode = false;
+    activeMtu = 512;
     Serial.println("[BLE] Central connected");
     redrawScreen(true);
   }
@@ -943,8 +1103,14 @@ class ServerCallbacks : public BLEServerCallbacks {
     centralConnected = true;
     pairMode = false;
     activeConnId = param->connect.conn_id;
+    activeMtu = 512;
     Serial.println("[BLE] Central connected");
     redrawScreen(true);
+  }
+
+  void onMtuChanged(BLEServer*, esp_ble_gatts_cb_param_t* param) override {
+    activeMtu = param->mtu.mtu > 3 ? param->mtu.mtu : 512;
+    Serial.printf("[BLE] MTU negotiated: %u\n", activeMtu);
   }
 
   void onDisconnect(BLEServer*) override {
@@ -1086,86 +1252,75 @@ void handleTimeSync(const String& payload, uint32_t nowMs) {
   notifyAck("time_sync", "ok", "Time synchronized");
 }
 
+#pragma pack(push, 1)
+struct WheelTelemetryPacket {
+  uint32_t seq;
+  uint32_t timestamp_ms;
+  int16_t  ax;            // mG (1000 = 1.000g)
+  int16_t  ay;            // mG
+  int16_t  az;            // mG
+  int16_t  gx;            // 0.1 dps
+  int16_t  gy;            // 0.1 dps
+  int16_t  gz;            // 0.1 dps
+  uint8_t  battery_pct;   // 0..100%
+  uint16_t battery_mv;    // mV
+  int16_t  velocity_cms;  // cm/s
+  uint32_t distance_cm;   // cm
+  uint8_t  flags;         // bit 0: isRecording, bit 1: imuValid, bit 2: charging
+};
+#pragma pack(pop)
+
+static_assert(sizeof(WheelTelemetryPacket) == 30, "Packet must be exactly 30 bytes");
+
 void notifyTelemetry(uint32_t nowMs) {
   if (!telemetryChar || !centralConnected) {
     return;
   }
 
-  StaticJsonDocument<896> doc;
-  char buf[896];
-  doc["device_id"] = deviceId;
-  doc["device_name"] = deviceName;
-  doc["device_type"] = "wheelchair";
-  doc["hardware_type"] = "companion_m5";
-  doc["firmware"] = FIRMWARE_VERSION;
-  doc["model"] = "M5StickCPlus2";
-  doc["seq"] = telemetrySeq;
-  doc["timestamp"] = isoTimestamp(nowMs);
-  doc["uptime_ms"] = nowMs;
-  doc["room_id"] = roomId;
-  doc["room_name"] = roomName;
+  WheelTelemetryPacket pkt;
+  pkt.seq = telemetrySeq++;
+  pkt.timestamp_ms = nowMs;
+  pkt.ax = static_cast<int16_t>(sensorFrame.ax * 1000.0f);
+  pkt.ay = static_cast<int16_t>(sensorFrame.ay * 1000.0f);
+  pkt.az = static_cast<int16_t>(sensorFrame.az * 1000.0f);
+  pkt.gx = static_cast<int16_t>(sensorFrame.gx * 10.0f);
+  pkt.gy = static_cast<int16_t>(sensorFrame.gy * 10.0f);
+  pkt.gz = static_cast<int16_t>(sensorFrame.gz * 10.0f);
+  pkt.battery_pct = static_cast<uint8_t>(sensorFrame.batteryPercent >= 0 ? sensorFrame.batteryPercent : 0);
+  pkt.battery_mv = static_cast<uint16_t>(sensorFrame.batteryVoltageMv > 0 ? sensorFrame.batteryVoltageMv : 0);
+  pkt.velocity_cms = static_cast<int16_t>(velocityMs * 100.0f);
+  pkt.distance_cm = static_cast<uint32_t>(distanceM * 100.0f);
+  pkt.flags = (recording ? 1 : 0) | (sensorFrame.imuValid ? 2 : 0) | (sensorFrame.charging ? 4 : 0);
 
-  JsonObject imu = doc.createNestedObject("imu");
-  imu["ax"] = sensorFrame.ax;
-  imu["ay"] = sensorFrame.ay;
-  imu["az"] = sensorFrame.az;
-  imu["gx"] = sensorFrame.gx;
-  imu["gy"] = sensorFrame.gy;
-  imu["gz"] = sensorFrame.gz;
-  imu["valid"] = sensorFrame.imuValid;
-
-  JsonObject motion = doc.createNestedObject("motion");
-  motion["distance_m"] = distanceM;
-  motion["velocity_ms"] = velocityMs;
-  motion["accel_ms2"] = accelMs2;
-  motion["direction"] = velocityMs > 0.01f ? 1 : (velocityMs < -0.01f ? -1 : 0);
-
-  JsonObject battery = doc.createNestedObject("battery");
-  if (sensorFrame.batteryPercent >= 0) {
-    battery["percentage"] = sensorFrame.batteryPercent;
-  } else {
-    battery["percentage"] = nullptr;
-  }
-  if (sensorFrame.batteryVoltageMv > 0) {
-    battery["voltage_v"] = sensorFrame.batteryVoltageMv / 1000.0f;
-  } else {
-    battery["voltage_v"] = nullptr;
-  }
-  battery["charging"] = sensorFrame.charging;
-
-  doc["is_recording"] = recording;
-  if (recording) {
-    doc["action_label"] = actionLabel;
-    doc["record_elapsed_ms"] = nowMs - recordStartMs;
-  }
-
-  size_t n = serializeJson(doc, buf, sizeof(buf));
-  if (n > 0 && n < sizeof(buf)) {
-    telemetryChar->setValue(reinterpret_cast<uint8_t*>(buf), n);
-    telemetryChar->notify();
-    telemetrySeq++;
-  }
+  telemetryChar->setValue(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt));
+  telemetryChar->notify();
 }
 
 void setupBle() {
   writeMutex = xSemaphoreCreateMutex();
   BLEDevice::init(deviceName.c_str());
-  BLEDevice::setMTU(512);
+  BLEDevice::setMTU(517);
 
   bleServer = BLEDevice::createServer();
   bleServer->setCallbacks(new ServerCallbacks());
   BLEService* service = bleServer->createService(SERVICE_UUID);
 
   deviceInfoChar = service->createCharacteristic(DEVICE_INFO_UUID, BLECharacteristic::PROPERTY_READ);
-  telemetryChar = service->createCharacteristic(TELEMETRY_UUID, BLECharacteristic::PROPERTY_NOTIFY);
-  telemetryChar->addDescriptor(new BLE2902());
+  telemetryChar = service->createCharacteristic(
+      TELEMETRY_UUID, BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ);
+  BLE2902* telemetry2902 = new BLE2902();
+  telemetry2902->setNotifications(true);
+  telemetryChar->addDescriptor(telemetry2902);
 
   BLECharacteristic* commandChar = service->createCharacteristic(
       COMMAND_UUID, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
   commandChar->setCallbacks(new WriteCallbacks(COMMAND_TARGET));
 
-  ackChar = service->createCharacteristic(ACK_UUID, BLECharacteristic::PROPERTY_NOTIFY);
-  ackChar->addDescriptor(new BLE2902());
+  ackChar = service->createCharacteristic(
+      ACK_UUID, BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ);
+  BLE2902* ack2902 = new BLE2902();
+  ack2902->setNotifications(true);
+  ackChar->addDescriptor(ack2902);
 
   BLECharacteristic* roomChar = service->createCharacteristic(
       ROOM_CONFIG_UUID, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
@@ -1262,7 +1417,7 @@ void handleButtons() {
       startPairAdvertising();
     }
     if (buttonB.pressedEvent) {
-      dashboardPage = (dashboardPage + 1) % 2;
+      dashboardPage = (dashboardPage + 1) % 3;
       redrawScreen(true);
     }
     if (buttonC.pressedEvent) {

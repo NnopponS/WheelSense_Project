@@ -728,22 +728,21 @@ async def test_mcp_scope_requirement_enforcement():
 
 
 @pytest.mark.asyncio
-async def test_supervisor_has_limited_write_access(
+async def test_supervisor_inherits_operational_lead_write_access(
     db_session: AsyncSession,
     policy_test_workspace: Workspace,
     policy_supervisor_user: User,
     policy_patients: list[Patient],
 ):
-    """Test that supervisor has limited write access - no patient writes."""
-    from app.api.dependencies import ROLE_TOKEN_SCOPES
+    """Canonical supervisor inherits the approved legacy head-nurse scope union."""
+    from app.api.dependencies import resolve_effective_token_scopes
 
-    supervisor_scopes = ROLE_TOKEN_SCOPES.get("supervisor", set())
+    supervisor_scopes = resolve_effective_token_scopes("supervisor", [])
 
     # Supervisor can read patients
     assert "patients.read" in supervisor_scopes
 
-    # Supervisor cannot write patients
-    assert "patients.write" not in supervisor_scopes
+    assert "patients.write" in supervisor_scopes
 
     # But can manage alerts
     assert "alerts.manage" in supervisor_scopes

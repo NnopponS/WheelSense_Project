@@ -24,17 +24,12 @@ import { useTranslation } from "@/lib/i18n";
 import { workflowJobStepAttachmentDownloadUrl } from "@/lib/workflowJobs";
 import { WorkflowJobCreateDialog } from "@/components/workflow/WorkflowJobCreateDialog";
 
-export type WorkflowJobsPanelVariant = "head_caregiver" | "caregiver";
-
-/** Legacy cache-key prefix per variant (preserves cache compatibility). */
-const CACHE_PREFIX: Record<WorkflowJobsPanelVariant, string> = {
-  head_caregiver: "head-nurse",
-  caregiver: "observer",
-};
+export type WorkflowJobsPanelVariant = "head-nurse" | "observer" | "supervisor";
 
 const JOBS_QUERY: Record<WorkflowJobsPanelVariant, readonly string[]> = {
-  head_caregiver: ["head-nurse", "workflow-jobs"],
-  caregiver: ["observer", "workflow-jobs"],
+  "head-nurse": ["head-nurse", "workflow-jobs"],
+  observer: ["caregiver", "workflow-jobs"],
+  supervisor: ["head_caregiver", "workflow-jobs"],
 };
 
 /** Invalidate companion `care_tasks` feeds (shadow row per checklist job) + ops console. */
@@ -42,10 +37,10 @@ function invalidateWorkflowTaskQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   variant: WorkflowJobsPanelVariant,
 ) {
-  const prefix = CACHE_PREFIX[variant];
-  void queryClient.invalidateQueries({ queryKey: [prefix, "tasks"] });
-  void queryClient.invalidateQueries({ queryKey: [variant, "workflow", "tasks"] });
-  void queryClient.invalidateQueries({ queryKey: [prefix, "dashboard", "tasks"] });
+  const role = variant === "head-nurse" ? "head_nurse" : variant;
+  void queryClient.invalidateQueries({ queryKey: [variant, "tasks"] });
+  void queryClient.invalidateQueries({ queryKey: [role, "workflow", "tasks"] });
+  void queryClient.invalidateQueries({ queryKey: [variant, "dashboard", "tasks"] });
 }
 
 function stepProgress(job: CareWorkflowJobOut): { done: number; total: number } {
@@ -56,7 +51,7 @@ function stepProgress(job: CareWorkflowJobOut): { done: number; total: number } 
 }
 
 /** Mirrors `STAFF_WIDE_ROLES` + unassigned-step rule in `care_workflow_jobs.patch_step`. */
-const COORDINATOR_ROLES = new Set(["admin", "head_caregiver"]);
+const COORDINATOR_ROLES = new Set(["admin", "head_caregiver", "head_caregiver"]);
 
 function actorMayEditStep(
   actorUserId: number | undefined,

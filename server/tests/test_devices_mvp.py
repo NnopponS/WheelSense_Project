@@ -584,6 +584,148 @@ async def test_mqtt_ack_updates_dispatch(admin_user: User, db_session):
 
 
 @pytest.mark.asyncio
+async def test_assign_task_dispatch_to_room_node(admin_user: User, db_session):
+    from app.models.core import DeviceCommandDispatch
+    from app.models.tasks import Task
+    from app.services.device_management import dispatch_assign_task_to_room_node
+
+    ws = admin_user.workspace_id
+    room = Room(workspace_id=ws, name="Room 101", node_device_id="CAM_E84_T1")
+    caregiver = CareGiver(
+        workspace_id=ws, first_name="Ann", last_name="Nurse", role="caregiver", phone="", email=""
+    )
+    db_session.add_all(
+        [
+            room,
+            caregiver,
+            Device(
+                workspace_id=ws,
+                device_id="CAM_E84_T1",
+                device_type="camera",
+                hardware_type="node",
+                display_name="E84 node",
+            ),
+        ]
+    )
+    await db_session.flush()
+    assignee = User(
+        workspace_id=ws,
+        username="cg_e84",
+        hashed_password="x",
+        role="caregiver",
+        caregiver_id=caregiver.id,
+    )
+    patient = Patient(workspace_id=ws, first_name="P", last_name="One", room_id=room.id)
+    db_session.add_all([assignee, patient])
+    await db_session.flush()
+    task = Task(
+        workspace_id=ws,
+        task_type="specific",
+        patient_id=patient.id,
+        title="Check vitals",
+        assigned_user_id=assignee.id,
+        assigned_user_ids=[assignee.id],
+    )
+    db_session.add(task)
+    await db_session.commit()
+
+    with patch(
+        "app.services.device_management.publish_mqtt",
+        new_callable=AsyncMock,
+    ) as pub:
+        await dispatch_assign_task_to_room_node(db_session, task)
+
+    pub.assert_awaited_once()
+    topic, payload = pub.await_args.args
+    assert topic == "WheelSense/camera/CAM_E84_T1/control"
+    assert payload["command"] == "assign_task"
+    assert payload["task_id"] == str(task.id)
+    assert payload["task_title"] == "Check vitals"
+    assert payload["room_name"] == "Room 101"
+    assert payload["caregiver_name"] == "Ann Nurse"
+
+    row = (
+        await db_session.execute(
+            select(DeviceCommandDispatch).where(
+                DeviceCommandDispatch.device_id == "CAM_E84_T1"
+            )
+        )
+    ).scalar_one()
+    assert row.payload["command"] == "assign_task"
+
+
+@pytest.mark.asyncio
+async def test_assign_task_dispatch_skipped_without_room(admin_user: User, db_session):
+    from app.models.tasks import Task
+    from app.services.device_management import dispatch_assign_task_to_room_node
+
+    ws = admin_user.workspace_id
+    patient = Patient(workspace_id=ws, first_name="No", last_name="Room")
+    assignee = User(
+        workspace_id=ws, username="cg_noroom", hashed_password="x", role="caregiver"
+    )
+    db_session.add_all([patient, assignee])
+    await db_session.flush()
+    task = Task(
+        workspace_id=ws,
+        task_type="specific",
+        patient_id=patient.id,
+        title="No room task",
+        assigned_user_id=assignee.id,
+        assigned_user_ids=[assignee.id],
+    )
+    db_session.add(task)
+    await db_session.commit()
+
+    with patch(
+        "app.services.device_management.publish_mqtt",
+        new_callable=AsyncMock,
+    ) as pub:
+        await dispatch_assign_task_to_room_node(db_session, task)
+    pub.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_assign_task_confirm_ack_starts_task(admin_user: User, db_session):
+    from app.models.core import DeviceCommandDispatch
+    from app.models.tasks import Task
+    from app.services.device_management import apply_command_ack
+
+    ws = admin_user.workspace_id
+    task = Task(workspace_id=ws, task_type="specific", title="Confirm me")
+    db_session.add(task)
+    await db_session.flush()
+    cmd_id = "bbbbbbbb-cccc-dddd-eeee-ffffffffffff"
+    db_session.add(
+        DeviceCommandDispatch(
+            id=cmd_id,
+            workspace_id=ws,
+            device_id="CAM_E84_T2",
+            topic="WheelSense/camera/CAM_E84_T2/control",
+            payload={"command": "assign_task", "task_id": str(task.id)},
+            status="sent",
+        )
+    )
+    await db_session.commit()
+
+    ok = await apply_command_ack(
+        db_session, cmd_id, {"command_id": cmd_id, "message": "task_confirmed"}
+    )
+    assert ok is True
+    await db_session.refresh(task)
+    assert task.status == "in_progress"
+
+    task.status = "pending"
+    await db_session.commit()
+    ok = await apply_command_ack(
+        db_session, cmd_id, {"command_id": cmd_id, "message": "task_dismissed"}
+    )
+    assert ok is True
+    await db_session.refresh(task)
+    assert task.status == "pending"
+
+
+@pytest.mark.asyncio
 async def test_list_device_activity_after_registry_create(client: AsyncClient):
     res = await client.post(
         "/api/devices",

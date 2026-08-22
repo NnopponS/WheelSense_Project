@@ -28,7 +28,7 @@ interface SupervisorHealthQueueProps {
  * Shows the top 5 tasks assigned to the current supervisor that are still
  * pending or in progress, sorted by priority then due time. This keeps the
  * supervisor's "what should I do" view above the fold without removing the
- * fuller workflow pages at `/supervisor/tasks` and `/supervisor/workflow`.
+ * fuller workflow pages at `/head-caregiver/tasks` and `/head-caregiver/workflow`.
  */
 export function SupervisorHealthQueue({
   currentUserId,

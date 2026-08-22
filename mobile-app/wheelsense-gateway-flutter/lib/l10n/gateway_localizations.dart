@@ -82,6 +82,9 @@ class GatewayStrings {
   String get appTitle => 'WheelSense';
   String get navOverview => pick('Overview', 'ภาพรวม');
   String get navDevices => pick('Devices', 'อุปกรณ์');
+  String get navMonitor => pick('Live Monitor', 'มอนิเตอร์สด');
+  String get navPolarStudio => pick('Polar Studio', 'โพลาร์สตูดิโอ');
+  String get navNodeRadar => pick('Node Radar', 'เรดาร์โหนด');
   String get navOperations => pick('Operations', 'ปฏิบัติการ');
   String get navPortal => pick('Portal', 'พอร์ทัล');
   String get navSettings => pick('Settings', 'ตั้งค่า');
@@ -345,6 +348,37 @@ class GatewayStrings {
     'Alerts appear here after the backend publishes to the linked patient or gateway topic.',
     'แจ้งเตือนจะแสดงเมื่อ backend ส่งมาที่ topic ของผู้ป่วยหรือเกตเวย์',
   );
+  String get monitorPolarTitle => pick('Polar vitals', 'ข้อมูลชีพจร Polar');
+  String get monitorPolarSubtitle => pick(
+    'Live heart rate, HRV, and SpO2 from the paired Polar sensor.',
+    'ชีพจร ค่า HRV และ SpO2 แบบสดจากเซนเซอร์ Polar',
+  );
+  String get monitorMotionTitle => pick('Wheelchair motion', 'การเคลื่อนไหวรถเข็น');
+  String get monitorMotionSubtitle => pick(
+    'Live distance, velocity, and acceleration from the M5 sensor.',
+    'ระยะทาง ความเร็ว และความเร่งแบบสดจากเซนเซอร์ M5',
+  );
+  String get monitorPolarLink => pick('Polar link', 'การเชื่อมต่อ Polar');
+  String get monitorM5Link => pick('M5 link', 'การเชื่อมต่อ M5');
+  String get monitorRecording => pick('Recording', 'กำลังบันทึก');
+  String get monitorRelaying => pick('Relaying', 'กำลังส่งข้อมูล');
+  String get monitorPairHint => pick(
+    'Pair the sensor from the Devices tab to see live data.',
+    'จับคู่เซนเซอร์ที่หน้าอุปกรณ์เพื่อดูข้อมูลสด',
+  );
+  String get monitorHrv => pick('HRV (RMSSD)', 'HRV (RMSSD)');
+  String get monitorSpo2 => pick('SpO2', 'SpO2');
+  String get monitorSpo2Estimated =>
+      pick('Estimated from PPG', 'ประมาณจากสัญญาณ PPG');
+  String get monitorHrRange => pick('HR range', 'ช่วงชีพจร');
+  String get monitorSensorBattery => pick('Sensor battery', 'แบตเตอรี่เซนเซอร์');
+  String get monitorCharging => pick('Charging', 'กำลังชาร์จ');
+  String get monitorContactOn => pick('Contact', 'สัมผัสผิวหนัง');
+  String get monitorContactOff => pick('No contact', 'ไม่สัมผัสผิวหนัง');
+  String monitorPublishAge(Duration age) => age.inMinutes < 1
+      ? pick('${age.inSeconds}s ago', '${age.inSeconds} วินาทีที่แล้ว')
+      : pick('${age.inMinutes}m ago', '${age.inMinutes} นาทีที่แล้ว');
+
   String get portal => pick('Portal', 'พอร์ทัล');
   String get roomPredictionTitle => pick('Room prediction', 'ผลทำนายห้อง');
   String get roomPredictionSubtitle => pick(

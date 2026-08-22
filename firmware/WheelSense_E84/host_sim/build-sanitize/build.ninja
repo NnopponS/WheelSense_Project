@@ -91,8 +91,6 @@ build tests/CMakeFiles/test_protocol.dir/test_protocol.c.obj: C_COMPILER__test_p
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_protocol.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_protocol.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_protocol.dir\
-  TARGET_PDB = tests\test_protocol.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_protocol.dir
 
 build tests/CMakeFiles/test_protocol.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_protocol_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_protocol
@@ -101,8 +99,6 @@ build tests/CMakeFiles/test_protocol.dir/C_/Users/worap/Documents/Project/wheels
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_protocol.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_protocol.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_protocol.dir\
-  TARGET_PDB = tests\test_protocol.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_protocol.dir
 
 
@@ -120,10 +116,9 @@ build tests/test_protocol.exe: C_EXECUTABLE_LINKER__test_protocol_ tests/CMakeFi
   OBJECT_DIR = tests\CMakeFiles\test_protocol.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_protocol.dir\
   TARGET_FILE = tests\test_protocol.exe
   TARGET_IMPLIB = tests\libtest_protocol.dll.a
-  TARGET_PDB = tests\test_protocol.pdb
+  TARGET_PDB = test_protocol.exe.dbg
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_protocol.dir
 
 # =============================================================================
@@ -141,8 +136,6 @@ build tests/CMakeFiles/test_ipc_messages.dir/test_ipc_messages.c.obj: C_COMPILER
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_messages.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_messages.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_messages.dir\
-  TARGET_PDB = tests\test_ipc_messages.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_messages.dir
 
 build tests/CMakeFiles/test_ipc_messages.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_ipc_messages_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_ipc_messages
@@ -151,8 +144,6 @@ build tests/CMakeFiles/test_ipc_messages.dir/C_/Users/worap/Documents/Project/wh
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_messages.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_messages.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_messages.dir\
-  TARGET_PDB = tests\test_ipc_messages.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_messages.dir
 
 build tests/CMakeFiles/test_ipc_messages.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj: C_COMPILER__test_ipc_messages_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c || cmake_object_order_depends_target_test_ipc_messages
@@ -161,8 +152,6 @@ build tests/CMakeFiles/test_ipc_messages.dir/8b91e1091ec70afd669f0f97978a8367/fi
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_messages.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_messages.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_messages.dir\
-  TARGET_PDB = tests\test_ipc_messages.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_messages.dir
 
 build tests/CMakeFiles/test_ipc_messages.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj: C_COMPILER__test_ipc_messages_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c || cmake_object_order_depends_target_test_ipc_messages
@@ -171,8 +160,6 @@ build tests/CMakeFiles/test_ipc_messages.dir/8b91e1091ec70afd669f0f97978a8367/fi
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_messages.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_messages.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_messages.dir\
-  TARGET_PDB = tests\test_ipc_messages.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_messages.dir
 
 
@@ -190,10 +177,9 @@ build tests/test_ipc_messages.exe: C_EXECUTABLE_LINKER__test_ipc_messages_ tests
   OBJECT_DIR = tests\CMakeFiles\test_ipc_messages.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_messages.dir\
   TARGET_FILE = tests\test_ipc_messages.exe
   TARGET_IMPLIB = tests\libtest_ipc_messages.dll.a
-  TARGET_PDB = tests\test_ipc_messages.pdb
+  TARGET_PDB = test_ipc_messages.exe.dbg
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_messages.dir
 
 # =============================================================================
@@ -211,8 +197,6 @@ build tests/CMakeFiles/test_ipc_queue.dir/test_ipc_queue.c.obj: C_COMPILER__test
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_queue.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_queue.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_queue.dir\
-  TARGET_PDB = tests\test_ipc_queue.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_queue.dir
 
 build tests/CMakeFiles/test_ipc_queue.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_ipc_queue_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_ipc_queue
@@ -221,8 +205,6 @@ build tests/CMakeFiles/test_ipc_queue.dir/C_/Users/worap/Documents/Project/wheel
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_queue.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_queue.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_queue.dir\
-  TARGET_PDB = tests\test_ipc_queue.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_queue.dir
 
 build tests/CMakeFiles/test_ipc_queue.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj: C_COMPILER__test_ipc_queue_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c || cmake_object_order_depends_target_test_ipc_queue
@@ -231,8 +213,6 @@ build tests/CMakeFiles/test_ipc_queue.dir/8b91e1091ec70afd669f0f97978a8367/firmw
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_queue.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_queue.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_queue.dir\
-  TARGET_PDB = tests\test_ipc_queue.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_queue.dir
 
 build tests/CMakeFiles/test_ipc_queue.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c.obj: C_COMPILER__test_ipc_queue_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c || cmake_object_order_depends_target_test_ipc_queue
@@ -241,8 +221,6 @@ build tests/CMakeFiles/test_ipc_queue.dir/C_/Users/worap/Documents/Project/wheel
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_ipc_queue.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_queue.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_queue.dir\
-  TARGET_PDB = tests\test_ipc_queue.pdb
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_queue.dir
 
 
@@ -260,91 +238,79 @@ build tests/test_ipc_queue.exe: C_EXECUTABLE_LINKER__test_ipc_queue_ tests/CMake
   OBJECT_DIR = tests\CMakeFiles\test_ipc_queue.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_queue.dir\
   TARGET_FILE = tests\test_ipc_queue.exe
   TARGET_IMPLIB = tests\libtest_ipc_queue.dll.a
-  TARGET_PDB = tests\test_ipc_queue.pdb
+  TARGET_PDB = test_ipc_queue.exe.dbg
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_queue.dir
 
 # =============================================================================
-# Object build statements for EXECUTABLE target test_ipc_endpoint
+# Object build statements for EXECUTABLE target test_ipc_transport
 
 
 #############################################
-# Order-only phony target for test_ipc_endpoint
+# Order-only phony target for test_ipc_transport
 
-build cmake_object_order_depends_target_test_ipc_endpoint: phony || .
+build cmake_object_order_depends_target_test_ipc_transport: phony || .
 
-build tests/CMakeFiles/test_ipc_endpoint.dir/test_ipc_endpoint.c.obj: C_COMPILER__test_ipc_endpoint_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ipc_endpoint.c || cmake_object_order_depends_target_test_ipc_endpoint
-  DEP_FILE = tests\CMakeFiles\test_ipc_endpoint.dir\test_ipc_endpoint.c.obj.d
+build tests/CMakeFiles/test_ipc_transport.dir/test_ipc_transport.c.obj: C_COMPILER__test_ipc_transport_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ipc_transport.c || cmake_object_order_depends_target_test_ipc_transport
+  DEP_FILE = tests\CMakeFiles\test_ipc_transport.dir\test_ipc_transport.c.obj.d
   FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
-  OBJECT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
-  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_endpoint.dir\
-  TARGET_PDB = tests\test_ipc_endpoint.pdb
-  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
+  OBJECT_DIR = tests\CMakeFiles\test_ipc_transport.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_transport.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_transport.dir
 
-build tests/CMakeFiles/test_ipc_endpoint.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_ipc_endpoint_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_ipc_endpoint
-  DEP_FILE = tests\CMakeFiles\test_ipc_endpoint.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_protocol.c.obj.d
+build tests/CMakeFiles/test_ipc_transport.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_ipc_transport_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_ipc_transport
+  DEP_FILE = tests\CMakeFiles\test_ipc_transport.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_protocol.c.obj.d
   FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
-  OBJECT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
-  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_endpoint.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_endpoint.dir\
-  TARGET_PDB = tests\test_ipc_endpoint.pdb
-  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
+  OBJECT_DIR = tests\CMakeFiles\test_ipc_transport.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_transport.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_transport.dir
 
-build tests/CMakeFiles/test_ipc_endpoint.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj: C_COMPILER__test_ipc_endpoint_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c || cmake_object_order_depends_target_test_ipc_endpoint
-  DEP_FILE = tests\CMakeFiles\test_ipc_endpoint.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ipc_messages.c.obj.d
+build tests/CMakeFiles/test_ipc_transport.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj: C_COMPILER__test_ipc_transport_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c || cmake_object_order_depends_target_test_ipc_transport
+  DEP_FILE = tests\CMakeFiles\test_ipc_transport.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ipc_messages.c.obj.d
   FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
-  OBJECT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
-  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_endpoint.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_endpoint.dir\
-  TARGET_PDB = tests\test_ipc_endpoint.pdb
-  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
+  OBJECT_DIR = tests\CMakeFiles\test_ipc_transport.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_transport.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_transport.dir
 
-build tests/CMakeFiles/test_ipc_endpoint.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c.obj: C_COMPILER__test_ipc_endpoint_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c || cmake_object_order_depends_target_test_ipc_endpoint
-  DEP_FILE = tests\CMakeFiles\test_ipc_endpoint.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_ipc_queue.c.obj.d
+build tests/CMakeFiles/test_ipc_transport.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c.obj: C_COMPILER__test_ipc_transport_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c || cmake_object_order_depends_target_test_ipc_transport
+  DEP_FILE = tests\CMakeFiles\test_ipc_transport.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_ipc_queue.c.obj.d
   FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
-  OBJECT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
-  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_endpoint.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_endpoint.dir\
-  TARGET_PDB = tests\test_ipc_endpoint.pdb
-  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
+  OBJECT_DIR = tests\CMakeFiles\test_ipc_transport.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_transport.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_transport.dir
 
-build tests/CMakeFiles/test_ipc_endpoint.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_endpoint.c.obj: C_COMPILER__test_ipc_endpoint_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_endpoint.c || cmake_object_order_depends_target_test_ipc_endpoint
-  DEP_FILE = tests\CMakeFiles\test_ipc_endpoint.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ipc_endpoint.c.obj.d
+build tests/CMakeFiles/test_ipc_transport.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_transport.c.obj: C_COMPILER__test_ipc_transport_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_transport.c || cmake_object_order_depends_target_test_ipc_transport
+  DEP_FILE = tests\CMakeFiles\test_ipc_transport.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ipc_transport.c.obj.d
   FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
-  OBJECT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
-  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_endpoint.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_endpoint.dir\
-  TARGET_PDB = tests\test_ipc_endpoint.pdb
-  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
+  OBJECT_DIR = tests\CMakeFiles\test_ipc_transport.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ipc_transport.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_transport.dir
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target test_ipc_endpoint
+# Link build statements for EXECUTABLE target test_ipc_transport
 
 
 #############################################
-# Link the executable tests\test_ipc_endpoint.exe
+# Link the executable tests\test_ipc_transport.exe
 
-build tests/test_ipc_endpoint.exe: C_EXECUTABLE_LINKER__test_ipc_endpoint_ tests/CMakeFiles/test_ipc_endpoint.dir/test_ipc_endpoint.c.obj tests/CMakeFiles/test_ipc_endpoint.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj tests/CMakeFiles/test_ipc_endpoint.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj tests/CMakeFiles/test_ipc_endpoint.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c.obj tests/CMakeFiles/test_ipc_endpoint.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_endpoint.c.obj
+build tests/test_ipc_transport.exe: C_EXECUTABLE_LINKER__test_ipc_transport_ tests/CMakeFiles/test_ipc_transport.dir/test_ipc_transport.c.obj tests/CMakeFiles/test_ipc_transport.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj tests/CMakeFiles/test_ipc_transport.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj tests/CMakeFiles/test_ipc_transport.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_queue.c.obj tests/CMakeFiles/test_ipc_transport.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_transport.c.obj
   FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
   LINK_FLAGS = -fsanitize=address,undefined
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
-  OBJECT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
+  OBJECT_DIR = tests\CMakeFiles\test_ipc_transport.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_ipc_endpoint.dir\
-  TARGET_FILE = tests\test_ipc_endpoint.exe
-  TARGET_IMPLIB = tests\libtest_ipc_endpoint.dll.a
-  TARGET_PDB = tests\test_ipc_endpoint.pdb
-  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_endpoint.dir
+  TARGET_FILE = tests\test_ipc_transport.exe
+  TARGET_IMPLIB = tests\libtest_ipc_transport.dll.a
+  TARGET_PDB = test_ipc_transport.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ipc_transport.dir
 
 # =============================================================================
 # Object build statements for OBJECT_LIBRARY target test_shared_types
@@ -361,8 +327,6 @@ build tests/CMakeFiles/test_shared_types.dir/test_shared_types.c.obj: C_COMPILER
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_shared_types.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_shared_types.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_shared_types.dir\
-  TARGET_PDB = ""
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_shared_types.dir
 
 
@@ -387,8 +351,6 @@ build tests/CMakeFiles/test_feature_matrix_default.dir/test_feature_matrix.c.obj
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_feature_matrix_default.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_feature_matrix_default.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_feature_matrix_default.dir\
-  TARGET_PDB = ""
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_feature_matrix_default.dir
 
 
@@ -414,8 +376,6 @@ build tests/CMakeFiles/test_feature_matrix_minimal.dir/test_feature_matrix.c.obj
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_feature_matrix_minimal.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_feature_matrix_minimal.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_feature_matrix_minimal.dir\
-  TARGET_PDB = ""
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_feature_matrix_minimal.dir
 
 
@@ -441,8 +401,6 @@ build tests/CMakeFiles/test_feature_matrix_host.dir/test_feature_matrix.c.obj: C
   INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
   OBJECT_DIR = tests\CMakeFiles\test_feature_matrix_host.dir
   OBJECT_FILE_DIR = tests\CMakeFiles\test_feature_matrix_host.dir
-  TARGET_COMPILE_PDB = tests\CMakeFiles\test_feature_matrix_host.dir\
-  TARGET_PDB = ""
   TARGET_SUPPORT_DIR = tests\CMakeFiles\test_feature_matrix_host.dir
 
 
@@ -451,6 +409,438 @@ build tests/CMakeFiles/test_feature_matrix_host.dir/test_feature_matrix.c.obj: C
 # Object library test_feature_matrix_host
 
 build tests/test_feature_matrix_host: phony tests/CMakeFiles/test_feature_matrix_host.dir/test_feature_matrix.c.obj
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_environment_contract
+
+
+#############################################
+# Order-only phony target for test_environment_contract
+
+build cmake_object_order_depends_target_test_environment_contract: phony || .
+
+build tests/CMakeFiles/test_environment_contract.dir/test_environment_contract.c.obj: C_COMPILER__test_environment_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_environment_contract.c || cmake_object_order_depends_target_test_environment_contract
+  DEP_FILE = tests\CMakeFiles\test_environment_contract.dir\test_environment_contract.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_environment_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_environment_contract.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_environment_contract.dir
+
+build tests/CMakeFiles/test_environment_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj: C_COMPILER__test_environment_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_environment.c || cmake_object_order_depends_target_test_environment_contract
+  DEP_FILE = tests\CMakeFiles\test_environment_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_environment.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_environment_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_environment_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_environment_contract.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_environment_contract
+
+
+#############################################
+# Link the executable tests\test_environment_contract.exe
+
+build tests/test_environment_contract.exe: C_EXECUTABLE_LINKER__test_environment_contract_ tests/CMakeFiles/test_environment_contract.dir/test_environment_contract.c.obj tests/CMakeFiles/test_environment_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_environment_contract.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_environment_contract.exe
+  TARGET_IMPLIB = tests\libtest_environment_contract.dll.a
+  TARGET_PDB = test_environment_contract.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_environment_contract.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_orientation_contract
+
+
+#############################################
+# Order-only phony target for test_orientation_contract
+
+build cmake_object_order_depends_target_test_orientation_contract: phony || .
+
+build tests/CMakeFiles/test_orientation_contract.dir/test_orientation_contract.c.obj: C_COMPILER__test_orientation_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_orientation_contract.c || cmake_object_order_depends_target_test_orientation_contract
+  DEP_FILE = tests\CMakeFiles\test_orientation_contract.dir\test_orientation_contract.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_orientation_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_orientation_contract.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_orientation_contract.dir
+
+build tests/CMakeFiles/test_orientation_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c.obj: C_COMPILER__test_orientation_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c || cmake_object_order_depends_target_test_orientation_contract
+  DEP_FILE = tests\CMakeFiles\test_orientation_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_imu_orientation.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_orientation_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_orientation_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_orientation_contract.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_orientation_contract
+
+
+#############################################
+# Link the executable tests\test_orientation_contract.exe
+
+build tests/test_orientation_contract.exe: C_EXECUTABLE_LINKER__test_orientation_contract_ tests/CMakeFiles/test_orientation_contract.dir/test_orientation_contract.c.obj tests/CMakeFiles/test_orientation_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_orientation_contract.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_orientation_contract.exe
+  TARGET_IMPLIB = tests\libtest_orientation_contract.dll.a
+  TARGET_PDB = test_orientation_contract.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_orientation_contract.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_environment_conversion
+
+
+#############################################
+# Order-only phony target for test_environment_conversion
+
+build cmake_object_order_depends_target_test_environment_conversion: phony || .
+
+build tests/CMakeFiles/test_environment_conversion.dir/test_environment_conversion.c.obj: C_COMPILER__test_environment_conversion_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_environment_conversion.c || cmake_object_order_depends_target_test_environment_conversion
+  DEP_FILE = tests\CMakeFiles\test_environment_conversion.dir\test_environment_conversion.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_environment_conversion.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_environment_conversion.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_environment_conversion.dir
+
+build tests/CMakeFiles/test_environment_conversion.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj: C_COMPILER__test_environment_conversion_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_environment.c || cmake_object_order_depends_target_test_environment_conversion
+  DEP_FILE = tests\CMakeFiles\test_environment_conversion.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_environment.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_environment_conversion.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_environment_conversion.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_environment_conversion.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_environment_conversion
+
+
+#############################################
+# Link the executable tests\test_environment_conversion.exe
+
+build tests/test_environment_conversion.exe: C_EXECUTABLE_LINKER__test_environment_conversion_ tests/CMakeFiles/test_environment_conversion.dir/test_environment_conversion.c.obj tests/CMakeFiles/test_environment_conversion.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_environment_conversion.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_environment_conversion.exe
+  TARGET_IMPLIB = tests\libtest_environment_conversion.dll.a
+  TARGET_PDB = test_environment_conversion.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_environment_conversion.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_orientation_state
+
+
+#############################################
+# Order-only phony target for test_orientation_state
+
+build cmake_object_order_depends_target_test_orientation_state: phony || .
+
+build tests/CMakeFiles/test_orientation_state.dir/test_orientation_state.c.obj: C_COMPILER__test_orientation_state_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_orientation_state.c || cmake_object_order_depends_target_test_orientation_state
+  DEP_FILE = tests\CMakeFiles\test_orientation_state.dir\test_orientation_state.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_orientation_state.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_orientation_state.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_orientation_state.dir
+
+build tests/CMakeFiles/test_orientation_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c.obj: C_COMPILER__test_orientation_state_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c || cmake_object_order_depends_target_test_orientation_state
+  DEP_FILE = tests\CMakeFiles\test_orientation_state.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_imu_orientation.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_orientation_state.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_orientation_state.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_orientation_state.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_orientation_state
+
+
+#############################################
+# Link the executable tests\test_orientation_state.exe
+
+build tests/test_orientation_state.exe: C_EXECUTABLE_LINKER__test_orientation_state_ tests/CMakeFiles/test_orientation_state.dir/test_orientation_state.c.obj tests/CMakeFiles/test_orientation_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_orientation_state.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_orientation_state.exe
+  TARGET_IMPLIB = tests\libtest_orientation_state.dll.a
+  TARGET_PDB = test_orientation_state.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_orientation_state.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_sensor_schedule
+
+
+#############################################
+# Order-only phony target for test_sensor_schedule
+
+build cmake_object_order_depends_target_test_sensor_schedule: phony || .
+
+build tests/CMakeFiles/test_sensor_schedule.dir/test_sensor_schedule.c.obj: C_COMPILER__test_sensor_schedule_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_sensor_schedule.c || cmake_object_order_depends_target_test_sensor_schedule
+  DEP_FILE = tests\CMakeFiles\test_sensor_schedule.dir\test_sensor_schedule.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_sensor_schedule.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_sensor_schedule.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_sensor_schedule.dir
+
+build tests/CMakeFiles/test_sensor_schedule.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj: C_COMPILER__test_sensor_schedule_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_environment.c || cmake_object_order_depends_target_test_sensor_schedule
+  DEP_FILE = tests\CMakeFiles\test_sensor_schedule.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_environment.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_sensor_schedule.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_sensor_schedule.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_sensor_schedule.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_sensor_schedule
+
+
+#############################################
+# Link the executable tests\test_sensor_schedule.exe
+
+build tests/test_sensor_schedule.exe: C_EXECUTABLE_LINKER__test_sensor_schedule_ tests/CMakeFiles/test_sensor_schedule.dir/test_sensor_schedule.c.obj tests/CMakeFiles/test_sensor_schedule.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_sensor_schedule.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_sensor_schedule.exe
+  TARGET_IMPLIB = tests\libtest_sensor_schedule.dll.a
+  TARGET_PDB = test_sensor_schedule.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_sensor_schedule.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_ui_state
+
+
+#############################################
+# Order-only phony target for test_ui_state
+
+build cmake_object_order_depends_target_test_ui_state: phony || .
+
+build tests/CMakeFiles/test_ui_state.dir/test_ui_state.c.obj: C_COMPILER__test_ui_state_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ui_state.c || cmake_object_order_depends_target_test_ui_state
+  DEP_FILE = tests\CMakeFiles\test_ui_state.dir\test_ui_state.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_state.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_state.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_state.dir
+
+build tests/CMakeFiles/test_ui_state.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj: C_COMPILER__test_ui_state_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c || cmake_object_order_depends_target_test_ui_state
+  DEP_FILE = tests\CMakeFiles\test_ui_state.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_ui_state.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_state.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_state.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_state.dir
+
+build tests/CMakeFiles/test_ui_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj: C_COMPILER__test_ui_state_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c || cmake_object_order_depends_target_test_ui_state
+  DEP_FILE = tests\CMakeFiles\test_ui_state.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ipc_messages.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_state.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_state.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_state.dir
+
+build tests/CMakeFiles/test_ui_state.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_ui_state_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_ui_state
+  DEP_FILE = tests\CMakeFiles\test_ui_state.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_protocol.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_state.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_state.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_state.dir
+
+build tests/CMakeFiles/test_ui_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj: C_COMPILER__test_ui_state_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c || cmake_object_order_depends_target_test_ui_state
+  DEP_FILE = tests\CMakeFiles\test_ui_state.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ble_payloads.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_state.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_state.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_state.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_ui_state
+
+
+#############################################
+# Link the executable tests\test_ui_state.exe
+
+build tests/test_ui_state.exe: C_EXECUTABLE_LINKER__test_ui_state_ tests/CMakeFiles/test_ui_state.dir/test_ui_state.c.obj tests/CMakeFiles/test_ui_state.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj tests/CMakeFiles/test_ui_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj tests/CMakeFiles/test_ui_state.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj tests/CMakeFiles/test_ui_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_ui_state.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_ui_state.exe
+  TARGET_IMPLIB = tests\libtest_ui_state.dll.a
+  TARGET_PDB = test_ui_state.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_state.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_lvgl_state_contract
+
+
+#############################################
+# Order-only phony target for test_lvgl_state_contract
+
+build cmake_object_order_depends_target_test_lvgl_state_contract: phony || .
+
+build tests/CMakeFiles/test_lvgl_state_contract.dir/test_lvgl_state_contract.c.obj: C_COMPILER__test_lvgl_state_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_lvgl_state_contract.c || cmake_object_order_depends_target_test_lvgl_state_contract
+  DEP_FILE = tests\CMakeFiles\test_lvgl_state_contract.dir\test_lvgl_state_contract.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+
+build tests/CMakeFiles/test_lvgl_state_contract.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj: C_COMPILER__test_lvgl_state_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c || cmake_object_order_depends_target_test_lvgl_state_contract
+  DEP_FILE = tests\CMakeFiles\test_lvgl_state_contract.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_ui_state.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+
+build tests/CMakeFiles/test_lvgl_state_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj: C_COMPILER__test_lvgl_state_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c || cmake_object_order_depends_target_test_lvgl_state_contract
+  DEP_FILE = tests\CMakeFiles\test_lvgl_state_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ipc_messages.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+
+build tests/CMakeFiles/test_lvgl_state_contract.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_lvgl_state_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_lvgl_state_contract
+  DEP_FILE = tests\CMakeFiles\test_lvgl_state_contract.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_protocol.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+
+build tests/CMakeFiles/test_lvgl_state_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj: C_COMPILER__test_lvgl_state_contract_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c || cmake_object_order_depends_target_test_lvgl_state_contract
+  DEP_FILE = tests\CMakeFiles\test_lvgl_state_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ble_payloads.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_lvgl_state_contract
+
+
+#############################################
+# Link the executable tests\test_lvgl_state_contract.exe
+
+build tests/test_lvgl_state_contract.exe: C_EXECUTABLE_LINKER__test_lvgl_state_contract_ tests/CMakeFiles/test_lvgl_state_contract.dir/test_lvgl_state_contract.c.obj tests/CMakeFiles/test_lvgl_state_contract.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj tests/CMakeFiles/test_lvgl_state_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj tests/CMakeFiles/test_lvgl_state_contract.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj tests/CMakeFiles/test_lvgl_state_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_lvgl_state_contract.exe
+  TARGET_IMPLIB = tests\libtest_lvgl_state_contract.dll.a
+  TARGET_PDB = test_lvgl_state_contract.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_lvgl_state_contract.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_ui_diagnostic_consumption
+
+
+#############################################
+# Order-only phony target for test_ui_diagnostic_consumption
+
+build cmake_object_order_depends_target_test_ui_diagnostic_consumption: phony || .
+
+build tests/CMakeFiles/test_ui_diagnostic_consumption.dir/test_ui_diagnostic_consumption.c.obj: C_COMPILER__test_ui_diagnostic_consumption_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ui_diagnostic_consumption.c || cmake_object_order_depends_target_test_ui_diagnostic_consumption
+  DEP_FILE = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\test_ui_diagnostic_consumption.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+
+build tests/CMakeFiles/test_ui_diagnostic_consumption.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj: C_COMPILER__test_ui_diagnostic_consumption_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c || cmake_object_order_depends_target_test_ui_diagnostic_consumption
+  DEP_FILE = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_ui_state.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+
+build tests/CMakeFiles/test_ui_diagnostic_consumption.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj: C_COMPILER__test_ui_diagnostic_consumption_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c || cmake_object_order_depends_target_test_ui_diagnostic_consumption
+  DEP_FILE = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ipc_messages.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+
+build tests/CMakeFiles/test_ui_diagnostic_consumption.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj: C_COMPILER__test_ui_diagnostic_consumption_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c || cmake_object_order_depends_target_test_ui_diagnostic_consumption
+  DEP_FILE = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source\ws_protocol.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\C_\Users\worap\Documents\Project\wheelsense-platform\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+
+build tests/CMakeFiles/test_ui_diagnostic_consumption.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj: C_COMPILER__test_ui_diagnostic_consumption_unscanned_ C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c || cmake_object_order_depends_target_test_ui_diagnostic_consumption
+  DEP_FILE = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source\ws_ble_payloads.c.obj.d
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -Werror -std=c11
+  INCLUDES = -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include
+  OBJECT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+  OBJECT_FILE_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir\8b91e1091ec70afd669f0f97978a8367\firmware\WheelSense_E84\shared\source
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_ui_diagnostic_consumption
+
+
+#############################################
+# Link the executable tests\test_ui_diagnostic_consumption.exe
+
+build tests/test_ui_diagnostic_consumption.exe: C_EXECUTABLE_LINKER__test_ui_diagnostic_consumption_ tests/CMakeFiles/test_ui_diagnostic_consumption.dir/test_ui_diagnostic_consumption.c.obj tests/CMakeFiles/test_ui_diagnostic_consumption.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj tests/CMakeFiles/test_ui_diagnostic_consumption.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj tests/CMakeFiles/test_ui_diagnostic_consumption.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj tests/CMakeFiles/test_ui_diagnostic_consumption.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj
+  FLAGS = -fsanitize=address,undefined -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address,undefined
+  LINK_LIBRARIES = -lm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = tests\test_ui_diagnostic_consumption.exe
+  TARGET_IMPLIB = tests\libtest_ui_diagnostic_consumption.dll.a
+  TARGET_PDB = test_ui_diagnostic_consumption.exe.dbg
+  TARGET_SUPPORT_DIR = tests\CMakeFiles\test_ui_diagnostic_consumption.dir
 
 
 #############################################
@@ -491,15 +881,19 @@ build tests/rebuild_cache: phony tests/CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
+build test_environment_contract: phony tests/test_environment_contract.exe
+
+build test_environment_contract.exe: phony tests/test_environment_contract.exe
+
+build test_environment_conversion: phony tests/test_environment_conversion.exe
+
+build test_environment_conversion.exe: phony tests/test_environment_conversion.exe
+
 build test_feature_matrix_default: phony tests/test_feature_matrix_default
 
 build test_feature_matrix_host: phony tests/test_feature_matrix_host
 
 build test_feature_matrix_minimal: phony tests/test_feature_matrix_minimal
-
-build test_ipc_endpoint: phony tests/test_ipc_endpoint.exe
-
-build test_ipc_endpoint.exe: phony tests/test_ipc_endpoint.exe
 
 build test_ipc_messages: phony tests/test_ipc_messages.exe
 
@@ -509,11 +903,39 @@ build test_ipc_queue: phony tests/test_ipc_queue.exe
 
 build test_ipc_queue.exe: phony tests/test_ipc_queue.exe
 
+build test_ipc_transport: phony tests/test_ipc_transport.exe
+
+build test_ipc_transport.exe: phony tests/test_ipc_transport.exe
+
+build test_lvgl_state_contract: phony tests/test_lvgl_state_contract.exe
+
+build test_lvgl_state_contract.exe: phony tests/test_lvgl_state_contract.exe
+
+build test_orientation_contract: phony tests/test_orientation_contract.exe
+
+build test_orientation_contract.exe: phony tests/test_orientation_contract.exe
+
+build test_orientation_state: phony tests/test_orientation_state.exe
+
+build test_orientation_state.exe: phony tests/test_orientation_state.exe
+
 build test_protocol: phony tests/test_protocol.exe
 
 build test_protocol.exe: phony tests/test_protocol.exe
 
+build test_sensor_schedule: phony tests/test_sensor_schedule.exe
+
+build test_sensor_schedule.exe: phony tests/test_sensor_schedule.exe
+
 build test_shared_types: phony tests/test_shared_types
+
+build test_ui_diagnostic_consumption: phony tests/test_ui_diagnostic_consumption.exe
+
+build test_ui_diagnostic_consumption.exe: phony tests/test_ui_diagnostic_consumption.exe
+
+build test_ui_state: phony tests/test_ui_state.exe
+
+build test_ui_state.exe: phony tests/test_ui_state.exe
 
 # =============================================================================
 # Folder targets.
@@ -530,7 +952,7 @@ build all: phony tests/all
 #############################################
 # Folder: C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/tests
 
-build tests/all: phony tests/test_protocol.exe tests/test_ipc_messages.exe tests/test_ipc_queue.exe tests/test_ipc_endpoint.exe tests/test_shared_types tests/test_feature_matrix_default tests/test_feature_matrix_minimal tests/test_feature_matrix_host
+build tests/all: phony tests/test_protocol.exe tests/test_ipc_messages.exe tests/test_ipc_queue.exe tests/test_ipc_transport.exe tests/test_shared_types tests/test_feature_matrix_default tests/test_feature_matrix_minimal tests/test_feature_matrix_host tests/test_environment_contract.exe tests/test_orientation_contract.exe tests/test_environment_conversion.exe tests/test_orientation_state.exe tests/test_sensor_schedule.exe tests/test_ui_state.exe tests/test_lvgl_state_contract.exe tests/test_ui_diagnostic_consumption.exe
 
 # =============================================================================
 # Built-in targets
@@ -539,14 +961,14 @@ build tests/all: phony tests/test_protocol.exe tests/test_ipc_messages.exe tests
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/cmake_install.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/tests/cmake_install.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/CTestTestfile.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/tests/CTestTestfile.cmake: RERUN_CMAKE | C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCCompilerABI.c C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCompilerIdDetection.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompilerABI.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompilerId.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompilerSupport.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeFindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeParseLibraryArchitecture.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeRCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystem.cmake.in C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeTestCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeTestCompilerCommon.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeTestRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/ADSP-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/ARMCC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/ARMClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/AppleClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Borland-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Bruce-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-DetermineCompilerInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-FindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Compaq-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Cray-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/CrayClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Diab-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Embarcadero-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Fujitsu-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GHS-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GNU-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/HP-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IAR-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Intel-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/LCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/MSVC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/NVHPC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/NVIDIA-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/OrangeC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/PGI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/PathScale-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/PellesC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Renesas-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/SCO-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/SDCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/SunPro-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/TI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/TIClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Tasking-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Watcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/XL-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/XLClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/zOS-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeDetermineLinkerId.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeInspectCLinker.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/FeatureTesting.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/WindowsPaths.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/CMakeLists.txt C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/CMakeLists.txt CMakeCache.txt CMakeFiles/4.4.2/CMakeCCompiler.cmake CMakeFiles/4.4.2/CMakeRCCompiler.cmake CMakeFiles/4.4.2/CMakeSystem.cmake
+build build.ninja C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/cmake_install.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/tests/cmake_install.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/CTestTestfile.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-sanitize/tests/CTestTestfile.cmake: RERUN_CMAKE | C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/WindowsPaths.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/CMakeLists.txt C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/CMakeLists.txt CMakeCache.txt CMakeFiles/4.4.2/CMakeCCompiler.cmake CMakeFiles/4.4.2/CMakeRCCompiler.cmake CMakeFiles/4.4.2/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCCompilerABI.c C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCompilerIdDetection.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompilerABI.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompilerId.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineCompilerSupport.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeDetermineSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeFindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeParseImplicitIncludeInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeParseImplicitLinkInfo.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeParseLibraryArchitecture.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeRCCompiler.cmake.in C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystem.cmake.in C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeTestCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeTestCompilerCommon.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeTestRCCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/ADSP-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/ARMCC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/ARMClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/AppleClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Borland-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Bruce-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-DetermineCompilerInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-FindBinUtils.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Compaq-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Cray-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/CrayClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Diab-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Embarcadero-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Fujitsu-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GHS-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GNU-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/HP-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IAR-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Intel-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/LCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/MSVC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/NVHPC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/NVIDIA-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/OrangeC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/PGI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/PathScale-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/PellesC-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Renesas-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/SCO-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/SDCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/SunPro-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/TI-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/TIClang-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Tasking-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Watcom-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/XL-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/XLClang-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/zOS-C-DetermineCompiler.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeDetermineLinkerId.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeInspectCLinker.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/FeatureTesting.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/WindowsPaths.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/CMakeLists.txt C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/CMakeLists.txt CMakeCache.txt CMakeFiles/4.4.2/CMakeCCompiler.cmake CMakeFiles/4.4.2/CMakeRCCompiler.cmake CMakeFiles/4.4.2/CMakeSystem.cmake: phony
+build C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeRCInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Compiler/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Internal/CMakeCommonLinkerInformation.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Linker/LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Linker/Windows-LLD.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang-C.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Clang.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/Windows.cmake C$:/Program$ Files/CMake/share/cmake-4.4/Modules/Platform/WindowsPaths.cmake C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/CMakeLists.txt C$:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/CMakeLists.txt CMakeCache.txt CMakeFiles/4.4.2/CMakeCCompiler.cmake CMakeFiles/4.4.2/CMakeRCCompiler.cmake CMakeFiles/4.4.2/CMakeSystem.cmake: phony
 
 
 #############################################

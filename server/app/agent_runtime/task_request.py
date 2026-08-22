@@ -199,9 +199,9 @@ def extract_task_assignee(text: str) -> dict[str, Any]:
         return args
 
     role_patterns = [
-        ("head_nurse", r"\b(head\s*nurse|headnurse|duty\s*nurse|nurse\s*team|nurses?|nursing\s*team)\b"),
-        ("observer", r"\b(observer|caregiver|care\s*team|staff|floor\s*staff)\b"),
-        ("supervisor", r"\bsupervisor\b"),
+        ("head_caregiver", r"\b(head\s*nurse|headnurse|duty\s*nurse|nurse\s*team|nurses?|nursing\s*team|head\s*caregiver|caregiver\s*lead|desk\s*coordinator)\b"),
+        ("caregiver", r"\b(observer|caregiver|care\s*team|staff|floor\s*staff)\b"),
+        ("head_caregiver", r"\bsupervisor\b"),
         ("admin", r"\badmin\b"),
     ]
     for role, pattern in role_patterns:

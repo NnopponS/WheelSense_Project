@@ -313,13 +313,14 @@ ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
 
 def assert_patient_record_access(user: User, patient_id: int) -> None:
     """Staff may access any patient in workspace; patients only their own row."""
-    if user.role == "patient":
+    canonical = canonicalize_role(user.role)
+    if canonical == "patient":
         if getattr(user, "patient_id", None) != patient_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Cannot access another patient's records",
             )
-    elif user.role not in ROLE_CLINICAL_STAFF:
+    elif canonical not in ROLE_CLINICAL_STAFF:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Operation not permitted",

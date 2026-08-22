@@ -10,7 +10,7 @@ from app.agent_runtime.layers.observability import PipelineEventEmitter
 from app.agent_runtime.orchestrator import orchestrate_turn
 
 
-def _actor(role: str = "observer", patient_id: int | None = None) -> ActorFacts:
+def _actor(role: str = "caregiver", patient_id: int | None = None) -> ActorFacts:
     return ActorFacts(
         role=role,
         user_id=1,
@@ -24,7 +24,7 @@ async def test_orchestrate_turn_routes_read_request_to_tool_mode() -> None:
     emitter = PipelineEventEmitter(capacity=16)
 
     result = await orchestrate_turn(
-        actor=_actor("observer"),
+        actor=_actor("caregiver"),
         message="show alerts",
         context=ConversationContext(),
         classifier=IntentClassifier(),
@@ -41,7 +41,7 @@ async def test_orchestrate_turn_routes_read_request_to_tool_mode() -> None:
 @pytest.mark.asyncio
 async def test_orchestrate_turn_routes_mutation_to_plan_mode() -> None:
     result = await orchestrate_turn(
-        actor=_actor("supervisor"),
+        actor=_actor("head_caregiver"),
         message="acknowledge alert #123",
         context=ConversationContext(),
         classifier=IntentClassifier(),

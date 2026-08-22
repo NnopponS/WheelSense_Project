@@ -59,9 +59,14 @@ COMPONENTS+=FREERTOS RTOS_AWARE USBD_BASE
 # unused WiFi/mbedTLS code from the final ELF. CY_IGNORE does not work for
 # shared library paths on Windows/cygwin MTB builds.
 COMPONENTS+=LWIP MBEDTLS
-ifeq ($(WS_FEATURE_TOUCH),1)
-COMPONENTS+=BMM350_I3C
-endif
+
+# MQTT needs only coreMQTT. Excluding unused AWS/HTTP/PKCS modules also keeps
+# generated Windows object paths below ModusToolbox's 260-character limit.
+CY_IGNORE+= $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/aws
+CY_IGNORE+= $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreHTTP
+CY_IGNORE+= $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreJSON
+CY_IGNORE+= $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/corePKCS11
+CY_IGNORE+= $(SEARCH_aws-iot-device-sdk-port)/source/ota
 
 # Like COMPONENTS, but disable optional code that was enabled by default.
 DISABLE_COMPONENTS=
@@ -80,6 +85,10 @@ CORE_NAME=CM55_0
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
 SOURCES+=../shared/source/ws_protocol.c ../shared/source/ws_ipc_messages.c ../shared/source/ws_ble_payloads.c ../shared/source/ws_ipc_queue.c ../shared/source/ws_ipc_transport.c
+SOURCES+=../shared/source/ws_node_contract.c ../shared/source/ws_ui_state.c
+ifeq ($(WS_FEATURE_ENVIRONMENT),1)
+SOURCES+=../shared/source/ws_environment.c
+endif
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
@@ -130,11 +139,7 @@ LDLIBS+=
 LINKER_SCRIPT=
 
 # Custom pre-build commands to run.
-ifeq ($(WS_FEATURE_TOUCH),1)
-PREBUILD=$(SEARCH_sensor-orientation-bmm350)/COMPONENT_BMM350_I3C/bmm350_fix.bash "$(SEARCH_BMM350_SensorAPI)/bmm350.c"
-else
 PREBUILD=
-endif
 
 # Custom post-build commands to run.
 POSTBUILD=

@@ -1,133 +1,164 @@
 import 'package:flutter/material.dart';
 
+import 'app_palette.dart';
+import 'app_typography.dart';
+
 class WheelSenseColors {
   const WheelSenseColors._();
 
-  static const clinicalBlue = Color(0xFF2563EB);
-  static const ink = Color(0xFF172033);
-  static const muted = Color(0xFF64748B);
-  static const canvas = Color(0xFFF5F9FF);
-  static const panel = Color(0xFFFFFFFF);
-  static const emergency = Color(0xFFDC2626);
-  static const warning = Color(0xFFD97706);
-  static const success = Color(0xFF15803D);
+  static const clinicalBlue = AppPalette.left;
+  static const ink = AppPalette.slate900;
+  static const muted = AppPalette.slate500;
+  static const canvas = AppPalette.slate50;
+  static const panel = AppPalette.white;
+  static const emergency = AppPalette.danger;
+  static const warning = AppPalette.warning;
+  static const success = AppPalette.success;
   static const ai = Color(0xFF6D28D9);
 }
 
-ThemeData buildWheelSenseTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: WheelSenseColors.clinicalBlue,
-    brightness: Brightness.light,
-    surface: WheelSenseColors.panel,
-  );
+/// Builds the comprehensive WheelSense theme for light and dark modes.
+abstract final class AppTheme {
+  const AppTheme._();
 
-  return ThemeData(
-    useMaterial3: true,
-    fontFamily: 'Kanit',
-    colorScheme: scheme.copyWith(
-      primary: WheelSenseColors.clinicalBlue,
-      error: WheelSenseColors.emergency,
-      surface: WheelSenseColors.panel,
-      surfaceContainerLowest: WheelSenseColors.canvas,
-      tertiary: WheelSenseColors.success,
-      tertiaryContainer: const Color(0xFFE8F7EE),
-    ),
-    scaffoldBackgroundColor: WheelSenseColors.canvas,
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      centerTitle: false,
-      backgroundColor: WheelSenseColors.panel,
-      foregroundColor: WheelSenseColors.ink,
-    ),
-    cardTheme: CardThemeData(
-      elevation: 0,
-      color: WheelSenseColors.panel,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: Color(0xFFDCE7F5)),
+  static ThemeData light() => _build(
+        brightness: Brightness.light,
+        scheme: const ColorScheme.light(
+          primary: AppPalette.brand,
+          onPrimary: AppPalette.white,
+          primaryContainer: Color(0xFFCCFBF1),
+          onPrimaryContainer: AppPalette.brandStrong,
+          secondary: AppPalette.left,
+          onSecondary: AppPalette.white,
+          surface: AppPalette.white,
+          onSurface: AppPalette.slate900,
+          surfaceContainerLowest: AppPalette.white,
+          surfaceContainerLow: AppPalette.slate50,
+          surfaceContainer: AppPalette.slate100,
+          surfaceContainerHigh: AppPalette.slate200,
+          onSurfaceVariant: AppPalette.slate600,
+          outline: AppPalette.slate300,
+          outlineVariant: AppPalette.slate200,
+          error: AppPalette.danger,
+          onError: AppPalette.white,
+          tertiary: AppPalette.success,
+          tertiaryContainer: Color(0xFFDCFCE7),
+        ),
+        scaffold: AppPalette.slate50,
+        ink: AppPalette.slate900,
+        muted: AppPalette.slate600,
+      );
+
+  static ThemeData dark() => _build(
+        brightness: Brightness.dark,
+        scheme: const ColorScheme.dark(
+          primary: AppPalette.brandSoft,
+          onPrimary: AppPalette.slate950,
+          primaryContainer: AppPalette.brandStrong,
+          onPrimaryContainer: Color(0xFFCCFBF1),
+          secondary: AppPalette.leftBright,
+          onSecondary: AppPalette.slate950,
+          surface: AppPalette.slate900,
+          onSurface: AppPalette.slate100,
+          surfaceContainerLowest: AppPalette.slate950,
+          surfaceContainerLow: AppPalette.slate900,
+          surfaceContainer: AppPalette.slate850,
+          surfaceContainerHigh: AppPalette.slate800,
+          onSurfaceVariant: AppPalette.slate400,
+          outline: AppPalette.slate700,
+          outlineVariant: AppPalette.slate800,
+          error: AppPalette.dangerBright,
+          onError: AppPalette.slate950,
+          tertiary: AppPalette.successBright,
+          tertiaryContainer: Color(0xFF064E3B),
+        ),
+        scaffold: AppPalette.slate950,
+        ink: AppPalette.slate100,
+        muted: AppPalette.slate400,
+      );
+
+  static ThemeData _build({
+    required Brightness brightness,
+    required ColorScheme scheme,
+    required Color scaffold,
+    required Color ink,
+    required Color muted,
+  }) {
+    final textTheme = AppTypography.textTheme(ink, muted);
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: scaffold,
+      textTheme: textTheme,
+      splashFactory: InkSparkle.splashFactory,
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: ink,
+          fontWeight: FontWeight.w700,
+        ),
+        foregroundColor: ink,
       ),
-    ),
-    navigationRailTheme: const NavigationRailThemeData(
-      backgroundColor: WheelSenseColors.panel,
-      selectedIconTheme: IconThemeData(color: WheelSenseColors.clinicalBlue),
-      selectedLabelTextStyle: TextStyle(
-        color: WheelSenseColors.clinicalBlue,
-        fontWeight: FontWeight.w700,
-      ),
-      unselectedIconTheme: IconThemeData(color: WheelSenseColors.muted),
-      unselectedLabelTextStyle: TextStyle(color: WheelSenseColors.muted),
-    ),
-    navigationBarTheme: NavigationBarThemeData(
-      elevation: 0,
-      backgroundColor: WheelSenseColors.panel,
-      indicatorColor: WheelSenseColors.clinicalBlue.withValues(alpha: 0.12),
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => TextStyle(
-          fontSize: 11,
-          fontWeight: states.contains(WidgetState.selected)
-              ? FontWeight.w700
-              : FontWeight.w500,
+      cardTheme: CardThemeData(
+        color: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: scheme.outlineVariant),
         ),
       ),
-    ),
-    textTheme: const TextTheme(
-      titleLarge: TextStyle(
-        fontSize: 22,
-        height: 1.18,
-        fontWeight: FontWeight.w700,
-        color: WheelSenseColors.ink,
+      navigationBarTheme: NavigationBarThemeData(
+        elevation: 0,
+        backgroundColor: scheme.surface,
+        indicatorColor: scheme.primary.withValues(alpha: 0.15),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontSize: 11,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? scheme.primary
+                : muted,
+          ),
+        ),
       ),
-      titleMedium: TextStyle(
-        fontSize: 17,
-        height: 1.25,
-        fontWeight: FontWeight.w700,
-        color: WheelSenseColors.ink,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: brightness == Brightness.light
+            ? AppPalette.slate50
+            : AppPalette.slate850,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: scheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+        ),
       ),
-      bodyLarge: TextStyle(
-        fontSize: 15,
-        height: 1.35,
-        color: WheelSenseColors.ink,
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        height: 1.35,
-        color: WheelSenseColors.ink,
-      ),
-      labelLarge: TextStyle(
-        fontSize: 13,
-        height: 1.25,
-        color: WheelSenseColors.muted,
-        fontWeight: FontWeight.w700,
-      ),
-      labelMedium: TextStyle(
-        fontSize: 12,
-        height: 1.2,
-        color: WheelSenseColors.muted,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(44, 44),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(44, 44),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.white,
-      isDense: true,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFDCE7F5)),
-      ),
-    ),
-  );
+    );
+  }
 }
+
+ThemeData buildWheelSenseTheme() => AppTheme.light();

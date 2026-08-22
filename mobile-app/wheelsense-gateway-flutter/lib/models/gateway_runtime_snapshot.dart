@@ -61,6 +61,10 @@ class GatewayConfigUpdate {
     return GatewayConfigUpdate(
       portalBaseUrl: payload.containsKey('portal_base_url')
           ? _safePortalUrl(payload['portal_base_url'])
+          : payload.containsKey('portal_url')
+          ? _safePortalUrl(payload['portal_url'])
+          : payload.containsKey('server_url')
+          ? _safePortalUrl(payload['server_url'])
           : _payloadUnset,
       linkedPatientId: payload.containsKey('linked_patient_id')
           ? _int(payload['linked_patient_id'])
@@ -204,6 +208,9 @@ class GatewayRuntimeSnapshot {
     this.latestPolarSample,
     this.latestRoomPrediction,
     this.alerts = const <GatewayAlertEvent>[],
+    this.m5History = const <M5TelemetrySample>[],
+    this.polarHistory = const <PolarTelemetrySample>[],
+    this.detectedNodes = const <NodeTsimcamSnapshot>[],
     this.lastSuccessfulPublishAt,
     this.failedPublishCount = 0,
     this.lastPublishFailure,
@@ -224,6 +231,9 @@ class GatewayRuntimeSnapshot {
   final PolarTelemetrySample? latestPolarSample;
   final RoomPredictionEvent? latestRoomPrediction;
   final List<GatewayAlertEvent> alerts;
+  final List<M5TelemetrySample> m5History;
+  final List<PolarTelemetrySample> polarHistory;
+  final List<NodeTsimcamSnapshot> detectedNodes;
   final DateTime? lastSuccessfulPublishAt;
   final int failedPublishCount;
   final TelemetryPublishResult? lastPublishFailure;
@@ -244,6 +254,9 @@ class GatewayRuntimeSnapshot {
     PolarTelemetrySample? latestPolarSample,
     RoomPredictionEvent? latestRoomPrediction,
     List<GatewayAlertEvent>? alerts,
+    List<M5TelemetrySample>? m5History,
+    List<PolarTelemetrySample>? polarHistory,
+    List<NodeTsimcamSnapshot>? detectedNodes,
     DateTime? lastSuccessfulPublishAt,
     int? failedPublishCount,
     Object? lastPublishFailure = _snapshotUnset,
@@ -261,6 +274,9 @@ class GatewayRuntimeSnapshot {
       latestPolarSample: latestPolarSample ?? this.latestPolarSample,
       latestRoomPrediction: latestRoomPrediction ?? this.latestRoomPrediction,
       alerts: alerts ?? this.alerts,
+      m5History: m5History ?? this.m5History,
+      polarHistory: polarHistory ?? this.polarHistory,
+      detectedNodes: detectedNodes ?? this.detectedNodes,
       lastSuccessfulPublishAt:
           lastSuccessfulPublishAt ?? this.lastSuccessfulPublishAt,
       failedPublishCount: failedPublishCount ?? this.failedPublishCount,

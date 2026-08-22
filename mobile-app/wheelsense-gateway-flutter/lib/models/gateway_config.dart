@@ -19,14 +19,14 @@ class GatewayConfig {
   factory GatewayConfig.defaults() {
     return const GatewayConfig(
       deviceId: 'wheelsense-mobile-gateway',
-      mqttHost: 'mqtt.wheelsense.local',
-      mqttPort: 8883,
-      mqttUseTls: true,
+      mqttHost: 'broker.emqx.io',
+      mqttPort: 1883,
+      mqttUseTls: false,
       mqttUsername: '',
       mqttPassword: '',
       portalBaseUrl: 'https://portal.wheelsense.local',
-      bleServiceUuid: '8f6e0001-b5a3-f393-e0a9-e50e24dcca9e',
-      bleTelemetryCharacteristicUuid: '8f6e0003-b5a3-f393-e0a9-e50e24dcca9e',
+      bleServiceUuid: '0000a1b2-0000-1000-8000-00805f9b34fb',
+      bleTelemetryCharacteristicUuid: '0000a1b3-0000-1000-8000-00805f9b34fb',
       alertsEnabled: false,
       setupCompleted: false,
     );

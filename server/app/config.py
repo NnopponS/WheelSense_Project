@@ -78,9 +78,9 @@ class Settings(BaseSettings):
 
     # AI chat (Ollama + GitHub Copilot CLI)
     ai_provider: str = "ollama"  # ollama | copilot
-    ai_default_model: str = "gemma4:e4b"
+    ai_default_model: str = "qwen2.5:7b"
     ollama_base_url: str = "http://127.0.0.1:11434/v1"
-    ollama_fallback_model: str = "gemma4:e4b"
+    ollama_fallback_model: str = "qwen2.5:7b"
     copilot_cli_url: str = ""  # e.g. copilot-cli:4321 or http://localhost:4321
     server_base_url: str = "http://127.0.0.1:8000"
     # Public web URL for mobile WebView (e.g. Cloudflare quick tunnel). Published to MQTT config when set.
@@ -112,6 +112,15 @@ class Settings(BaseSettings):
     agent_routing_mode: Literal["intent", "llm_tools"] = "intent"
     # Feature flag for ADR 0015 five-layer pipeline orchestration (Slice 3+).
     easeai_pipeline_v2: bool = False
+    # When False, the deterministic answer locks (task-create clarification,
+    # deterministic read synthesis, and the v2 deterministic-immediate tool
+    # precheck) are bypassed so the LLM tool router (the ADR 0015 AI pipeline)
+    # runs as the primary decision-maker. Only the page-context and identity
+    # fast paths remain, because the LLM router has no page_context in its
+    # system prompt. Layer 1 safety rejects (empty/overlong/role-disallowed)
+    # are unaffected. Default True preserves legacy behavior; core compose
+    # sets this to False so the deployed EaseAI assistant uses the AI pipeline.
+    easeai_deterministic_answer_lock_enabled: bool = True
     # When set, Ollama tool-calling leg uses this model name (OpenAI-compatible /v1); defaults to ai_default_model.
     agent_llm_router_model: str = ""
     # GitHub OAuth App (Device Flow) — used for Copilot CLI token acquisition

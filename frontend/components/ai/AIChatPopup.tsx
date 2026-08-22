@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { API_BASE } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
+import { canonicalizeRole } from "@/lib/roles";
 import { ActionPlanPreview } from "./ActionPlanPreview";
 import { EaseAIResponseCard } from "./EaseAIResponseCard";
 import type { AITraceChip, ProviderAttemptTrace } from "./AITraceChips";
@@ -387,7 +388,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const pagePatientId = useMemo(() => {
-    const m = pathname?.match(/^\/(?:admin|head-caregiver|caregiver)\/patients\/(\d+)/);
+    const m = pathname?.match(/^\/(?:admin|head-nurse|supervisor|observer)\/patients\/(\d+)/);
     return m ? parseInt(m[1], 10) : null;
   }, [pathname]);
   const pageContext = useMemo(() => {
@@ -421,7 +422,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const quickPrompts = useMemo(() => {
-    switch (user?.role) {
+    switch (user?.role ? canonicalizeRole(user.role) : undefined) {
       case "admin":
         return [t("aiChat.quick.adminRisks"), t("aiChat.quick.adminAudit")];
       case "head_caregiver":
@@ -977,7 +978,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="ws-ai-fab fixed right-4 z-50 hidden h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-elevated transition-smooth hover:bg-primary/90 sm:right-6 sm:h-14 sm:px-5 lg:flex"
+        className="ws-ai-fab fixed right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-elevated transition-smooth hover:bg-primary/90 sm:right-6 sm:h-14 sm:px-5"
         aria-label={t("aiChat.openChat")}
       >
         <Bot className="h-5 w-5" />
@@ -1028,7 +1029,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
                       </button>
                       <button
                         type="button"
-                        className="hidden rounded p-0.5 hover:bg-critical/20 group-hover:inline-flex"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-critical hover:bg-critical/20"
                         onClick={() => void handleDeleteConversation(row.id)}
                         aria-label={t("aiChat.deleteConversation")}
                       >
@@ -1050,7 +1051,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
             <div className="flex items-center gap-2 border-b border-outline-variant/15 bg-surface-container-low px-3 py-2.5">
               <button
                 type="button"
-                className="rounded-lg p-1 hover:bg-surface-container transition-smooth"
+                className="flex h-11 w-11 items-center justify-center rounded-lg transition-smooth hover:bg-surface-container"
                 onClick={() => setShowHistory((prev) => !prev)}
                 aria-label={t("aiChat.toggleHistory")}
               >
@@ -1064,7 +1065,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
               </div>
               <button
                 type="button"
-                className={`rounded-lg p-1 transition-smooth ${
+                className={`flex h-11 w-11 items-center justify-center rounded-lg transition-smooth ${
                   voiceEnabled
                     ? "bg-primary/10 text-primary hover:bg-primary/15"
                     : "hover:bg-surface-container"
@@ -1079,7 +1080,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
               </button>
               <button
                 type="button"
-                className="rounded-lg p-1 hover:bg-surface-container transition-smooth"
+                className="flex h-11 w-11 items-center justify-center rounded-lg transition-smooth hover:bg-surface-container"
                 onClick={handleNewChat}
                 aria-label={t("aiChat.newChat")}
               >
@@ -1087,7 +1088,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
               </button>
               <button
                 type="button"
-                className="rounded-lg p-1 hover:bg-surface-container transition-smooth"
+                className="flex h-11 w-11 items-center justify-center rounded-lg transition-smooth hover:bg-surface-container"
                 onClick={() => {
                   setOpen(false);
                   onClose?.();
@@ -1104,7 +1105,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
                   <button
                     key={qp}
                     type="button"
-                    className="rounded-lg bg-surface-container px-2 py-1 text-[11px] text-foreground-variant hover:bg-surface-container-high transition-smooth"
+                    className="min-h-11 rounded-lg bg-surface-container px-3 py-2 text-[11px] text-foreground-variant transition-smooth hover:bg-surface-container-high"
                     onClick={() => setInput(qp)}
                   >
                     {qp}
@@ -1166,7 +1167,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
                   <ThinkingIndicator label={t("aiChat.thinking")} />
                 </div>
               ) : null}
-              {error ? <p className="text-critical text-xs">{error}</p> : null}
+              {error ? <p className="text-xs text-critical" role="alert">{error}</p> : null}
               <div ref={messagesEndRef} />
             </div>
 
@@ -1181,7 +1182,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
                   type="button"
                   disabled={loading || !speechSupported}
                   onClick={toggleVoiceInput}
-                  className={`rounded-xl border border-outline-variant/25 px-3 transition-smooth ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl border border-outline-variant/25 transition-smooth ${
                     listening
                       ? "bg-critical/10 text-critical hover:bg-critical/15"
                       : "bg-surface-container text-foreground hover:bg-surface-container-high"
@@ -1209,7 +1210,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
                   type="button"
                   disabled={loading}
                   onClick={() => void send()}
-                  className="rounded-xl gradient-cta px-3 text-white disabled:opacity-50 transition-smooth"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                   aria-label={t("aiChat.send")}
                   title={t("aiChat.send")}
                 >

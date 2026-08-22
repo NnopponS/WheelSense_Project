@@ -112,7 +112,7 @@ export default function PatientList({
       <div
         className="sticky top-0 z-[1] -mx-1 mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-outline-variant/25 bg-surface-container-low/95 px-3 py-3 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-surface-container-low/80"
         role="region"
-        aria-label="Patient list filters"
+        aria-label={t("patients.listFilters")}
       >
         <div className="flex min-w-[10rem] flex-1 flex-col gap-1">
           <label htmlFor="admin-patient-filter-care" className="text-xs font-medium text-foreground-variant">
@@ -128,9 +128,9 @@ export default function PatientList({
             }}
           >
             <option value="all">{t("devicesDetail.tabAll")}</option>
-            <option value="normal">normal</option>
-            <option value="special">special</option>
-            <option value="critical">critical</option>
+            <option value="normal">{t("patients.careLevelNormal")}</option>
+            <option value="special">{t("patients.careLevelSpecial")}</option>
+            <option value="critical">{t("patients.careLevelCritical")}</option>
           </select>
         </div>
         <div className="flex min-w-[10rem] flex-1 flex-col gap-1">
@@ -165,7 +165,7 @@ export default function PatientList({
             }}
           >
             <option value="all">{t("devicesDetail.tabAll")}</option>
-            <option value="assigned">Room assigned</option>
+            <option value="assigned">{t("patients.roomAssigned")}</option>
             <option value="unassigned">{t("patients.noRoom")}</option>
           </select>
         </div>

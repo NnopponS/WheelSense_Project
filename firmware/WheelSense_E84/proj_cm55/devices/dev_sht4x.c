@@ -38,12 +38,14 @@
 #ifdef IM_ENABLE_SHT4X
 
 #include <cybsp.h>
+#include <stdio.h>
 #include "protocol/protocol.h"
 #include "protocol/pb_encode.h"
-#include "clock.h"
+#include "ws_clock.h"
 #include "dev_sht4x.h"
 #include "mtb_sht4x.h"
 #include "common.h"
+#include "ws_environment.h"
 
 /*******************************************************************************
 * Macros
@@ -425,7 +427,22 @@ static bool _read_hw(dev_sht4x_t* dev, mtb_hal_i2c_t* i2c)
     if (sht40_state == SHT40_READY)
     {
         /* read the sensor */   
-        mtb_sht4x_measure_nonblocking(&temperature, &humidity);
+        if (mtb_sht4x_measure_nonblocking(&temperature, &humidity) != CY_RSLT_SUCCESS)
+        {
+            sht40_state = SHT40_IDLE;
+            return false;
+        }
+
+        static bool ws_cache_sample_reported = false;
+        if (ws_environment_publish_sht40(
+                clock_get_tick() * 10u,
+                _convert_milli_to_unit(temperature),
+                _convert_milli_to_unit(humidity)) == WS_STATUS_READY &&
+            !ws_cache_sample_reported)
+        {
+            printf("[EASE_AI] SHT4X sample cache PASS\r\n");
+            ws_cache_sample_reported = true;
+        }
     
         if(dev->stream_mode == SHT4X_MODE_STREAM_COMBINED)
         {
@@ -965,7 +982,7 @@ bool dev_sht4x_register(protocol_t* protocol, mtb_hal_i2c_t* i2c)
         DEV_SHT4X_OPTION_KEY_PRECISION,
         "Precision",
         "Data reading precision",
-        1,
+        2,
         (const char* []) { "Low","Medium","High" },
         3);
 

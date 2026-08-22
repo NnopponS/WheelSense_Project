@@ -90,7 +90,7 @@ describe("useFontScale", () => {
       result.current.increase();
     });
 
-    expect(result.current.elderClass).toBe("ws-role-elder");
+    expect(result.current.elderClass).toBe("ws-large-text");
     expect(result.current.isEnlarged).toBe(true);
   });
 
@@ -110,7 +110,7 @@ describe("useFontScale", () => {
     const { result } = renderHook(() => useFontScale());
 
     await waitFor(() => expect(result.current.scale).toBe(1.375));
-    expect(result.current.elderClass).toBe("ws-role-elder");
+    expect(result.current.elderClass).toBe("ws-large-text");
   });
 
   it("should clamp invalid stored values to valid range", async () => {

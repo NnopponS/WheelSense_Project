@@ -15,6 +15,7 @@ from app.api.dependencies import (
 )
 from app.models.core import Workspace
 from app.models.users import User
+from app.roles import canonicalize_role
 from app.schemas.users import UserCreate, UserOut, UserSearchOut, UserUpdate
 from app.services.auth import UserService
 
@@ -60,12 +61,13 @@ async def search_users(
     """
     Search active workspace users for role/person assignment controls.
     """
-    role_filters = [role.strip() for role in (roles or "").split(",") if role.strip()]
+    role_filters = [canonicalize_role(r.strip()) for r in (roles or "").split(",") if r.strip()]
+    canonical_role = canonicalize_role(role) if role else None
     return await UserService.search_users(
         session,
         ws.id,
         q=q,
-        role=role,
+        role=canonical_role,
         kind=kind,
         roles=role_filters or None,
         limit=limit,

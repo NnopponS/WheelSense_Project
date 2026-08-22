@@ -7,9 +7,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, Bell, ClipboardList, HeartPulse, MessageSquare, NotebookPen } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { AppPage } from "@/components/layout/AppPage";
 import { PatientHealthAnalysisPanel } from "@/components/patients/PatientHealthAnalysisPanel";
 import { MovementTimelineCard } from "@/components/timeline/MovementTimelineCard";
-import UserAvatar from "@/components/shared/UserAvatar";
 import {
   WorkflowMessageDetailDialog,
   WorkflowMessagePreviewTrigger,
@@ -91,7 +91,7 @@ type HandoverRow = {
   createdAt: string;
 };
 
-type HandoverTargetRoleChoice = "all" | "head_nurse" | "supervisor" | "admin" | "observer";
+type HandoverTargetRoleChoice = "all" | "head_caregiver" | "admin" | "caregiver";
 
 type AlertRow = {
   id: number;
@@ -135,7 +135,7 @@ function taskPriorityLabel(translate: (key: TranslationKey) => string, priority:
 }
 
 /** Shared query prefix so observer route and admin patient tab share cache; matches WorkflowTasksHubContent invalidation. */
-const QK = ["observer", "patient-detail"] as const;
+const QK = ["caregiver", "patient-detail"] as const;
 
 export type PatientCareCoordinationPanelProps = {
   patientId: number;
@@ -148,7 +148,7 @@ export type PatientCareCoordinationPanelProps = {
 export function PatientCareCoordinationPanel({
   patientId,
   showHeader = true,
-  invalidBackHref = "/observer/personnel",
+  invalidBackHref = "/caregiver/personnel",
 }: PatientCareCoordinationPanelProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -157,7 +157,7 @@ export function PatientCareCoordinationPanel({
 
   const [noteText, setNoteText] = useState("");
   const [handoverText, setHandoverText] = useState("");
-  const [handoverTargetRole, setHandoverTargetRole] = useState<HandoverTargetRoleChoice>("head_nurse");
+  const [handoverTargetRole, setHandoverTargetRole] = useState<HandoverTargetRoleChoice>("head_caregiver");
   const [actionError, setActionError] = useState<string | null>(null);
   const [messageDetail, setMessageDetail] = useState<MessageRow | null>(null);
   const [pendingAlertId, setPendingAlertId] = useState<number | null>(null);
@@ -211,7 +211,7 @@ export function PatientCareCoordinationPanel({
         event_type: "observation",
         description,
         room_name: "",
-        source: "observer",
+        source: "caregiver",
         data: { channel: "observer_note" },
       } satisfies CreateTimelineEventRequest;
 
@@ -221,7 +221,7 @@ export function PatientCareCoordinationPanel({
       setNoteText("");
       setActionError(null);
       await queryClient.invalidateQueries({ queryKey: [...QK, patientId, "timeline"] });
-      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["caregiver", "dashboard"] });
     },
     onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errSaveNote")),
   });
@@ -242,7 +242,7 @@ export function PatientCareCoordinationPanel({
       setHandoverText("");
       setActionError(null);
       await queryClient.invalidateQueries({ queryKey: [...QK, patientId, "handovers"] });
-      await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
+      await queryClient.invalidateQueries({ queryKey: ["caregiver", "patients"] });
     },
     onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errHandover")),
   });
@@ -253,8 +253,8 @@ export function PatientCareCoordinationPanel({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [...QK, patientId, "tasks"] });
-      await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
-      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["caregiver", "patients"] });
+      await queryClient.invalidateQueries({ queryKey: ["caregiver", "dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
       setActionError(null);
     },
@@ -267,7 +267,7 @@ export function PatientCareCoordinationPanel({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [...QK, patientId, "messages"] });
-      await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
+      await queryClient.invalidateQueries({ queryKey: ["caregiver", "patients"] });
       setActionError(null);
     },
     onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errMarkRead")),
@@ -284,7 +284,7 @@ export function PatientCareCoordinationPanel({
     onSuccess: async () => {
       setActionError(null);
       await queryClient.invalidateQueries({ queryKey: [...QK, patientId, "alerts"] });
-      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["caregiver", "dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errAlertAction")),
@@ -915,23 +915,16 @@ export function PatientCareCoordinationPanel({
     handoversQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {showHeader ? (
-        <div className="flex min-w-0 items-center gap-4">
-          <UserAvatar
-            username={patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
-            profileImageUrl={patient?.photo_url}
-            sizePx={64}
-            fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
-          />
-          <div className="min-w-0">
-            <h2 className="truncate text-2xl font-bold text-foreground">
-              {patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("observer.patientDetail.subtitle")}</p>
-          </div>
-        </div>
-      ) : null}
+    <AppPage
+      showHeader={showHeader}
+      title={patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
+      description={t("observer.patientDetail.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/caregiver" },
+        { label: t("nav.patients"), href: invalidBackHref },
+        { label: patientDisplayName ?? t("observer.patientDetail.title") },
+      ]}
+    >
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryStatCard icon={Bell} label={t("observer.patientDetail.activeAlerts")} value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
@@ -950,7 +943,7 @@ export function PatientCareCoordinationPanel({
       />
 
       {actionError ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-xl border border-critical/30 bg-critical-bg px-4 py-3 text-sm text-critical-foreground" role="alert">
           {actionError}
         </div>
       ) : null}
@@ -989,10 +982,9 @@ export function PatientCareCoordinationPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("observer.patientDetail.handoverTargetAll")}</SelectItem>
-                  <SelectItem value="head_nurse">{t("shell.roleHeadNurse")}</SelectItem>
-                  <SelectItem value="supervisor">{t("shell.roleSupervisor")}</SelectItem>
+                  <SelectItem value="head_caregiver">{t("shell.roleHeadCaregiver")}</SelectItem>
                   <SelectItem value="admin">{t("shell.roleAdmin")}</SelectItem>
-                  <SelectItem value="observer">{t("shell.roleObserver")}</SelectItem>
+                  <SelectItem value="caregiver">{t("shell.roleCaregiver")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1025,6 +1017,7 @@ export function PatientCareCoordinationPanel({
         columns={vitalsColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noVitals")}
+        mobileMode="cards"
         csvExport={vitalsCsvExport}
       />
 
@@ -1035,6 +1028,7 @@ export function PatientCareCoordinationPanel({
         columns={alertColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noAlerts")}
+        mobileMode="cards"
         rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
         csvExport={alertsCsvExport}
       />
@@ -1046,6 +1040,7 @@ export function PatientCareCoordinationPanel({
         columns={taskColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noTasks")}
+        mobileMode="cards"
         rightSlot={<Activity className="h-4 w-4 text-muted-foreground" />}
         csvExport={tasksCsvExport}
       />
@@ -1057,6 +1052,7 @@ export function PatientCareCoordinationPanel({
         columns={timelineColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noTimeline")}
+        mobileMode="cards"
         csvExport={timelineCsvExport}
       />
 
@@ -1067,6 +1063,7 @@ export function PatientCareCoordinationPanel({
         columns={messagesColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noMessages")}
+        mobileMode="cards"
       />
 
       <DataTableCard
@@ -1076,6 +1073,7 @@ export function PatientCareCoordinationPanel({
         columns={handoversColumns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noHandovers")}
+        mobileMode="cards"
         rightSlot={<NotebookPen className="h-4 w-4 text-muted-foreground" />}
         csvExport={handoversCsvExport}
       />
@@ -1093,6 +1091,6 @@ export function PatientCareCoordinationPanel({
           attachments={messageDetail.attachments}
         />
       ) : null}
-    </div>
+    </AppPage>
   );
 }

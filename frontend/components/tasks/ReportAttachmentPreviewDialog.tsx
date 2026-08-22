@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslation } from "@/lib/i18n";
 
 export interface ReportAttachmentPreviewDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function ReportAttachmentPreviewDialog({
   iframeSrc,
   contentType,
 }: ReportAttachmentPreviewDialogProps) {
+  const { t } = useTranslation();
   const isImage =
     Boolean(imageSrc) ||
     (contentType?.startsWith("image/") ?? false);
@@ -53,7 +55,7 @@ export function ReportAttachmentPreviewDialog({
               className="w-full min-h-[70vh] rounded-lg border bg-background"
             />
           ) : (
-            <p className="text-sm text-muted-foreground p-8">No preview available</p>
+            <p className="text-sm text-muted-foreground p-8">{t("tasks.attachment.noPreview")}</p>
           )}
         </div>
       </DialogContent>

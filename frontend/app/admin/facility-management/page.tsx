@@ -2,6 +2,9 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useTranslation } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { Facility, Floor } from "@/lib/types";
@@ -40,9 +43,9 @@ type FacilityTab = "facilities" | "floors" | "editor";
 type MetricTone = "blue" | "green" | "violet";
 
 const metricToneClasses: Record<MetricTone, string> = {
-  blue: "bg-blue-50 text-blue-600 ring-blue-500/10 dark:bg-blue-950/35 dark:text-blue-300",
-  green: "bg-emerald-50 text-emerald-600 ring-emerald-500/10 dark:bg-emerald-950/35 dark:text-emerald-300",
-  violet: "bg-violet-50 text-violet-600 ring-violet-500/10 dark:bg-violet-950/35 dark:text-violet-300",
+  blue: "bg-primary/10 text-primary ring-primary/10",
+  green: "bg-success-bg text-success ring-success/10",
+  violet: "bg-info-bg text-info ring-info/10",
 };
 
 function FacilityMetric({
@@ -74,6 +77,7 @@ function FacilityMetric({
 
 function FacilityManagementPageContent() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<FacilityTab>("facilities");
   const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(null);
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
@@ -281,18 +285,17 @@ function FacilityManagementPageContent() {
   const isLoading = facilitiesQuery.isLoading || floorsQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Building2 className="h-7 w-7 text-primary" />
-            {t("facilityMgmt.title")}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("facilityMgmt.subtitle")}
-          </p>
-        </div>
+    <AppPage
+      title={t("facilityMgmt.title")}
+      description={t("facilityMgmt.subtitle")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: user?.role ? `/${String(user.role).replace("_", "-")}` : "/admin",
+        },
+        { label: t("nav.facilities") },
+      ]}
+      actions={
         <div className="flex items-center gap-2">
           {selectedFacility && (
             <Badge variant="outline" className="text-sm">
@@ -307,7 +310,8 @@ function FacilityManagementPageContent() {
             </Badge>
           )}
         </div>
-      </div>
+      }
+    >
 
       {/* Stats */}
       <div className="rounded-lg border border-border/70 bg-card p-3 shadow-sm sm:p-4">
@@ -374,7 +378,7 @@ function FacilityManagementPageContent() {
             <CardContent>
               {isLoading ? (
                 <div className="flex min-h-48 items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  <div className="h-11 w-11 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                 </div>
               ) : filteredFacilities.length === 0 ? (
                 <div className="text-center py-12">
@@ -391,20 +395,20 @@ function FacilityManagementPageContent() {
                     <div
                       key={facility.id}
                       className={cn(
-                        "rounded-lg border border-border/70 bg-background/70 p-4 transition-all hover:border-primary",
+                        "rounded-lg border border-border/70 bg-background/70 p-4 transition-colors hover:border-primary",
                         selectedFacilityId === facility.id ? "border-primary ring-1 ring-primary" : "",
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <button
                           type="button"
-                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          className="flex min-h-11 min-w-0 flex-1 items-start gap-3 text-left"
                           onClick={() => {
                             setSelectedFacilityId(facility.id);
                             setActiveTab("floors");
                           }}
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                               <Building2 className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
@@ -421,7 +425,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-11 w-11"
                               aria-label={t("facilityMgmt.editFacility")}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -433,7 +437,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-destructive"
+                              className="h-11 w-11 text-destructive"
                               aria-label={t("facilityMgmt.deleteFacility")}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -486,7 +490,7 @@ function FacilityManagementPageContent() {
                 </div>
               ) : floorsQuery.isLoading ? (
                 <div className="flex min-h-48 items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  <div className="h-11 w-11 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                 </div>
               ) : floors.length === 0 ? (
                 <div className="text-center py-12">
@@ -503,20 +507,20 @@ function FacilityManagementPageContent() {
                     <div
                       key={floor.id}
                       className={cn(
-                        "rounded-lg border border-border/70 bg-background/70 p-4 transition-all hover:border-primary",
+                        "rounded-lg border border-border/70 bg-background/70 p-4 transition-colors hover:border-primary",
                         selectedFloorId === floor.id ? "border-primary ring-1 ring-primary" : "",
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <button
                           type="button"
-                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          className="flex min-h-11 min-w-0 flex-1 items-start gap-3 text-left"
                           onClick={() => {
                             setSelectedFloorId(floor.id);
                             setActiveTab("editor");
                           }}
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success-bg text-success">
                               <DoorOpen className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
@@ -532,7 +536,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-11 w-11"
                               aria-label={t("facilityMgmt.editFloor")}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -544,7 +548,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-destructive"
+                              className="h-11 w-11 text-destructive"
                               aria-label={t("facilityMgmt.deleteFloor")}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -681,7 +685,7 @@ function FacilityManagementPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppPage>
   );
 }
 
@@ -691,10 +695,7 @@ export default function FacilityManagementPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center py-24">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <span className="sr-only">{t("common.loading")}</span>
-        </div>
+        <DataState kind="loading" title={t("common.loading")} />
       }
     >
       <FacilityManagementPageContent />

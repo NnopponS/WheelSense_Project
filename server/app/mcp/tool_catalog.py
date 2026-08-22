@@ -82,6 +82,7 @@ _REQUIRED_SCOPE: dict[str, str | None] = {
     "send_device_command": "devices.command",
     "get_facility_details": "rooms.read",
     "get_floorplan_layout": "rooms.read",
+    "get_floorplan_presence": "rooms.read",
     "execute_python_code": None,
     "update_patient": "patients.write",
     "delete_patient": "patients.write",

@@ -19,6 +19,7 @@ from app.config import settings
 from app.db.session import AsyncSessionLocal
 from app.models.core import Workspace
 from app.mcp.server import execute_workspace_tool
+from app.roles import canonicalize_role
 from app.schemas.agent_runtime import (
     AgentRuntimeExecuteResponse,
     AgentRuntimeProposeResponse,
@@ -844,13 +845,10 @@ def _is_patient_detail_navigation_request(message: str) -> bool:
 
 
 def _role_patient_detail_path(role: str, patient_id: int) -> str:
-    normalized = (role or "admin").replace("_", "-")
-    if role == "patient":
+    canonical = canonicalize_role(role)
+    normalized = (canonical or "admin").replace("_", "-")
+    if canonical == "patient":
         return "/patient?tab=profile"
-    if role == "admin":
-        return f"/admin/patients/{patient_id}"
-    if role in {"head_nurse", "supervisor", "observer"}:
-        return f"/{normalized}/personnel/{patient_id}"
     return f"/{normalized}/patients/{patient_id}"
 
 
@@ -1123,11 +1121,18 @@ async def _try_deterministic_read_answer(
     message: str,
     conversation_id: int | None,
     page_context: dict[str, Any] | None = None,
+    lock_enabled: bool = True,
 ) -> AgentRuntimeProposeResponse | None:
     """Resolve common live-data asks before LLM tool routing.
 
     This covers name-heavy questions where an LLM may choose only
     list_visible_patients and then summarize incorrectly.
+
+    When ``lock_enabled`` is False (AI-primary mode), only the page-context
+    and identity fast paths remain — the LLM tool router has no page_context
+    in its system prompt, so those two cases are not "answer locks" the way
+    timeline/location/device synthesis are. Everything else falls through to
+    the ADR 0015 AI pipeline.
     """
     wants_timeline = _is_patient_timeline_request(message)
     wants_location = _is_patient_location_request(message)
@@ -1138,6 +1143,14 @@ async def _try_deterministic_read_answer(
     wants_identity = _is_identity_request(message)
     wants_page_context = _is_page_context_request(message)
     wants_patient_navigation = _is_patient_detail_navigation_request(message)
+    if not lock_enabled:
+        wants_timeline = False
+        wants_location = False
+        wants_device_status = False
+        wants_device_inventory = False
+        wants_system_status = False
+        wants_workspace_inventory = False
+        wants_patient_navigation = False
     if not (
         wants_timeline
         or wants_location
@@ -1824,7 +1837,11 @@ async def propose_turn(
         message=message,
         context=context,
     )
-    clarification = _clarification_reply_for_ambiguous_request(message, context)
+    clarification = (
+        _clarification_reply_for_ambiguous_request(message, context)
+        if settings.easeai_deterministic_answer_lock_enabled
+        else None
+    )
     if clarification is not None:
         clarification_reply, clarification_cards = clarification
         context.add_message("user", message)
@@ -1847,6 +1864,7 @@ async def propose_turn(
             message=message,
             conversation_id=conversation_id,
             page_context=page_context,
+            lock_enabled=settings.easeai_deterministic_answer_lock_enabled,
         )
         if deterministic_read is not None:
             return deterministic_read
@@ -1925,47 +1943,48 @@ async def propose_turn(
                     grounding=attach_response_cards(grounding, cards_for_plan(plan)),
                 )
 
-        deterministic_match, deterministic_immediate = classifier.classify(
-            message,
-            context,
-            allow_semantic=False,
-        )
-        if deterministic_immediate is not None:
-            tool_name, tool_arguments = deterministic_immediate
-            if is_mcp_tool_read_only(tool_name):
-                result = await _call_mcp_tool(actor_access_token, tool_name, tool_arguments)
-                _ingest_patient_context_from_tool_result(conversation_id, tool_name, result, tool_arguments)
-                async with AsyncSessionLocal() as db:
-                    user, workspace = await _load_runtime_actor_context(db, actor_access_token)
-                    provider_attempts: list[dict[str, object]] = []
-                    assistant_reply = await _collect_grounded_tool_answer_or_fallback(
-                        db=db,
-                        user=user,
-                        workspace=workspace,
-                        user_message=message,
-                        tool_name=tool_name,
-                        tool_result=result,
-                        provider_attempts_out=provider_attempts,
+        if settings.easeai_deterministic_answer_lock_enabled:
+            deterministic_match, deterministic_immediate = classifier.classify(
+                message,
+                context,
+                allow_semantic=False,
+            )
+            if deterministic_immediate is not None:
+                tool_name, tool_arguments = deterministic_immediate
+                if is_mcp_tool_read_only(tool_name):
+                    result = await _call_mcp_tool(actor_access_token, tool_name, tool_arguments)
+                    _ingest_patient_context_from_tool_result(conversation_id, tool_name, result, tool_arguments)
+                    async with AsyncSessionLocal() as db:
+                        user, workspace = await _load_runtime_actor_context(db, actor_access_token)
+                        provider_attempts: list[dict[str, object]] = []
+                        assistant_reply = await _collect_grounded_tool_answer_or_fallback(
+                            db=db,
+                            user=user,
+                            workspace=workspace,
+                            user_message=message,
+                            tool_name=tool_name,
+                            tool_result=result,
+                            provider_attempts_out=provider_attempts,
+                        )
+                    grounding = {
+                        "tool_name": tool_name,
+                        "result": result,
+                        "confidence": deterministic_match.confidence if deterministic_match else 0.95,
+                        "classification_method": "easeai_pipeline_v2_deterministic_precheck",
+                        "pipeline_version": "v2",
+                        "strategy": "deterministic_precheck",
+                        "fallback_from": "llm_tools" if llm_tools_attempted else None,
+                    }
+                    if provider_attempts:
+                        grounding["provider_attempts"] = provider_attempts
+                    return AgentRuntimeProposeResponse(
+                        mode="answer",
+                        assistant_reply=assistant_reply,
+                        grounding=attach_response_cards(
+                            grounding,
+                            cards_for_tool_result(tool_name, result),
+                        ),
                     )
-                grounding = {
-                    "tool_name": tool_name,
-                    "result": result,
-                    "confidence": deterministic_match.confidence if deterministic_match else 0.95,
-                    "classification_method": "easeai_pipeline_v2_deterministic_precheck",
-                    "pipeline_version": "v2",
-                    "strategy": "deterministic_precheck",
-                    "fallback_from": "llm_tools" if llm_tools_attempted else None,
-                }
-                if provider_attempts:
-                    grounding["provider_attempts"] = provider_attempts
-                return AgentRuntimeProposeResponse(
-                    mode="answer",
-                    assistant_reply=assistant_reply,
-                    grounding=attach_response_cards(
-                        grounding,
-                        cards_for_tool_result(tool_name, result),
-                    ),
-                )
 
         llm_routed = await _try_v2_llm_tools_strategy(
             actor_access_token=actor_access_token,

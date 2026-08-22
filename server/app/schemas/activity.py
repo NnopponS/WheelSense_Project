@@ -50,7 +50,7 @@ class TimelineEventOut(BaseModel):
             return "simulator"
         if data.get("seed") is True or self.source == "seed":
             return "seed"
-        if self.source in {"caregiver", "observer", "manual"}:  # observer is legacy alias for caregiver
+        if self.source in {"caregiver", "observer", "manual"}:  # observer is a legacy alias for caregiver
             return self.source
         if self.source == "auto" and self.event_type in {
             "room_enter",

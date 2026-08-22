@@ -32,7 +32,7 @@ def _decision(intent_key: str, tool: str | None = None, confidence: float = 0.9)
     return IntentDecision(intent_key=intent_key, confidence=confidence, matched_tool=tool)
 
 
-def _actor(role: str = "observer", patient_id: int | None = None) -> ActorFacts:
+def _actor(role: str = "caregiver", patient_id: int | None = None) -> ActorFacts:
     return ActorFacts(role=role, user_id=2, workspace_id=1, patient_id=patient_id)
 
 
@@ -58,11 +58,11 @@ class TestLayer2SuccessPaths:
 
     def test_assemble_copies_actor_and_intent(self) -> None:
         corr = new_correlation()
-        actor = _actor("supervisor")
+        actor = _actor("head_caregiver")
         decision = _decision("workflow.read", "list_workflow_tasks")
         result = assemble(corr, actor, decision, system_state={})
         assert isinstance(result, ValidatedContextPackage)
-        assert result.actor.role == "supervisor"
+        assert result.actor.role == "head_caregiver"
         assert result.intent.intent_key == "workflow.read"
 
     def test_assemble_attaches_read_only_policy_tag_for_read_tool(self) -> None:
@@ -76,7 +76,7 @@ class TestLayer2SuccessPaths:
 
     def test_assemble_does_not_attach_read_only_for_write_tool(self) -> None:
         corr = new_correlation()
-        actor = _actor("head_nurse")
+        actor = _actor("head_caregiver")
         result = assemble(
             corr, actor, _decision("alerts.manage", "acknowledge_alert"),
             system_state={},
@@ -134,7 +134,7 @@ class TestLayer2MissingFacts:
         """
         corr = new_correlation()
         # Observer with no patient_id tries to call get_patient_vitals.
-        actor = ActorFacts(role="observer", user_id=5, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=5, workspace_id=1)
         decision = _decision("patients.read", "get_patient_vitals")
         result = assemble(corr, actor, decision, system_state={})
         assert isinstance(result, MissingFacts)
@@ -142,7 +142,7 @@ class TestLayer2MissingFacts:
 
     def test_missing_facts_carries_localized_messages(self) -> None:
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=5, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=5, workspace_id=1)
         decision = _decision("patients.read", "get_patient_vitals")
         result = assemble(corr, actor, decision, system_state={})
         assert isinstance(result, MissingFacts)
@@ -151,7 +151,7 @@ class TestLayer2MissingFacts:
 
     def test_missing_facts_reason_code_is_stable_string(self) -> None:
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=5, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=5, workspace_id=1)
         decision = _decision("patients.read", "get_patient_timeline")
         result = assemble(corr, actor, decision, system_state={})
         assert isinstance(result, MissingFacts)
@@ -174,7 +174,7 @@ class TestLayer2Observability:
     def test_assemble_emits_reject_outcome_for_missing_facts(self) -> None:
         emitter = PipelineEventEmitter(capacity=8)
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=5, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=5, workspace_id=1)
         decision = _decision("patients.read", "get_patient_vitals")
         assemble(corr, actor, decision, system_state={}, emitter=emitter)
         events = emitter.events_for(corr.id)

@@ -16,9 +16,7 @@ import { Calendar, ListChecks, ListTodo, Plus, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildCsvFromRows, downloadCsvFile } from "@/lib/csv";
-import FeatureDetailActions, {
-  type FeatureDetailAction,
-} from "@/components/dashboard/FeatureDetailActions";
+import { AppPage } from "@/components/layout/AppPage";
 
 export interface TasksPageLayoutProps {
   /** Page title */
@@ -26,7 +24,7 @@ export interface TasksPageLayoutProps {
   /** Page subtitle/description */
   description: string;
   /** Role identifier for permissions */
-  role: "admin" | "head-caregiver" | "caregiver" | "patient";
+  role: "admin" | "head_caregiver" | "caregiver" | "patient";
   /** Whether user can create tasks */
   canCreate?: boolean;
   /** Whether user can manage (edit/delete/reassign) tasks */
@@ -41,9 +39,6 @@ export interface TasksPageLayoutProps {
   taskParams?: Record<string, unknown>;
   /** Current user ID for filtering */
   currentUserId?: number;
-  /** Cross-links that keep task views connected to dashboard/map/alerts on mobile. */
-  contextActions?: FeatureDetailAction[];
-  contextTitle?: string;
 }
 
 /**
@@ -62,8 +57,6 @@ export function TasksPageLayout({
   showDailyRoutineOverview = false,
   filterTasks,
   taskParams = {},
-  contextActions = [],
-  contextTitle = "View more",
 }: TasksPageLayoutProps) {
   const { t } = useTranslation();
   const [selectedTask, setSelectedTask] = useState<TaskOut | null>(null);
@@ -130,16 +123,15 @@ export function TasksPageLayout({
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="border-b bg-background px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
-            <p className="text-sm text-muted-foreground">{description}</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
+    <AppPage
+      title={title}
+      description={description}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: `/${role.replace("_", "-")}` },
+        { label: t("nav.tasks") },
+      ]}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
             {/* View Toggle */}
             <Tabs 
               value={viewMode} 
@@ -169,24 +161,30 @@ export function TasksPageLayout({
                 size="sm"
                 className="px-2"
                 onClick={() => setViewMode("kanban")}
+                aria-label={t("tasks.kanban")}
+                aria-pressed={viewMode === "kanban"}
               >
-                <ListTodo className="h-4 w-4" />
+                <ListTodo className="h-5 w-5" aria-hidden="true" />
               </Button>
               <Button
                 variant={viewMode === "calendar" ? "default" : "ghost"}
                 size="sm"
                 className="px-2"
                 onClick={() => setViewMode("calendar")}
+                aria-label={t("tasks.calendar")}
+                aria-pressed={viewMode === "calendar"}
               >
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-5 w-5" aria-hidden="true" />
               </Button>
               <Button
                 variant={viewMode === "stats" ? "default" : "ghost"}
                 size="sm"
                 className="px-2"
                 onClick={() => setViewMode("stats")}
+                aria-label={t("tasks.stats")}
+                aria-pressed={viewMode === "stats"}
               >
-                <BarChart3 className="h-4 w-4" />
+                <BarChart3 className="h-5 w-5" aria-hidden="true" />
               </Button>
             </div>
 
@@ -220,18 +218,12 @@ export function TasksPageLayout({
                 {showArchived ? t("tasks.showActive") : t("tasks.showArchived")}
               </Button>
             )}
-          </div>
         </div>
-      </div>
-
-      {contextActions.length > 0 ? (
-        <div className="border-b bg-background px-4 py-3 sm:px-6">
-          <FeatureDetailActions title={contextTitle} actions={contextActions} />
-        </div>
-      ) : null}
+      }
+    >
 
       {/* Stats Bar */}
-      <div className="border-b bg-background px-4 py-4 sm:px-6">
+      <div className="rounded-xl border border-border bg-card p-4">
         <UnifiedTaskCommandBar 
           tasks={visibleTasks} 
           isLoading={isLoading} 
@@ -240,11 +232,12 @@ export function TasksPageLayout({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="min-h-0 overflow-auto">
         {viewMode === "kanban" && (
           <UnifiedTaskKanbanBoard
             tasks={visibleTasks}
             isLoading={isLoading}
+            onCreateTask={canCreate && !showArchived ? () => setShowCreateDialog(true) : undefined}
             onTaskClick={setSelectedTask}
             onStatusChange={canExecute && !showArchived ? handleStatusChange : undefined}
             canManage={canManage}
@@ -374,6 +367,6 @@ export function TasksPageLayout({
       {showDailyRoutineOverview && (
         <RoutineDayOverviewSheet open={routineSheetOpen} onOpenChange={setRoutineSheetOpen} />
       )}
-    </div>
+    </AppPage>
   );
 }

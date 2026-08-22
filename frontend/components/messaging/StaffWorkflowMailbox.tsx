@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { Inbox, Mail, PenLine, Send, Trash2, UserRoundCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { AppPage } from "@/components/layout/AppPage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +53,7 @@ import { canDeleteWorkflowMessage, WORKFLOW_MESSAGE_MAX_ATTACHMENTS } from "@/li
 const EMPTY_SELECT = "__empty__";
 
 /** Matches `GET /workflow/messaging/recipients` (staff + patient accounts in workspace). */
-const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "caregiver", "patient"] as const;
+const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "head_caregiver", "caregiver", "patient"] as const;
 type RecipientFilterRole = (typeof RECIPIENT_FILTER_ROLES)[number];
 
 const composeSchema = z.object({
@@ -65,7 +66,7 @@ const composeSchema = z.object({
 
 type ComposeValues = z.infer<typeof composeSchema>;
 
-export type StaffMailboxVariant = "head_caregiver" | "caregiver";
+export type StaffMailboxVariant = "head_nurse" | "supervisor" | "observer";
 
 type MessageRow = {
   id: number;
@@ -95,7 +96,7 @@ const VARIANT_CONFIG: Record<
     subtitleKey: TranslationKey;
   }
 > = {
-  head_caregiver: {
+  head_nurse: {
     invalidatePrefix: ["head-nurse", "messages"],
     messagesQueryKey: ["head-nurse", "messages", "list"],
     patientsQueryKey: ["head-nurse", "messages", "patients"],
@@ -104,11 +105,20 @@ const VARIANT_CONFIG: Record<
     titleKey: "headNurse.messages.pageTitle",
     subtitleKey: "headNurse.messages.pageSubtitle",
   },
-  caregiver: {
-    invalidatePrefix: ["observer", "messages"],
-    messagesQueryKey: ["observer", "messages", "list"],
-    patientsQueryKey: ["observer", "messages", "patients"],
-    recipientsQueryKey: ["observer", "messages", "recipients"],
+  supervisor: {
+    invalidatePrefix: ["head_caregiver", "messages"],
+    messagesQueryKey: ["head_caregiver", "messages", "list"],
+    patientsQueryKey: ["head_caregiver", "messages", "patients"],
+    recipientsQueryKey: ["head_caregiver", "messages", "recipients"],
+    defaultFilterRole: "head_caregiver",
+    titleKey: "supervisor.messages.pageTitle",
+    subtitleKey: "supervisor.messages.pageSubtitle",
+  },
+  observer: {
+    invalidatePrefix: ["caregiver", "messages"],
+    messagesQueryKey: ["caregiver", "messages", "list"],
+    patientsQueryKey: ["caregiver", "messages", "patients"],
+    recipientsQueryKey: ["caregiver", "messages", "recipients"],
     defaultFilterRole: "head_caregiver",
     titleKey: "observer.messages.pageTitle",
     subtitleKey: "observer.messages.pageSubtitle",
@@ -130,6 +140,8 @@ function recipientFilterRoleLabelKey(role: RecipientFilterRole): TranslationKey 
   switch (role) {
     case "admin":
       return "admin.workflowMessaging.roleLabelAdmin";
+    case "head_caregiver":
+      return "admin.workflowMessaging.roleLabelHeadNurse";
     case "head_caregiver":
       return "admin.workflowMessaging.roleLabelSupervisor";
     case "caregiver":
@@ -367,12 +379,17 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
   const loading = messagesQuery.isLoading || patientsQuery.isLoading;
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">{t(cfg.titleKey)}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t(cfg.subtitleKey)}</p>
-        </div>
+    <AppPage
+      title={t(cfg.titleKey)}
+      description={t(cfg.subtitleKey)}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: `/${variant.replace("_", "-")}`,
+        },
+        { label: t("nav.messages") },
+      ]}
+      actions={
         <Button
           type="button"
           className="shrink-0 gap-2"
@@ -381,10 +398,11 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
             setComposeOpen(true);
           }}
         >
-          <PenLine className="h-4 w-4" />
+          <PenLine className="h-5 w-5" aria-hidden="true" />
           {t("messaging.mailbox.composeButton")}
         </Button>
-      </div>
+      }
+    >
 
       <div className="flex flex-col overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm lg:min-h-[min(70vh,780px)] lg:flex-row">
         <div className="flex w-full min-w-0 flex-col border-border/80 lg:w-[min(100%,400px)] lg:border-r">
@@ -721,6 +739,6 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
           </form>
         </SheetContent>
       </Sheet>
-    </div>
+    </AppPage>
   );
 }

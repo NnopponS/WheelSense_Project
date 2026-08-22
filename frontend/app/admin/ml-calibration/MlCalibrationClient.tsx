@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { 
-  Cpu, 
   MapPin, 
   Activity, 
   Play, 
@@ -101,7 +101,7 @@ interface MotionTrainResponse {
   accuracy: number;
 }
 
-export default function MlCalibrationClient() {
+export default function MlCalibrationClient({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>("localization");
@@ -272,9 +272,9 @@ export default function MlCalibrationClient() {
       setLocSessionId(res.id);
       setRecordingLoc(true);
       setLocSamplesCount(0);
-      showMsg("Calibration session started. Move around and record samples.", "success");
+      showMsg(t("admin.ml.msgSessionStarted"), "success");
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to start session", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgStartFailed"), "error");
     }
   };
 
@@ -297,7 +297,7 @@ export default function MlCalibrationClient() {
       }
       if (Object.keys(byNode).length === 0) {
         showMsg(
-          "No RSSI readings found for this device yet. Ensure the device is online and publishing RSSI.",
+          t("admin.ml.msgNoRssi"),
           "error",
         );
         return;
@@ -309,9 +309,9 @@ export default function MlCalibrationClient() {
         rssi_vector: byNode,
       });
       setLocSamplesCount((prev) => prev + 1);
-      showMsg("Sample recorded", "success");
+      showMsg(t("admin.ml.msgSampleRecorded"), "success");
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to record sample", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgSampleFailed"), "error");
     }
   };
 
@@ -321,10 +321,10 @@ export default function MlCalibrationClient() {
       await api.post(`/localization/calibration/sessions/${locSessionId}/train`, {});
       setRecordingLoc(false);
       setLocSessionId(null);
-      showMsg("Session trained and samples saved to the training set.", "success");
+      showMsg(t("admin.ml.msgSessionTrained"), "success");
       await refetchLoc();
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to finish session", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgFinishFailed"), "error");
     }
   };
 
@@ -334,13 +334,13 @@ export default function MlCalibrationClient() {
       setLocStrategyDirty(false);
       showMsg(
         locStrategy === "max_rssi"
-          ? "Saved: localization uses strongest RSSI node → room mapping for MQTT predictions."
-          : "Saved: localization uses trained KNN fingerprints when available.",
+          ? t("admin.ml.msgStrategyStrongestSaved")
+          : t("admin.ml.msgStrategyKnnSaved"),
         "success",
       );
       await refetchLocConfig();
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to save strategy", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgStrategyFailed"), "error");
     }
   };
 
@@ -348,10 +348,10 @@ export default function MlCalibrationClient() {
     try {
       setTrainingStatus("training_loc");
       await api.post("/localization/retrain", {});
-      showMsg("Localization model trained successfully", "success");
+      showMsg(t("admin.ml.msgLocalizationTrained"), "success");
       await refetchLoc();
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to train model", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgTrainFailed"), "error");
     } finally {
       setTrainingStatus(null);
     }
@@ -367,8 +367,8 @@ export default function MlCalibrationClient() {
       });
       showMsg(
         repaired.ready
-          ? "Localization baseline repaired and connected."
-          : "Repair ran, but some required links are still missing.",
+          ? t("admin.ml.msgBaselineRepaired")
+          : t("admin.ml.msgRepairIncomplete"),
         repaired.ready ? "success" : "info",
       );
       await Promise.all([
@@ -377,7 +377,7 @@ export default function MlCalibrationClient() {
         refetchLoc(),
       ]);
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to repair localization readiness", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgRepairFailed"), "error");
     } finally {
       setRepairingReadiness(false);
     }
@@ -385,7 +385,7 @@ export default function MlCalibrationClient() {
 
   // Handlers for Motion
   const handleStartRecord = async () => {
-    if (!selectedDevice) return showMsg("Please select a device first", "error");
+    if (!selectedDevice) return showMsg(t("admin.ml.msgSelectDevice"), "error");
     try {
       await api.post("/motion/record/start", {
         device_id: selectedDevice,
@@ -393,9 +393,9 @@ export default function MlCalibrationClient() {
         session_id: `session_${Date.now()}`
       });
       setIsRecording(true);
-      showMsg(`Recording started for label: ${motionLabel}`, "success");
+      showMsg(`${t("admin.ml.msgRecordingStarted")}: ${motionLabel}`, "success");
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to start recording", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgRecordingStartFailed"), "error");
     }
   };
 
@@ -404,9 +404,9 @@ export default function MlCalibrationClient() {
     try {
       await api.post("/motion/record/stop", { device_id: selectedDevice });
       setIsRecording(false);
-      showMsg("Recording stopped", "success");
+      showMsg(t("admin.ml.msgRecordingStopped"), "success");
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to stop recording", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgRecordingStopFailed"), "error");
     }
   };
 
@@ -414,10 +414,10 @@ export default function MlCalibrationClient() {
     try {
       setTrainingStatus("training_motion");
       const res = await api.post<MotionTrainResponse>("/motion/train", {});
-      showMsg(`Motion model trained. Accuracy: ${(res.accuracy * 100).toFixed(1)}%`, "success");
+      showMsg(`${t("admin.ml.msgMotionTrained")} ${t("admin.ml.accuracy")}: ${(res.accuracy * 100).toFixed(1)}%`, "success");
       await refetchMotion();
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to train model", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgTrainFailed"), "error");
     } finally {
       setTrainingStatus(null);
     }
@@ -426,40 +426,42 @@ export default function MlCalibrationClient() {
   const handleSaveMotion = async () => {
     try {
       await api.post("/motion/model/save", {});
-      showMsg("Motion model saved to disk", "success");
+      showMsg(t("admin.ml.msgMotionSaved"), "success");
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to save model", "error");
+      showMsg(err instanceof ApiError ? err.message : t("admin.ml.msgSaveModelFailed"), "error");
     }
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-6xl">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Cpu className="w-6 h-6 text-primary" />
-          ML Calibration
-        </h2>
-        <p className="text-sm text-foreground-variant mt-1">
-          Manage and calibrate machine learning models for room localization and motion detection.
-        </p>
-      </div>
+    <AppPage
+      showHeader={!embedded}
+      width="content"
+      title={t("admin.ml.calibrationTitle")}
+      description={t("admin.ml.calibrationDescription")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/admin" },
+        { label: t("nav.mlCalibration") },
+      ]}
+    >
 
-      <div className="flex gap-2 border-b border-outline-variant pb-3">
+      <div className="flex gap-2 border-b border-outline-variant pb-3" role="group" aria-label={t("admin.ml.modelAreaTabs")}>
         <Button 
+          aria-pressed={activeTab === "localization"}
           variant={activeTab === "localization" ? "default" : "ghost"}
           onClick={() => setActiveTab("localization")}
           className="rounded-full"
         >
           <MapPin className="w-4 h-4 mr-2" />
-          Localization
+          {t("admin.ml.localizationTab")}
         </Button>
         <Button 
+          aria-pressed={activeTab === "motion"}
           variant={activeTab === "motion" ? "default" : "ghost"}
           onClick={() => setActiveTab("motion")}
           className="rounded-full"
         >
           <Activity className="w-4 h-4 mr-2" />
-          Motion (XGBoost)
+          {t("admin.ml.motionTab")}
         </Button>
       </div>
 
@@ -481,16 +483,16 @@ export default function MlCalibrationClient() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Terminal className="w-5 h-5" />
-                  Localization Data Collector
+                  {t("admin.ml.localizationCollectorTitle")}
                 </CardTitle>
                 <CardDescription>
-                  Record RSSI fingerprints for a selected room to train the model.
+                  {t("admin.ml.localizationCollectorDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Building</Label>
+                    <Label>{t("admin.ml.buildingLabel")}</Label>
                     <Select
                       value={selectedFacilityId === "" ? "" : String(selectedFacilityId)}
                       onValueChange={(v) => {
@@ -501,7 +503,7 @@ export default function MlCalibrationClient() {
                       disabled={recordingLoc}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select building..." />
+                        <SelectValue placeholder={t("admin.ml.selectBuilding")} />
                       </SelectTrigger>
                       <SelectContent>
                         {facilities?.map((facility) => (
@@ -513,7 +515,7 @@ export default function MlCalibrationClient() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Floor</Label>
+                    <Label>{t("admin.ml.floorLabel")}</Label>
                     <Select
                       value={selectedFloorId === "" ? "" : String(selectedFloorId)}
                       onValueChange={(v) => {
@@ -523,12 +525,12 @@ export default function MlCalibrationClient() {
                       disabled={recordingLoc || selectedFacilityId === ""}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select floor..." />
+                        <SelectValue placeholder={t("admin.ml.selectFloor")} />
                       </SelectTrigger>
                       <SelectContent>
                         {floors?.map((floor) => (
                           <SelectItem key={floor.id} value={String(floor.id)}>
-                            {floor.name?.trim() || `Floor ${floor.floor_number}`}
+                            {floor.name?.trim() || `${t("admin.ml.floorLabel")} ${floor.floor_number}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -538,10 +540,10 @@ export default function MlCalibrationClient() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Room</Label>
+                    <Label>{t("admin.ml.roomLabel")}</Label>
                     <Select value={String(selectedRoomId)} onValueChange={v => setSelectedRoomId(Number(v))} disabled={recordingLoc}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select room..." />
+                        <SelectValue placeholder={t("admin.ml.selectRoom")} />
                       </SelectTrigger>
                       <SelectContent>
                         {filteredRooms.map(r => (
@@ -553,10 +555,10 @@ export default function MlCalibrationClient() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Calibration Device (M5/Mobile)</Label>
+                    <Label>{t("admin.ml.calibrationDeviceLabel")}</Label>
                     <Select value={selectedLocDevice} onValueChange={setSelectedLocDevice} disabled={recordingLoc}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select device..." />
+                        <SelectValue placeholder={t("admin.ml.selectDevice")} />
                       </SelectTrigger>
                       <SelectContent>
                         {devices?.map(d => (
@@ -580,7 +582,7 @@ export default function MlCalibrationClient() {
                       onClick={handleStartLocSession}
                       disabled={!selectedLocDevice || !selectedRoomId || selectedFacilityId === "" || selectedFloorId === ""}
                     >
-                      <Play className="w-5 h-5 mr-2 fill-current" /> Start Calibration Session
+                      <Play className="w-5 h-5 mr-2 fill-current" /> {t("admin.ml.startCalibration")}
                     </Button>
                   ) : (
                     <>
@@ -588,13 +590,13 @@ export default function MlCalibrationClient() {
                         className="flex-1 h-12 rounded-xl text-lg font-bold bg-success text-white hover:bg-success/90"
                         onClick={handleRecordLocSample}
                       >
-                        <Camera className="w-5 h-5 mr-2" /> Record Sample ({locSamplesCount})
+                        <Camera className="w-5 h-5 mr-2" /> {t("admin.ml.recordSample")} ({locSamplesCount})
                       </Button>
                       <Button 
                         className="flex-1 h-12 rounded-xl text-lg font-bold bg-error text-white hover:bg-error/90"
                         onClick={handleStopLocSession}
                       >
-                        <Square className="w-5 h-5 mr-2 fill-current" /> Finish & Train
+                        <Square className="w-5 h-5 mr-2 fill-current" /> {t("admin.ml.finishTrain")}
                       </Button>
                     </>
                   )}
@@ -603,7 +605,7 @@ export default function MlCalibrationClient() {
                 {recordingLoc && (
                   <div className="flex items-center justify-center gap-2 p-4 bg-info-container/20 rounded-xl animate-pulse">
                     <div className="w-3 h-3 rounded-full bg-info" />
-                    <span className="text-sm font-bold text-info uppercase tracking-widest">Move device around the room and record samples</span>
+                    <span className="text-sm font-bold text-info">{t("admin.ml.moveDeviceHint")}</span>
                   </div>
                 )}
               </CardContent>
@@ -613,19 +615,19 @@ export default function MlCalibrationClient() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
-                  Rooms & Training Status
+                  {t("admin.ml.roomsTrainingTitle")}
                 </CardTitle>
                 <CardDescription>
-                  RSSI fingerprints are mapped to these rooms.
+                  {t("admin.ml.roomsTrainingDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Room Name</TableHead>
-                      <TableHead>Node ID</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t("admin.ml.roomName")}</TableHead>
+                      <TableHead>{t("admin.ml.nodeId")}</TableHead>
+                      <TableHead>{t("clinical.table.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -633,16 +635,16 @@ export default function MlCalibrationClient() {
                       <TableRow key={room.id}>
                         <TableCell className="font-medium">{room.name}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{room.node_device_id || "No Node"}</Badge>
+                          <Badge variant="outline">{room.node_device_id || t("admin.ml.noNode")}</Badge>
                         </TableCell>
                         <TableCell>
                           {locModel?.status === "ready" && (locModel?.rooms ?? 0) > 0 ? (
                             <div className="flex items-center gap-1 text-success">
                               <CheckCircle2 className="w-3 h-3" />
-                              <span className="text-xs">Active</span>
+                              <span className="text-sm">{t("patients.statusActive")}</span>
                             </div>
                           ) : (
-                            <span className="text-xs text-foreground-variant">No Data</span>
+                            <span className="text-sm text-foreground-variant">{t("admin.ml.noData")}</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -650,7 +652,7 @@ export default function MlCalibrationClient() {
                     {(!rooms || rooms.length === 0) && (
                       <TableRow>
                         <TableCell colSpan={3} className="text-center py-8 text-foreground-variant italic">
-                          No rooms configured. Go to Facility Management to add rooms.
+                          {t("admin.ml.noRooms")}
                         </TableCell>
                       </TableRow>
                     )}
@@ -662,63 +664,63 @@ export default function MlCalibrationClient() {
 
           <Card className="h-fit">
             <CardHeader>
-              <CardTitle className="text-lg">Model Controls</CardTitle>
+              <CardTitle className="text-lg">{t("admin.ml.modelControls")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="surface-container-low p-4 rounded-xl space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Workspace Readiness</p>
+                    <p className="text-sm font-semibold text-foreground">{t("admin.ml.workspaceReadiness")}</p>
                     <p className="text-xs text-foreground-variant">
                       {locReadiness?.telemetry_strongest_node_id
-                        ? `Latest wheelchair RSSI: strongest node ${locReadiness.telemetry_strongest_node_id} → predicted room ${
+                        ? `${t("admin.ml.latestWheelchairRssi")}: ${locReadiness.telemetry_strongest_node_id} → ${t("admin.ml.predictedRoom")} ${
                             locReadiness.telemetry_predicted_room_name ||
                             (locReadiness.telemetry_predicted_room_id != null
                               ? `#${locReadiness.telemetry_predicted_room_id}`
                               : "?")
-                          }. Baseline chain: ${locReadiness.wheelchair_device_id || "wheelchair"} → ${
-                            locReadiness.node_device_id || "node"
-                          } → ${locReadiness.room_name || "room"} → ${
-                            locReadiness.patient_username || locReadiness.patient_name || "patient"
+                          }. ${t("admin.ml.baselineChain")}: ${locReadiness.wheelchair_device_id || t("admin.ml.wheelchair")} → ${
+                            locReadiness.node_device_id || t("admin.ml.node")
+                          } → ${locReadiness.room_name || t("admin.ml.roomLabel")} → ${
+                            locReadiness.patient_username || locReadiness.patient_name || t("admin.ml.patient")
                           }.`
-                        : `Baseline chain: ${locReadiness?.wheelchair_device_id || "wheelchair"} → ${
-                            locReadiness?.node_display_name || locReadiness?.node_device_id || "node"
-                          } → ${locReadiness?.room_name || "room"} → ${
-                            locReadiness?.patient_username || locReadiness?.patient_name || "patient"
-                          }. Publish RSSI from the wheelchair to see strongest-node preview.`}
+                        : `${t("admin.ml.baselineChain")}: ${locReadiness?.wheelchair_device_id || t("admin.ml.wheelchair")} → ${
+                            locReadiness?.node_display_name || locReadiness?.node_device_id || t("admin.ml.node")
+                          } → ${locReadiness?.room_name || t("admin.ml.roomLabel")} → ${
+                            locReadiness?.patient_username || locReadiness?.patient_name || t("admin.ml.patient")
+                          }. ${t("admin.ml.publishRssiHint")}`}
                     </p>
                   </div>
                   <Badge variant={locReadiness?.ready ? "default" : "secondary"}>
-                    {locReadiness?.ready ? "Ready" : "Needs repair"}
+                    {locReadiness?.ready ? t("admin.ml.ready") : t("admin.ml.needsRepair")}
                   </Badge>
                 </div>
-                <div className="space-y-2 text-xs">
+                <div className="space-y-2 text-sm">
                   <div className="flex justify-between gap-3">
-                    <span className="text-foreground-variant">Wheelchair</span>
-                    <span className="font-medium">{locReadiness?.wheelchair_device_id || "Missing"}</span>
+                    <span className="text-foreground-variant">{t("admin.ml.wheelchair")}</span>
+                    <span className="font-medium">{locReadiness?.wheelchair_device_id || t("admin.ml.missing")}</span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-foreground-variant">Strongest RSSI (live)</span>
+                    <span className="text-foreground-variant">{t("admin.ml.strongestRssi")}</span>
                     <span className="font-medium">
                       {locReadiness?.telemetry_strongest_node_id || "—"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-foreground-variant">Node alias</span>
-                    <span className="font-medium">{locReadiness?.node_display_name || locReadiness?.node_device_id || "Missing"}</span>
+                    <span className="text-foreground-variant">{t("admin.ml.nodeAlias")}</span>
+                    <span className="font-medium">{locReadiness?.node_display_name || locReadiness?.node_device_id || t("admin.ml.missing")}</span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-foreground-variant">Room</span>
-                    <span className="font-medium">{locReadiness?.room_name || "Missing"}</span>
+                    <span className="text-foreground-variant">{t("admin.ml.roomLabel")}</span>
+                    <span className="font-medium">{locReadiness?.room_name || t("admin.ml.missing")}</span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-foreground-variant">Patient</span>
-                    <span className="font-medium">{locReadiness?.patient_name || locReadiness?.patient_username || "Missing"}</span>
+                    <span className="text-foreground-variant">{t("admin.ml.patient")}</span>
+                    <span className="font-medium">{locReadiness?.patient_name || locReadiness?.patient_username || t("admin.ml.missing")}</span>
                   </div>
                 </div>
                 {locReadiness && locReadiness.missing.length > 0 && (
-                  <p className="text-xs text-amber-700">
-                    Missing: {locReadiness.missing.join(", ")}
+                  <p className="text-sm text-warning-foreground">
+                    {t("admin.ml.missing")}: {locReadiness.missing.join(", ")}
                   </p>
                 )}
                 <Button
@@ -732,15 +734,15 @@ export default function MlCalibrationClient() {
                   ) : (
                     <Save className="w-4 h-4 mr-2" />
                   )}
-                  Repair and connect baseline
+                  {t("admin.ml.repairBaseline")}
                 </Button>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <Label>Localization Strategy</Label>
+                  <Label>{t("admin.ml.localizationStrategy")}</Label>
                   <span className="text-xs text-muted-foreground">
-                    Saved: <span className="font-semibold text-foreground">{locConfig?.strategy ?? "—"}</span>
+                    {t("admin.ml.saved")}: <span className="font-semibold text-foreground">{locConfig?.strategy ?? "—"}</span>
                   </span>
                 </div>
                 <Select
@@ -755,14 +757,14 @@ export default function MlCalibrationClient() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="knn">KNN (Fingerprinting)</SelectItem>
-                    <SelectItem value="max_rssi">Strongest RSSI Node</SelectItem>
+                    <SelectItem value="knn">{t("admin.ml.strategyKnn")}</SelectItem>
+                    <SelectItem value="max_rssi">{t("admin.ml.strategyStrongest")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-foreground-variant italic">
                   {locStrategy === "knn"
-                    ? "Uses machine learning on RSSI fingerprints."
-                    : "Uses the strongest visible RSSI node as the default room signal."}
+                    ? t("admin.ml.strategyKnnHint")
+                    : t("admin.ml.strategyStrongestHint")}
                 </p>
                 <Button
                   type="button"
@@ -772,25 +774,25 @@ export default function MlCalibrationClient() {
                   onClick={() => void handleSaveLocalizationStrategy()}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save strategy
+                  {t("admin.ml.saveStrategy")}
                 </Button>
               </div>
 
               <div className="surface-container-low p-4 rounded-xl space-y-2 mt-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-foreground-variant">Status</span>
+                  <span className="text-foreground-variant">{t("clinical.table.status")}</span>
                   <Badge variant={locModel?.status === "ready" ? "default" : "secondary"}>
-                    {locModel?.status || "Unknown"}
+                    {locModel?.status === "ready" ? t("admin.ml.ready") : locModel?.status || t("admin.ml.unknown")}
                   </Badge>
                 </div>
                 {locModel?.status === "ready" && (
                   <>
                     <div className="flex justify-between text-sm">
-                      <span className="text-foreground-variant">Trained Rooms</span>
+                      <span className="text-foreground-variant">{t("admin.ml.trainedRooms")}</span>
                       <span className="font-bold">{locModel.rooms ?? 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-foreground-variant">Nodes (Beacons)</span>
+                      <span className="text-foreground-variant">{t("admin.ml.nodesBeacons")}</span>
                       <span className="font-bold">{locModel.nodes?.length || 0}</span>
                     </div>
                   </>
@@ -807,10 +809,10 @@ export default function MlCalibrationClient() {
                 ) : (
                   <RefreshCw className="w-4 h-4 mr-2" />
                 )}
-                Retrain from Database
+                {t("admin.ml.retrainDatabase")}
               </Button>
               <p className="text-xs text-foreground-variant italic px-1 text-center">
-                Uses existing RSSI fingerprint data in the database.
+                {t("admin.ml.retrainDatabaseHint")}
               </p>
             </CardContent>
           </Card>
@@ -823,19 +825,19 @@ export default function MlCalibrationClient() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Terminal className="w-5 h-5" />
-                Training Data Collector
+                {t("admin.ml.motionCollectorTitle")}
               </CardTitle>
               <CardDescription>
-                Record IMU windows from an M5StickC to train the motion classifier.
+                {t("admin.ml.motionCollectorDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Target Wheelchair (M5StickC)</Label>
+                  <Label>{t("admin.ml.targetWheelchair")}</Label>
                   <Select value={selectedDevice} onValueChange={setSelectedDevice}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select device..." />
+                      <SelectValue placeholder={t("admin.ml.selectDevice")} />
                     </SelectTrigger>
                     <SelectContent>
                       {devices?.map(d => (
@@ -847,18 +849,18 @@ export default function MlCalibrationClient() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Action Label</Label>
+                  <Label>{t("admin.ml.actionLabel")}</Label>
                   <Select value={motionLabel} onValueChange={setMotionLabel}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="idle">Idle (หยุดนิ่ง)</SelectItem>
-                      <SelectItem value="straight">Straight (เดินหน้า)</SelectItem>
-                      <SelectItem value="turn_left">Turn Left (เลี้ยวซ้าย)</SelectItem>
-                      <SelectItem value="turn_right">Turn Right (เลี้ยวขวา)</SelectItem>
-                      <SelectItem value="reverse">Reverse (ถอยหลัง)</SelectItem>
-                      <SelectItem value="fall">Fall (หกล้ม)</SelectItem>
+                      <SelectItem value="idle">{t("admin.ml.motionIdle")}</SelectItem>
+                      <SelectItem value="straight">{t("admin.ml.motionStraight")}</SelectItem>
+                      <SelectItem value="turn_left">{t("admin.ml.motionTurnLeft")}</SelectItem>
+                      <SelectItem value="turn_right">{t("admin.ml.motionTurnRight")}</SelectItem>
+                      <SelectItem value="reverse">{t("admin.ml.motionReverse")}</SelectItem>
+                      <SelectItem value="fall">{t("admin.ml.motionFall")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -875,9 +877,9 @@ export default function MlCalibrationClient() {
                   disabled={!selectedDevice}
                 >
                   {isRecording ? (
-                    <><Square className="w-5 h-5 mr-2 fill-current" /> Stop Recording</>
+                    <><Square className="w-5 h-5 mr-2 fill-current" /> {t("admin.ml.stopRecording")}</>
                   ) : (
-                    <><Play className="w-5 h-5 mr-2 fill-current" /> Start Recording</>
+                    <><Play className="w-5 h-5 mr-2 fill-current" /> {t("admin.ml.startRecording")}</>
                   )}
                 </Button>
               </div>
@@ -885,12 +887,12 @@ export default function MlCalibrationClient() {
               {isRecording && (
                 <div className="flex items-center justify-center gap-2 p-4 bg-error-container/20 rounded-xl animate-pulse">
                   <div className="w-3 h-3 rounded-full bg-error" />
-                  <span className="text-sm font-bold text-error uppercase tracking-widest">Live Recording Session</span>
+                  <span className="text-sm font-bold text-error">{t("admin.ml.liveRecording")}</span>
                 </div>
               )}
 
               <div className="space-y-2">
-                <h4 className="text-sm font-bold">Model Labels Status</h4>
+                <h4 className="text-sm font-bold">{t("admin.ml.modelLabelsStatus")}</h4>
                 <div className="flex flex-wrap gap-2">
                   {motionModel?.labels?.map((l: string) => (
                     <Badge key={l} variant="default" className="bg-primary/20 text-primary border-primary/30">
@@ -898,7 +900,7 @@ export default function MlCalibrationClient() {
                     </Badge>
                   ))}
                   {(!motionModel?.labels || motionModel?.labels.length === 0) && (
-                    <span className="text-xs text-foreground-variant italic">No labels trained yet.</span>
+                    <span className="text-sm text-foreground-variant italic">{t("admin.ml.noLabels")}</span>
                   )}
                 </div>
               </div>
@@ -907,24 +909,24 @@ export default function MlCalibrationClient() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Model Control</CardTitle>
+              <CardTitle className="text-lg">{t("admin.ml.modelControl")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="surface-container-low p-4 rounded-xl space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-foreground-variant">Trained</span>
+                  <span className="text-foreground-variant">{t("admin.ml.trained")}</span>
                   <Badge variant={motionModel?.trained ? "default" : "secondary"}>
-                    {motionModel?.trained ? "Ready" : "Not Trained"}
+                    {motionModel?.trained ? t("admin.ml.ready") : t("admin.ml.notTrained")}
                   </Badge>
                 </div>
                 {motionModel?.trained && (
                   <>
                     <div className="flex justify-between text-sm">
-                      <span className="text-foreground-variant">Accuracy</span>
+                      <span className="text-foreground-variant">{t("admin.ml.accuracy")}</span>
                       <span className="font-bold">{((motionModel.accuracy ?? 0) * 100).toFixed(1)}%</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-foreground-variant">Samples</span>
+                      <span className="text-foreground-variant">{t("admin.ml.samples")}</span>
                       <span className="font-bold">{motionModel.n_samples ?? 0}</span>
                     </div>
                   </>
@@ -942,25 +944,25 @@ export default function MlCalibrationClient() {
                   ) : (
                     <RefreshCw className="w-4 h-4 mr-2" />
                   )}
-                  Train XGBoost Model
+                  {t("admin.ml.trainXgboost")}
                 </Button>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <Button variant="outline" size="sm" onClick={handleSaveMotion} disabled={!motionModel?.trained}>
                     <Save className="w-4 h-4 mr-2" />
-                    Save
+                    {t("common.save")}
                   </Button>
                   <Button variant="outline" size="sm" onClick={async () => {
                     try {
                       await api.post("/motion/model/load", {});
-                      showMsg("Model loaded from disk", "success");
+                      showMsg(t("admin.ml.msgModelLoaded"), "success");
                       await refetchMotion();
                     } catch {
-                      showMsg("No saved model found", "error");
+                      showMsg(t("admin.ml.msgNoSavedModel"), "error");
                     }
                   }}>
                     <Download className="w-4 h-4 mr-2" />
-                    Load
+                    {t("admin.ml.load")}
                   </Button>
                 </div>
               </div>
@@ -968,6 +970,6 @@ export default function MlCalibrationClient() {
           </Card>
         </div>
       )}
-    </div>
+    </AppPage>
   );
 }

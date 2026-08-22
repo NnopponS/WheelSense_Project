@@ -3,28 +3,35 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Pill, Search, Users } from "lucide-react";
-import HeadCaregiverPrescriptionsPage from "@/app/head-caregiver/prescriptions/page";
+import { Pill, Users } from "lucide-react";
+import SupervisorPrescriptionsPage from "@/app/head-caregiver/prescriptions/page";
 import { useHubTab, HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/shared/FilterBar";
 import { api } from "@/lib/api";
 import type { ListPatientsResponse } from "@/lib/api/task-scope-types";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
+import {
+  buildPatientListHref,
+  rememberPatientListScroll,
+  restorePatientListScroll,
+  withPatientListReturnTo,
+} from "@/lib/patientListContext";
 
 const TAB_CONFIG: Array<Omit<HubTab, "label"> & { labelKey: TranslationKey }> = [
   { key: "patients", labelKey: "nav.patients", icon: Users },
   { key: "prescriptions", labelKey: "nav.prescriptions", icon: Pill },
 ];
 
-export default function HeadCaregiverPatientsPage() {
+export default function SupervisorPatientsPage() {
   const { t } = useTranslation();
   const tabs = useMemo<HubTab[]>(
     () => TAB_CONFIG.map(({ labelKey, ...item }) => ({ ...item, label: t(labelKey) })),
@@ -35,7 +42,7 @@ export default function HeadCaregiverPatientsPage() {
     <div>
       <Suspense><HubTabBar tabs={tabs} /></Suspense>
       {tab === "patients" && <PatientsContent />}
-      {tab === "prescriptions" && <HeadCaregiverPrescriptionsPage />}
+      {tab === "prescriptions" && <SupervisorPrescriptionsPage />}
     </div>
   );
 }
@@ -51,7 +58,26 @@ type PatientRow = {
 
 function PatientsContent() {
   const { t } = useTranslation();
-  const [search, setSearch] = useState("");
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+
+  const replaceSearch = useCallback(
+    (nextSearch: string) => {
+      router.replace(buildPatientListHref(pathname, searchParams, nextSearch, "all"), { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const currentPatientListHref = useMemo(
+    () => buildPatientListHref(pathname, searchParams, search, "all"),
+    [pathname, search, searchParams],
+  );
+
+  useEffect(() => {
+    restorePatientListScroll(currentPatientListHref);
+  }, [currentPatientListHref]);
 
   const patientsQuery = useQuery({
     queryKey: ["head_caregiver", "patients", "list"],
@@ -145,46 +171,58 @@ function PatientsContent() {
         header: t("clinical.table.actions"),
         cell: ({ row }) => (
           <Button asChild size="sm" variant="outline">
-            <Link href={`/head-caregiver/patients/${row.original.id}`}>{t("clinical.table.openDetail")}</Link>
+            <Link
+              href={withPatientListReturnTo(
+                `/head-caregiver/personnel/${row.original.id}`,
+                currentPatientListHref,
+              )}
+              onClick={() => rememberPatientListScroll(currentPatientListHref)}
+            >
+              {t("clinical.table.openDetail")}
+            </Link>
           </Button>
         ),
       },
     ],
-    [t],
+    [currentPatientListHref, t],
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("nav.patients")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.patientsList.subtitle")}</p>
-      </div>
+    <AppPage
+      title={t("nav.patients")}
+      description={t("supervisor.patientsList.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/head-caregiver" },
+        { label: t("nav.patients") },
+      ]}
+    >
 
-      <Card className="border-border/70">
-        <CardContent className="p-4">
-          <div className="relative w-full md:max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("clinical.patientsRoster.searchPlaceholder")}
-              className="pl-9"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          replaceSearch(value);
+        }}
+        searchPlaceholder={t("clinical.patientsRoster.searchPlaceholder")}
+        resultLabel={`${rows.length} ${rows.length === 1 ? t("table.row") : t("table.rows")}`}
+        hasActiveFilters={search.trim().length > 0}
+        onReset={() => {
+          setSearch("");
+          replaceSearch("");
+        }}
+      />
 
       <DataTableCard
         title={t("clinical.patientsRoster.title")}
+        mobileMode="cards"
         description={t("clinical.patientsRoster.description")}
         data={rows}
         columns={columns}
         isLoading={patientsQuery.isLoading}
         emptyText={t("clinical.patientsRoster.empty")}
         rightSlot={<Users className="h-4 w-4 text-muted-foreground" />}
-        mobileMode="cards"
         csvExport={{
-          fileNameBase: "wheelsense-head-caregiver-patients",
+          fileNameBase: "wheelsense-supervisor-personnel",
           headers: [
             t("patients.recordId"),
             t("clinical.table.patient"),
@@ -201,6 +239,6 @@ function PatientsContent() {
           ],
         }}
       />
-    </div>
+    </AppPage>
   );
 }

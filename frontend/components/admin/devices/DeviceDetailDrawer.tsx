@@ -27,7 +27,7 @@ import {
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 
 /** Matches `RequireRole` on `GET /api/devices/activity`. */
-const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_nurse", "supervisor"]);
+const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_caregiver", "head_caregiver"]);
 import type {
   DeviceActivityEventOut,
   ListPatientsResponse,
@@ -404,10 +404,12 @@ function DeviceHistoryPanel({
   hardwareType,
   history,
   loading,
+  t,
 }: {
   hardwareType: HardwareType;
   history: DeviceHistory | null | undefined;
   loading: boolean;
+  t: TFn;
 }) {
   const rows = historyRowsForHardware(history, hardwareType);
   const metrics = HISTORY_METRICS[hardwareType];
@@ -430,7 +432,7 @@ function DeviceHistoryPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Realtime History</CardTitle>
+        <CardTitle className="text-base">{t("devicesDetail.historyTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -440,7 +442,7 @@ function DeviceHistoryPanel({
         ) : null}
         {!loading && rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No telemetry history for this device yet. Live mobile devices will appear here after ingest.
+            {t("devicesDetail.historyEmpty")}
           </p>
         ) : null}
         {hasChartData ? (
@@ -453,7 +455,7 @@ function DeviceHistoryPanel({
                 <Tooltip
                   labelFormatter={(_, payload) => {
                     const ts = payload?.[0]?.payload?.timestamp;
-                    return typeof ts === "string" ? formatDateTime(ts) : "Telemetry";
+                    return typeof ts === "string" ? formatDateTime(ts) : t("devicesDetail.telemetry");
                   }}
                   formatter={(value, name) => {
                     const metric = metrics.find((item) => item.key === name || item.label === name);
@@ -484,13 +486,15 @@ function DeviceHistoryPanel({
         ) : null}
         {latestRows.length > 0 ? (
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Latest values</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("devicesDetail.latestValues")}
+            </p>
             {latestRows.map((row, index) => {
               const entries = Object.entries(row).filter(([key]) => key !== "timestamp");
               return (
                 <div key={`${row.timestamp ?? "row"}-${index}`} className="rounded-xl border border-border bg-muted/20 p-3">
                   <p className="text-xs font-medium text-muted-foreground">
-                    {typeof row.timestamp === "string" ? formatDateTime(row.timestamp) : "No timestamp"}
+                    {typeof row.timestamp === "string" ? formatDateTime(row.timestamp) : t("devicesDetail.noTimestamp")}
                   </p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {entries.map(([key, value]) => (
@@ -1088,7 +1092,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                       value={detail.last_seen ? formatDateTime(detail.last_seen) : "-"}
                     />
                     <Metric
-                      label="Relative"
+                      label={t("devicesDetail.relative")}
                       value={detail.last_seen ? formatRelativeTime(detail.last_seen) : "-"}
                     />
                   </CardContent>
@@ -1096,17 +1100,20 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Health Snapshot</CardTitle>
+                    <CardTitle className="text-base">{t("devicesDetail.healthSnapshot")}</CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
-                    <Metric label="Status" value={healthStatus} />
-                    <Metric label="Connectivity" value={online ? "online" : "offline"} />
+                    <Metric label={t("workflow.console.field.status")} value={healthStatus} />
+                    <Metric
+                      label={t("devicesDetail.connectivity")}
+                      value={online ? t("devices.online") : t("devices.offline")}
+                    />
                     <Metric
                       label={t("devicesDetail.battery")}
                       value={batteryPct != null ? `${batteryPct}%` : "-"}
                     />
                     <Metric
-                      label="Latest reading"
+                        label={t("devicesDetail.latestReading")}
                       value={latestReadingAt ? `${formatRelativeTime(latestReadingAt)} (${latestReadingType})` : "-"}
                     />
                   </CardContent>
@@ -1382,7 +1389,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                             ) : (
                               <Link2 className="h-4 w-4" />
                             )}
-                            Link room
+                            {t("devicesDetail.linkRoom")}
                           </Button>
                           <Button
                             type="button"
@@ -1395,7 +1402,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                             ) : (
                               <Link2Off className="h-4 w-4" />
                             )}
-                            Unlink room
+                            {t("devicesDetail.unlinkRoom")}
                           </Button>
                         </div>
                       </form>
@@ -1407,6 +1414,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   hardwareType={hardwareType}
                   history={history}
                   loading={historyQuery.isLoading}
+                  t={t}
                 />
 
                 {isPatientAssignable && supportsStaffDeviceLink ? (
@@ -1452,7 +1460,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                                     <SelectValue placeholder={t("devicesDetail.selectPatient")} />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value={EMPTY_SELECT_VALUE}>Select patient</SelectItem>
+                                    <SelectItem value={EMPTY_SELECT_VALUE}>{t("devicesDetail.selectPatient")}</SelectItem>
                                     {patientOptions.map((patient) => (
                                       <SelectItem key={patient.id} value={String(patient.id)}>
                                         {patient.name}
@@ -1474,7 +1482,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                                 ) : (
                                   <Link2 className="h-4 w-4" />
                                 )}
-                                Link patient
+                                      {t("devicesDetail.linkPatient")}
                               </Button>
                               <Button
                                 type="button"
@@ -1487,7 +1495,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                                 ) : (
                                   <Link2Off className="h-4 w-4" />
                                 )}
-                                Unlink patient
+                                      {t("devicesDetail.unlinkPatient")}
                               </Button>
                             </div>
                           </form>
@@ -1566,7 +1574,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
                         <UserRound className="h-4 w-4" />
-                        Patient Assignment
+                      {t("devicesDetail.patientAssignment")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -1594,7 +1602,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                                 <SelectValue placeholder={t("devicesDetail.selectPatient")} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value={EMPTY_SELECT_VALUE}>Select patient</SelectItem>
+                                <SelectItem value={EMPTY_SELECT_VALUE}>{t("devicesDetail.selectPatient")}</SelectItem>
                                 {patientOptions.map((patient) => (
                                   <SelectItem key={patient.id} value={String(patient.id)}>
                                     {patient.name}
@@ -1614,7 +1622,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                             ) : (
                               <Link2 className="h-4 w-4" />
                             )}
-                            Link patient
+                              {t("devicesDetail.linkPatient")}
                           </Button>
                           <Button
                             type="button"
@@ -1627,7 +1635,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                             ) : (
                               <Link2Off className="h-4 w-4" />
                             )}
-                            Unlink patient
+                              {t("devicesDetail.unlinkPatient")}
                           </Button>
                         </div>
                       </form>
@@ -1662,7 +1670,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Clock3 className="h-4 w-4" />
-                      Activity Log
+                      {t("devicesDetail.activityLog")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -1673,7 +1681,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                     ) : null}
 
                     {!activityQuery.isLoading && (activityQuery.data?.length ?? 0) === 0 ? (
-                      <p className="text-sm text-muted-foreground">No recent activity for this device.</p>
+                      <p className="text-sm text-muted-foreground">{t("devicesDetail.activityEmpty")}</p>
                     ) : null}
 
                     {(activityQuery.data ?? []).map((event) => (

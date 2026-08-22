@@ -25,7 +25,7 @@ import { useTranslation } from "@/lib/i18n";
 
 const ALL_FILTER = "__all__";
 
-export type WardTimelineCacheScope = "head-caregiver" | "caregiver";
+export type WardTimelineCacheScope = "head-nurse" | "observer" | "supervisor";
 
 function timelineSource(event: ListTimelineEventsResponse[number]): string {
   return event.provenance || event.source || "system";

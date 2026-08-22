@@ -12,13 +12,13 @@ type Props = {
   onCreated: () => void;
 };
 
-type CaregiverRole = "admin" | "observer" | "supervisor";
+type CaregiverRole = "admin" | "caregiver" | "head_caregiver";
 
 export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
   const { t } = useTranslation();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<CaregiverRole>("observer");
+  const [role, setRole] = useState<CaregiverRole>("caregiver");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   
@@ -40,7 +40,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
   function resetForm() {
     setFirstName("");
     setLastName("");
-    setRole("observer");
+    setRole("caregiver");
     setPhone("");
     setEmail("");
     setCreateAccount(false);
@@ -113,7 +113,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
             type="button"
             className="rounded-lg p-1.5 hover:bg-surface-container-high transition-smooth"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -170,8 +170,8 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
               onChange={(e) => setRole(e.target.value as CaregiverRole)}
             >
               <option value="admin">{t("shell.roleAdmin")}</option>
-              <option value="supervisor">{t("shell.roleSupervisor")}</option>
-              <option value="observer">{t("shell.roleObserver")}</option>
+              <option value="head_caregiver">{t("shell.roleHeadCaregiver")}</option>
+              <option value="caregiver">{t("shell.roleCaregiver")}</option>
             </select>
           </div>
 

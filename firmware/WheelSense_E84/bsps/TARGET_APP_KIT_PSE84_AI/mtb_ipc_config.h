@@ -87,13 +87,18 @@ extern "C" {
 #define MTB_IPC_MBOX_IDX_SRF                        (0UL)
 #endif // if defined(COMPONENT_MW_MTB_SRF)
 
-/** WheelSense IPC channel reservation (Phase 1).
- *  Channel 1 is reserved for WheelSense inter-core messaging,
- *  separate from SRF's channel 0. Used by ws_ipc_endpoint. */
+/** WheelSense IPC instance reservation, separate from SRF's channel 0. */
 #define MTB_IPC_CHANNEL_WS                          (MTB_IPC_CHAN_1)
+
+/** WheelSense queue data channel; must differ from the instance channel. */
+#define MTB_IPC_CHANNEL_WS_QUEUE                    (MTB_IPC_CHAN_2)
 
 /** Semaphore index for WheelSense IPC operations. */
 #define MTB_IPC_SEMA_NUM_WS                         (10UL)
+
+/** Semaphores protecting the two WheelSense queue directions. */
+#define MTB_IPC_SEMA_NUM_WS_QUEUE_CM33_TO_CM55      (11UL)
+#define MTB_IPC_SEMA_NUM_WS_QUEUE_CM55_TO_CM33      (12UL)
 
 /** Reserved semaphore IRQ for WheelSense IPC on CM33 NS (relay). */
 #define MTB_IPC_IRQ_SEMA_WS_CM33                    (MTB_IPC_IRQ_USER + 4)
@@ -101,11 +106,13 @@ extern "C" {
 /** Reserved queue IRQ for WheelSense IPC on CM33 NS (relay). */
 #define MTB_IPC_IRQ_QUEUE_WS_CM33                   (MTB_IPC_IRQ_USER + 5)
 
-/** Reserved semaphore IRQ for WheelSense IPC on CM55 (client). */
-#define MTB_IPC_IRQ_SEMA_WS_CM55                    (MTB_IPC_IRQ_USER + 6)
-
-/** Reserved queue IRQ for WheelSense IPC on CM55 (client). */
-#define MTB_IPC_IRQ_QUEUE_WS_CM55                   (MTB_IPC_IRQ_USER + 7)
+/**
+ * WheelSense IRQs on CM55. Values +0/+1 are used by SRF only on CM33; the
+ * cores have separate NVICs. They therefore avoid CM55's local SRF +2/+3
+ * IRQs and remain distinct from WheelSense CM33 +4/+5 as MTB-IPC requires.
+ */
+#define MTB_IPC_IRQ_SEMA_WS_CM55                    (MTB_IPC_IRQ_USER)
+#define MTB_IPC_IRQ_QUEUE_WS_CM55                   (MTB_IPC_IRQ_USER + 1)
 
 
 #ifdef __cplusplus

@@ -15,7 +15,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.agent_runtime import ExecutionPlan
 
-KnownRole = Literal["admin", "head_nurse", "supervisor", "observer", "patient"]
+KnownRole = Literal["admin", "head_caregiver", "caregiver", "patient"]
 Locale = Literal["en", "th"]
 
 

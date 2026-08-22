@@ -107,6 +107,8 @@ class MqttGatewayService {
       'WheelSense/mobile/${config.deviceId}/#',
       'WheelSense/mobile/${config.deviceId}/control',
       'WheelSense/room/${config.deviceId}',
+      'WheelSense/camera/+/status',
+      'WheelSense/camera/+/registration',
     };
     if (config.alertsEnabled) {
       if (config.linkedPatientId != null) {
@@ -170,6 +172,60 @@ class MqttGatewayService {
     }
   }
 
+  Future<TelemetryPublishResult> publishUnifiedTelemetry({
+    required GatewayConfig config,
+    M5TelemetrySample? m5Sample,
+    PolarTelemetrySample? polarSample,
+    List<Map<String, Object?>> rssiList = const <Map<String, Object?>>[],
+  }) async {
+    final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
+    if (!isConnected) {
+      return TelemetryPublishResult.failed(
+        topic: topic,
+        reason: TelemetryPublishFailureReason.disconnected,
+      );
+    }
+
+    final payloadMap = <String, Object?>{
+      'device_id': config.deviceId,
+      'device_type': 'mobile_phone',
+      'hardware_type': 'mobile_phone',
+      'app_mode': 'ble_gateway',
+      'timestamp': DateTime.now().toUtc().toIso8601String(),
+      'firmware': '3.1.0',
+    };
+
+    if (m5Sample != null) {
+      payloadMap['m5'] = m5Sample.toServerCompanionJson();
+    }
+    if (polarSample != null) {
+      payloadMap['polar'] = polarSample.toServerPolarJson();
+      payloadMap['hr'] = <String, Object?>{
+        'bpm': polarSample.heartRateBpm,
+        'rr_intervals_ms': polarSample.rrIntervalsMs,
+        if (polarSample.spo2Percent != null) 'spo2': polarSample.spo2Percent,
+        'sensor_battery': polarSample.sensorBatteryPercent,
+      };
+    }
+    if (rssiList.isNotEmpty) {
+      payloadMap['rssi'] = rssiList;
+    }
+
+    final builder = MqttClientPayloadBuilder()
+      ..addUTF8String(jsonEncode(payloadMap));
+    try {
+      _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      _client?.publishMessage('WheelSense/data', MqttQos.atLeastOnce, builder.payload!);
+      return TelemetryPublishResult.sent(topic);
+    } on Object catch (error) {
+      return TelemetryPublishResult.failed(
+        topic: topic,
+        reason: TelemetryPublishFailureReason.exception,
+        errorMessage: '$error',
+      );
+    }
+  }
+
   Future<bool> publishRegistration({
     required GatewayConfig config,
     Map<String, Object?>? companionM5,
@@ -188,7 +244,7 @@ class MqttGatewayService {
           ? 'ios'
           : Platform.operatingSystem,
       'os_version': Platform.operatingSystemVersion,
-      'app_version': '1.0.0',
+      'app_version': '3.1.0',
     };
     payload.addAll(<String, Object?>{
       ...?(companionM5 == null
@@ -306,14 +362,16 @@ class MqttGatewayService {
         'rr_intervals': sample.rrIntervalsMs,
         if (sample.spo2Percent != null) 'spo2': sample.spo2Percent,
         if (sample.spo2Percent != null) 'spo2_estimated': sample.spo2Estimated,
-        'sensor_battery': ?sample.sensorBatteryPercent,
+        if (sample.sensorBatteryPercent != null)
+          'sensor_battery': sample.sensorBatteryPercent,
       },
       'polar_hr': <String, Object?>{
         'heart_rate_bpm': sample.heartRateBpm,
-        'rr_interval_ms': ?rrIntervalMs,
+        if (rrIntervalMs != null) 'rr_interval_ms': rrIntervalMs,
         if (sample.spo2Percent != null) 'spo2': sample.spo2Percent,
         if (sample.spo2Percent != null) 'spo2_estimated': sample.spo2Estimated,
-        'sensor_battery': ?sample.sensorBatteryPercent,
+        if (sample.sensorBatteryPercent != null)
+          'sensor_battery': sample.sensorBatteryPercent,
       },
       'polar_signal': <String, Object?>{
         'rssi': sample.rssi,

@@ -29,6 +29,7 @@ import {
   type MessagingRecipientRow,
 } from "@/components/messaging/MessagingRecipientPicker";
 import { useAuth } from "@/hooks/useAuth";
+import { AppPage } from "@/components/layout/AppPage";
 import {
   WorkflowComposeAttachments,
   WorkflowMessageAttachmentLinks,
@@ -48,8 +49,8 @@ import { canDeleteWorkflowMessage, WORKFLOW_MESSAGE_MAX_ATTACHMENTS } from "@/li
 type RecipientTarget = "role" | "user";
 type MessageTab = "all" | "inbox" | "sent";
 
-const ROLE_OPTIONS = ["admin", "head_caregiver", "caregiver", "patient"] as const;
-const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "caregiver", "patient"] as const;
+const ROLE_OPTIONS = ["admin", "head_caregiver", "head_caregiver", "caregiver", "patient"] as const;
+const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "head_caregiver", "caregiver", "patient"] as const;
 type RecipientFilterRole = (typeof RECIPIENT_FILTER_ROLES)[number];
 
 const TARGET_USER_NONE = "__none__";
@@ -78,6 +79,8 @@ function workflowRoleDisplay(role: string, t: (key: TranslationKey) => string): 
     case "admin":
       return t("admin.workflowMessaging.roleLabelAdmin");
     case "head_caregiver":
+      return t("admin.workflowMessaging.roleLabelHeadNurse");
+    case "head_caregiver":
       return t("admin.workflowMessaging.roleLabelSupervisor");
     case "caregiver":
       return t("admin.workflowMessaging.roleLabelObserver");
@@ -92,6 +95,8 @@ function recipientFilterRoleLabelKey(role: RecipientFilterRole): TranslationKey 
   switch (role) {
     case "admin":
       return "admin.workflowMessaging.roleLabelAdmin";
+    case "head_caregiver":
+      return "admin.workflowMessaging.roleLabelHeadNurse";
     case "head_caregiver":
       return "admin.workflowMessaging.roleLabelSupervisor";
     case "caregiver":
@@ -296,33 +301,15 @@ export function AdminWorkflowMailbox() {
   const listLoading = messagesQuery.isLoading;
 
   return (
-    <div className="space-y-5 pb-6 animate-fade-in">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Mail className="h-3.5 w-3.5" />
-            {t("admin.workflowMessaging.badge")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-              {t("admin.workflowMessaging.title")}
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              {t("admin.workflowMessaging.subtitle")}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Badge variant="outline">
-              {t("admin.workflowMessaging.countTotal").replace("{count}", String(rows.length))}
-            </Badge>
-            <Badge variant="warning">
-              {t("admin.workflowMessaging.countUnread").replace("{count}", String(unreadCount))}
-            </Badge>
-            <Badge variant="success">
-              {t("admin.workflowMessaging.countSent").replace("{count}", String(sentRows.length))}
-            </Badge>
-          </div>
-        </div>
+    <AppPage
+      eyebrow={t("admin.workflowMessaging.badge")}
+      title={t("admin.workflowMessaging.title")}
+      description={t("admin.workflowMessaging.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/admin" },
+        { label: t("nav.messages") },
+      ]}
+      actions={
         <Button
           type="button"
           className="shrink-0 gap-2"
@@ -331,9 +318,21 @@ export function AdminWorkflowMailbox() {
             setComposeOpen(true);
           }}
         >
-          <PenLine className="h-4 w-4" />
+          <PenLine className="h-5 w-5" aria-hidden="true" />
           {t("messaging.mailbox.composeButton")}
         </Button>
+      }
+    >
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="outline">
+          {t("admin.workflowMessaging.countTotal").replace("{count}", String(rows.length))}
+        </Badge>
+        <Badge variant="warning">
+          {t("admin.workflowMessaging.countUnread").replace("{count}", String(unreadCount))}
+        </Badge>
+        <Badge variant="success">
+          {t("admin.workflowMessaging.countSent").replace("{count}", String(sentRows.length))}
+        </Badge>
       </div>
 
       <div className="flex min-h-[min(70vh,780px)] flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm lg:flex-row">
@@ -678,6 +677,6 @@ export function AdminWorkflowMailbox() {
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </AppPage>
   );
 }

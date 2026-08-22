@@ -1,6 +1,8 @@
 FROM python:3.12-slim
 
 WORKDIR /app
+LABEL org.opencontainers.image.title="Ease AI Server" \
+      org.opencontainers.image.description="Ease AI platform API and device services"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev && \

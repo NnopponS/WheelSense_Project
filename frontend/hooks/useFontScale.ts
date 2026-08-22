@@ -53,8 +53,9 @@ function setStoredScale(value: FontScale): void {
 }
 
 /**
- * Hook for elder-friendly font scaling.
+ * Hook for large-text accessibility scaling.
  * Persists preference to localStorage and applies CSS variable --ws-font-scale.
+ * Exposed to any user via Account > Display, not tied to a specific role.
  */
 export function useFontScale(): UseFontScaleReturn {
   const [scale, setScaleState] = useState<FontScale>(() => getStoredScale());
@@ -91,7 +92,7 @@ export function useFontScale(): UseFontScaleReturn {
     setScale(DEFAULT_SCALE);
   }, [setScale]);
 
-  const elderClass = scale > 1 ? "ws-role-elder" : "";
+  const elderClass = scale > 1 ? "ws-large-text" : "";
   const isEnlarged = scale > DEFAULT_SCALE;
 
   return {

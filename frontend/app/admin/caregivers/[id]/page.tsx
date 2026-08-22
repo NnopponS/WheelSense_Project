@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { ROUTES } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import CaregiverDetailPane from "@/components/admin/caregivers/CaregiverDetailPane";
 import type { Caregiver, User } from "@/lib/types";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
+import { useAuth } from "@/hooks/useAuth";
+import { getCaregiversPath } from "@/lib/routes";
 
 function usersForCaregiver(users: User[] | null | undefined, caregiverId: number): User[] {
   if (!users?.length) return [];
@@ -20,6 +21,7 @@ export default function AdminCaregiverDetailPage() {
   const params = useParams();
   const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const { t } = useTranslation();
+  const { user } = useAuth();
   const numericId = Number(id);
   const { data: users, refetch: refetchUsers } = useQuery({
     queryKey: ["admin", "caregivers", "detail", "users"],
@@ -66,58 +68,42 @@ export default function AdminCaregiverDetailPage() {
   }, [numericId, t]);
 
   const linked = caregiver ? usersForCaregiver(users, caregiver.id) : [];
+  const backHref = getCaregiversPath(user?.role || "admin");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 animate-fade-in">
+    <AppPage
+      width="content"
+      title={
+        caregiver
+          ? `${caregiver.first_name} ${caregiver.last_name}`.trim() || t("caregivers.title")
+          : t("caregivers.title")
+      }
+      description={t("caregivers.directorySubtitle")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: user?.role ? `/${String(user.role).replace("_", "-")}` : "/admin",
+        },
+        { label: t("caregivers.title"), href: backHref },
+        { label: caregiver ? `${caregiver.first_name} ${caregiver.last_name}` : t("common.loading") },
+      ]}
+    >
       {loading ? (
-        <>
-          <Link
-            href={ROUTES.CAREGIVERS}
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            {t("caregivers.backToDirectory")}
-          </Link>
-          <div className="flex justify-center py-16">
-            <div
-              className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent"
-              role="status"
-              aria-label={t("common.loading")}
-            />
-          </div>
-        </>
+        <DataState kind="loading" title={t("common.loading")} />
       ) : error || !caregiver ? (
-        <>
-          <Link
-            href={ROUTES.CAREGIVERS}
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            {t("caregivers.backToDirectory")}
-          </Link>
-          <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-4 py-8 text-center text-sm text-foreground-variant">
-            {error ?? t("caregivers.detailNotFound")}
-          </div>
-        </>
+        <DataState
+          kind="error"
+          title={t("caregivers.detailNotFound")}
+          description={error ?? t("caregivers.detailLoadError")}
+        />
       ) : (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link
-              href={ROUTES.CAREGIVERS}
-              className="inline-flex items-center gap-2 text-sm text-foreground-variant hover:text-primary transition-smooth"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden />
-              {t("caregivers.backToDirectory")}
-            </Link>
-          </div>
-          <CaregiverDetailPane
-            caregiver={caregiver}
-            linkedUsers={linked}
-            onUserUpdated={() => void refetchUsers()}
-            onCaregiverUpdated={setCaregiver}
-          />
-        </>
+        <CaregiverDetailPane
+          caregiver={caregiver}
+          linkedUsers={linked}
+          onUserUpdated={() => void refetchUsers()}
+          onCaregiverUpdated={setCaregiver}
+        />
       )}
-    </div>
+    </AppPage>
   );
 }

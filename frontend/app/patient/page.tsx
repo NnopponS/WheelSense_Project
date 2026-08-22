@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useCallback, useMemo, useRef } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -11,8 +11,6 @@ import {
   Home,
   MapPin,
   MessageCircle,
-  Phone,
-  Siren,
   Sparkles,
   UserRound,
 } from "lucide-react";
@@ -24,7 +22,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import { useTranslation } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GetPatientResponse } from "@/lib/api/task-scope-types";
 import { PatientMySensors } from "@/components/patient/PatientMySensors";
@@ -72,6 +69,10 @@ export default function PatientDashboardPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const nowMs = useFixedNowMs();
+  const [raiseResult, setRaiseResult] = useState<{
+    kind: "assistance" | "sos";
+    status: "sending" | "sent" | "error";
+  } | null>(null);
 
   const previewRaw = searchParams.get("previewAs");
   const previewNum = previewRaw != null && previewRaw !== "" ? Number(previewRaw) : NaN;
@@ -136,7 +137,7 @@ export default function PatientDashboardPage() {
 
   const raiseAssistanceMutation = useMutation({
     mutationFn: async (kind: "assistance" | "sos") => {
-      if (!effectivePatientId) return;
+      if (!effectivePatientId) throw new Error("Patient record is not available");
       await api.createAlert({
         patient_id: Number(effectivePatientId),
         alert_type: kind === "sos" ? "emergency_sos" : "patient_assistance",
@@ -148,7 +149,11 @@ export default function PatientDashboardPage() {
             : "Patient requested non-emergency assistance from patient dashboard.",
         data: { source: "patient_dashboard", kind },
       });
+      return kind;
     },
+    onMutate: (kind) => setRaiseResult({ kind, status: "sending" }),
+    onSuccess: (_data, kind) => setRaiseResult({ kind, status: "sent" }),
+    onError: (_error, kind) => setRaiseResult({ kind, status: "error" }),
   });
 
   const lastRaiseRef = useRef<{ at: number; kind: "assistance" | "sos" } | null>(null);
@@ -184,7 +189,7 @@ export default function PatientDashboardPage() {
   if (!effectivePatientId || !patient) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center animate-fade-in">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-lg bg-red-500/12 text-red-600">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-lg bg-critical-bg text-critical">
           <AlertTriangle className="h-8 w-8" />
         </div>
         <h1 className="text-2xl font-semibold text-foreground md:text-3xl">{t("patient.page.notLinkedTitle")}</h1>
@@ -209,15 +214,15 @@ export default function PatientDashboardPage() {
     <div className="mx-auto max-w-5xl space-y-6 pb-6 animate-fade-in">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Heart className="h-3.5 w-3.5" />
+          <div className="inline-flex min-h-8 items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium text-muted-foreground">
+            <Heart className="h-5 w-5" aria-hidden="true" />
             {t("patient.page.portalBadge")}
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
+            <h1 className="text-2xl font-bold text-foreground md:text-3xl">
               {t("patient.page.helloPrefix")} {fullName || t("patient.page.guest")}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.dashboardTagline")}</p>
+            </h1>
+            <p className="mt-1 text-base text-muted-foreground">{t("patient.page.dashboardTagline")}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -244,13 +249,13 @@ export default function PatientDashboardPage() {
       </div>
 
       <Card className="border-primary/25 bg-primary/5">
-        <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
-              <MapPin className="h-5 w-5" />
+              <MapPin className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 space-y-0.5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="text-sm font-semibold text-muted-foreground">
                 {t("patient.page.roomLocationTitle")}
               </p>
               <p className="text-lg font-semibold leading-snug text-foreground tracking-tight">{roomHeadline}</p>
@@ -268,6 +273,7 @@ export default function PatientDashboardPage() {
           patientId={Number(effectivePatientId)}
           previewPatientId={isAdminPreview ? previewPatientId : null}
           isPending={raiseAssistanceMutation.isPending}
+          raiseResult={raiseResult}
           onRaise={onRaiseAlert}
           t={t}
         />
@@ -289,120 +295,62 @@ function PatientHomeContent({
   patientId,
   previewPatientId,
   isPending,
+  raiseResult,
   onRaise,
   t,
 }: {
   patientId: number;
   previewPatientId: number | null;
   isPending: boolean;
+  raiseResult: {
+    kind: "assistance" | "sos";
+    status: "sending" | "sent" | "error";
+  } | null;
   onRaise: (kind: "assistance" | "sos") => void;
   t: (key: string) => string;
 }) {
-  const servicesHref = withPatientPreview("/patient/services", previewPatientId);
-
   return (
     <>
-      <PatientSosHero isPending={isPending} onRaise={onRaise} />
+      <PatientSosHero isPending={isPending} result={raiseResult} onRaise={onRaise} />
       <PatientCareRoadmap patientId={patientId} />
       <PatientMySensors patientId={patientId} />
 
-      <section className="hidden grid-cols-1 gap-4 md:grid-cols-2">
-        <Card className="border-border/70 transition-all hover:border-primary/50 hover:shadow-md">
-          <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
-            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-sky-500/12 text-sky-600">
-              <Phone className="h-10 w-10" />
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-semibold text-foreground md:text-2xl">{t("patient.page.callNurse")}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.callNurseHint")}</p>
-            </div>
-            <Button size="lg" variant="outline" className="w-full max-w-xs" asChild>
-              <Link href={servicesHref}>
-                <Phone className="mr-2 h-5 w-5" />
-                {t("patient.page.requestAssistance")}
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="w-full max-w-xs"
-              disabled={isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onRaise("assistance");
-              }}
-            >
-              {t("patient.page.notifyStaffUrgent")}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-red-500/30 bg-red-500/5 transition-all hover:border-red-500/60 hover:shadow-md">
-          <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
-            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-red-500/12 text-red-600">
-              <Siren className="h-10 w-10 animate-pulse" />
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-semibold text-red-600 md:text-2xl">{t("patient.page.emergencySos")}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.emergencySosHint")}</p>
-            </div>
-            <Button
-              type="button"
-              size="lg"
-              variant="destructive"
-              className="w-full max-w-xs"
-              disabled={isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onRaise("sos");
-              }}
-            >
-              <Siren className="mr-2 h-5 w-5" />
-              {t("patient.page.emergencyAlert")}
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-
       <section className="space-y-3" aria-labelledby="patient-quicklinks-heading">
-        <h3 id="patient-quicklinks-heading" className="text-sm font-semibold text-foreground">
+        <h2 id="patient-quicklinks-heading" className="text-lg font-semibold text-foreground">
           {t("patient.page.quickLinksTitle")}
-        </h3>
+        </h2>
         <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           {
             href: "/patient/schedule",
             icon: Calendar,
             labelKey: "patient.page.navSchedule" as const,
-            color: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-300",
+            color: "bg-success-bg text-success",
           },
           {
             href: "/patient/room-controls",
             icon: Home,
             labelKey: "patient.page.navRoom" as const,
-            color: "bg-amber-500/12 text-amber-600 dark:text-amber-300",
+            color: "bg-warning-bg text-warning",
           },
           {
             href: "/patient/messages",
             icon: MessageCircle,
             labelKey: "patient.page.navMessages" as const,
-            color: "bg-sky-500/12 text-sky-600 dark:text-sky-300",
+            color: "bg-info-bg text-info",
           },
           {
             href: "/patient/services",
             icon: Sparkles,
             labelKey: "patient.page.navServices" as const,
-            color: "bg-violet-500/12 text-violet-600 dark:text-violet-300",
+            color: "bg-primary/10 text-primary",
           },
         ].map(({ href, icon: Icon, labelKey, color }) => (
           <Link key={href} href={withPatientPreview(href, previewPatientId)} className="h-full">
-            <Card className="h-full border-border/70 transition-all hover:border-primary/40 hover:shadow-sm">
+            <Card className="h-full border-border/70 transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-sm">
               <CardContent className="flex h-full flex-col items-center justify-center gap-3 p-4 sm:p-5">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${color}`}>
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-6 w-6" aria-hidden="true" />
                 </div>
                 <p className="text-sm font-semibold text-foreground">{t(labelKey)}</p>
               </CardContent>
@@ -426,14 +374,26 @@ function ProfileTab({
   nowMs: number;
   roomDisplay: string;
 }) {
+  const { t } = useTranslation();
   const linkedPatientName = [patient.first_name, patient.last_name].filter(Boolean).join(" ").trim();
   const age = ageYears(patient.date_of_birth, nowMs);
   const avatarUrl = useMemo(
     () => mergedPatientPortalAvatarUrl(patient, profile),
     [patient, profile],
   );
-  const initialsLabel = linkedPatientName || profile?.user.username || "Patient";
-  const { t } = useTranslation();
+  const initialsLabel = linkedPatientName || profile?.user.username || t("patient.profilePatientFallback");
+  const careLevelLabel = patient.care_level === "critical"
+    ? t("patients.careLevelCritical")
+    : patient.care_level === "special"
+      ? t("patients.careLevelSpecial")
+      : t("patients.careLevelStandard");
+  const mobilityLabel = patient.mobility_type === "wheelchair"
+    ? t("patients.mobilityWheelchair")
+    : patient.mobility_type === "walker"
+      ? t("patients.mobilityWalker")
+      : patient.mobility_type === "independent"
+        ? t("patients.mobilityIndependent")
+        : "—";
 
   return (
     <section className="space-y-4">
@@ -453,21 +413,21 @@ function ProfileTab({
             />
             <div className="min-w-0">
               <p className="truncate text-xl font-semibold text-foreground">
-                {linkedPatientName || profile?.user.username || "Patient"}
+                {linkedPatientName || profile?.user.username || t("patient.profilePatientFallback")}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {(profile?.user.role?.replace(/_/g, " ") || "patient")} · {roomDisplay}
+                {t("shell.rolePatient")} · {roomDisplay}
               </p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoCard label="Patient record" value={linkedPatientName || "Not linked"} />
-            <InfoCard label="Age" value={age != null ? `${age} years` : "—"} />
-            <InfoCard label="Care level" value={patient.care_level || "standard"} />
-            <InfoCard label="Record status" value={patient.is_active ? "active" : "inactive"} />
-            <InfoCard label="Date of birth" value={patient.date_of_birth || "—"} />
-            <InfoCard label="Mobility" value={patient.mobility_type || "—"} />
+            <InfoCard label={t("patient.profilePatientRecord")} value={linkedPatientName || t("patient.profileNotLinked")} />
+            <InfoCard label={t("patients.age")} value={age != null ? `${age} ${t("patients.years")}` : "—"} />
+            <InfoCard label={t("patients.careLevel")} value={careLevelLabel} />
+            <InfoCard label={t("patient.profileRecordStatus")} value={patient.is_active ? t("patients.statusActive") : t("patients.statusInactive")} />
+            <InfoCard label={t("patients.dateOfBirth")} value={patient.date_of_birth || "—"} />
+            <InfoCard label={t("patients.mobilityType")} value={mobilityLabel} />
           </div>
 
           <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
@@ -483,13 +443,13 @@ function ProfileTab({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoCard label="Username" value={profile?.user.username || "—"} />
-            <InfoCard label="Role" value={profile?.user.role?.replace(/_/g, " ") || "patient"} />
-            <InfoCard label="Email" value={profile?.user.email || "—"} />
-            <InfoCard label="Phone" value={profile?.user.phone || "—"} />
+            <InfoCard label={t("admin.users.username")} value={profile?.user.username || "—"} />
+            <InfoCard label={t("common.role")} value={t("shell.rolePatient")} />
+            <InfoCard label={t("clinical.table.email")} value={profile?.user.email || "—"} />
+            <InfoCard label={t("clinical.table.phone")} value={profile?.user.phone || "—"} />
           </div>
           <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
-            Patients can review their own information here, but account and health-record edits must be requested from staff.
+            {t("patient.profileReadOnlyHint")}
           </div>
         </CardContent>
       </Card>
@@ -501,7 +461,7 @@ function ProfileTab({
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border/70 bg-muted/15 p-3">
-      <p className="text-sm uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
     </div>
   );

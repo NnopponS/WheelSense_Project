@@ -1,56 +1,64 @@
-@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #eff6ff;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #0f5cc0;
-  --primary-foreground: #f8fbff;
-  --primary-container: #d9e8ff;
-  --primary-container-foreground: #0b3b80;
-  --secondary: #0e7490;
-  --secondary-foreground: #f0fdff;
-  --muted: #e2eef9;
-  --muted-soft: #f6fbff;
-  --muted-foreground: #516173;
-  --accent: #d8edf7;
-  --accent-foreground: #164e63;
-  --destructive: #c63f3f;
-  --destructive-foreground: #fff7f7;
-  --success: #15803d;
-  --success-soft: #dcfce7;
-  --warning: #b45309;
-  --warning-soft: #fef3c7;
-  --info: #1d4ed8;
-  --info-soft: #dbeafe;
-  --critical: #dc2626;
-  --critical-soft: #fee2e2;
-  --border: #c9d7e6;
-  --border-strong: #b3c4d8;
-  --input: #f8fbff;
-  --ring: #2563eb;
-  --shadow-card: 0 12px 30px -18px rgb(15 23 42 / 0.16);
-  --shadow-elevated: 0 24px 40px -20px rgb(15 23 42 / 0.24);
+  --background: #F3F1EA;
+  --foreground: #23262B;
+  --card: #FBFAF7;
+  --card-foreground: #23262B;
+  --popover: #FBFAF7;
+  --popover-foreground: #23262B;
+  --primary: #2E6690;
+  --primary-foreground: #F3F8FB;
+  --primary-container: #D8E6EE;
+  --primary-container-foreground: #1B3C52;
+  --secondary: #3F7A72;
+  --secondary-foreground: #F1F8F6;
+  --muted: #E9E6DD;
+  --muted-soft: #F2F0E8;
+  --muted-foreground: #5C5C52;
+  --accent: #E3EAEE;
+  --accent-foreground: #244153;
+  --destructive: #B24A42;
+  --destructive-foreground: #FBF3F1;
+  --success: #3F7D56;
+  --success-soft: #DEEBE1;
+  --success-foreground: #1F4530;
+  --warning: #A67418;
+  --warning-soft: #F1E6CB;
+  --warning-foreground: #5C3F0C;
+  --info: #5C6BAE;
+  --info-soft: #E2E4F2;
+  --info-foreground: #2C3564;
+  --critical: #B23B36;
+  --critical-soft: #F1DAD8;
+  --critical-foreground: #5C201C;
+  --border: #DDD8CC;
+  --border-strong: #C9C2B2;
+  --input: #FBFAF7;
+  --ring: #2E6690;
+  --shadow-card: 0 10px 26px -18px rgb(35 38 43 / 0.14);
+  --shadow-elevated: 0 22px 44px -22px rgb(35 38 43 / 0.22);
   --sidebar-width: 260px;
   --sidebar-collapsed: 72px;
   --topbar-height: 64px;
   --radius: 1rem;
+  --radius-control: 0.75rem;
+  --duration-fast: 150ms;
+  --duration-standard: 220ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 
   --ws-density-scale: 1;
   --ws-spacing-unit: 0.5rem;
-  --ws-page-padding: clamp(0.75rem, 3vw, 1.5rem);
-  --ws-section-padding: 1rem;
-  --ws-card-padding: 1rem;
-  --ws-stack-gap: 0.75rem;
-  --ws-inline-gap: 0.875rem;
+  --ws-page-padding: clamp(0.875rem, 3vw, 1.75rem);
+  --ws-section-padding: 1.125rem;
+  --ws-card-padding: 1.125rem;
+  --ws-stack-gap: 0.875rem;
+  --ws-inline-gap: 1rem;
   --ws-touch-target-size: 2.75rem;
   --ws-mobile-nav-padding: 0.875rem;
   --ws-mobile-bottom-bar: 5.75rem;
   --ws-mobile-fab-offset: 5.25rem;
+  --ws-fab-clearance: 4.5rem;
 
   --ws-focus-ring-width: 3px;
   --ws-focus-ring-offset: 2px;
@@ -66,49 +74,58 @@
   --ws-status-surface-info: var(--info-soft);
   --ws-status-text-info: var(--info);
   --ws-status-surface-muted: var(--muted-soft);
+  --ws-status-text-muted: var(--muted-foreground);
+  --ws-selected-surface: var(--primary-container);
+  --ws-selected-foreground: var(--primary-container-foreground);
+  --ws-disabled-surface: color-mix(in srgb, var(--muted) 72%, var(--card));
+  --ws-disabled-foreground: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
 }
 
 .dark {
-  --background: #101827;
-  --foreground: #f4f8ff;
-  --card: #162238;
-  --card-foreground: #f5f9ff;
-  --popover: #1a2941;
-  --popover-foreground: #f5f9ff;
-  --primary: #94bbff;
-  --primary-foreground: #071c3e;
-  --primary-container: #1d4f91;
-  --primary-container-foreground: #eaf2ff;
-  --secondary: #5eead4;
-  --secondary-foreground: #052f2b;
-  --muted: #20324d;
-  --muted-soft: #17263d;
-  --muted-foreground: #b5c7df;
-  --accent: #243b5a;
-  --accent-foreground: #eff7ff;
-  --destructive: #fb7185;
-  --destructive-foreground: #2d0610;
-  --success: #6ee7a8;
-  --success-soft: rgb(110 231 168 / 0.18);
-  --warning: #facc15;
-  --warning-soft: rgb(250 204 21 / 0.18);
-  --info: #7dd3fc;
-  --info-soft: rgb(125 211 252 / 0.18);
-  --critical: #fb7185;
-  --critical-soft: rgb(251 113 133 / 0.18);
-  --border: #344b6b;
-  --border-strong: #4f6f95;
-  --input: #1b2b45;
-  --ring: #9dc4ff;
-  --shadow-card: 0 16px 36px -24px rgb(2 6 23 / 0.82);
-  --shadow-elevated: 0 30px 70px -34px rgb(2 6 23 / 0.88);
+  --background: #1A1A17;
+  --foreground: #E7E4DC;
+  --card: #232320;
+  --card-foreground: #E7E4DC;
+  --popover: #262622;
+  --popover-foreground: #E7E4DC;
+  --primary: #7FA8C2;
+  --primary-foreground: #12232E;
+  --primary-container: #2A4152;
+  --primary-container-foreground: #D6E6EF;
+  --secondary: #7FB5AA;
+  --secondary-foreground: #0F2621;
+  --muted: #262620;
+  --muted-soft: #201F1B;
+  --muted-foreground: #B7B2A4;
+  --accent: #2B3A44;
+  --accent-foreground: #D9E5EC;
+  --destructive: #D08A82;
+  --destructive-foreground: #341210;
+  --success: #86BE99;
+  --success-soft: rgb(134 190 153 / 0.16);
+  --success-foreground: #CDE7D5;
+  --warning: #D3AD68;
+  --warning-soft: rgb(211 173 104 / 0.16);
+  --warning-foreground: #F0DDB4;
+  --info: #9AA6D6;
+  --info-soft: rgb(154 166 214 / 0.16);
+  --info-foreground: #DDE1F2;
+  --critical: #D08A82;
+  --critical-soft: rgb(208 138 130 / 0.16);
+  --critical-foreground: #F1D6D2;
+  --border: #322F27;
+  --border-strong: #423E32;
+  --input: #211F1B;
+  --ring: #7FA8C2;
+  --shadow-card: 0 16px 36px -24px rgb(10 9 7 / 0.55);
+  --shadow-elevated: 0 30px 70px -34px rgb(10 9 7 / 0.62);
 
   --ws-density-scale: 0.98;
-  --ws-page-padding: clamp(0.75rem, 2.6vw, 1.5rem);
-  --ws-section-padding: 0.95rem;
-  --ws-card-padding: 1rem;
-  --ws-stack-gap: 0.7rem;
-  --ws-inline-gap: 0.8rem;
+  --ws-page-padding: clamp(0.875rem, 2.6vw, 1.7rem);
+  --ws-section-padding: 1.05rem;
+  --ws-card-padding: 1.1rem;
+  --ws-stack-gap: 0.8rem;
+  --ws-inline-gap: 0.9rem;
   --ws-touch-target-size: 2.75rem;
   --ws-focus-ring-color: color-mix(in srgb, var(--ring) 38%, transparent);
   --ws-focus-ring-inner: color-mix(in srgb, var(--ring) 24%, transparent);
@@ -121,6 +138,11 @@
   --ws-status-surface-info: color-mix(in srgb, var(--info) 16%, transparent);
   --ws-status-text-info: var(--info);
   --ws-status-surface-muted: color-mix(in srgb, var(--muted) 22%, transparent);
+  --ws-status-text-muted: var(--muted-foreground);
+  --ws-selected-surface: var(--primary-container);
+  --ws-selected-foreground: var(--primary-container-foreground);
+  --ws-disabled-surface: color-mix(in srgb, var(--muted) 48%, var(--card));
+  --ws-disabled-foreground: color-mix(in srgb, var(--muted-foreground) 68%, transparent);
 }
 
 @theme inline {
@@ -144,9 +166,13 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-critical: var(--critical);
+  --color-critical-foreground: var(--critical-foreground);
 
   --color-surface: var(--background);
   --color-surface-bright: var(--background);
@@ -173,7 +199,16 @@
   --color-critical-bg: var(--critical-soft);
   --color-info-bg: var(--info-soft);
 
-  --font-sans: "Kanit", system-ui, sans-serif;
+  /* Legacy Material-3-style token names from a prior design iteration, still
+     referenced in ~30 files. Aliased onto the current palette so those call
+     sites resolve to real colors instead of silently rendering unstyled. */
+  --color-primary-fixed: var(--primary-container);
+  --color-secondary-fixed: var(--color-secondary-container);
+  --color-tertiary: var(--warning);
+  --color-tertiary-fixed: var(--warning-soft);
+  --color-foreground-variant: var(--muted-foreground);
+
+  --font-sans: var(--font-noto-sans-thai), system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
   --radius-sm: calc(var(--radius) - 0.5rem);
   --radius-md: calc(var(--radius) - 0.35rem);
@@ -182,6 +217,26 @@
   --radius-2xl: calc(var(--radius) + 0.35rem);
   --shadow-card: var(--shadow-card);
   --shadow-elevated: var(--shadow-elevated);
+
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.55;
+  --text-xl: 1.3125rem;
+  --text-xl--line-height: 1.45;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 1.3;
+  --tracking-2xl: -0.01em;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 1.2;
+  --tracking-3xl: -0.015em;
+  --text-4xl: 2.5rem;
+  --text-4xl--line-height: 1.15;
+  --tracking-4xl: -0.02em;
 }
 
 * {
@@ -284,6 +339,12 @@ html.dark body {
   box-shadow: var(--shadow-elevated);
 }
 
+@media (hover: none) {
+  .surface-card:hover {
+    box-shadow: var(--shadow-card);
+  }
+}
+
 .surface-section {
   background-color: var(--muted-soft);
   border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
@@ -347,9 +408,9 @@ html.dark body {
 }
 
 .transition-smooth {
-  transition-duration: calc(0.2s * var(--ws-density-scale));
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: var(--duration-standard);
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-timing-function: var(--ease-standard);
 }
 
 @keyframes fadeIn {
@@ -424,14 +485,28 @@ html.dark body {
   min-height: var(--ws-touch-target-size);
 }
 
+.ws-density-patient {
+  --ws-density-scale: 1.06;
+  --ws-page-padding: clamp(1rem, 4vw, 2rem);
+  --ws-section-padding: 1.125rem;
+  --ws-card-padding: 1.25rem;
+  --ws-stack-gap: 1rem;
+  --ws-inline-gap: 1rem;
+  --ws-touch-target-size: 3rem;
+}
+
+.ws-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 767px) {
   :root {
     --ws-density-scale: 1;
-    --ws-page-padding: clamp(0.75rem, 4vw, 1.25rem);
-    --ws-section-padding: 0.95rem;
-    --ws-card-padding: 1rem;
-    --ws-stack-gap: 0.8rem;
-    --ws-inline-gap: 0.95rem;
+    --ws-page-padding: clamp(0.875rem, 4vw, 1.4rem);
+    --ws-section-padding: 1.05rem;
+    --ws-card-padding: 1.1rem;
+    --ws-stack-gap: 0.9rem;
+    --ws-inline-gap: 1.05rem;
     --ws-touch-target-size: 2.95rem;
     --ws-mobile-nav-padding: 0.5rem;
     --ws-status-surface-muted: color-mix(in srgb, var(--muted-soft) 92%, var(--background));
@@ -441,11 +516,11 @@ html.dark body {
 @media (min-width: 1024px) {
   :root {
     --ws-density-scale: 0.94;
-    --ws-page-padding: clamp(1rem, 2vw, 1.75rem);
-    --ws-section-padding: 0.85rem;
-    --ws-card-padding: 0.95rem;
-    --ws-stack-gap: 0.7rem;
-    --ws-inline-gap: 0.75rem;
+    --ws-page-padding: clamp(1.1rem, 2vw, 1.9rem);
+    --ws-section-padding: 0.95rem;
+    --ws-card-padding: 1.05rem;
+    --ws-stack-gap: 0.8rem;
+    --ws-inline-gap: 0.85rem;
     --ws-touch-target-size: 2.5rem;
     --ws-mobile-bottom-bar: 1.5rem;
     --ws-mobile-fab-offset: 1.5rem;
@@ -453,7 +528,7 @@ html.dark body {
   }
 
   .ws-mobile-safe-bottom {
-    padding-bottom: 1.5rem;
+    padding-bottom: max(1.5rem, var(--ws-fab-clearance));
   }
 
   .ws-ai-fab {
@@ -481,62 +556,64 @@ html.dark body {
 }
 
 /*
- * Elder-friendly font scaling (ws-role-elder)
- * Applied when font scale > 1.0 for accessibility
+ * Large-text accessibility mode (ws-large-text)
+ * Opt-in via Account > Display, available to any user, not tied to role.
+ * Applied when --ws-font-scale > 1.0.
  */
-.ws-role-elder {
+.ws-large-text {
+  --ws-font-scale: 1.15;
   font-size: calc(1rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder h1,
-.ws-role-elder .text-3xl {
-  font-size: calc(1.875rem * var(--ws-font-scale, 1));
+.ws-large-text h1,
+.ws-large-text .text-3xl {
+  font-size: calc(2rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder h2,
-.ws-role-elder .text-2xl {
-  font-size: calc(1.5rem * var(--ws-font-scale, 1));
+.ws-large-text h2,
+.ws-large-text .text-2xl {
+  font-size: calc(1.625rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder h3,
-.ws-role-elder .text-xl {
-  font-size: calc(1.25rem * var(--ws-font-scale, 1));
+.ws-large-text h3,
+.ws-large-text .text-xl {
+  font-size: calc(1.3125rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder .text-lg {
+.ws-large-text .text-lg {
   font-size: calc(1.125rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder .text-base {
+.ws-large-text .text-base {
   font-size: calc(1rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder .text-sm {
-  font-size: calc(0.875rem * var(--ws-font-scale, 1));
+.ws-large-text .text-sm {
+  font-size: calc(0.9375rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder .text-xs {
-  font-size: calc(0.75rem * var(--ws-font-scale, 1));
+.ws-large-text .text-xs {
+  font-size: calc(0.8125rem * var(--ws-font-scale, 1));
 }
 
-/* Larger touch targets for elderly users */
-.ws-role-elder button,
-.ws-role-elder [role="button"] {
+/* Larger touch targets when large text is on */
+.ws-large-text button,
+.ws-large-text [role="button"] {
   min-height: calc(2.75rem * var(--ws-font-scale, 1));
   min-width: calc(2.75rem * var(--ws-font-scale, 1));
 }
 
 /* Increased spacing for readability */
-.ws-role-elder .p-4 {
+.ws-large-text .p-4 {
   padding: calc(1rem * var(--ws-font-scale, 1));
 }
 
-.ws-role-elder .gap-4 {
+.ws-large-text .gap-4 {
   gap: calc(1rem * var(--ws-font-scale, 1));
 }
 
 /* High contrast focus indicators */
-.ws-role-elder *:focus-visible {
+.ws-large-text *:focus-visible {
   outline: 3px solid var(--ws-focus-ring-color);
   outline-offset: var(--ws-focus-ring-offset);
 }

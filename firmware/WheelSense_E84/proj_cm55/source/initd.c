@@ -54,7 +54,7 @@
 #include "protocol/protocol.h"
 #include "build.h"
 #include "common.h"
-#include "clock.h"
+#include "ws_clock.h"
 #include "board.h"
 #include "system.h"
 #include "initd.h"
@@ -62,6 +62,109 @@
 #include "services.h"
 #include "wifi_configs/im_config.h"
 #include "usbd.h"
+#include "services/ws_mqtt.h"
+#include "ws_ui_state.h"
+
+#define WS_NODE_FIRMWARE_VERSION "4.0.0"
+#define WS_NODE_DEFAULT_MQTT      "broker.emqx.io"
+
+static ws_ui_state_t ws_node_ui_state;
+
+static void ws_node_command(const ws_node_command_t *command, void *context)
+{
+    ws_ui_state_t *state = (ws_ui_state_t *)context;
+    if (command == NULL || state == NULL) return;
+
+    switch (command->type) {
+        case WS_NODE_COMMAND_ASSIGN_TASK:
+            if (ws_ui_apply_task(state, command->task_id, command->task_title,
+                                 command->room_name, command->caregiver_name) == WS_STATUS_READY) {
+                (void)ws_mqtt_publish_ack(command->command_id, command->command, "ok",
+                                          "task_displayed", command->task_id);
+            } else {
+                (void)ws_mqtt_publish_ack(command->command_id, command->command, "error",
+                                          "invalid_task", command->task_id);
+            }
+            break;
+        case WS_NODE_COMMAND_ENTER_CONFIG:
+            ws_ui_set_provisioning(state, true);
+            (void)ws_mqtt_publish_ack(command->command_id, command->command, "ok",
+                                      "entering_config_mode", NULL);
+            break;
+        case WS_NODE_COMMAND_REBOOT:
+            (void)ws_mqtt_publish_ack(command->command_id, command->command, "ok",
+                                      "rebooting", NULL);
+            vTaskDelay(pdMS_TO_TICKS(200u));
+            NVIC_SystemReset();
+            break;
+        default:
+            (void)ws_mqtt_publish_ack(command->command_id, command->command, "error",
+                                      "camera_port_deferred", NULL);
+            break;
+    }
+}
+
+#if ((WS_FEATURE_ENVIRONMENT == 1) || (WS_FEATURE_TOUCH == 1) || \
+     (WS_FEATURE_MICROPHONE == 1))
+#define WS_SENSOR_POLL_STACK_SIZE (1024u)
+#define WS_SENSOR_POLL_PRIORITY   (tskIDLE_PRIORITY + 1u)
+
+static pb_ostream_t ws_sensor_sink = PB_OSTREAM_SIZING;
+
+static void ws_sensor_poll_task(void *arg)
+{
+    protocol_t *protocol = (protocol_t *)arg;
+    for (;;)
+    {
+        ws_sensor_sink.bytes_written = 0u;
+        (void)protocol_call_device_poll(protocol, &ws_sensor_sink);
+        vTaskDelay(pdMS_TO_TICKS(1u));
+    }
+}
+
+static bool ws_sensor_start_devices(protocol_t *protocol)
+{
+    unsigned started = 0u;
+    const unsigned expected =
+        ((WS_FEATURE_ENVIRONMENT == 1) ? 2u : 0u) +
+        ((WS_FEATURE_TOUCH == 1) ? 1u : 0u) +
+        ((WS_FEATURE_MICROPHONE == 1) ? 1u : 0u);
+    for (int i = 0; i < protocol->board.devices_count; ++i)
+    {
+        const char *name = protocol->board.devices[i].name;
+        bool selected = false;
+#if (WS_FEATURE_ENVIRONMENT == 1)
+        selected = (strcmp(name, "DPS") == 0) || (strcmp(name, "SHT4X") == 0);
+#endif
+#if (WS_FEATURE_TOUCH == 1)
+        selected = selected || (strcmp(name, "IMU") == 0);
+#endif
+#if (WS_FEATURE_MICROPHONE == 1)
+        selected = selected || (strcmp(name, "Microphone") == 0);
+#endif
+        if (!selected)
+        {
+            continue;
+        }
+
+        device_manager_t *manager = &protocol->device_managers[i];
+        if (manager->start == NULL)
+        {
+            return false;
+        }
+        manager->busy = &ws_sensor_sink;
+        manager->start(protocol, i, &ws_sensor_sink, manager->arg);
+        if (protocol->board.devices[i].status !=
+            protocol_DeviceStatus_DEVICE_STATUS_ACTIVE)
+        {
+            manager->busy = NULL;
+            return false;
+        }
+        ++started;
+    }
+    return started == expected;
+}
+#endif
 
 #ifdef IM_ENABLE_NET
 #include "net/wifi.h"
@@ -344,6 +447,12 @@ static void wifi_connected(wifi_t* wifi)
 {
     /* Turn on Wi-Fi LED */
     set_led1(true);
+    char ip_address[48] = {0};
+    cy_nw_ntoa(&wifi->ip_addr, ip_address);
+    ws_ui_apply_connectivity(&ws_node_ui_state, true,
+                             ws_node_ui_state.ble_connected,
+                             ws_node_ui_state.camera_ready);
+    ws_mqtt_wifi_changed(true, ip_address);
 
 #ifdef IM_ENABLE_SHELL
     /* If shell is enabled, run the /system/net-up script */
@@ -371,8 +480,14 @@ static void wifi_connected(wifi_t* wifi)
 *******************************************************************************/
 static void wifi_disconnected(wifi_t* wifi)
 {
+    (void)wifi;
     /* Turn off Wi-Fi LED */
     set_led1(false);
+    ws_ui_apply_connectivity(&ws_node_ui_state, false,
+                             ws_node_ui_state.ble_connected,
+                             ws_node_ui_state.camera_ready);
+    ws_ui_apply_mqtt(&ws_node_ui_state, false);
+    ws_mqtt_wifi_changed(false, NULL);
 
 #ifdef IM_ENABLE_SHELL
     /* If shell is enabled, run the /system/net-down script */
@@ -414,6 +529,13 @@ void initd_task(void* arg)
 
     /* Serial UUID */
     uint8_t* serial = board_get_serial_uuid();
+    char device_id[WS_NODE_DEVICE_ID_MAX + 1u];
+    char node_id[WS_NODE_NODE_ID_MAX + 1u];
+    (void)snprintf(device_id, sizeof(device_id), "CAM_E84_%02X%02X%02X%02X",
+                   serial[12], serial[13], serial[14], serial[15]);
+    (void)snprintf(node_id, sizeof(node_id), "WSN_%02X%02X%02X%02X",
+                   serial[12], serial[13], serial[14], serial[15]);
+    ws_ui_state_init(&ws_node_ui_state);
 
     /* Create a protocol instance */
 #ifdef USE_KIT_PSE84_AI
@@ -460,6 +582,16 @@ void initd_task(void* arg)
     /* Load all device drivers */
     system_load_device_drivers(protocol);
 
+#if ((WS_FEATURE_ENVIRONMENT == 1) || (WS_FEATURE_TOUCH == 1) || \
+     (WS_FEATURE_MICROPHONE == 1))
+    if (!ws_sensor_start_devices(protocol) ||
+        (xTaskCreate(ws_sensor_poll_task, "ws_sensor", WS_SENSOR_POLL_STACK_SIZE,
+                     protocol, WS_SENSOR_POLL_PRIORITY, NULL) != pdPASS))
+    {
+        printf("[EASE_AI] sensor acquisition start FAIL\r\n");
+    }
+#endif
+
     /* Turn of status leds */
     set_led0(false);
     set_led1(false);
@@ -491,6 +623,22 @@ void initd_task(void* arg)
     wifi_t* wifi = (wifi_t*)sys_malloc(sizeof(wifi_t));
     wifi_init(wifi, wifi_connected, wifi_disconnected);
     system_services[ENV_SERVICE_WIFI] = wifi;
+
+    const ws_mqtt_config_t mqtt_config = {
+        .broker = WS_NODE_DEFAULT_MQTT,
+        .port = 1883u,
+        .username = "",
+        .password = "",
+        .device_id = device_id,
+        .node_id = node_id,
+        .firmware = WS_NODE_FIRMWARE_VERSION,
+        .ble_mac = "",
+        .command_handler = ws_node_command,
+        .command_context = &ws_node_ui_state,
+    };
+    if (!ws_mqtt_start(&mqtt_config)) {
+        printf("[WheelSense] MQTT service initialization failed\r\n");
+    }
 
 #endif /* IM_ENABLE_NET */
 

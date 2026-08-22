@@ -198,7 +198,7 @@ async def test_workflow_target_validation_rejects_invalid_roles_and_cross_worksp
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("role", ["head_nurse", "supervisor"])
+@pytest.mark.parametrize("role", ["head_caregiver"])
 async def test_workflow_operational_lead_has_workspace_wide_patient_visibility(
     client: AsyncClient,
     db_session: AsyncSession,

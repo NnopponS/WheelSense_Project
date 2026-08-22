@@ -2,7 +2,7 @@
 
 import RoleShell from "@/components/RoleShell";
 
-export default function HeadCaregiverLayout({
+export default function HeadNurseLayout({
   children,
 }: {
   children: React.ReactNode;

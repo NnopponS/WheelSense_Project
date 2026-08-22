@@ -1,4 +1,4 @@
-# WheelSense Design Context
+# Ease AI Design Context
 
 ## Visual Direction
 Use a compact clinical operations style: light, precise, calm, and information dense. The design follows the approved reference board: hospital duty boards, mobile care coordination, emergency response apps, care-team apps, EHR workflow dashboards, and clinical decision support panels.
@@ -16,7 +16,7 @@ Use a compact clinical operations style: light, precise, calm, and information d
 
 ## Color
 - Base surface: tinted clinical blue white.
-- Primary: saturated WheelSense blue.
+- Primary: saturated Ease AI blue.
 - Emergency: red with pale red surface and clear icon.
 - Warning: amber.
 - Success/available: green.
@@ -27,7 +27,7 @@ Use a compact clinical operations style: light, precise, calm, and information d
 - Desktop keeps sidebar and topbar.
 - Mobile uses compact top header plus fixed bottom task bar.
 - Staff mobile home pages prioritize emergency, my tasks, AI, and patient lookup before floor plan.
-- Head Nurse desktop keeps the boxed floor plan as a core command-center panel.
+- Supervisor desktop keeps the boxed floor plan as a core command-center panel.
 - Use cards for distinct operational panels only; do not place cards inside cards.
 - Keep repeated item panels compact with stable heights and clear actions.
 

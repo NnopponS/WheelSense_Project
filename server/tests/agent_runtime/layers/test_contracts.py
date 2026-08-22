@@ -46,7 +46,7 @@ class TestActorFacts:
             ActorFacts(role="random_role", user_id=1, workspace_id=1)
 
     def test_actor_facts_accepts_known_roles(self) -> None:
-        for role in ["admin", "head_nurse", "supervisor", "observer", "patient"]:
+        for role in ["admin", "head_caregiver", "caregiver", "patient"]:
             actor = ActorFacts(role=role, user_id=1, workspace_id=1)
             assert actor.role == role
 
@@ -86,7 +86,7 @@ class TestRejectDecision:
 class TestValidatedContextPackage:
     def test_validated_context_package_minimal(self) -> None:
         corr = new_correlation()
-        actor = ActorFacts(role="observer", user_id=2, workspace_id=1)
+        actor = ActorFacts(role="caregiver", user_id=2, workspace_id=1)
         decision = IntentDecision(intent_key="alerts.read", confidence=0.9)
         package = ValidatedContextPackage(
             correlation_id=corr.id,
@@ -97,7 +97,7 @@ class TestValidatedContextPackage:
             policy_tags=["read_only"],
         )
         assert package.correlation_id == corr.id
-        assert package.actor.role == "observer"
+        assert package.actor.role == "caregiver"
         assert "read_only" in package.policy_tags
 
 

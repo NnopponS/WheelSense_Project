@@ -3,7 +3,7 @@
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ConciergeBell, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 
 type BadgeVariant = "default" | "secondary" | "outline" | "success" | "warning" | "destructive";
 
@@ -118,19 +119,15 @@ function PatientServicesContent() {
     hasPatientProfileForSubmit && title.trim().length > 0 && note.trim().length > 0;
 
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            <ConciergeBell className="h-3.5 w-3.5" />
-            {t("patient.services.badge")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("patient.services.title")}</h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t("patient.services.subtitleFreeform")}</p>
-          </div>
-        </div>
-      </div>
+    <AppPage
+      eyebrow={t("patient.services.badge")}
+      title={t("patient.services.title")}
+      description={t("patient.services.subtitleFreeform")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/patient" },
+        { label: t("patient.services.title") },
+      ]}
+    >
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <Card className="border-border/70">
@@ -171,7 +168,7 @@ function PatientServicesContent() {
               <p className="text-sm text-muted-foreground">{t("patient.services.noProfileLinked")}</p>
             ) : null}
 
-            {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
+            {submitError ? <p className="text-sm text-critical-foreground" role="alert">{submitError}</p> : null}
 
             <Button
               type="button"
@@ -250,7 +247,7 @@ function PatientServicesContent() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppPage>
   );
 }
 

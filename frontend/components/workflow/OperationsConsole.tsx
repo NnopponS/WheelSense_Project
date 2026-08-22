@@ -232,14 +232,16 @@ const defaultMessageForm: MessageFormState = {
   body: "",
 };
 
-const defaultHandoverForm: HandoverFormState = {
+function defaultHandoverForm(shiftLabel: string): HandoverFormState {
+  return {
   patientId: EMPTY_SELECT,
   targetRole: "head_caregiver",
   shiftDate: "",
-  shiftLabel: "current shift",
+  shiftLabel,
   priority: "routine",
   note: "",
-};
+  };
+}
 
 function formatConsoleError(error: unknown, fallback: string): string {
   if (error instanceof ApiError) return error.message;
@@ -702,7 +704,7 @@ export function OperationsConsole({
     : consoleTabFromSearchParams(searchParams);
 
   const baseKey = [role, "workflow"] as const;
-  /** Matches `GET /api/analytics/wards/summary` — caregiver is not authorized for workspace-wide ward totals. */
+  /** Matches `GET /api/analytics/wards/summary` — observer is not authorized for workspace-wide ward totals. */
   const canLoadWardSummary =
     role === "admin" || role === "head_caregiver";
   const [queueSearch, setQueueSearch] = useState("");
@@ -716,7 +718,9 @@ export function OperationsConsole({
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(defaultScheduleForm);
   const [directiveForm, setDirectiveForm] = useState<DirectiveFormState>(defaultDirectiveForm);
   const [messageForm, setMessageForm] = useState<MessageFormState>(defaultMessageForm);
-  const [handoverForm, setHandoverForm] = useState<HandoverFormState>(defaultHandoverForm);
+  const [handoverForm, setHandoverForm] = useState<HandoverFormState>(() =>
+    defaultHandoverForm(t("workflow.console.currentShift")),
+  );
   const [createError, setCreateError] = useState<string | null>(null);
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
   const [transferTargetMode, setTransferTargetMode] = useState<AssignmentMode>("role");
@@ -1221,7 +1225,7 @@ export function OperationsConsole({
       await api.createWorkflowHandover(payload);
     },
     onSuccess: async () => {
-      setHandoverForm(defaultHandoverForm);
+      setHandoverForm(defaultHandoverForm(t("workflow.console.currentShift")));
       setCoordinationError(null);
       await invalidateConsoleData();
     },
@@ -1270,7 +1274,7 @@ export function OperationsConsole({
     () => [
       {
         accessorKey: "title",
-        header: "Item",
+        header: t("workflow.console.column.item"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -1281,21 +1285,21 @@ export function OperationsConsole({
           </div>
         ),
       },
-      { accessorKey: "patientName", header: "Patient" },
-      { accessorKey: "ownerLabel", header: "Owner" },
+      { accessorKey: "patientName", header: t("workflow.console.field.patient") },
+      { accessorKey: "ownerLabel", header: t("workflow.console.field.owner") },
       {
         accessorKey: "secondaryLabel",
-        header: "Type / Priority",
+        header: t("workflow.console.column.typePriority"),
         cell: ({ row }) => <Badge variant="secondary">{row.original.secondaryLabel || "-"}</Badge>,
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("workflow.console.field.status"),
         cell: ({ row }) => <Badge variant={statusVariant(row.original.status)}>{row.original.status}</Badge>,
       },
       {
         accessorKey: "timestamp",
-        header: "Next action",
+        header: t("workflow.console.column.nextAction"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -1308,19 +1312,19 @@ export function OperationsConsole({
         header: "",
         cell: ({ row }) => (
           <Button type="button" size="sm" variant="outline" onClick={() => setSelectedRow(row.original)}>
-            Open
+            {t("workflow.console.action.open")}
           </Button>
         ),
       },
     ],
-    [setSelectedRow],
+    [setSelectedRow, t],
   );
 
   const transferColumns = useMemo<ColumnDef<WorkflowListRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Workflow item",
+        header: t("workflow.console.workflowItem"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -1328,10 +1332,10 @@ export function OperationsConsole({
           </div>
         ),
       },
-      { accessorKey: "ownerLabel", header: "Current owner" },
+      { accessorKey: "ownerLabel", header: t("workflow.console.currentOwner") },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("workflow.console.field.status"),
         cell: ({ row }) => <Badge variant={statusVariant(row.original.status)}>{row.original.status}</Badge>,
       },
       {
@@ -1350,7 +1354,7 @@ export function OperationsConsole({
               }}
             >
               <UserCheck className="mr-2 h-4 w-4" />
-              Claim
+              {t("workflow.console.action.claim")}
             </Button>
             <Button
               type="button"
@@ -1365,7 +1369,7 @@ export function OperationsConsole({
               }}
             >
               <ArrowRightLeft className="mr-2 h-4 w-4" />
-              Handoff
+              {t("workflow.console.action.handoff")}
             </Button>
           </div>
         ),
@@ -1378,6 +1382,7 @@ export function OperationsConsole({
       setTransferTargetMode,
       setTransferTargetRole,
       setTransferTargetUserId,
+      t,
     ],
   );
 
@@ -1385,40 +1390,40 @@ export function OperationsConsole({
     () => [
       {
         accessorKey: "subject",
-        header: "Message",
+        header: t("workflow.console.message"),
         cell: ({ row }) => (
           <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.subject || "(No subject)"}</p>
+            <p className="font-medium text-foreground">{row.original.subject || t("workflow.console.noSubject")}</p>
             <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.body}</p>
           </div>
         ),
       },
       {
         accessorKey: "recipient_role",
-        header: "Routing",
+        header: t("workflow.console.routing"),
         cell: ({ row }) => {
           const sender =
             row.original.sender_person?.display_name || `User #${row.original.sender_user_id}`;
           const recipient = row.original.recipient_person?.display_name
             || row.original.recipient_role
-            || (row.original.recipient_user_id ? `User #${row.original.recipient_user_id}` : "Direct");
+            || (row.original.recipient_user_id ? `User #${row.original.recipient_user_id}` : t("workflow.console.direct"));
           return (
             <div className="space-y-1 text-xs text-muted-foreground">
-              <p>From: {sender}</p>
-              <p>To: {recipient}</p>
+              <p>{t("workflow.console.from")}: {sender}</p>
+              <p>{t("workflow.console.to")}: {recipient}</p>
             </div>
           );
         },
       },
       {
         accessorKey: "patient_id",
-        header: "Patient",
+        header: t("workflow.console.field.patient"),
         cell: ({ row }) =>
           row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
       },
       {
         accessorKey: "created_at",
-        header: "Created",
+        header: t("workflow.console.created"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.created_at)}</p>
@@ -1427,19 +1432,19 @@ export function OperationsConsole({
         ),
       },
     ],
-    [patientMap, unitWide],
+    [patientMap, t, unitWide],
   );
 
   const handoverColumns = useMemo<ColumnDef<HandoverNoteOut>[]>(
     () => [
       {
         accessorKey: "note",
-        header: "Handover",
+        header: t("workflow.console.handover"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={priorityVariant(row.original.priority)}>{row.original.priority}</Badge>
-              <p className="text-xs text-muted-foreground">{row.original.shift_label || "Shift handoff"}</p>
+              <p className="text-xs text-muted-foreground">{row.original.shift_label || t("workflow.console.shiftHandoff")}</p>
             </div>
             <p className="line-clamp-3 text-sm text-foreground">{row.original.note}</p>
           </div>
@@ -1447,18 +1452,18 @@ export function OperationsConsole({
       },
       {
         accessorKey: "patient_id",
-        header: "Patient",
+        header: t("workflow.console.field.patient"),
         cell: ({ row }) =>
           row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
       },
       {
         accessorKey: "target_role",
-        header: "Target",
-        cell: ({ row }) => row.original.target_role || "Open handoff",
+        header: t("workflow.console.target"),
+        cell: ({ row }) => row.original.target_role || t("workflow.console.openHandoff"),
       },
       {
         accessorKey: "created_at",
-        header: "Created",
+        header: t("workflow.console.created"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.created_at)}</p>
@@ -1467,28 +1472,28 @@ export function OperationsConsole({
         ),
       },
     ],
-    [patientMap, unitWide],
+    [patientMap, t, unitWide],
   );
 
   const auditColumns = useMemo<ColumnDef<AuditTrailEventOut>[]>(
     () => [
-      { accessorKey: "domain", header: "Domain" },
-      { accessorKey: "action", header: "Action" },
+      { accessorKey: "domain", header: t("workflow.console.domain") },
+      { accessorKey: "action", header: t("workflow.console.actionLabel") },
       {
         accessorKey: "entity_type",
-        header: "Entity",
+        header: t("workflow.console.entity"),
         cell: ({ row }) =>
           `${row.original.entity_type}${row.original.entity_id != null ? ` #${row.original.entity_id}` : ""}`,
       },
       {
         accessorKey: "patient_id",
-        header: "Patient",
+        header: t("workflow.console.field.patient"),
         cell: ({ row }) =>
           row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
       },
       {
         accessorKey: "created_at",
-        header: "Created",
+        header: t("workflow.console.created"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.created_at)}</p>
@@ -1497,7 +1502,7 @@ export function OperationsConsole({
         ),
       },
     ],
-    [patientMap, unitWide],
+    [patientMap, t, unitWide],
   );
 
   const isLoadingAny =
@@ -1573,16 +1578,16 @@ export function OperationsConsole({
           <Card className="border-border/70">
             <CardContent className="grid auto-rows-fr gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="workflow-search">Search queue</Label>
+                <Label htmlFor="workflow-search">{t("workflow.console.searchQueue")}</Label>
                 <Input
                   id="workflow-search"
                   value={queueSearch}
                   onChange={(event) => setQueueSearch(event.target.value)}
-                  placeholder="Search by title, patient, owner, or note"
+                  placeholder={t("workflow.console.searchPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Item type</Label>
+                <Label>{t("workflow.console.itemType")}</Label>
                 <Select
                   value={queueTypeFilter}
                   onValueChange={(value) => setQueueTypeFilter(value as "all" | WorkflowItemType)}
@@ -1591,28 +1596,28 @@ export function OperationsConsole({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All items</SelectItem>
-                    <SelectItem value="task">Tasks</SelectItem>
-                    <SelectItem value="schedule">Schedules</SelectItem>
-                    <SelectItem value="directive">Directives</SelectItem>
+                    <SelectItem value="all">{t("workflow.console.allItems")}</SelectItem>
+                    <SelectItem value="task">{t("workflow.console.tasks")}</SelectItem>
+                    <SelectItem value="schedule">{t("workflow.console.schedules")}</SelectItem>
+                    <SelectItem value="directive">{t("workflow.console.directives")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t("workflow.console.field.status")}</Label>
                 <Select value={queueStatusFilter} onValueChange={setQueueStatusFilter}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="pending">pending</SelectItem>
-                    <SelectItem value="in_progress">in_progress</SelectItem>
-                    <SelectItem value="scheduled">scheduled</SelectItem>
-                    <SelectItem value="active">active</SelectItem>
-                    <SelectItem value="completed">completed</SelectItem>
-                    <SelectItem value="acknowledged">acknowledged</SelectItem>
-                    <SelectItem value="cancelled">cancelled</SelectItem>
+                    <SelectItem value="all">{t("workflow.console.allStatuses")}</SelectItem>
+                    <SelectItem value="pending">{t("workflow.console.status.pending")}</SelectItem>
+                    <SelectItem value="in_progress">{t("workflow.console.status.inProgress")}</SelectItem>
+                    <SelectItem value="scheduled">{t("workflow.console.status.scheduled")}</SelectItem>
+                    <SelectItem value="active">{t("workflow.console.status.active")}</SelectItem>
+                    <SelectItem value="completed">{t("workflow.console.status.completed")}</SelectItem>
+                    <SelectItem value="acknowledged">{t("workflow.console.status.acknowledged")}</SelectItem>
+                    <SelectItem value="cancelled">{t("workflow.console.status.cancelled")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1620,12 +1625,12 @@ export function OperationsConsole({
           </Card>
 
           <DataTableCard
-            title="Operations queue"
-            description="Tasks, schedules, and directives consolidated into one queue."
+            title={t("workflow.console.queueTitle")}
+            description={t("workflow.console.queueDescription")}
             data={filteredQueueRows}
             columns={queueColumns}
             isLoading={isLoadingAny}
-            emptyText="No workflow items match the current filters."
+            emptyText={t("workflow.console.queueEmpty")}
           />
         </div>
       ) : null}
@@ -1635,9 +1640,9 @@ export function OperationsConsole({
           <div className="grid gap-4 xl:grid-cols-[1.04fr_0.96fr]">
             <Card className="border-border/70">
               <CardHeader className="space-y-2">
-                <CardTitle className="text-base">Create workflow item</CardTitle>
+                <CardTitle className="text-base">{t("workflow.console.createTitle")}</CardTitle>
                 <CardDescription>
-                  Standardized create flow with assignment mode and recurrence presets.
+                  {t("workflow.console.createDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1650,7 +1655,7 @@ export function OperationsConsole({
                       size="sm"
                       onClick={() => setFormKind(itemType)}
                     >
-                      {itemType}
+                      {t(`workflow.console.type.${itemType}`)}
                     </Button>
                   ))}
                 </div>
@@ -1665,18 +1670,18 @@ export function OperationsConsole({
                     }}
                   >
                     <div className="space-y-2">
-                      <Label>Title</Label>
+                      <Label>{t("workflow.console.field.title")}</Label>
                       <Input
                         value={taskForm.title}
                         onChange={(event) =>
                           setTaskForm((current) => ({ ...current, title: event.target.value }))
                         }
-                        placeholder="Task title"
+                        placeholder={t("workflow.console.taskTitlePlaceholder")}
                       />
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Patient</Label>
+                        <Label>{t("workflow.console.field.patient")}</Label>
                         <Select
                           value={taskForm.patientId}
                           onValueChange={(value) =>
@@ -1697,7 +1702,7 @@ export function OperationsConsole({
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Priority</Label>
+                        <Label>{t("workflow.console.field.priority")}</Label>
                         <Select
                           value={taskForm.priority}
                           onValueChange={(value) =>
@@ -1708,27 +1713,27 @@ export function OperationsConsole({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="normal">normal</SelectItem>
-                            <SelectItem value="high">high</SelectItem>
-                            <SelectItem value="critical">critical</SelectItem>
+                            <SelectItem value="normal">{t("workflow.console.priority.normal")}</SelectItem>
+                            <SelectItem value="high">{t("workflow.console.priority.high")}</SelectItem>
+                            <SelectItem value="critical">{t("workflow.console.priority.critical")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Description</Label>
+                      <Label>{t("workflow.console.field.description")}</Label>
                       <Textarea
                         rows={3}
                         value={taskForm.description}
                         onChange={(event) =>
                           setTaskForm((current) => ({ ...current, description: event.target.value }))
                         }
-                        placeholder="Expected outcome or handling notes"
+                        placeholder={t("workflow.console.taskDescriptionPlaceholder")}
                       />
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Due at</Label>
+                        <Label>{t("workflow.console.field.dueAt")}</Label>
                         <Input
                           type="datetime-local"
                           value={taskForm.dueAt}
@@ -1738,7 +1743,7 @@ export function OperationsConsole({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Assign by</Label>
+                        <Label>{t("workflow.console.field.assignBy")}</Label>
                         <Select
                           value={taskForm.assignmentMode}
                           onValueChange={(value) =>
@@ -1752,15 +1757,15 @@ export function OperationsConsole({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="role">role</SelectItem>
-                            <SelectItem value="person">person</SelectItem>
+                            <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                            <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     {taskForm.assignmentMode === "role" ? (
                       <div className="space-y-2">
-                        <Label>Assigned role</Label>
+                        <Label>{t("workflow.console.field.assignedRole")}</Label>
                         <Select
                           value={taskForm.assignedRole}
                           onValueChange={(value) =>
@@ -1781,7 +1786,7 @@ export function OperationsConsole({
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Label>Assigned person</Label>
+                        <Label>{t("workflow.console.field.assignedPerson")}</Label>
                         <Select
                           value={taskForm.assignedUserId}
                           onValueChange={(value) =>
@@ -1789,7 +1794,7 @@ export function OperationsConsole({
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a user" />
+                            <SelectValue placeholder={t("workflow.console.selectUser")} />
                           </SelectTrigger>
                           <SelectContent>
                             {userOptions.map((option) => (
@@ -1803,7 +1808,7 @@ export function OperationsConsole({
                     )}
                     <Button type="submit" disabled={createTaskMutation.isPending}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Create task
+                        {t("workflow.console.createTask")}
                     </Button>
                   </form>
                 ) : null}
@@ -1818,18 +1823,18 @@ export function OperationsConsole({
                     }}
                   >
                     <div className="space-y-2">
-                      <Label>Title</Label>
+                      <Label>{t("workflow.console.field.title")}</Label>
                       <Input
                         value={scheduleForm.title}
                         onChange={(event) =>
                           setScheduleForm((current) => ({ ...current, title: event.target.value }))
                         }
-                        placeholder="Schedule title"
+                        placeholder={t("workflow.console.scheduleTitlePlaceholder")}
                       />
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Patient</Label>
+                        <Label>{t("workflow.console.field.patient")}</Label>
                         <Select
                           value={scheduleForm.patientId}
                           onValueChange={(value) =>
@@ -1850,7 +1855,7 @@ export function OperationsConsole({
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Schedule type</Label>
+                        <Label>{t("workflow.console.field.scheduleType")}</Label>
                         <Input
                           value={scheduleForm.scheduleType}
                           onChange={(event) =>
@@ -1859,13 +1864,13 @@ export function OperationsConsole({
                               scheduleType: event.target.value,
                             }))
                           }
-                          placeholder="round"
+                        placeholder={t("workflow.console.scheduleTypePlaceholder")}
                         />
                       </div>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Starts at</Label>
+                        <Label>{t("workflow.console.field.startsAt")}</Label>
                         <Input
                           type="datetime-local"
                           value={scheduleForm.startsAt}
@@ -1878,7 +1883,7 @@ export function OperationsConsole({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Recurrence preset</Label>
+                        <Label>{t("workflow.console.field.recurrence")}</Label>
                         <Select
                           value={scheduleForm.recurrencePreset}
                           onValueChange={(value) =>
@@ -1896,29 +1901,29 @@ export function OperationsConsole({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="once">once</SelectItem>
-                            <SelectItem value="every_shift">every_shift</SelectItem>
-                            <SelectItem value="daily">daily</SelectItem>
-                            <SelectItem value="weekdays">weekdays</SelectItem>
-                            <SelectItem value="weekly">weekly</SelectItem>
+                            <SelectItem value="once">{t("workflow.console.recurrence.once")}</SelectItem>
+                            <SelectItem value="every_shift">{t("workflow.console.recurrence.everyShift")}</SelectItem>
+                            <SelectItem value="daily">{t("workflow.console.recurrence.daily")}</SelectItem>
+                            <SelectItem value="weekdays">{t("workflow.console.recurrence.weekdays")}</SelectItem>
+                            <SelectItem value="weekly">{t("workflow.console.recurrence.weekly")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Notes</Label>
+                      <Label>{t("workflow.console.field.notes")}</Label>
                       <Textarea
                         rows={3}
                         value={scheduleForm.notes}
                         onChange={(event) =>
                           setScheduleForm((current) => ({ ...current, notes: event.target.value }))
                         }
-                        placeholder="Context for whoever executes this schedule"
+                        placeholder={t("workflow.console.scheduleNotesPlaceholder")}
                       />
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Assign by</Label>
+                        <Label>{t("workflow.console.field.assignBy")}</Label>
                         <Select
                           value={scheduleForm.assignmentMode}
                           onValueChange={(value) =>
@@ -1932,14 +1937,14 @@ export function OperationsConsole({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="role">role</SelectItem>
-                            <SelectItem value="person">person</SelectItem>
+                            <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                            <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       {scheduleForm.assignmentMode === "role" ? (
                         <div className="space-y-2">
-                          <Label>Assigned role</Label>
+                          <Label>{t("workflow.console.field.assignedRole")}</Label>
                           <Select
                             value={scheduleForm.assignedRole}
                             onValueChange={(value) =>
@@ -1960,7 +1965,7 @@ export function OperationsConsole({
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <Label>Assigned person</Label>
+                          <Label>{t("workflow.console.field.assignedPerson")}</Label>
                           <Select
                             value={scheduleForm.assignedUserId}
                             onValueChange={(value) =>
@@ -1968,7 +1973,7 @@ export function OperationsConsole({
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a user" />
+                              <SelectValue placeholder={t("workflow.console.selectUser")} />
                             </SelectTrigger>
                             <SelectContent>
                               {userOptions.map((option) => (
@@ -1983,7 +1988,7 @@ export function OperationsConsole({
                     </div>
                     <Button type="submit" disabled={createScheduleMutation.isPending}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Create schedule
+                        {t("workflow.console.createSchedule")}
                     </Button>
                   </form>
                 ) : null}
@@ -1998,18 +2003,18 @@ export function OperationsConsole({
                     }}
                   >
                     <div className="space-y-2">
-                      <Label>Title</Label>
+                      <Label>{t("workflow.console.field.title")}</Label>
                       <Input
                         value={directiveForm.title}
                         onChange={(event) =>
                           setDirectiveForm((current) => ({ ...current, title: event.target.value }))
                         }
-                        placeholder="Directive title"
+                        placeholder={t("workflow.console.directiveTitlePlaceholder")}
                       />
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Patient</Label>
+                        <Label>{t("workflow.console.field.patient")}</Label>
                         <Select
                           value={directiveForm.patientId}
                           onValueChange={(value) =>
@@ -2030,7 +2035,7 @@ export function OperationsConsole({
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Effective from</Label>
+                        <Label>{t("workflow.console.field.effectiveFrom")}</Label>
                         <Input
                           type="datetime-local"
                           value={directiveForm.effectiveFrom}
@@ -2045,7 +2050,7 @@ export function OperationsConsole({
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Assign by</Label>
+                        <Label>{t("workflow.console.field.assignBy")}</Label>
                         <Select
                           value={directiveForm.assignmentMode}
                           onValueChange={(value) =>
@@ -2059,14 +2064,14 @@ export function OperationsConsole({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="role">role</SelectItem>
-                            <SelectItem value="person">person</SelectItem>
+                            <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                            <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       {directiveForm.assignmentMode === "role" ? (
                         <div className="space-y-2">
-                          <Label>Target role</Label>
+                          <Label>{t("workflow.console.field.targetRole")}</Label>
                           <Select
                             value={directiveForm.targetRole}
                             onValueChange={(value) =>
@@ -2087,7 +2092,7 @@ export function OperationsConsole({
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <Label>Target person</Label>
+                          <Label>{t("workflow.console.field.targetPerson")}</Label>
                           <Select
                             value={directiveForm.targetUserId}
                             onValueChange={(value) =>
@@ -2095,7 +2100,7 @@ export function OperationsConsole({
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a user" />
+                              <SelectValue placeholder={t("workflow.console.selectUser")} />
                             </SelectTrigger>
                             <SelectContent>
                               {userOptions.map((option) => (
@@ -2109,7 +2114,7 @@ export function OperationsConsole({
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label>Directive</Label>
+                      <Label>{t("workflow.console.field.directive")}</Label>
                       <Textarea
                         rows={4}
                         value={directiveForm.directiveText}
@@ -2119,12 +2124,12 @@ export function OperationsConsole({
                             directiveText: event.target.value,
                           }))
                         }
-                        placeholder="Directive details"
+                        placeholder={t("workflow.console.directivePlaceholder")}
                       />
                     </div>
                     <Button type="submit" disabled={createDirectiveMutation.isPending}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Create directive
+                        {t("workflow.console.createDirective")}
                     </Button>
                   </form>
                 ) : null}
@@ -2134,12 +2139,12 @@ export function OperationsConsole({
             </Card>
 
             <DataTableCard
-              title="Transfer board"
-              description="Claim work, reassign it, or hand it off with a note."
+            title={t("workflow.console.transferTitle")}
+            description={t("workflow.console.transferDescription")}
               data={openQueueRows}
               columns={transferColumns}
               isLoading={isLoadingAny}
-              emptyText="No open workflow items need transfer actions."
+            emptyText={t("workflow.console.transferEmpty")}
             />
           </div>
         </div>
@@ -2150,7 +2155,7 @@ export function OperationsConsole({
           <div className="grid gap-4 xl:grid-cols-2">
             <Card className="border-border/70">
               <CardHeader className="space-y-2">
-                <CardTitle className="text-base">Role message</CardTitle>
+                <CardTitle className="text-base">{t("workflow.console.roleMessage")}</CardTitle>
                 <CardDescription>
                   Send operational context to a role or a named person.
                 </CardDescription>
@@ -2166,7 +2171,7 @@ export function OperationsConsole({
                 >
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Target mode</Label>
+                      <Label>{t("workflow.console.field.targetMode")}</Label>
                       <Select
                         value={messageForm.targetMode}
                         onValueChange={(value) =>
@@ -2180,13 +2185,13 @@ export function OperationsConsole({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="role">role</SelectItem>
-                          <SelectItem value="person">person</SelectItem>
+                          <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                          <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Patient</Label>
+                      <Label>{t("workflow.console.field.patient")}</Label>
                       <Select
                         value={messageForm.patientId}
                         onValueChange={(value) =>
@@ -2210,7 +2215,7 @@ export function OperationsConsole({
 
                   {messageForm.targetMode === "role" ? (
                     <div className="space-y-2">
-                      <Label>Recipient role</Label>
+                      <Label>{t("workflow.console.field.recipientRole")}</Label>
                       <Select
                         value={messageForm.recipientRole}
                         onValueChange={(value) =>
@@ -2231,7 +2236,7 @@ export function OperationsConsole({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <Label>Recipient person</Label>
+                      <Label>{t("workflow.console.field.recipientPerson")}</Label>
                       <Select
                         value={messageForm.recipientUserId}
                         onValueChange={(value) =>
@@ -2239,7 +2244,7 @@ export function OperationsConsole({
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a user" />
+                          <SelectValue placeholder={t("workflow.console.selectUser")} />
                         </SelectTrigger>
                         <SelectContent>
                           {userOptions.map((option) => (
@@ -2253,29 +2258,29 @@ export function OperationsConsole({
                   )}
 
                   <div className="space-y-2">
-                    <Label>Subject</Label>
+                    <Label>{t("workflow.console.field.subject")}</Label>
                     <Input
                       value={messageForm.subject}
                       onChange={(event) =>
                         setMessageForm((current) => ({ ...current, subject: event.target.value }))
                       }
-                      placeholder="Message subject"
+                      placeholder={t("workflow.console.messageSubjectPlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Body</Label>
+                    <Label>{t("workflow.console.field.body")}</Label>
                     <Textarea
                       rows={4}
                       value={messageForm.body}
                       onChange={(event) =>
                         setMessageForm((current) => ({ ...current, body: event.target.value }))
                       }
-                      placeholder="Operational update or instruction"
+                      placeholder={t("workflow.console.messageBodyPlaceholder")}
                     />
                   </div>
                   <Button type="submit" disabled={sendMessageMutation.isPending}>
                     <Send className="mr-2 h-4 w-4" />
-                    Send message
+                    {t("workflow.console.sendMessage")}
                   </Button>
                 </form>
               </CardContent>
@@ -2283,7 +2288,7 @@ export function OperationsConsole({
 
             <Card className="border-border/70">
               <CardHeader className="space-y-2">
-                <CardTitle className="text-base">Create handover</CardTitle>
+                <CardTitle className="text-base">{t("workflow.console.createHandover")}</CardTitle>
                 <CardDescription>
                   Record shift-to-shift continuity with target role and priority.
                 </CardDescription>
@@ -2299,7 +2304,7 @@ export function OperationsConsole({
                 >
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Patient</Label>
+                      <Label>{t("workflow.console.field.patient")}</Label>
                       <Select
                         value={handoverForm.patientId}
                         onValueChange={(value) =>
@@ -2320,7 +2325,7 @@ export function OperationsConsole({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Target role</Label>
+                      <Label>{t("workflow.console.field.targetRole")}</Label>
                       <Select
                         value={handoverForm.targetRole}
                         onValueChange={(value) =>
@@ -2331,7 +2336,7 @@ export function OperationsConsole({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={EMPTY_SELECT}>Open handoff</SelectItem>
+                          <SelectItem value={EMPTY_SELECT}>{t("workflow.console.openHandoff")}</SelectItem>
                           {STAFF_ROLE_OPTIONS.map((option) => (
                             <SelectItem key={option} value={option}>
                               {option}
@@ -2343,7 +2348,7 @@ export function OperationsConsole({
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Shift date</Label>
+                      <Label>{t("workflow.console.field.shiftDate")}</Label>
                       <Input
                         type="date"
                         value={handoverForm.shiftDate}
@@ -2353,18 +2358,18 @@ export function OperationsConsole({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Shift label</Label>
+                      <Label>{t("workflow.console.field.shiftLabel")}</Label>
                       <Input
                         value={handoverForm.shiftLabel}
                         onChange={(event) =>
                           setHandoverForm((current) => ({ ...current, shiftLabel: event.target.value }))
                         }
-                        placeholder="morning shift"
+                        placeholder={t("workflow.console.shiftLabelPlaceholder")}
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Priority</Label>
+                    <Label>{t("workflow.console.field.priority")}</Label>
                     <Select
                       value={handoverForm.priority}
                       onValueChange={(value) =>
@@ -2375,26 +2380,26 @@ export function OperationsConsole({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="routine">routine</SelectItem>
-                        <SelectItem value="urgent">urgent</SelectItem>
-                        <SelectItem value="critical">critical</SelectItem>
+                        <SelectItem value="routine">{t("workflow.console.priority.routine")}</SelectItem>
+                        <SelectItem value="urgent">{t("workflow.console.priority.urgent")}</SelectItem>
+                        <SelectItem value="critical">{t("workflow.console.priority.critical")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Note</Label>
+                    <Label>{t("workflow.console.field.note")}</Label>
                     <Textarea
                       rows={4}
                       value={handoverForm.note}
                       onChange={(event) =>
                         setHandoverForm((current) => ({ ...current, note: event.target.value }))
                       }
-                      placeholder="What the next staff member must know"
+                      placeholder={t("workflow.console.handoverNotePlaceholder")}
                     />
                   </div>
                   <Button type="submit" disabled={createHandoverMutation.isPending}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Save handover
+                    {t("workflow.console.saveHandover")}
                   </Button>
                 </form>
               </CardContent>
@@ -2404,33 +2409,33 @@ export function OperationsConsole({
           {coordinationError ? <p className="text-sm text-destructive">{coordinationError}</p> : null}
 
           <DataTableCard
-            title="Recent messages"
-            description="Recent role-based operational messages in this workspace."
+              title={t("workflow.console.recentMessages")}
+              description={t("workflow.console.recentMessagesDescription")}
             data={recentMessages}
             columns={messageColumns}
             isLoading={messagesQuery.isLoading || patientsQuery.isLoading}
-            emptyText="No workflow messages found."
+              emptyText={t("workflow.console.messagesEmpty")}
           />
 
           <DataTableCard
-            title="Recent handovers"
-            description="Shift handovers and continuity notes."
+              title={t("workflow.console.recentHandovers")}
+              description={t("workflow.console.recentHandoversDescription")}
             data={handovers}
             columns={handoverColumns}
             isLoading={handoversQuery.isLoading || patientsQuery.isLoading}
-            emptyText="No handovers recorded yet."
+              emptyText={t("workflow.console.handoversEmpty")}
           />
         </div>
       ) : null}
 
       {activeTab === "audit" ? (
         <DataTableCard
-          title="Workflow audit"
-          description="Trace workflow changes across tasks, schedules, directives, handovers, and messaging."
+            title={t("workflow.console.auditTitle")}
+            description={t("workflow.console.auditDescription")}
           data={auditEvents}
           columns={auditColumns}
           isLoading={auditQuery.isLoading || patientsQuery.isLoading}
-          emptyText="No workflow audit entries have been recorded yet."
+            emptyText={t("workflow.console.auditEmpty")}
           rightSlot={<History className="h-4 w-4 text-muted-foreground" />}
         />
       ) : null}
@@ -2481,13 +2486,13 @@ export function OperationsConsole({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">all</SelectItem>
-                    <SelectItem value="task">task</SelectItem>
-                    <SelectItem value="schedule">schedule</SelectItem>
-                    <SelectItem value="directive">directive</SelectItem>
-                    <SelectItem value="handover">handover</SelectItem>
-                    <SelectItem value="messaging">messaging</SelectItem>
-                    <SelectItem value="alert">alert</SelectItem>
+                    <SelectItem value="all">{t("workflow.console.option.all")}</SelectItem>
+                    <SelectItem value="task">{t("workflow.console.type.task")}</SelectItem>
+                    <SelectItem value="schedule">{t("workflow.console.type.schedule")}</SelectItem>
+                    <SelectItem value="directive">{t("workflow.console.type.directive")}</SelectItem>
+                    <SelectItem value="handover">{t("workflow.console.type.handover")}</SelectItem>
+                    <SelectItem value="messaging">{t("workflow.console.type.messaging")}</SelectItem>
+                    <SelectItem value="alert">{t("workflow.console.type.alert")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -2555,14 +2560,14 @@ export function OperationsConsole({
       >
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{selectedRow?.title ?? "Workflow item"}</DialogTitle>
+            <DialogTitle>{selectedRow?.title ?? t("workflow.console.workflowItem")}</DialogTitle>
             <DialogDescription>
-              {selectedRow ? `${selectedRow.itemType} | ${selectedRow.patientName}` : "Workflow detail"}
+              {selectedRow ? `${selectedRow.itemType} | ${selectedRow.patientName}` : t("workflow.console.workflowDetail")}
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[72vh] space-y-5 overflow-y-auto px-6 pb-6">
             {detailQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading workflow detail...</p>
+              <p className="text-sm text-muted-foreground">{t("workflow.console.loadingDetail")}</p>
             ) : detailQuery.isError ? (
               <p className="text-sm text-destructive">{formatConsoleError(detailQuery.error, requestFailedMsg)}</p>
             ) : detailQuery.data != null &&
@@ -2571,19 +2576,25 @@ export function OperationsConsole({
               <>
                 <section className="grid gap-3 rounded-lg border border-border bg-muted/25 p-4 md:grid-cols-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("workflow.console.field.status")}
+                    </p>
                     <Badge className="mt-2" variant={statusVariant(String(detailQuery.data?.item?.status ?? selectedRow?.status ?? "open"))}>
                       {String(detailQuery.data?.item?.status ?? selectedRow?.status ?? "open")}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Owner</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("workflow.console.field.owner")}
+                    </p>
                     <p className="mt-2 text-sm font-medium text-foreground">
-                      {selectedRow?.ownerLabel ?? "Unassigned"}
+                      {selectedRow?.ownerLabel ?? unassignedLabel}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Patient</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("workflow.console.field.patient")}
+                    </p>
                     <p className="mt-2 text-sm font-medium text-foreground">
                       {selectedRow?.patientName ?? unitWide}
                     </p>
@@ -2593,35 +2604,35 @@ export function OperationsConsole({
                 <section className="grid gap-3 md:grid-cols-2">
                   {[
                     {
-                      label: "Priority",
+                      label: t("workflow.console.field.priority"),
                       value:
                         typeof detailQuery.data?.item?.priority === "string"
                           ? detailQuery.data?.item?.priority
                           : null,
                     },
                     {
-                      label: "Schedule type",
+                      label: t("workflow.console.field.scheduleType"),
                       value:
                         typeof detailQuery.data?.item?.schedule_type === "string"
                           ? detailQuery.data?.item?.schedule_type
                           : null,
                     },
                     {
-                      label: "Due at",
+                      label: t("workflow.console.field.dueAt"),
                       value:
                         typeof detailQuery.data?.item?.due_at === "string"
                           ? formatDateTime(detailQuery.data?.item?.due_at)
                           : null,
                     },
                     {
-                      label: "Starts at",
+                      label: t("workflow.console.field.startsAt"),
                       value:
                         typeof detailQuery.data?.item?.starts_at === "string"
                           ? formatDateTime(detailQuery.data?.item?.starts_at)
                           : null,
                     },
                     {
-                      label: "Effective from",
+                      label: t("workflow.console.field.effectiveFrom"),
                       value:
                         typeof detailQuery.data?.item?.effective_from === "string"
                           ? formatDateTime(detailQuery.data?.item?.effective_from)
@@ -2641,21 +2652,21 @@ export function OperationsConsole({
 
                 {[
                   {
-                    label: "Description",
+                    label: t("workflow.console.field.description"),
                     value:
                       typeof detailQuery.data?.item?.description === "string"
                         ? detailQuery.data?.item?.description
                         : null,
                   },
                   {
-                    label: "Notes",
+                    label: t("workflow.console.field.notes"),
                     value:
                       typeof detailQuery.data?.item?.notes === "string"
                         ? detailQuery.data?.item?.notes
                         : null,
                   },
                   {
-                    label: "Directive",
+                    label: t("workflow.console.field.directive"),
                     value:
                       typeof detailQuery.data?.item?.directive_text === "string"
                         ? detailQuery.data?.item?.directive_text
@@ -2674,15 +2685,15 @@ export function OperationsConsole({
 
                 <section className="space-y-3">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">Item discussion</h3>
+                    <h3 className="text-sm font-semibold text-foreground">{t("workflow.console.discussion")}</h3>
                     <p className="text-xs text-muted-foreground">
-                      Use this thread for questions and updates tied to the selected workflow item.
+                      {t("workflow.console.discussionDescription")}
                     </p>
                   </div>
                   <div className="space-y-2">
                     {(detailQuery.data?.messages ?? []).length === 0 ? (
                       <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-                        No discussion yet.
+                        {t("workflow.console.discussionEmpty")}
                       </p>
                     ) : (
                       (detailQuery.data?.messages ?? []).map((message) => (
@@ -2712,26 +2723,26 @@ export function OperationsConsole({
                       sendThreadMessageMutation.mutate();
                     }}
                   >
-                    <Label htmlFor="workflow-thread-reply">Reply</Label>
+                    <Label htmlFor="workflow-thread-reply">{t("workflow.console.reply")}</Label>
                     <Textarea
                       id="workflow-thread-reply"
                       rows={3}
                       value={replyBody}
                       onChange={(event) => setReplyBody(event.target.value)}
-                      placeholder="Ask a question or send an update"
+                      placeholder={t("workflow.console.replyPlaceholder")}
                     />
                     {detailError ? <p className="text-sm text-destructive">{detailError}</p> : null}
                     <Button type="submit" disabled={!replyBody.trim() || sendThreadMessageMutation.isPending}>
                       <Send className="mr-2 h-4 w-4" />
-                      Send reply
+                      {t("workflow.console.sendReply")}
                     </Button>
                   </form>
                 </section>
 
                 <section className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">Audit</h3>
+                  <h3 className="text-sm font-semibold text-foreground">{t("workflow.console.audit")}</h3>
                   {(detailQuery.data?.audit ?? []).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No item audit entries yet.</p>
+                    <p className="text-sm text-muted-foreground">{t("workflow.console.itemAuditEmpty")}</p>
                   ) : (
                     (detailQuery.data?.audit ?? []).map((event) => (
                       <div key={event.id} className="rounded-lg border border-border p-3 text-sm">
@@ -2746,7 +2757,7 @@ export function OperationsConsole({
               </>
             ) : detailQuery.data ? (
               <p className="text-sm text-muted-foreground">
-                Workflow detail response did not include an item payload.
+                {t("workflow.console.detailMissing")}
               </p>
             ) : null}
           </div>
@@ -2766,10 +2777,14 @@ export function OperationsConsole({
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>
-              {transferDialog?.mode === "claim" ? "Claim workflow item" : "Handoff workflow item"}
+              {transferDialog?.mode === "claim"
+                ? t("workflow.console.claimItemTitle")
+                : t("workflow.console.handoffItemTitle")}
             </DialogTitle>
             <DialogDescription>
-              {transferDialog ? `${transferDialog.row.title} | ${transferDialog.row.patientName}` : "Transfer workflow item"}
+              {transferDialog
+                ? `${transferDialog.row.title} | ${transferDialog.row.patientName}`
+                : t("workflow.console.transferItem")}
             </DialogDescription>
           </DialogHeader>
 
@@ -2777,7 +2792,7 @@ export function OperationsConsole({
             {transferDialog?.mode === "handoff" ? (
               <>
                 <div className="space-y-2">
-                  <Label>Target mode</Label>
+                  <Label>{t("workflow.console.field.targetMode")}</Label>
                   <Select
                     value={transferTargetMode}
                     onValueChange={(value) => setTransferTargetMode(value as AssignmentMode)}
@@ -2786,15 +2801,15 @@ export function OperationsConsole({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="role">role</SelectItem>
-                      <SelectItem value="person">person</SelectItem>
+                      <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                      <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {transferTargetMode === "role" ? (
                   <div className="space-y-2">
-                    <Label>Target role</Label>
+                    <Label>{t("workflow.console.field.targetRole")}</Label>
                     <Select value={transferTargetRole} onValueChange={setTransferTargetRole}>
                       <SelectTrigger>
                         <SelectValue />
@@ -2810,10 +2825,10 @@ export function OperationsConsole({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Label>Target person</Label>
+                    <Label>{t("workflow.console.field.targetPerson")}</Label>
                     <Select value={transferTargetUserId} onValueChange={setTransferTargetUserId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a user" />
+                      <SelectValue placeholder={t("workflow.console.selectUser")} />
                       </SelectTrigger>
                       <SelectContent>
                         {userOptions.map((option) => (
@@ -2829,15 +2844,15 @@ export function OperationsConsole({
             ) : null}
 
             <div className="space-y-2">
-              <Label>Note</Label>
+              <Label>{t("workflow.console.field.note")}</Label>
               <Textarea
                 rows={4}
                 value={transferNote}
                 onChange={(event) => setTransferNote(event.target.value)}
                 placeholder={
                   transferDialog?.mode === "claim"
-                    ? "Optional ownership note"
-                    : "Context for the receiving team or person"
+                    ? t("workflow.console.claimNotePlaceholder")
+                    : t("workflow.console.handoffContextPlaceholder")
                 }
               />
             </div>
@@ -2854,7 +2869,7 @@ export function OperationsConsole({
                   setCoordinationError(null);
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               {transferDialog?.mode === "claim" ? (
                 <Button
@@ -2866,7 +2881,7 @@ export function OperationsConsole({
                     claimMutation.mutate({ row: transferDialog.row, note: transferNote.trim() });
                   }}
                 >
-                  Claim item
+                  {t("workflow.console.claimItem")}
                 </Button>
               ) : (
                 <Button
@@ -2887,7 +2902,7 @@ export function OperationsConsole({
                     });
                   }}
                 >
-                  Handoff item
+                  {t("workflow.console.handoffItem")}
                 </Button>
               )}
             </div>

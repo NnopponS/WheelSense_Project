@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
-import { getDevicesPath, getPersonnelPath, getMlCalibrationPath } from "@/lib/routes";
+import { getMlCalibrationPath } from "@/lib/routes";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";

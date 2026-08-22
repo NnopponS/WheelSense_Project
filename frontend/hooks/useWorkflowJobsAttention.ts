@@ -7,10 +7,10 @@ import type { CareWorkflowJobOut } from "@/lib/api/task-scope-types";
 import { useAuth } from "@/hooks/useAuth";
 
 /** Same clinical roles as workflow task list / notifications workflow jobs poll. */
-const WORKFLOW_JOBS_ROLES = new Set(["admin", "head_caregiver", "caregiver"]);
+const WORKFLOW_JOBS_ROLES = new Set(["admin", "head_caregiver", "head_caregiver", "caregiver"]);
 
 /** Coordinators see all open jobs in the workspace poll (matches operational oversight). */
-const COORDINATOR_ROLES = new Set(["admin", "head_caregiver"]);
+const COORDINATOR_ROLES = new Set(["admin", "head_caregiver", "head_caregiver"]);
 
 function openStepsRemaining(job: CareWorkflowJobOut): number {
   return (job.steps ?? []).filter((s) => s.status !== "done" && s.status !== "skipped").length;

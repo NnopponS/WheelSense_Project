@@ -25,6 +25,8 @@ from app.models.activity import Alert
 from app.models.caregivers import CareGiver, CareGiverDeviceAssignment
 from app.models.core import Device, DeviceActivityEvent, DeviceCommandDispatch, Room, Workspace
 from app.models.patients import Patient, PatientDeviceAssignment
+from app.models.tasks import Task
+from app.models.users import User
 from app.models.telemetry import (
     IMUTelemetry,
     LocalizationCalibrationSample,
@@ -2005,6 +2007,43 @@ async def camera_check_snapshot(
         "dispatched_at": row.dispatched_at.isoformat() if row.dispatched_at else None,
     }
 
+async def dispatch_assign_task_to_room_node(session: AsyncSession, task: Task) -> None:
+    """Best-effort push of an assign_task display command to the room's node. Never raises."""
+    try:
+        if not task.patient_id or not task.assigned_user_id:
+            return
+        patient = await session.get(Patient, task.patient_id)
+        if patient is None or not patient.room_id:
+            return
+        room = await session.get(Room, patient.room_id)
+        if room is None or not room.node_device_id:
+            return
+        caregiver_name = ""
+        user = await session.get(User, task.assigned_user_id)
+        if user is not None:
+            caregiver_name = user.username
+            if user.caregiver_id is not None:
+                caregiver = await session.get(CareGiver, user.caregiver_id)
+                if caregiver is not None:
+                    full = f"{caregiver.first_name} {caregiver.last_name}".strip()
+                    caregiver_name = full or user.username
+        if not caregiver_name:
+            return
+        body = DeviceCommandRequest(
+            channel="camera",
+            payload={
+                "command": "assign_task",
+                "task_id": str(task.id),
+                "task_title": task.title,
+                "room_name": room.name,
+                "caregiver_name": caregiver_name,
+            },
+        )
+        await dispatch_command(session, task.workspace_id, room.node_device_id, body)
+    except Exception as exc:
+        logger.warning("assign_task dispatch failed for task %s: %s", getattr(task, "id", "?"), exc)
+
+
 async def assign_caregiver_device(
     session: AsyncSession,
     ws_id: int,
@@ -2069,5 +2108,16 @@ async def apply_command_ack(session: AsyncSession, command_id: str, ack_payload:
     row.status = "acked"
     row.ack_at = utcnow()
     row.ack_payload = ack_payload
+    if str((row.payload or {}).get("command") or "").lower() == "assign_task":
+        message = str(ack_payload.get("message") or "")
+        if message == "task_confirmed":
+            try:
+                task_id = int(str((row.payload or {}).get("task_id") or ""))
+            except ValueError:
+                task_id = 0
+            task = await session.get(Task, task_id) if task_id else None
+            if task is not None and task.workspace_id == row.workspace_id and task.status == "pending":
+                task.status = "in_progress"
+                session.add(task)
     await session.commit()
     return True

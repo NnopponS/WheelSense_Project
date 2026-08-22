@@ -33,7 +33,7 @@ from app.agent_runtime.layers.layer4_constrained_synthesis import (
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def _package(
-    role: str = "observer",
+    role: str = "caregiver",
     intent_key: str = "alerts.read",
     policy_tags: list[str] | None = None,
     patient_id: int | None = None,
@@ -62,7 +62,7 @@ def _package(
 
 class TestCheckToolAllowed:
     def test_observer_can_list_active_alerts(self) -> None:
-        assert check_tool_allowed("observer", "list_active_alerts") is True
+        assert check_tool_allowed("caregiver", "list_active_alerts") is True
 
     def test_patient_cannot_list_visible_patients(self) -> None:
         """list_visible_patients is not in the patient allowlist per ai_chat.py."""
@@ -80,7 +80,7 @@ class TestCheckToolAllowed:
         assert check_tool_allowed("patient", "execute_python_code") is False
 
     def test_head_nurse_can_acknowledge_alert(self) -> None:
-        assert check_tool_allowed("head_nurse", "acknowledge_alert") is True
+        assert check_tool_allowed("head_caregiver", "acknowledge_alert") is True
 
     def test_unknown_role_returns_false(self) -> None:
         assert check_tool_allowed("random_role", "list_active_alerts") is False
@@ -89,18 +89,18 @@ class TestCheckToolAllowed:
         assert check_tool_allowed("admin", "nonexistent_tool_xyz") is False
 
     def test_observer_cannot_execute_python_code(self) -> None:
-        assert check_tool_allowed("observer", "execute_python_code") is False
+        assert check_tool_allowed("caregiver", "execute_python_code") is False
 
     def test_supervisor_can_list_workflow_tasks(self) -> None:
-        assert check_tool_allowed("supervisor", "list_workflow_tasks") is True
+        assert check_tool_allowed("head_caregiver", "list_workflow_tasks") is True
 
 
 # ── build_policy_context ──────────────────────────────────────────────────────
 
 class TestBuildPolicyContext:
     def test_context_contains_role(self) -> None:
-        ctx = build_policy_context(_package(role="supervisor"))
-        assert ctx["role"] == "supervisor"
+        ctx = build_policy_context(_package(role="head_caregiver"))
+        assert ctx["role"] == "head_caregiver"
 
     def test_context_contains_workspace_id(self) -> None:
         ctx = build_policy_context(_package())

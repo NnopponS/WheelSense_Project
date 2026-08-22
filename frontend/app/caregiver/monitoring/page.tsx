@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function CaregiverMonitoringRedirectPage() {
+export default function ObserverMonitoringRedirectPage() {
   redirect("/caregiver/floorplans");
 }

@@ -17,7 +17,7 @@ from app.agent_runtime.layers.observability import PipelineEventEmitter
 from app.schemas.agent_runtime import ExecutionPlan, ExecutionPlanStep
 
 
-def _actor(role: str = "observer") -> ActorFacts:
+def _actor(role: str = "caregiver") -> ActorFacts:
     return ActorFacts(role=role, user_id=1, workspace_id=1)
 
 
@@ -28,7 +28,7 @@ class TestGuardToolCall:
 
         result = guard_tool_call(
             correlation=corr,
-            actor=_actor("observer"),
+            actor=_actor("caregiver"),
             tool_name="list_active_alerts",
             emitter=emitter,
         )
@@ -74,7 +74,7 @@ class TestGuardExecutionPlan:
 
         result = guard_execution_plan(
             correlation=corr,
-            actor=_actor("supervisor"),
+            actor=_actor("head_caregiver"),
             execution_plan=plan,
             emitter=emitter,
         )
@@ -126,7 +126,7 @@ class TestGuardSynthesis:
 
         result = guard_synthesis(
             correlation=corr,
-            actor=_actor("supervisor"),
+            actor=_actor("head_caregiver"),
             synthesis=synthesis,
         )
 

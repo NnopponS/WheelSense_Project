@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function CaregiverSettingsRedirectPage() {
+export default function ObserverSettingsRedirectPage() {
   redirect("/account");
 }

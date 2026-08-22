@@ -66,6 +66,37 @@ export interface NavGroup {
 
 export type RoleNavConfig = NavGroup[];
 
+type SearchParamsLike = { get(key: string): string | null };
+
+export function isNavItemActive(
+  item: NavItem,
+  pathname: string,
+  searchParams: SearchParamsLike,
+  role?: string,
+): boolean {
+  if (item.activeForPaths?.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    return true;
+  }
+  const base = item.href.split("?")[0];
+  if (item.activeWhenQueryMatch) {
+    const { param, value } = item.activeWhenQueryMatch;
+    return (
+      (pathname === base || pathname.startsWith(`${base}/`)) &&
+      searchParams.get(param) === value
+    );
+  }
+  const rolePath = role?.replaceAll("_", "-") ?? "";
+  const isRoleRoot = base === `/${rolePath}` || (role === "admin" && base === "/admin");
+  if (isRoleRoot) {
+    if (item.inactiveWhenQueryMatch && pathname === base) {
+      const { param, value } = item.inactiveWhenQueryMatch;
+      if (searchParams.get(param) === value) return false;
+    }
+    return pathname === base;
+  }
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
 /**
  * Role-based navigation configurations
  * Each role has its own set of navigation groups and items
@@ -82,7 +113,7 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
         },
         {
           key: "nav.admin.people",
-          href: "/admin/personnel",
+          href: "/admin/patients",
           icon: Users,
           requiredCapability: "patients.read",
           activeForPaths: ["/admin/caregivers", "/admin/patients", "/admin/account-management", "/admin/users"],
@@ -124,21 +155,21 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
     {
       items: [
         {
-          key: "nav.headCaregiver.queue",
+          key: "nav.headNurse.queue",
           href: "/head-caregiver",
           icon: LayoutDashboard,
           badge: "alerts",
           mobilePriority: 1,
         },
         {
-          key: "nav.headCaregiver.emergency",
+          key: "nav.headNurse.emergency",
           href: "/head-caregiver/emergency",
           icon: ShieldAlert,
           badge: "alerts",
           mobilePriority: 5,
         },
         {
-          key: "nav.headCaregiver.patients",
+          key: "nav.headNurse.patients",
           href: "/head-caregiver/patients",
           icon: Users,
           requiredCapability: "patients.read",
@@ -146,14 +177,14 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           mobilePriority: 3,
         },
         {
-          key: "nav.headCaregiver.caregivers",
+          key: "nav.headNurse.caregivers",
           href: "/head-caregiver/caregivers",
           icon: Users,
           requiredCapability: "caregivers.read",
           mobilePriority: 4,
         },
         {
-          key: "nav.headCaregiver.tasks",
+          key: "nav.headNurse.tasks",
           href: "/head-caregiver/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
@@ -165,15 +196,15 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           mobilePriority: 2,
         },
         {
-          key: "nav.headCaregiver.messages",
+          key: "nav.headNurse.messages",
           href: "/head-caregiver/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
           mobilePriority: 4,
         },
-        { key: "nav.headCaregiver.map", href: "/head-caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/head-caregiver/monitoring"] },
-        { key: "nav.headCaregiver.support", href: "/head-caregiver/support", icon: Bug, group: "more" },
-        { key: "nav.headCaregiver.account", href: "/head-caregiver/settings", icon: Settings, group: "more" },
+        { key: "nav.headNurse.map", href: "/head-caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/head-caregiver/monitoring"] },
+        { key: "nav.headNurse.support", href: "/head-caregiver/support", icon: Bug, group: "more" },
+        { key: "nav.headNurse.account", href: "/head-caregiver/settings", icon: Settings, group: "more" },
       ],
     },
   ],
@@ -187,20 +218,20 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
     {
       items: [
         {
-          key: "nav.caregiver.today",
+          key: "nav.observer.today",
           href: "/caregiver",
           icon: LayoutDashboard,
           mobilePriority: 1,
         },
         {
-          key: "nav.caregiver.tasks",
+          key: "nav.observer.tasks",
           href: "/caregiver/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
           mobilePriority: 2,
         },
         {
-          key: "nav.caregiver.patients",
+          key: "nav.observer.patients",
           href: "/caregiver/patients",
           icon: Users,
           requiredCapability: "patients.read",
@@ -208,22 +239,22 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           mobilePriority: 4,
         },
         {
-          key: "nav.caregiver.alerts",
+          key: "nav.observer.alerts",
           href: "/caregiver/alerts",
           icon: Bell,
           badge: "alerts",
           mobilePriority: 3,
         },
         {
-          key: "nav.caregiver.handover",
+          key: "nav.observer.handover",
           href: "/caregiver/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
           mobilePriority: 5,
         },
-        { key: "nav.caregiver.support", href: "/caregiver/support", icon: Bug, group: "more" },
-        { key: "nav.caregiver.map", href: "/caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/caregiver/monitoring"] },
-        { key: "nav.caregiver.account", href: "/caregiver/settings", icon: Settings, group: "more" },
+        { key: "nav.observer.support", href: "/caregiver/support", icon: Bug, group: "more" },
+        { key: "nav.observer.map", href: "/caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/caregiver/monitoring"] },
+        { key: "nav.observer.account", href: "/caregiver/settings", icon: Settings, group: "more" },
       ],
     },
   ],

@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useState, type ComponentType } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState, type ComponentType } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Tablet, Wifi, WifiOff } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight, Search, Tablet, Wifi, WifiOff } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -20,10 +20,8 @@ import DeviceDetailDrawer from "@/components/admin/devices/DeviceDetailDrawer";
 import type { Device, SmartDevice } from "@/lib/types";
 import { isDeviceOnline } from "@/lib/deviceOnline";
 import { isSmartDeviceOnline } from "@/lib/smartDeviceOnline";
-import {
-  registryDeviceCardPresentation,
-  SMART_DEVICE_CARD_VISUAL,
-} from "@/lib/deviceFleetCardIcon";
+import { sortRegistryDevices, type DeviceSortDirection, type DeviceSortKey } from "@/lib/deviceFleetSort";
+import { SMART_DEVICE_CARD_VISUAL } from "@/lib/deviceFleetCardIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,18 +29,8 @@ import { Input } from "@/components/ui/input";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { cn } from "@/lib/utils";
-
-function registryDeviceLabelSortKey(device: Device): string {
-  return (device.display_name?.trim() || device.device_id).toLocaleLowerCase();
-}
-
-function compareRegistryDevices(a: Device, b: Device): number {
-  const byLabel = registryDeviceLabelSortKey(a).localeCompare(registryDeviceLabelSortKey(b), undefined, {
-    sensitivity: "base",
-  });
-  if (byLabel !== 0) return byLabel;
-  return a.device_id.localeCompare(b.device_id);
-}
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
 
 function compareSmartFleetDevices(a: SmartDevice, b: SmartDevice): number {
   const byName = a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase(), undefined, {
@@ -59,6 +47,9 @@ function DevicesPageContent() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<DeviceSortKey>("status");
+  const [sortDirection, setSortDirection] = useState<DeviceSortDirection>("asc");
+  const deviceButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const nowMs = useFixedNowMs();
 
   const tab = useMemo(() => fleetTabFromQuery(searchParams.get("tab")), [searchParams]);
@@ -113,8 +104,8 @@ function DevicesPageContent() {
             (device.display_name || "").toLowerCase().includes(q) ||
             device.hardware_type.toLowerCase().includes(q),
         );
-    return [...filtered].sort(compareRegistryDevices);
-  }, [devices, search]);
+    return sortRegistryDevices(filtered, sortKey, sortDirection, nowMs);
+  }, [devices, nowMs, search, sortDirection, sortKey]);
 
   const filteredSmart = useMemo(() => {
     const list = smartDevices ?? [];
@@ -137,6 +128,20 @@ function DevicesPageContent() {
     if (smartEndpoint) void refetchSmart();
   }, [refetchRegistry, refetchSmart, registryEndpoint, smartEndpoint]);
 
+  const toggleSort = (nextKey: DeviceSortKey) => {
+    if (sortKey === nextKey) setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(nextKey);
+      setSortDirection(nextKey === "last_seen" ? "desc" : "asc");
+    }
+  };
+
+  const closeDeviceDetail = () => {
+    const triggerId = selectedId;
+    setSelectedId(null);
+    if (triggerId) requestAnimationFrame(() => deviceButtonRefs.current.get(triggerId)?.focus());
+  };
+
   const registryStats = useMemo(() => {
     const source = devices ?? [];
     const online = source.filter((device) => isDeviceOnline(device.last_seen, nowMs)).length;
@@ -158,11 +163,17 @@ function DevicesPageContent() {
   }, [smartDevices]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("devices.title")}</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("devices.healthNote")}</p>
-      </div>
+    <AppPage
+      title={t("devices.title")}
+      description={t("devices.healthNote")}
+      breadcrumbs={[
+        {
+          label: t("nav.dashboard"),
+          href: user?.role ? `/${String(user.role).replace("_", "-")}` : "/admin",
+        },
+        { label: t("nav.devices") },
+      ]}
+    >
 
       {tab === "smart_ha" ? (
         <div className="grid items-stretch gap-3 md:grid-cols-3">
@@ -251,13 +262,13 @@ function DevicesPageContent() {
                   <CardContent className="flex flex-1 flex-col gap-2 text-sm">
                     <p className="text-muted-foreground">{device.device_type}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">State</span>
+                      <span className="text-muted-foreground">{t("devices.state")}</span>
                       <span className="font-medium text-foreground">
                         {device.state || (device.is_active ? t("smartDevices.active") : t("smartDevices.inactive"))}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Status</span>
+                      <span className="text-muted-foreground">{t("clinical.table.status")}</span>
                       <Badge variant={device.is_active ? "success" : "outline"}>
                         {device.is_active ? t("smartDevices.active") : t("smartDevices.inactive")}
                       </Badge>
@@ -269,78 +280,109 @@ function DevicesPageContent() {
           </div>
         )
       ) : filteredRegistry.length === 0 ? (
-        <EmptyState icon={Tablet} message={t("devices.empty")} />
+        <DataState
+          kind={search.trim() ? "filtered-empty" : "empty"}
+          title={search.trim() ? t("devices.noMatches") : t("devices.empty")}
+          actionLabel={search.trim() ? t("devices.clearSearch") : undefined}
+          onAction={search.trim() ? () => setSearch("") : undefined}
+        />
       ) : (
-        <div className="grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredRegistry.map((device) => {
-            const online = isDeviceOnline(device.last_seen, nowMs);
-            const title = device.display_name?.trim() || device.device_id;
-            const visual = registryDeviceCardPresentation(device.hardware_type);
-            const DeviceIcon = visual.Icon;
-            return (
-              <Card
-                key={device.id}
-                className="flex h-full cursor-pointer flex-col transition-colors hover:border-primary/45"
-                onClick={() => setSelectedId(device.device_id)}
-              >
-                <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${visual.wrapClass}`}
-                    >
-                      <DeviceIcon className={`h-5 w-5 ${visual.iconClass}`} />
-                    </div>
-                    <div className="min-w-0">
-                      <CardTitle className="truncate text-base">{title}</CardTitle>
-                      <p className="truncate font-mono text-sm text-muted-foreground">{device.device_id}</p>
-                    </div>
-                  </div>
-                  <Badge variant={online ? "success" : "warning"}>
-                    {online ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Wifi className="h-3 w-3" />
-                        {t("devices.online")}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1">
-                        <WifiOff className="h-3 w-3" />
-                        {t("devices.offline")}
-                      </span>
-                    )}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="flex flex-1 flex-col gap-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Hardware</span>
-                    <span className="font-medium text-foreground">{device.hardware_type}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Firmware</span>
-                    <span className="font-medium text-foreground">{device.firmware || "-"}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-muted-foreground">{t("devices.lastSeen")}</p>
-                    <p className="text-foreground">{device.last_seen ? formatDateTime(device.last_seen) : "-"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {device.last_seen ? formatRelativeTime(device.last_seen) : "-"}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <section className="overflow-hidden rounded-xl border border-border bg-card" aria-label={t("devices.title")}>
+          <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {t("devices.resultCount").replace("{count}", String(filteredRegistry.length))}
+            </p>
+            <div className="flex flex-wrap items-center gap-2" aria-label={t("devices.sortBy")}>
+              {([
+                ["device", t("devices.device")],
+                ["status", t("clinical.table.status")],
+                ["last_seen", t("devices.lastSeen")],
+              ] as Array<[DeviceSortKey, string]>).map(([key, label]) => (
+                <Button
+                  key={key}
+                  type="button"
+                  variant={sortKey === key ? "secondary" : "outline"}
+                  size="sm"
+                  aria-pressed={sortKey === key}
+                  onClick={() => toggleSort(key)}
+                >
+                  {label}
+                  {sortKey === key ? (
+                    sortDirection === "asc" ? <ArrowUp className="h-4 w-4" aria-hidden="true" /> : <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                  ) : null}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="hidden grid-cols-[minmax(0,2fr)_minmax(7rem,0.8fr)_minmax(7rem,0.8fr)_minmax(7rem,1fr)_minmax(10rem,1.2fr)_2rem] gap-3 border-b border-border bg-muted/30 px-4 py-2 text-xs font-semibold text-muted-foreground md:grid">
+            <span>{t("devices.device")}</span>
+            <span>{t("devices.type")}</span>
+            <span>{t("clinical.table.status")}</span>
+            <span>{t("devices.firmware")}</span>
+            <span>{t("devices.lastSeen")}</span>
+            <span className="sr-only">{t("common.open")}</span>
+          </div>
+          <ul className="divide-y divide-border" role="list">
+            {filteredRegistry.map((device) => {
+              const online = isDeviceOnline(device.last_seen, nowMs);
+              const title = device.display_name?.trim() || device.device_id;
+              const status = online ? t("devices.online") : t("devices.offline");
+              const accessibleLabel = t("devices.openDetailsLabel")
+                .replace("{name}", title)
+                .replace("{id}", device.device_id)
+                .replace("{status}", status);
+              return (
+                <li key={device.id}>
+                  <button
+                    ref={(node) => {
+                      if (node) deviceButtonRefs.current.set(device.device_id, node);
+                      else deviceButtonRefs.current.delete(device.device_id);
+                    }}
+                    type="button"
+                    className="grid min-h-11 w-full grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-4 py-3 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/80 md:grid-cols-[minmax(0,2fr)_minmax(7rem,0.8fr)_minmax(7rem,0.8fr)_minmax(7rem,1fr)_minmax(10rem,1.2fr)_2rem] md:items-center md:gap-3"
+                    aria-label={accessibleLabel}
+                    onClick={() => setSelectedId(device.device_id)}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold text-foreground">{title}</span>
+                      <span className="block truncate font-mono text-xs text-muted-foreground">{device.device_id}</span>
+                    </span>
+                    <span className="col-start-1 row-start-2 text-sm text-foreground md:col-auto md:row-auto">
+                      <span className="mr-2 text-xs font-medium text-muted-foreground md:hidden">{t("devices.type")}</span>
+                      {device.hardware_type}
+                    </span>
+                    <span className="col-start-2 row-start-1 justify-self-end md:col-auto md:row-auto md:justify-self-start">
+                      <Badge variant={online ? "success" : "warning"}>
+                        {online ? <Wifi className="h-3 w-3" aria-hidden="true" /> : <WifiOff className="h-3 w-3" aria-hidden="true" />}
+                        {status}
+                      </Badge>
+                    </span>
+                    <span className="col-start-1 row-start-3 text-sm text-foreground md:col-auto md:row-auto">
+                      <span className="mr-2 text-xs font-medium text-muted-foreground md:hidden">{t("devices.firmware")}</span>
+                      {device.firmware || "-"}
+                    </span>
+                    <span className="col-start-2 row-span-2 row-start-2 text-right text-sm text-foreground md:col-auto md:row-auto md:text-left">
+                      <span className="block">{device.last_seen ? formatDateTime(device.last_seen) : "-"}</span>
+                      <span className="block text-xs text-muted-foreground">{device.last_seen ? formatRelativeTime(device.last_seen) : "-"}</span>
+                    </span>
+                    <ChevronRight className="hidden h-5 w-5 text-muted-foreground md:block" aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {selectedId && tab !== "smart_ha" ? (
         <DeviceDetailDrawer
           deviceId={selectedId}
-          onClose={() => setSelectedId(null)}
+          onClose={closeDeviceDetail}
           t={t}
           onMutate={onMutate}
         />
       ) : null}
-    </div>
+    </AppPage>
   );
 }
 
@@ -349,10 +391,7 @@ export default function DevicesPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center py-24">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <span className="sr-only">{t("common.loading")}</span>
-        </div>
+        <DataState kind="loading" title={t("common.loading")} />
       }
     >
       <DevicesPageContent />
@@ -372,9 +411,9 @@ function SummaryCard({
   tone: "info" | "success" | "warning";
 }) {
   const toneClassMap: Record<"info" | "success" | "warning", string> = {
-    info: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
-    success: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
-    warning: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+    info: "bg-info-bg text-info-foreground",
+    success: "bg-success-bg text-success-foreground",
+    warning: "bg-warning-bg text-warning-foreground",
   };
 
   return (

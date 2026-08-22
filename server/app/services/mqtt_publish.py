@@ -221,3 +221,53 @@ async def refresh_all_mobile_devices_mqtt_config() -> None:
         logger.info("Refreshed MQTT mobile config for %d device(s)", len(device_ids))
     except Exception:
         logger.exception("refresh_all_mobile_devices_mqtt_config failed")
+
+
+async def publish_speaker_audio(
+    device_id: str,
+    clip_id: str,
+    pcm_bytes: bytes,
+    *,
+    sample_rate: int = 16000,
+    channels: int = 1,
+    session_id: str = "",
+) -> None:
+    """Publish a speaker playback command to a device (server→device two-way audio).
+
+    The device firmware is responsible for I2S/codec playback. This is the
+    software-only outbound contract; firmware driver remains Gate B.
+    """
+    import base64
+
+    payload = {
+        "clip_id": clip_id,
+        "device_id": device_id,
+        "data": base64.b64encode(pcm_bytes).decode(),
+        "sample_rate": sample_rate,
+        "channels": channels,
+        "session_id": session_id,
+    }
+    await mqtt_publish_json(f"WheelSense/audio/{device_id}/speaker", payload)
+
+
+def publish_speaker_audio_background(
+    device_id: str,
+    clip_id: str,
+    pcm_bytes: bytes,
+    *,
+    sample_rate: int = 16000,
+    channels: int = 1,
+    session_id: str = "",
+) -> None:
+    if not settings.mqtt_rest_publish_enabled:
+        return
+    asyncio.create_task(
+        publish_speaker_audio(
+            device_id,
+            clip_id,
+            pcm_bytes,
+            sample_rate=sample_rate,
+            channels=channels,
+            session_id=session_id,
+        )
+    )

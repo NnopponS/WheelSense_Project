@@ -44,14 +44,22 @@ class GatewayRuntimeService {
   StreamSubscription<String>? _m5TelemetrySubscription;
   StreamSubscription<PolarTelemetrySample>? _polarTelemetrySubscription;
   StreamSubscription<MqttGatewayMessage>? _mqttStatusSubscription;
+  Timer? _polarReconnectTimer;
   GatewayStatus _status = GatewayStatus.initial();
   GatewayRuntimeSnapshot _snapshot = GatewayRuntimeSnapshot.initial();
+
+  static const int _historyLimit = 300;
+  final List<M5TelemetrySample> _m5History = <M5TelemetrySample>[];
+  final List<PolarTelemetrySample> _polarHistory = <PolarTelemetrySample>[];
+  final Map<String, NodeTsimcamSnapshot> _detectedNodes = <String, NodeTsimcamSnapshot>{};
 
   Stream<GatewayStatus> get statuses => _statusController.stream;
   Stream<GatewayConfig> get configUpdates => _configController.stream;
   Stream<GatewayRuntimeSnapshot> get snapshots => _snapshotController.stream;
   GatewayStatus get status => _status;
   GatewayRuntimeSnapshot get snapshot => _snapshot;
+  bool get isM5RelayActive => _m5TelemetrySubscription != null;
+  bool get isPolarRelayActive => _polarTelemetrySubscription != null;
 
   Future<GatewayConfig> loadConfig() async {
     final config = await _preferences.loadConfig();
@@ -187,6 +195,39 @@ class GatewayRuntimeService {
     return _bleService.scan(config, profile: BleScanProfile.gatewayPairing);
   }
 
+  Stream<BleDeviceSnapshot> scanCameraNodes(GatewayConfig config) {
+    return _bleService.scan(config, profile: BleScanProfile.cameraNodes).map((device) {
+      _handleDiscoveredBleNode(device);
+      return device;
+    });
+  }
+
+  void _handleDiscoveredBleNode(BleDeviceSnapshot device) {
+    final devId = device.id;
+    final current = _detectedNodes[devId];
+    final updated = current != null
+        ? current.copyWith(
+            rssi: device.rssi,
+            lastSeen: DateTime.now(),
+          )
+        : NodeTsimcamSnapshot(
+            deviceId: device.name.startsWith('WS-Camera-')
+                ? device.name.replaceFirst('WS-Camera-', 'CAM_')
+                : device.name,
+            nodeId: device.name.startsWith('WSN_') ? device.name : 'WSN_001',
+            bleMac: device.id,
+            rssi: device.rssi,
+            lastSeen: DateTime.now(),
+            status: 'ble_beacon',
+          );
+    _detectedNodes[devId] = updated;
+    _emitSnapshot(
+      _snapshot.copyWith(
+        detectedNodes: List<NodeTsimcamSnapshot>.unmodifiable(_detectedNodes.values),
+      ),
+    );
+  }
+
   Future<Stream<String>> startM5TelemetryRelay(
     GatewayConfig config,
     BleDeviceSnapshot device,
@@ -269,7 +310,18 @@ class GatewayRuntimeService {
           sample: sample,
         );
         _recordPublishResult(result);
-        _emitSnapshot(_snapshot.copyWith(latestPolarSample: sample));
+        _polarHistory.add(sample);
+        if (_polarHistory.length > _historyLimit) {
+          _polarHistory.removeRange(0, _polarHistory.length - _historyLimit);
+        }
+        _emitSnapshot(
+          _snapshot.copyWith(
+            latestPolarSample: sample,
+            polarHistory: List<PolarTelemetrySample>.unmodifiable(
+              _polarHistory,
+            ),
+          ),
+        );
       },
       onError: (Object error) {
         _emit(
@@ -278,6 +330,7 @@ class GatewayRuntimeService {
             message: 'Polar telemetry error: $error',
           ),
         );
+        _schedulePolarReconnect();
       },
     );
     _emit(
@@ -346,17 +399,52 @@ class GatewayRuntimeService {
   }
 
   Future<void> forgetM5Device() async {
+    final paired = _snapshot.pairedM5Device;
     await _m5TelemetrySubscription?.cancel();
     _m5TelemetrySubscription = null;
+    if (paired != null) {
+      await _bleService.disconnectM5(paired.id);
+    }
     await _preferences.clearPairedM5Device();
-    _emitSnapshot(_snapshot.copyWith(pairedM5Device: null));
+    _m5History.clear();
+    _emitSnapshot(
+      _snapshot.copyWith(
+        pairedM5Device: null,
+        latestM5Sample: null,
+        m5History: const <M5TelemetrySample>[],
+      ),
+    );
+  }
+
+  Future<void> disconnectM5Device() async {
+    final paired = _snapshot.pairedM5Device;
+    await _m5TelemetrySubscription?.cancel();
+    _m5TelemetrySubscription = null;
+    if (paired != null) {
+      await _bleService.disconnectM5(paired.id);
+    }
+    _emit(
+      _status.copyWith(
+        mode: GatewayConnectionMode.idle,
+        message: 'M5StickC Plus 2 disconnected',
+      ),
+    );
   }
 
   Future<void> forgetPolarDevice() async {
     await _polarTelemetrySubscription?.cancel();
     _polarTelemetrySubscription = null;
+    _polarReconnectTimer?.cancel();
+    _polarReconnectTimer = null;
     await _preferences.clearPairedPolarDevice();
-    _emitSnapshot(_snapshot.copyWith(pairedPolarDevice: null));
+    _polarHistory.clear();
+    _emitSnapshot(
+      _snapshot.copyWith(
+        pairedPolarDevice: null,
+        latestPolarSample: null,
+        polarHistory: const <PolarTelemetrySample>[],
+      ),
+    );
   }
 
   Future<void> markSetupCompleted() async {
@@ -387,12 +475,24 @@ class GatewayRuntimeService {
     await _m5TelemetrySubscription?.cancel();
     await _polarTelemetrySubscription?.cancel();
     await _mqttStatusSubscription?.cancel();
+    _polarReconnectTimer?.cancel();
     await _ble?.dispose();
     await _mqtt?.disconnect();
     await _foreground.stop();
     await _configController.close();
     await _snapshotController.close();
     await _statusController.close();
+  }
+
+  void _schedulePolarReconnect() {
+    _polarReconnectTimer?.cancel();
+    _polarReconnectTimer = Timer(const Duration(seconds: 4), () {
+      final device = _snapshot.pairedPolarDevice;
+      if (device == null || _polarTelemetrySubscription == null) {
+        return;
+      }
+      unawaited(startPolarTelemetryRelay(_snapshot.config, device));
+    });
   }
 
   BleGatewayService get _bleService {
@@ -446,6 +546,10 @@ class GatewayRuntimeService {
       await _handleConfigMessage(message);
       return;
     }
+    if (message.topic.startsWith('WheelSense/camera/')) {
+      _handleCameraMessage(message);
+      return;
+    }
     if (message.topic.startsWith('WheelSense/room/')) {
       _handleRoomMessage(message);
       return;
@@ -462,6 +566,45 @@ class GatewayRuntimeService {
         ),
       );
     }
+  }
+
+  void _handleCameraMessage(MqttGatewayMessage message) {
+    final payload = message.payload;
+    final devId = payload['device_id']?.toString() ?? 'unknown_cam';
+    final nodeId = payload['node_id']?.toString() ?? 'WSN_001';
+    final ip = payload['ip_address']?.toString();
+    final fw = payload['firmware']?.toString();
+    final bmac = payload['ble_mac']?.toString() ?? '';
+    final battPct = payload['battery_pct'] as int?;
+    final battV = (payload['battery_voltage_v'] as num?)?.toDouble();
+    final streamOn = payload['stream_enabled'] == true;
+    final frames = payload['frames_captured'] as int? ?? 0;
+    final statusStr = payload['status']?.toString() ?? 'online';
+
+    final current = _detectedNodes[devId];
+    final updated = (current ?? NodeTsimcamSnapshot(
+      deviceId: devId,
+      nodeId: nodeId,
+      bleMac: bmac,
+      rssi: -60,
+      lastSeen: DateTime.now(),
+    )).copyWith(
+      ipAddress: ip,
+      firmware: fw,
+      batteryPercent: battPct,
+      batteryVoltageV: battV,
+      streamEnabled: streamOn,
+      framesCaptured: frames,
+      status: statusStr,
+      lastSeen: DateTime.now(),
+    );
+
+    _detectedNodes[devId] = updated;
+    _emitSnapshot(
+      _snapshot.copyWith(
+        detectedNodes: List<NodeTsimcamSnapshot>.unmodifiable(_detectedNodes.values),
+      ),
+    );
   }
 
   Future<void> _handleConfigMessage(MqttGatewayMessage message) async {
@@ -561,7 +704,16 @@ class GatewayRuntimeService {
   void _recordM5Payload(String payload) {
     try {
       final sample = M5TelemetrySample.fromPayload(payload);
-      _emitSnapshot(_snapshot.copyWith(latestM5Sample: sample));
+      _m5History.add(sample);
+      if (_m5History.length > _historyLimit) {
+        _m5History.removeRange(0, _m5History.length - _historyLimit);
+      }
+      _emitSnapshot(
+        _snapshot.copyWith(
+          latestM5Sample: sample,
+          m5History: List<M5TelemetrySample>.unmodifiable(_m5History),
+        ),
+      );
     } on Object {
       _emit(
         _status.copyWith(

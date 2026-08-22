@@ -10,9 +10,8 @@ import { useTranslation } from "@/lib/i18n";
 
 const ROLES = [
   { id: "admin", labelKey: "shell.roleAdmin", path: "/admin" },
-  { id: "head_nurse", labelKey: "shell.roleHeadNurse", path: "/head-nurse" },
-  { id: "supervisor", labelKey: "shell.roleSupervisor", path: "/supervisor" },
-  { id: "observer", labelKey: "shell.roleObserver", path: "/observer" },
+  { id: "head_caregiver", labelKey: "shell.roleHeadCaregiver", path: "/head-caregiver" },
+  { id: "caregiver", labelKey: "shell.roleCaregiver", path: "/caregiver" },
   { id: "patient", labelKey: "shell.rolePatient", path: "/patient" },
 ] as const;
 

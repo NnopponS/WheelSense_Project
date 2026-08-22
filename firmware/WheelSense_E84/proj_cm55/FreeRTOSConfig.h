@@ -108,7 +108,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_TRACE_FACILITY                1
 #define configUSE_STATS_FORMATTING_FUNCTIONS    0
 
-#include "clock.h" /* Ensure the clock.h header is included */ 
+#include "ws_clock.h" /* Ensure the WheelSense clock header is included */
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 #define portGET_RUN_TIME_COUNTER_VALUE()        clock_get_tick()
 

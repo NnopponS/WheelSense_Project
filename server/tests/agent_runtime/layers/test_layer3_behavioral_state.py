@@ -19,7 +19,7 @@ from app.agent_runtime.layers.layer3_behavioral_state import (
 from app.agent_runtime.layers.observability import PipelineEventEmitter
 
 
-def _actor(role: str = "observer", patient_id: int | None = None) -> ActorFacts:
+def _actor(role: str = "caregiver", patient_id: int | None = None) -> ActorFacts:
     return ActorFacts(
         role=role,
         user_id=11,

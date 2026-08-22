@@ -367,9 +367,17 @@ static void _poll_streams(protocol_t* protocol, int device, pb_ostream_t* ostrea
 
     if(pdm_pcm_data_ready(mic)) 
     {
+        static uint8_t ready_frames = 0u;
+        static bool capture_logged = false;
 
         uint32_t skipped_frames = 0;
         pdm_pcm_discard_samples(mic);
+
+        if (!capture_logged && (++ready_frames >= 5u))
+        {
+            printf("[EASE_AI] PDM PCM16 frame capture PASS\r\n");
+            capture_logged = true;
+        }
 
         int frames_in_chunk = pdm_pcm_get_frame_count(mic);
 

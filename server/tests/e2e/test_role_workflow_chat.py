@@ -22,13 +22,13 @@ async def test_cross_role_workflow_and_audit_permissions(
     supervisor = User(
         username="e2e_supervisor",
         hashed_password=get_password_hash("pass"),
-        role="supervisor",
+        role="head_caregiver",
         workspace_id=admin_user.workspace_id,
     )
     observer = User(
         username="e2e_observer",
         hashed_password=get_password_hash("pass"),
-        role="observer",
+        role="caregiver",
         workspace_id=admin_user.workspace_id,
     )
     db_session.add_all([supervisor, observer])
@@ -43,7 +43,7 @@ async def test_cross_role_workflow_and_audit_permissions(
             "title": "E2E med round",
             "schedule_type": "medication",
             "starts_at": "2026-04-04T09:00:00Z",
-            "assigned_role": "observer",
+            "assigned_role": "caregiver",
         },
     )
     assert schedule.status_code == 201
@@ -64,7 +64,7 @@ async def test_cross_role_workflow_and_audit_permissions(
         json={
             "title": "Fall watch protocol",
             "directive_text": "Escalate immediately to charge nurse on suspected fall.",
-            "target_role": "observer",
+            "target_role": "caregiver",
         },
     )
     assert directive.status_code == 201
@@ -87,7 +87,7 @@ async def test_cross_role_workflow_and_audit_permissions(
 
     observer_ack = await client.post(
         f"/api/workflow/directives/{directive_id}/acknowledge",
-        json={"note": "Acknowledged by observer"},
+        json={"note": "Acknowledged by caregiver"},
         headers=observer_headers,
     )
     assert observer_ack.status_code == 200
@@ -119,7 +119,7 @@ async def test_chat_stream_with_conversation_for_observer_role(
     observer = User(
         username="e2e_chat_observer",
         hashed_password=get_password_hash("pass"),
-        role="observer",
+        role="caregiver",
         workspace_id=admin_user.workspace_id,
     )
     db_session.add(observer)

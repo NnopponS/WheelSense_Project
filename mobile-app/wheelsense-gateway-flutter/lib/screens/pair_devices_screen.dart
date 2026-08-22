@@ -7,6 +7,7 @@ import '../models/gateway_ui_models.dart';
 import '../services/gateway_services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/clinical_components.dart';
+import '../widgets/realtime_charts.dart';
 
 enum _ScanTarget { m5, polar }
 
@@ -26,6 +27,8 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   StreamSubscription<String>? _m5Subscription;
   StreamSubscription<PolarTelemetrySample>? _polarSubscription;
   StreamSubscription<GatewayConfig>? _configSubscription;
+  Timer? _uiRefreshTimer;
+  bool _pendingUiUpdate = false;
 
   BleDeviceSnapshot? _m5Device;
   BleDeviceSnapshot? _polarDevice;
@@ -39,6 +42,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   bool _m5Connecting = false;
   bool _polarConnecting = false;
   bool _m5SetupCompletionMarked = false;
+  StreamSubscription<GatewayRuntimeSnapshot>? _snapshotSubscription;
 
   @override
   void didChangeDependencies() {
@@ -51,17 +55,36 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Batch stream-driven rebuilds to 20Hz (50ms) for responsive real-time motion display.
+    _uiRefreshTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (!_pendingUiUpdate || !mounted) {
+        return;
+      }
+      _pendingUiUpdate = false;
+      setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
+    _uiRefreshTimer?.cancel();
     _scanSubscription?.cancel();
     _m5Subscription?.cancel();
     _polarSubscription?.cancel();
     _configSubscription?.cancel();
+    _snapshotSubscription?.cancel();
     super.dispose();
   }
 
   Future<void> _loadInitialState() async {
     final runtime = GatewayServicesScope.of(context);
     _configSubscription ??= runtime.configUpdates.listen(_applyConfigUpdate);
+    _snapshotSubscription ??= runtime.snapshots.listen((_) {
+      if (!mounted) return;
+      _pendingUiUpdate = true;
+    });
     final config = await runtime.loadConfig();
     final pairedM5 = await runtime.loadPairedM5Device();
     final pairedPolar = await runtime.loadPairedPolarDevice();
@@ -96,6 +119,15 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = context.text;
+    final runtime = GatewayServicesScope.of(context);
+    // Prefer the shared rolling history: it also covers relays that were
+    // auto-started outside this screen (e.g. on app resume).
+    final m5Samples = runtime.snapshot.m5History.isNotEmpty
+        ? runtime.snapshot.m5History
+        : _m5Samples;
+    final polarSamples = runtime.snapshot.polarHistory.isNotEmpty
+        ? runtime.snapshot.polarHistory
+        : _polarSamples;
     final m5View = _selectedOrCandidate(
       _m5Device,
       (device) => device.looksLikeM5,
@@ -104,8 +136,8 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
       _polarDevice,
       (device) => device.looksLikePolar,
     );
-    final latestM5 = _m5Samples.lastOrNull;
-    final latestPolar = _polarSamples.lastOrNull;
+    final latestM5 = m5Samples.lastOrNull;
+    final latestPolar = polarSamples.lastOrNull;
     final m5Discovered = _discoveredMatching(
       _m5Device,
       (device) => device.looksLikeM5,
@@ -119,6 +151,13 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         .sorted((a, b) => b.rssi.compareTo(a.rssi))
         .toList();
 
+    final isM5Connected = _m5RelayActive ||
+        runtime.isM5RelayActive ||
+        (runtime.snapshot.pairedM5Device != null && latestM5 != null);
+    final isPolarConnected = _polarRelayActive ||
+        runtime.isPolarRelayActive ||
+        (runtime.snapshot.pairedPolarDevice != null && latestPolar != null);
+
     return ClinicalPage(
       children: [
         _SensorSection(
@@ -126,13 +165,13 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           child: _SensorDeviceCard(
             title: m5View?.name ?? 'M5StickC Plus2',
             imageAsset: 'assets/devices/m5stickcplus2_real_alt.webp',
-            connected: _m5RelayActive,
+            connected: isM5Connected,
             connecting: _m5Connecting,
             scanning: _scanning && _scanTarget == _ScanTarget.m5,
             status: _deviceStatus(
               device: m5View,
               discovered: m5Discovered != null,
-              connected: _m5RelayActive,
+              connected: isM5Connected,
               connecting: _m5Connecting,
               scanning: _scanning && _scanTarget == _ScanTarget.m5,
               error: _m5Error,
@@ -179,6 +218,17 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
                 unit: 'g',
               ),
             ],
+            extra: isM5Connected && m5Samples.length >= 2
+                ? Column(
+                    children: [
+                      AccelLineChart(samples: List.of(m5Samples)),
+                      const SizedBox(height: 12),
+                      GyroLineChart(samples: List.of(m5Samples)),
+                      const SizedBox(height: 12),
+                      MotionLineChart(samples: List.of(m5Samples)),
+                    ],
+                  )
+                : null,
           ),
         ),
         const SizedBox(height: 22),
@@ -187,13 +237,13 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           child: _SensorDeviceCard(
             title: polarView?.name ?? 'Polar Verity Sense',
             imageAsset: 'assets/devices/polar_verity_sense_real.png',
-            connected: _polarRelayActive,
+            connected: isPolarConnected,
             connecting: _polarConnecting,
             scanning: _scanning && _scanTarget == _ScanTarget.polar,
             status: _deviceStatus(
               device: polarView,
               discovered: polarDiscovered != null,
-              connected: _polarRelayActive,
+              connected: isPolarConnected,
               connecting: _polarConnecting,
               scanning: _scanning && _scanTarget == _ScanTarget.polar,
               error: _polarError,
@@ -241,6 +291,9 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
                 iconColor: WheelSenseColors.success,
               ),
             ],
+            extra: _polarRelayActive && polarSamples.length >= 2
+                ? PolarSignalChart(samples: List.of(polarSamples))
+                : null,
           ),
         ),
         const SizedBox(height: 22),
@@ -462,11 +515,15 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           if (!mounted || sample == null) {
             return;
           }
-          setState(() {
-            _m5Connecting = false;
-            _m5RelayActive = true;
-            _pushLimited(_m5Samples, sample);
-          });
+          final firstPacket = !_m5RelayActive;
+          _m5Connecting = false;
+          _m5RelayActive = true;
+          _pushLimited(_m5Samples, sample);
+          if (firstPacket) {
+            setState(() {});
+          } else {
+            _pendingUiUpdate = true;
+          }
           if (!_m5SetupCompletionMarked) {
             _m5SetupCompletionMarked = true;
             unawaited(runtime.markSetupCompleted());
@@ -529,11 +586,15 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           if (!mounted) {
             return;
           }
-          setState(() {
-            _polarConnecting = false;
-            _polarRelayActive = true;
-            _pushLimited(_polarSamples, sample);
-          });
+          final firstPacket = !_polarRelayActive;
+          _polarConnecting = false;
+          _polarRelayActive = true;
+          _pushLimited(_polarSamples, sample);
+          if (firstPacket) {
+            setState(() {});
+          } else {
+            _pendingUiUpdate = true;
+          }
         },
         onError: (Object error) {
           if (mounted) {
@@ -561,7 +622,12 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     try {
       return M5TelemetrySample.fromPayload(payload);
     } on Object {
-      setState(() => _m5Error = context.text.invalidM5Packet);
+      if (mounted) {
+        setState(() {
+          _m5Connecting = false;
+          _m5Error = context.text.invalidM5Packet;
+        });
+      }
       return null;
     }
   }
@@ -744,6 +810,7 @@ class _SensorDeviceCard extends StatelessWidget {
     required this.onTap,
     this.actions = const <Widget>[],
     this.error,
+    this.extra,
   });
 
   final String title;
@@ -757,6 +824,7 @@ class _SensorDeviceCard extends StatelessWidget {
   final VoidCallback? onTap;
   final List<Widget> actions;
   final String? error;
+  final Widget? extra;
 
   @override
   Widget build(BuildContext context) {
@@ -835,6 +903,10 @@ class _SensorDeviceCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (extra != null) ...[
+                const SizedBox(height: 16),
+                extra!,
+              ],
               if (actions.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 Wrap(spacing: 8, runSpacing: 8, children: actions),

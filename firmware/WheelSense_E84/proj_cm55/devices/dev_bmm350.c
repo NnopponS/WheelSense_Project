@@ -42,7 +42,7 @@
 #include "cy_pdl.h"
 #include "protocol/protocol.h"
 #include "protocol/pb_encode.h"
-#include "clock.h"
+#include "ws_clock.h"
 #include "dev_bmm350.h"
 #include "mtb_bmm350.h"
 #include "common.h"

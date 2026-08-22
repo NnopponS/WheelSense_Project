@@ -35,8 +35,11 @@ import { ExternalLink, Pencil } from "lucide-react";
 
 const ROLE_TO_I18N: Record<string, TranslationKey> = {
   admin: "personnel.role.admin",
-  head_caregiver: "personnel.role.supervisor",
-  caregiver: "personnel.role.observer",
+  head_caregiver: "personnel.role.headCaregiver",
+  head_nurse: "personnel.role.headCaregiver",
+  supervisor: "personnel.role.headCaregiver",
+  caregiver: "personnel.role.caregiver",
+  observer: "personnel.role.caregiver",
   patient: "personnel.role.patient",
 };
 
@@ -123,7 +126,7 @@ export function RoutineDayOverviewSheet({ open, onOpenChange }: RoutineDayOvervi
     return map;
   }, [schedulesQuery.data, shiftDate]);
 
-  const baseRows = workspaceQuery.data ?? [];
+  const baseRows = useMemo(() => workspaceQuery.data ?? [], [workspaceQuery.data]);
 
   const filteredRows = useMemo(() => {
     let rows = baseRows;
@@ -198,7 +201,7 @@ export function RoutineDayOverviewSheet({ open, onOpenChange }: RoutineDayOvervi
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" variant="secondary" size="sm" className="gap-1.5" asChild>
                 <Link
-                  href={me?.role === "admin" ? "/admin/personnel?tab=staff" : "/head-caregiver/personnel?tab=staff"}
+                  href={me?.role === "admin" ? "/admin/patients" : "/head-caregiver/caregivers"}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   {t("tasks.dailyRoutineOpenStaffHub")}
@@ -232,14 +235,19 @@ export function RoutineDayOverviewSheet({ open, onOpenChange }: RoutineDayOvervi
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("tasks.dailyRoutineRoleFilterAll")}</SelectItem>
-                    <SelectItem value="caregiver">{t("personnel.role.observer")}</SelectItem>
-                    <SelectItem value="head_caregiver">{t("personnel.role.supervisor")}</SelectItem>
+                    <SelectItem value="caregiver">{t("personnel.role.caregiver")}</SelectItem>
+                    <SelectItem value="head_caregiver">{t("personnel.role.headCaregiver")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="routine-staff-search">{t("tasks.dailyRoutineStaffSearchLabel")}</Label>
-                <div className="relative">
+                <div
+                  className="relative"
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) setSearchOpen(false);
+                  }}
+                >
                   <Input
                     id="routine-staff-search"
                     autoComplete="off"
@@ -253,17 +261,17 @@ export function RoutineDayOverviewSheet({ open, onOpenChange }: RoutineDayOvervi
                     onFocus={() => {
                       if (staffSearch.trim().length > 0) setSearchOpen(true);
                     }}
-                    onBlur={() => {
-                      window.setTimeout(() => setSearchOpen(false), 150);
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setSearchOpen(false);
                     }}
                   />
                   {searchOpen && staffSuggestions.length > 0 ? (
                     <ul
                       className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[11rem] overflow-auto rounded-md border border-border bg-popover p-1 text-sm shadow-md"
-                      role="listbox"
+                      aria-label={t("tasks.dailyRoutineStaffSearchLabel")}
                     >
                       {staffSuggestions.map((row) => (
-                        <li key={row.user_id} role="option">
+                        <li key={row.user_id}>
                           <button
                             type="button"
                             className="flex w-full flex-col gap-0.5 rounded-sm px-2 py-2 text-left hover:bg-muted"

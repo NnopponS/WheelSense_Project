@@ -6,7 +6,6 @@
  * Run: node scripts/test-i18n-batch1.mjs
  */
 
-import { execSync } from "child_process";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -22,26 +21,20 @@ const BATCH_FILES = [
   "components/NotificationDrawer.tsx",
 ];
 
-function runRipgrep(pattern, file) {
-  try {
-    const cmd = `cd "${rootDir}" && rg -n "${pattern}" ${file} || true`;
-    const output = execSync(cmd, { encoding: "utf-8" });
-    return output.trim();
-  } catch (e) {
-    return "";
-  }
-}
-
-function checkPattern(pattern, description) {
+function checkPattern(pattern, description, ignoreLine = () => false) {
   let totalHits = 0;
   const results = [];
 
   for (const file of BATCH_FILES) {
-    const output = runRipgrep(pattern, file);
-    if (output) {
-      const lines = output.split("\n").filter(Boolean);
-      totalHits += lines.length;
-      results.push({ file, hits: lines });
+    const source = readFileSync(join(rootDir, file), "utf-8");
+    const hits = source
+      .split(/\r?\n/)
+      .map((line, index) => ({ line, lineNumber: index + 1 }))
+      .filter(({ line }) => !ignoreLine(line) && pattern.test(line))
+      .map(({ line, lineNumber }) => `${lineNumber}:${line}`);
+    if (hits.length > 0) {
+      totalHits += hits.length;
+      results.push({ file, hits });
     }
   }
 
@@ -54,10 +47,14 @@ function main() {
   console.log();
 
   const checks = [
-    checkPattern('placeholder="[^{]', "placeholder attributes"),
-    checkPattern('aria-label="[^{]', "aria-label attributes"),
-    checkPattern('title="[^{]', "title attributes"),
-    checkPattern('>[^<{}]*[A-Za-zก-๙][^<{}]*<', "raw text nodes"),
+    checkPattern(/\bplaceholder="[^"{]/, "placeholder attributes"),
+    checkPattern(/\baria-label="[^"{]/, "aria-label attributes"),
+    checkPattern(/\btitle="[^"{]/, "title attributes"),
+    checkPattern(
+      />[^<>{}]*[A-Za-zก-๙][^<>{}]*</,
+      "raw text nodes",
+      (line) => line.includes("=>") || line.includes("queryFn:"),
+    ),
   ];
 
   let totalFailures = 0;

@@ -42,7 +42,7 @@
 #include <math.h>
 #include "protocol/protocol.h"
 #include "protocol/pb_encode.h"
-#include "clock.h"
+#include "ws_clock.h"
 #include "dev_bmi270.h"
 #include "common.h"
 
@@ -460,7 +460,12 @@ static bool _read_hw(dev_bmi270_t* dev)
     cy_rslt_t result;
     mtb_bmi270_data_t bmi270_data;
     result = mtb_bmi270_read(&(imu), &bmi270_data);
-    
+
+    if(CY_RSLT_SUCCESS != result)
+    {
+         return false;
+    }
+
 #ifdef USE_SENSOR_REMAPPING    
     /* Remapping the accelerometer data based on orientation of sensor */
     imu_remap_sensor_orientation(&(bmi270_data.sensor_data.acc));
@@ -468,11 +473,6 @@ static bool _read_hw(dev_bmi270_t* dev)
     /* Remapping the gyroscope data based on orientation of sensor */
     imu_remap_sensor_orientation(&(bmi270_data.sensor_data.gyr));
 #endif
-
-    if(CY_RSLT_SUCCESS != result)
-    {
-         return false;
-    }
 
     if(dev->stream_mode == BMI270_MODE_STREAM_COMBINED)
     {
@@ -519,6 +519,13 @@ static bool _read_hw(dev_bmi270_t* dev)
     }
 
     dev->frames_sampled++;
+
+    static bool sample_logged = false;
+    if (!sample_logged)
+    {
+        printf("[EASE_AI] BMI270 sample acquisition PASS\r\n");
+        sample_logged = true;
+    }
 
     return true;
 }

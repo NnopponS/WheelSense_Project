@@ -76,7 +76,7 @@ export function SupervisorQueue({
   const acknowledgeAlertMutation = useMutation({
     mutationFn: (alertId: number) => api.acknowledgeAlert(alertId, {}),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["head_caregiver", "dashboard", "alerts"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
@@ -88,14 +88,14 @@ export function SupervisorQueue({
         ...(currentUserId != null ? { assigned_user_id: currentUserId } : {}),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["head_caregiver", "dashboard", "tasks"] });
     },
   });
 
   const completeTaskMutation = useMutation({
     mutationFn: (taskId: number) => api.updateWorkflowTask(taskId, { status: "completed" }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["head_caregiver", "dashboard", "tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
@@ -104,7 +104,7 @@ export function SupervisorQueue({
     mutationFn: (directiveId: number) =>
       api.acknowledgeWorkflowDirective(directiveId, { note: t("supervisor.page.ackNote") }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "directives"] });
+      queryClient.invalidateQueries({ queryKey: ["head_caregiver", "dashboard", "directives"] });
     },
   });
 
@@ -140,7 +140,7 @@ export function SupervisorQueue({
               key: "view",
               label: t("supervisor.queue.view"),
               variant: "outline",
-              href: `/supervisor/emergency?alert=${alert.id}`,
+              href: `/head-caregiver/emergency?alert=${alert.id}`,
             },
           ],
         });
@@ -185,7 +185,7 @@ export function SupervisorQueue({
                     key: "view",
                     label: t("supervisor.queue.view"),
                     variant: "outline",
-                    href: "/supervisor/tasks",
+                    href: "/head-caregiver/tasks",
                   },
                 ]
             : [

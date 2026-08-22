@@ -1,9 +1,14 @@
-ws_protocol 0 0
-ws_ipc_messages 0 0
-ws_ipc_queue 0 0
-ws_ipc_endpoint 0 0
+ws_protocol 5 0.122017
+ws_ipc_messages 5 0.0304732
+ws_ipc_queue 5 0.0285613
+ws_ipc_endpoint 1 0.119315
+ws_ipc_transport 4 0.0379175
+ws_environment_contract 4 0.0361839
+ws_orientation_contract 4 0.0396895
+ws_environment_conversion 4 0.0412691
+ws_orientation_state 4 0.038291
+ws_sensor_schedule 4 0.0380073
+ws_ui_state 4 0.0365725
+ws_lvgl_state_contract 4 0.0365836
+ws_ui_diagnostic_consumption 4 0.0447687
 ---
-ws_protocol
-ws_ipc_messages
-ws_ipc_queue
-ws_ipc_endpoint

@@ -7,6 +7,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.roles import canonicalize_role
+
 
 # =============================================================================
 # MCP Scope Constants
@@ -147,7 +149,7 @@ def resolve_mcp_scopes_for_role(role: str, requested_scopes: list[str] | None = 
     Returns:
         Set of allowed MCP scopes
     """
-    allowed = ROLE_MCP_SCOPES.get(role, set())
+    allowed = ROLE_MCP_SCOPES.get(canonicalize_role(role), set())
     if not requested_scopes:
         return allowed
     requested = {s for s in requested_scopes if s in ALL_MCP_SCOPES}

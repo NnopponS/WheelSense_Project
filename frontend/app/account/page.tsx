@@ -8,10 +8,13 @@ import {
   Camera,
   KeyRound,
   Mail,
+  Minus,
   Phone,
+  Plus,
   Save,
   Shield,
   Trash2,
+  Type,
   Upload,
   UserRound,
 } from "lucide-react";
@@ -21,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { useFontScale } from "@/hooks/useFontScale";
 import { api, ApiError } from "@/lib/api";
 import { getRoleHome } from "@/lib/routes";
 import { bodyMassIndex, bmiCategory } from "@/lib/patientMetrics";
@@ -159,6 +163,7 @@ export default function AccountPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user, loading, refreshUser } = useAuth();
+  const fontScale = useFontScale();
   const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<MeProfileResponse | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -331,7 +336,7 @@ export default function AccountPage() {
       return;
     }
     if (!file.type.startsWith("image/")) {
-      setPhotoError("Choose an image file.");
+      setPhotoError(t("account.photoChooseImage"));
       return;
     }
     setPhotoSaving(true);
@@ -343,7 +348,7 @@ export default function AccountPage() {
       setUrlInput("");
       setFileLabel(file.name);
     } catch {
-      setPhotoError("The image could not be prepared for upload.");
+      setPhotoError(t("account.photoPrepareError"));
       setPendingJpegBlob(null);
       revokeLocalPreview();
       setFileLabel(null);
@@ -354,7 +359,7 @@ export default function AccountPage() {
 
   function handleUrlChange(value: string) {
     if (value.trim().toLowerCase().startsWith("data:")) {
-      setPhotoError("Data URLs are not accepted.");
+      setPhotoError(t("account.photoDataUrlError"));
       return;
     }
     setUrlInput(value);
@@ -390,7 +395,7 @@ export default function AccountPage() {
       } else {
         const nextUrl = urlInput.trim();
         if (nextUrl && !isAllowedProfileImageUrlInput(nextUrl)) {
-          setPhotoError("Use an http(s) image URL or a platform-hosted profile image path.");
+      setPhotoError(t("account.photoUrlError"));
           setPhotoSaving(false);
           return;
         }
@@ -398,13 +403,13 @@ export default function AccountPage() {
       }
       await refreshUser();
       await loadProfile();
-      setPhotoMessage("Profile photo updated.");
+      setPhotoMessage(t("account.photoUpdated"));
       setPendingJpegBlob(null);
       revokeLocalPreview();
       setFileLabel(null);
       if (fileRef.current) fileRef.current.value = "";
     } catch (err) {
-      setPhotoError(err instanceof ApiError ? err.message : "Could not save profile photo.");
+      setPhotoError(err instanceof ApiError ? err.message : t("account.photoSaveError"));
     } finally {
       setPhotoSaving(false);
     }
@@ -423,9 +428,9 @@ export default function AccountPage() {
       await patchProfileImage(null);
       await refreshUser();
       await loadProfile();
-      setPhotoMessage("Profile photo removed.");
+      setPhotoMessage(t("account.photoRemoved"));
     } catch (err) {
-      setPhotoError(err instanceof ApiError ? err.message : "Could not remove profile photo.");
+      setPhotoError(err instanceof ApiError ? err.message : t("account.photoRemoveError"));
     } finally {
       setPhotoSaving(false);
     }
@@ -560,7 +565,7 @@ export default function AccountPage() {
         scope === "patient" ? t("account.patientRecordUpdated") : t("account.profileUpdated"),
       );
     } catch (err) {
-      setProfileError(err instanceof ApiError ? err.message : "Could not save profile.");
+      setProfileError(err instanceof ApiError ? err.message : t("account.profileSaveError"));
     } finally {
       setProfileSaving(false);
     }
@@ -570,15 +575,15 @@ export default function AccountPage() {
     setPasswordError(null);
     setPasswordMessage(null);
     if (!passwordForm.current_password || !passwordForm.new_password) {
-      setPasswordError("Please enter your current and new password.");
+      setPasswordError(t("account.passwordRequired"));
       return;
     }
     if (passwordForm.new_password.length < 8) {
-      setPasswordError("New password must be at least 8 characters.");
+      setPasswordError(t("account.passwordMinLength"));
       return;
     }
     if (passwordForm.new_password !== passwordForm.confirm_password) {
-      setPasswordError("New password and confirmation do not match.");
+      setPasswordError(t("account.passwordMismatch"));
       return;
     }
     setPasswordSaving(true);
@@ -588,9 +593,9 @@ export default function AccountPage() {
         new_password: passwordForm.new_password,
       });
       setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
-      setPasswordMessage("Password updated.");
+      setPasswordMessage(t("account.passwordUpdated"));
     } catch (err) {
-      setPasswordError(err instanceof ApiError ? err.message : "Could not change password.");
+      setPasswordError(err instanceof ApiError ? err.message : t("account.passwordChangeError"));
     } finally {
       setPasswordSaving(false);
     }
@@ -608,9 +613,9 @@ export default function AccountPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-surface p-6">
         <div className="max-w-md rounded-xl border border-border bg-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">Sign in to manage your account.</p>
+          <p className="text-sm text-muted-foreground">{t("account.signInRequired")}</p>
           <Button asChild className="mt-4">
-            <Link href="/login">Go to login</Link>
+            <Link href="/login">{t("account.goToLogin")}</Link>
           </Button>
         </div>
       </main>
@@ -623,14 +628,14 @@ export default function AccountPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Account
+              {t("account.eyebrow")}
             </p>
-            <h1 className="mt-1 text-2xl font-semibold">Your profile and security</h1>
+            <h1 className="mt-1 text-2xl font-semibold">{t("account.title")}</h1>
           </div>
           <Button asChild variant="outline">
             <Link href={getRoleHome(user.role)}>
               <ArrowLeft className="h-4 w-4" />
-              Back to dashboard
+              {t("account.backToDashboard")}
             </Link>
           </Button>
         </div>
@@ -653,12 +658,12 @@ export default function AccountPage() {
               </div>
 
               <div className="mt-6 grid gap-3">
-                <InfoRow icon={KeyRound} label="User ID" value={String(activeUser.id)} />
-                <InfoRow icon={Shield} label="Role" value={activeUser.role.replace(/_/g, " ")} />
-                {activeUser.email ? <InfoRow icon={Mail} label="Email" value={activeUser.email} /> : null}
-                {activeUser.phone ? <InfoRow icon={Phone} label="Phone" value={activeUser.phone} /> : null}
+                <InfoRow icon={KeyRound} label={t("account.userId")} value={String(activeUser.id)} />
+                <InfoRow icon={Shield} label={t("account.role")} value={activeUser.role.replace(/_/g, " ")} />
+                {activeUser.email ? <InfoRow icon={Mail} label={t("account.email")} value={activeUser.email} /> : null}
+                {activeUser.phone ? <InfoRow icon={Phone} label={t("account.phone")} value={activeUser.phone} /> : null}
                 {linkedPatientLabel ? (
-                  <InfoRow icon={UserRound} label="Linked Patient" value={linkedPatientLabel} />
+                  <InfoRow icon={UserRound} label={t("account.linkedPatient")} value={linkedPatientLabel} />
                 ) : null}
               </div>
             </div>
@@ -669,9 +674,9 @@ export default function AccountPage() {
                   <Camera className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">Profile photo</h2>
+                  <h2 className="text-lg font-semibold">{t("account.photoTitle")}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Upload from your device or use an http(s) image URL.
+                    {t("account.photoDescription")}
                   </p>
                 </div>
               </div>
@@ -679,7 +684,7 @@ export default function AccountPage() {
               <div className="mt-5 space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium" htmlFor="account-photo-file">
-                    Upload from device
+                    {t("account.photoUpload")}
                   </label>
                   <Input
                     ref={fileRef}
@@ -690,7 +695,7 @@ export default function AccountPage() {
                     onChange={(event) => void handlePickFile(event)}
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Images are center-cropped to a square and compressed to JPEG before saving.
+                    {t("account.photoHelp")}
                   </p>
                   {fileLabel ? (
                     <p className="mt-1 truncate text-xs text-muted-foreground" title={fileLabel}>
@@ -701,7 +706,7 @@ export default function AccountPage() {
 
                 <div>
                   <label className="mb-1 block text-sm font-medium" htmlFor="account-photo-url">
-                    Image URL
+                    {t("account.photoUrl")}
                   </label>
                   <Input
                     id="account-photo-url"
@@ -739,7 +744,7 @@ export default function AccountPage() {
                       className="mr-auto text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
-                      Remove photo
+                      {t("account.photoRemove")}
                     </Button>
                   ) : null}
                   <Button
@@ -748,11 +753,11 @@ export default function AccountPage() {
                     disabled={photoSaving}
                     onClick={() => resetPhotoState(profile)}
                   >
-                    Reset
+                    {t("account.photoReset")}
                   </Button>
                   <Button type="button" disabled={photoSaving} onClick={() => void handleSavePhoto()}>
                     <Upload className="h-4 w-4" />
-                    {photoSaving ? "Saving..." : "Save photo"}
+                    {photoSaving ? t("common.loading") : t("account.photoSave")}
                   </Button>
                 </div>
               </div>
@@ -962,24 +967,24 @@ export default function AccountPage() {
             ) : null}
 
             <div className="rounded-xl border border-border bg-card p-5">
-              <h2 className="text-lg font-semibold">Personal profile</h2>
+              <h2 className="text-lg font-semibold">{t("account.personalProfile")}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                This page is the canonical self-edit surface for every role.
+                {t("account.personalProfileDescription")}
               </p>
 
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <Field
-                  label="Username"
+                  label={t("account.username")}
                   value={profileForm.username}
                   onChange={(value) => setProfileForm((prev) => ({ ...prev, username: value }))}
                 />
                 <Field
-                  label="Email"
+                  label={t("account.email")}
                   value={profileForm.email}
                   onChange={(value) => setProfileForm((prev) => ({ ...prev, email: value }))}
                 />
                 <Field
-                  label="Phone"
+                  label={t("account.phone")}
                   value={profileForm.phone}
                   onChange={(value) => setProfileForm((prev) => ({ ...prev, phone: value }))}
                 />
@@ -989,54 +994,54 @@ export default function AccountPage() {
                 <>
                   <div className="mt-5 border-t border-border pt-4">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                      Staff profile
+                      {t("account.staffProfile")}
                     </h3>
                   </div>
                   <div className="mt-3 grid gap-4 sm:grid-cols-2">
                     <Field
-                      label="First Name"
+                      label={t("patients.firstName")}
                       value={profileForm.caregiver_first_name}
                       onChange={(value) =>
                         setProfileForm((prev) => ({ ...prev, caregiver_first_name: value }))
                       }
                     />
                     <Field
-                      label="Last Name"
+                      label={t("patients.lastName")}
                       value={profileForm.caregiver_last_name}
                       onChange={(value) =>
                         setProfileForm((prev) => ({ ...prev, caregiver_last_name: value }))
                       }
                     />
                     <Field
-                      label="Department"
+                      label={t("account.department")}
                       value={profileForm.caregiver_department}
                       onChange={(value) =>
                         setProfileForm((prev) => ({ ...prev, caregiver_department: value }))
                       }
                     />
                     <Field
-                      label="Employee Code"
+                      label={t("account.employeeCode")}
                       value={profileForm.caregiver_employee_code}
                       onChange={(value) =>
                         setProfileForm((prev) => ({ ...prev, caregiver_employee_code: value }))
                       }
                     />
                     <Field
-                      label="Specialty"
+                      label={t("account.specialty")}
                       value={profileForm.caregiver_specialty}
                       onChange={(value) =>
                         setProfileForm((prev) => ({ ...prev, caregiver_specialty: value }))
                       }
                     />
                     <Field
-                      label="License Number"
+                      label={t("account.licenseNumber")}
                       value={profileForm.caregiver_license_number}
                       onChange={(value) =>
                         setProfileForm((prev) => ({ ...prev, caregiver_license_number: value }))
                       }
                     />
                     <Field
-                      label="Emergency Contact Name"
+                      label={t("account.emergencyContactName")}
                       value={profileForm.caregiver_emergency_contact_name}
                       onChange={(value) =>
                         setProfileForm((prev) => ({
@@ -1046,7 +1051,7 @@ export default function AccountPage() {
                       }
                     />
                     <Field
-                      label="Emergency Contact Phone"
+                      label={t("account.emergencyContactPhone")}
                       value={profileForm.caregiver_emergency_contact_phone}
                       onChange={(value) =>
                         setProfileForm((prev) => ({
@@ -1086,14 +1091,63 @@ export default function AccountPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-card p-5">
-              <h2 className="text-lg font-semibold">Change password</h2>
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                  <Type className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">{t("account.displayTitle")}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{t("account.displayDescription")}</p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-muted/20 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("account.textSizeLabel")}</p>
+                  <p className="text-sm text-muted-foreground ws-tabular-nums">{Math.round(fontScale.scale * 100)}%</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={fontScale.decrease}
+                    disabled={fontScale.scale <= 0.875}
+                    aria-label={t("account.textSizeDecrease")}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={fontScale.reset}
+                    disabled={fontScale.scale === 1}
+                  >
+                    {t("account.textSizeReset")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={fontScale.increase}
+                    disabled={fontScale.scale >= 1.5}
+                    aria-label={t("account.textSizeIncrease")}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h2 className="text-lg font-semibold">{t("account.passwordTitle")}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Password changes always require your current password.
+                {t("account.passwordDescription")}
               </p>
 
               <div className="mt-4 grid gap-4">
                 <Field
-                  label="Current Password"
+                  label={t("account.currentPassword")}
                   type="password"
                   value={passwordForm.current_password}
                   onChange={(value) =>
@@ -1101,7 +1155,7 @@ export default function AccountPage() {
                   }
                 />
                 <Field
-                  label="New Password"
+                  label={t("account.newPassword")}
                   type="password"
                   value={passwordForm.new_password}
                   onChange={(value) =>
@@ -1109,7 +1163,7 @@ export default function AccountPage() {
                   }
                 />
                 <Field
-                  label="Confirm New Password"
+                  label={t("account.confirmPassword")}
                   type="password"
                   value={passwordForm.confirm_password}
                   onChange={(value) =>
@@ -1138,7 +1192,7 @@ export default function AccountPage() {
                   disabled={passwordSaving}
                   onClick={() => void handleChangePassword()}
                 >
-                  {passwordSaving ? "Updating..." : "Update password"}
+                  {passwordSaving ? t("common.loading") : t("account.passwordUpdate")}
                 </Button>
               </div>
             </div>

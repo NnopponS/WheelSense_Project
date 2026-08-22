@@ -20,3 +20,7 @@ Canonical docs:
 - `.agents/workflows/wheelsense.md`
 - `docs/ARCHITECTURE.md`
 - `frontend/README.md`
+- `mobile-app/BUILD_GUIDE.md` (Flutter gateway app)
+- `firmware/WheelSense_E84/docs/` (PSoC 6 E84 firmware: protocol, memory, provenance)
+- `firmware/TELEMETRY_CONTRACT.md` (MQTT telemetry contract)
+- `.project/progress.md` (phase status and audit ledger)

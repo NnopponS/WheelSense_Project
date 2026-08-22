@@ -72,15 +72,15 @@ class TestPatientAllowlist:
         )
 
     def test_observer_does_not_have_sos_create_alert(self) -> None:
-        """sos_create_alert is patient-exclusive; observer uses create_alert."""
+        """sos_create_alert is patient-exclusive; caregiver uses create_alert."""
         allowlist = get_role_mcp_tool_allowlist()
-        assert "sos_create_alert" not in allowlist["observer"], (
-            "observer should not have sos_create_alert (they use create_alert)"
+        assert "sos_create_alert" not in allowlist["caregiver"], (
+            "caregiver should not have sos_create_alert (they use create_alert)"
         )
 
     def test_head_nurse_does_not_have_sos_create_alert(self) -> None:
         allowlist = get_role_mcp_tool_allowlist()
-        assert "sos_create_alert" not in allowlist["head_nurse"]
+        assert "sos_create_alert" not in allowlist["head_caregiver"]
 
     def test_all_patient_tools_exist_in_registry(self) -> None:
         """Every tool in the patient allowlist must be registered — no phantom references."""
@@ -115,7 +115,7 @@ class TestSosCreateAlertScope:
         from app.mcp.server import sos_create_alert  # type: ignore[attr-defined]
 
         import asyncio
-        actor = _make_staff_actor("observer")
+        actor = _make_staff_actor("caregiver")
         with actor_scope(actor):
             with pytest.raises(PermissionError):
                 asyncio.get_event_loop().run_until_complete(

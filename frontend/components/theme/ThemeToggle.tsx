@@ -4,8 +4,10 @@ import { Moon, SunMedium } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 
 export function ThemeToggle() {
+  const { t } = useTranslation();
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -15,7 +17,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button type="button" variant="ghost" size="icon" aria-label="Toggle theme">
+      <Button type="button" variant="ghost" size="icon" aria-label={t("theme.toggle")}>
         <SunMedium className="h-4 w-4" />
       </Button>
     );
@@ -28,7 +30,7 @@ export function ThemeToggle() {
       type="button"
       variant="ghost"
       size="icon"
-      aria-label="Toggle theme"
+      aria-label={t("theme.toggle")}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
       {isDark ? <SunMedium className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

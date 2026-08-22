@@ -42,6 +42,7 @@
 
 #include "cybsp.h"
 #include "cy_syslib.h"
+#include "ws_ipc_messages.h"
 #include "ws_ipc_transport.h"
 
 /*******************************************************************************
@@ -54,9 +55,7 @@
 #define CM55_APP_BOOT_ADDR          (CYMEM_CM33_0_m55_nvm_START + \
                                         CYBSP_MCUBOOT_HEADER_SIZE)
 
-/* WheelSense IPC shared queue — placed in inter-core shared SRAM
- * (m33_m55_shared region at 0x262FC000, accessible by both CM33 and CM55).
- * CM33 NS is the sender; CM55 is the receiver. */
+/* WheelSense MTB-IPC state in the CM33/CM55 shared SOCMEM region. */
 CY_SECTION(".cy_shared_socmem") ws_ipc_shared_queue_t ws_ipc_shared;
 
 /*******************************************************************************
@@ -78,6 +77,7 @@ CY_SECTION(".cy_shared_socmem") ws_ipc_shared_queue_t ws_ipc_shared;
 int main(void)
 {
     cy_rslt_t result = CY_RSLT_SUCCESS;
+    ws_status_t ipc_status = WS_STATUS_NOT_INITIALIZED;
 
     /* Initialize the device and board peripherals. */
     result = cybsp_init();
@@ -97,12 +97,85 @@ int main(void)
     /* Enable global interrupts */
     __enable_irq();
 
-    /* Initialize WheelSense IPC shared queue (sender side). */
-    (void)ws_ipc_transport_sender_init(&ws_ipc_shared);
+    /* Initialize synchronized WheelSense MTB-IPC and publish a boot probe. */
+    ipc_status = ws_ipc_transport_sender_init(&ws_ipc_shared);
+    ws_ipc_shared.diagnostic_sender_init_status = (uint32_t)ipc_status;
+    ws_ipc_shared.diagnostic_boot_send_status = (uint32_t)WS_STATUS_NOT_INITIALIZED;
+    if (ipc_status == WS_STATUS_READY)
+    {
+        uint8_t frame[WS_PROTOCOL_HEADER_SIZE + WS_PAYLOAD_DIAG_SIZE];
+        const ws_envelope_t header = {
+            .version = WS_PROTOCOL_VERSION,
+            .message_type = WS_IPC_DIAGNOSTIC_EVENT,
+            .payload_length = WS_PAYLOAD_DIAG_SIZE,
+            .flags = 0u,
+            .sequence = 1u,
+            .timestamp_us = 0u,
+        };
+
+        if ((ws_envelope_encode(frame, sizeof(frame), &header) == WS_STATUS_READY) &&
+            (ws_diag_event_encode(frame + WS_PROTOCOL_HEADER_SIZE,
+                                  WS_PAYLOAD_DIAG_SIZE,
+                                  WS_DIAG_EVENT_CM33_NS_BOOT_READY,
+                                  1u) == WS_STATUS_READY))
+        {
+            ws_ipc_shared.diagnostic_boot_send_status =
+                (uint32_t)ws_ipc_transport_send(&ws_ipc_shared, frame, sizeof(frame));
+        }
+    }
 
     /* Enable CM55. */
     /* CM55_APP_BOOT_ADDR must be updated if CM55 memory layout is changed.*/
     Cy_SysEnableCM55(MXCM55, CM55_APP_BOOT_ADDR, CM55_BOOT_WAIT_TIME_USEC);
+
+    /* Complete a bounded reverse-path handshake before entering deep sleep. */
+    if (ipc_status == WS_STATUS_READY)
+    {
+        for (uint32_t attempt = 0u; attempt < 5000u; ++attempt)
+        {
+            uint8_t received[WS_IPC_QUEUE_FRAME_SIZE];
+            size_t received_size = 0u;
+
+            if (ws_ipc_transport_receive(&ws_ipc_shared, received,
+                                         sizeof(received), &received_size) == WS_STATUS_READY)
+            {
+                ws_envelope_t received_header;
+                uint16_t event_id = 0u;
+                uint32_t counter = 0u;
+
+                if ((ws_envelope_decode(&received_header, received, received_size) == WS_STATUS_READY) &&
+                    (received_header.message_type == WS_IPC_DIAGNOSTIC_EVENT) &&
+                    (ws_diag_event_decode(&event_id, &counter,
+                                          received + WS_PROTOCOL_HEADER_SIZE,
+                                          received_header.payload_length) == WS_STATUS_READY) &&
+                    (event_id == WS_DIAG_EVENT_CM55_BOOT_ACK))
+                {
+                    uint8_t confirmation[WS_PROTOCOL_HEADER_SIZE + WS_PAYLOAD_DIAG_SIZE];
+                    const ws_envelope_t confirmation_header = {
+                        .version = WS_PROTOCOL_VERSION,
+                        .message_type = WS_IPC_DIAGNOSTIC_EVENT,
+                        .payload_length = WS_PAYLOAD_DIAG_SIZE,
+                        .flags = 0u,
+                        .sequence = 2u,
+                        .timestamp_us = 0u,
+                    };
+
+                    if ((ws_envelope_encode(confirmation, sizeof(confirmation),
+                                            &confirmation_header) == WS_STATUS_READY) &&
+                        (ws_diag_event_encode(confirmation + WS_PROTOCOL_HEADER_SIZE,
+                                              WS_PAYLOAD_DIAG_SIZE,
+                                              WS_DIAG_EVENT_CM33_NS_ACK,
+                                              1u) == WS_STATUS_READY))
+                    {
+                        (void)ws_ipc_transport_send(&ws_ipc_shared, confirmation,
+                                                    sizeof(confirmation));
+                    }
+                    break;
+                }
+            }
+            Cy_SysLib_Delay(1u);
+        }
+    }
 
     /* Put the CPU to Deep Sleep */
     for (;;)

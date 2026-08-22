@@ -1,9 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { AppPage } from "@/components/layout/AppPage";
+import { DataState } from "@/components/layout/DataState";
+import { ResponsiveDataView } from "@/components/shared/ResponsiveDataView";
 import { api } from "@/lib/api";
+import { formatDateTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
-import { ScrollText } from "lucide-react";
 
 interface AuditRow {
   id: number;
@@ -24,61 +27,79 @@ export default function AdminAuditPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-5xl">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <ScrollText className="w-7 h-7 text-primary" />
-          {t("admin.audit.title")}
-        </h2>
-        <p className="text-sm text-foreground-variant mt-1">
-          {t("admin.audit.subtitle")}
-        </p>
-      </div>
-
-      <div className="surface-card p-3 sm:p-4 overflow-x-auto">
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : error ? (
-          <p className="text-sm text-error">{String(error)}</p>
-        ) : !data?.length ? (
-          <p className="text-sm text-foreground-variant">—</p>
-        ) : (
-          <table className="w-full text-sm sm:text-sm leading-snug">
-            <thead>
-              <tr className="text-left text-foreground-variant border-b border-outline-variant/20">
-                <th className="pb-1.5 pr-2 font-medium">Time</th>
-                <th className="pb-1.5 pr-2 font-medium">Domain</th>
-                <th className="pb-1.5 pr-2 font-medium">Action</th>
-                <th className="pb-1.5 pr-2 font-medium">Entity</th>
-                <th className="pb-1.5 font-medium">Details</th>
-              </tr>
-            </thead>
-            <tbody>
+    <AppPage
+      width="content"
+      title={t("admin.audit.title")}
+      description={t("admin.audit.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/admin" },
+        { label: t("admin.audit.title") },
+      ]}
+    >
+      {isLoading ? (
+        <DataState kind="loading" title={t("common.loading")} />
+      ) : error ? (
+        <DataState kind="error" title={t("common.requestFailed")} description={String(error)} />
+      ) : !data?.length ? (
+        <DataState kind="empty" title={t("admin.audit.empty")} />
+      ) : (
+        <ResponsiveDataView
+          desktopLabel={t("common.tableView")}
+          mobileLabel={t("common.cardView")}
+          desktop={
+            <div className="surface-card overflow-x-auto p-4">
+              <table className="w-full text-sm leading-snug">
+                <thead>
+                  <tr className="border-b border-outline-variant/20 text-left text-foreground-variant">
+                    <th className="pb-3 pr-3 font-medium">{t("admin.audit.time")}</th>
+                    <th className="pb-3 pr-3 font-medium">{t("admin.audit.domain")}</th>
+                    <th className="pb-3 pr-3 font-medium">{t("admin.audit.action")}</th>
+                    <th className="pb-3 pr-3 font-medium">{t("admin.audit.entity")}</th>
+                    <th className="pb-3 font-medium">{t("admin.audit.details")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((row) => (
+                    <tr key={row.id} className="border-b border-outline-variant/10 align-top">
+                      <td className="whitespace-nowrap py-3 pr-3 tabular-nums text-foreground">
+                        {formatDateTime(row.created_at)}
+                      </td>
+                      <td className="py-3 pr-3">{row.domain}</td>
+                      <td className="py-3 pr-3">{row.action}</td>
+                      <td className="py-3 pr-3">
+                        {row.entity_type}{row.entity_id != null ? ` #${row.entity_id}` : ""}
+                      </td>
+                      <td className="max-w-[min(28rem,45vw)] truncate py-3 font-mono text-sm text-foreground-variant">
+                        {JSON.stringify(row.details)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          }
+          mobile={
+            <div className="space-y-3">
               {data.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-outline-variant/10 align-top"
-                >
-                  <td className="py-1.5 pr-2 whitespace-nowrap text-foreground tabular-nums">
-                    {new Date(row.created_at).toLocaleString()}
-                  </td>
-                  <td className="py-1.5 pr-2">{row.domain}</td>
-                  <td className="py-1.5 pr-2">{row.action}</td>
-                  <td className="py-1.5 pr-2">
-                    {row.entity_type}
-                    {row.entity_id != null ? ` #${row.entity_id}` : ""}
-                  </td>
-                  <td className="py-1.5 text-foreground-variant max-w-[min(28rem,45vw)] truncate font-mono text-sm sm:text-sm">
-                    {JSON.stringify(row.details)}
-                  </td>
-                </tr>
+                <article key={row.id} className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h2 className="text-base font-semibold text-foreground">{row.action}</h2>
+                    <time className="text-sm tabular-nums text-muted-foreground" dateTime={row.created_at}>
+                      {formatDateTime(row.created_at)}
+                    </time>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {row.domain} · {row.entity_type}{row.entity_id != null ? ` #${row.entity_id}` : ""}
+                  </p>
+                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-surface-container-low p-3 text-sm text-foreground">
+                    {JSON.stringify(row.details, null, 2)}
+                  </pre>
+                </article>
               ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+            </div>
+          }
+        />
+      )}
+    </AppPage>
   );
 }

@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import {
-  format,
+  format as formatDateFns,
   startOfMonth,
   endOfMonth,
   startOfWeek,
@@ -21,6 +21,7 @@ import {
   subWeeks,
   addDays as addDaysFn,
 } from "date-fns";
+import { enUS, th } from "date-fns/locale";
 import {
   ChevronLeft,
   ChevronRight,
@@ -31,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 export type CalendarViewMode = "month" | "week" | "day";
 
@@ -90,6 +92,9 @@ export function CalendarView({
   showCreateButton = true,
   readOnly = false,
 }: CalendarViewProps) {
+  const { t, locale } = useTranslation();
+  const formatLocalized = (date: Date, pattern: string) =>
+    formatDateFns(date, pattern, { locale: locale === "th" ? th : enUS });
   const [internalDate, setInternalDate] = useState(new Date());
   const [internalViewMode, setInternalViewMode] = useState<CalendarViewMode>(viewMode);
 
@@ -215,7 +220,7 @@ export function CalendarView({
                         "flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground"
                     )}
                   >
-                    {format(date, "d")}
+                    {formatLocalized(date, "d")}
                   </span>
                   {dayEvents.length > 0 && (
                     <span className="text-xs text-muted-foreground">
@@ -238,7 +243,7 @@ export function CalendarView({
                         onEventClick?.(event);
                       }}
                     >
-                      {format(new Date(event.startTime), "HH:mm")} {event.title}
+                      {formatLocalized(new Date(event.startTime), "HH:mm")} {event.title}
                     </div>
                   ))}
                   {dayEvents.length > 3 && (
@@ -291,7 +296,7 @@ export function CalendarView({
                     isTodayDate && "rounded-full bg-primary text-primary-foreground"
                   )}
                 >
-                  {format(date, "d")}
+                  {formatLocalized(date, "d")}
                 </div>
               </div>
             );
@@ -307,7 +312,7 @@ export function CalendarView({
                 key={`time-${hourIndex}`}
                 className="border-b border-r border-border p-2 text-right text-xs text-muted-foreground"
               >
-                {format(hour, "HH:mm")}
+                {formatLocalized(hour, "HH:mm")}
               </div>
 
               {/* Day columns */}
@@ -361,7 +366,7 @@ export function CalendarView({
         <div className="border-b border-border p-4">
           <div className="text-center">
             <div className="text-sm text-muted-foreground">
-              {format(currentDate, "EEEE")}
+              {formatLocalized(currentDate, "EEEE")}
             </div>
             <div
               className={cn(
@@ -370,7 +375,7 @@ export function CalendarView({
                   "rounded-full bg-primary text-primary-foreground"
               )}
             >
-              {format(currentDate, "d")}
+              {formatLocalized(currentDate, "d")}
             </div>
           </div>
         </div>
@@ -389,7 +394,7 @@ export function CalendarView({
                 onClick={() => onDateClick?.(hour)}
               >
                 <div className="w-20 border-r border-border p-3 text-right text-sm text-muted-foreground">
-                  {format(hour, "HH:mm")}
+                  {formatLocalized(hour, "HH:mm")}
                 </div>
                 <div className="flex-1 p-2">
                   {hourEvents.map((event) => (
@@ -408,8 +413,8 @@ export function CalendarView({
                         <div className="font-medium">{event.title}</div>
                         <div className="mt-1 flex items-center gap-2 text-sm">
                           <Clock className="h-3 w-3" />
-                          {format(new Date(event.startTime), "HH:mm")} -{" "}
-                          {format(new Date(event.endTime), "HH:mm")}
+                          {formatLocalized(new Date(event.startTime), "HH:mm")} -{" "}
+                          {formatLocalized(new Date(event.endTime), "HH:mm")}
                         </div>
                         {event.patientName && (
                           <div className="mt-1 text-sm">
@@ -442,25 +447,25 @@ export function CalendarView({
             variant="outline"
             size="icon"
             onClick={navigatePrevious}
-            aria-label="Previous"
+            aria-label={t("calendar.previous")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="outline" onClick={navigateToday}>
-            Today
+            {t("calendar.today")}
           </Button>
           <Button
             variant="outline"
             size="icon"
             onClick={navigateNext}
-            aria-label="Next"
+            aria-label={t("calendar.next")}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
           <h2 className="ml-4 text-lg font-semibold">
             {activeViewMode === "day"
-              ? format(currentDate, "MMMM d, yyyy")
-              : format(currentDate, "MMMM yyyy")}
+              ? formatLocalized(currentDate, "MMMM d, yyyy")
+              : formatLocalized(currentDate, "MMMM yyyy")}
           </h2>
         </div>
 
@@ -474,7 +479,7 @@ export function CalendarView({
                 onClick={() => handleViewModeChange(mode)}
                 className="capitalize"
               >
-                {mode}
+                {t(`calendar.${mode}`)}
               </Button>
             ))}
           </div>
@@ -482,7 +487,7 @@ export function CalendarView({
           {showCreateButton && !readOnly && (
             <Button onClick={() => onCreateClick?.(currentDate)}>
               <Plus className="mr-2 h-4 w-4" />
-              New Schedule
+              {t("calendar.newSchedule")}
             </Button>
           )}
         </div>

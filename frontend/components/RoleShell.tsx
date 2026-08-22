@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useFontScale } from "@/hooks/useFontScale";
 import { canAccessAppRole } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/routes";
-import { filterNavItemsByCapability, getNavConfig } from "@/lib/sidebarConfig";
+import { filterNavItemsByCapability, getNavConfig, isNavItemActive } from "@/lib/sidebarConfig";
 import { hasCapability, type AppRole } from "@/lib/permissions";
 import RoleSidebar from "./RoleSidebar";
 import TopBar from "./TopBar";
@@ -17,8 +18,8 @@ import { MoreHorizontal } from "lucide-react";
 
 interface RoleShellProps {
   children: React.ReactNode;
-  /** App root path for role guard (e.g., "/admin", "/head-nurse") */
-  appRoot: "/admin" | "/head-caregiver" | "/caregiver" | "/patient";
+  /** App root path for role guard (e.g., "/admin", "/head-caregiver") */
+  appRoot: "/admin" | "/head-caregiver" | "/head-caregiver" | "/caregiver" | "/patient";
   /** Optional additional classes for main content area */
   mainClassName?: string;
 }
@@ -47,48 +48,36 @@ function MobileRoleTaskBar({ onMoreClick }: { onMoreClick: () => void }) {
   return (
     <nav
       className="ws-role-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/98 px-2 pt-2 shadow-[0_-14px_35px_-28px_rgb(15_23_42/0.5)] lg:hidden"
-      aria-label="Mobile navigation"
+      aria-label={t("shell.mobileNavigation")}
     >
       <div className={cn("mx-auto grid max-w-md gap-1", gridColsClass === "grid-cols-5" ? "grid-cols-5" : gridColsClass === "grid-cols-4" ? "grid-cols-4" : gridColsClass === "grid-cols-3" ? "grid-cols-3" : "grid-cols-2")}>
         {displayItems.map((item) => {
           const Icon = item.icon;
-          const base = item.href.split("?")[0];
-          const active = (() => {
-            if (item.activeWhenQueryMatch) {
-              const { param, value } = item.activeWhenQueryMatch;
-              return (pathname === base || pathname.startsWith(`${base}/`)) && searchParams.get(param) === value;
-            }
-            if (item.inactiveWhenQueryMatch && pathname === base) {
-              const { param, value } = item.inactiveWhenQueryMatch;
-              if (searchParams.get(param) === value) return false;
-            }
-            if (item.activeForPaths?.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
-            return pathname === base || pathname.startsWith(`${base}/`);
-          })();
+          const active = isNavItemActive(item, pathname, searchParams, user.role);
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium leading-tight transition-colors",
+                "relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl px-1 text-sm font-medium leading-tight transition-colors",
                 active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               )}
+              aria-current={active ? "page" : undefined}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden />
-              <span className="max-w-full truncate">{t(item.key)}</span>
-              {item.badge ? <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-critical" /> : null}
+              <span className="line-clamp-2 max-w-full text-center">{t(item.key)}</span>
             </Link>
           );
         })}
         {needsMoreButton && (
           <button
             type="button"
-            className="relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium leading-tight text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            className="relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl px-1 text-sm font-medium leading-tight text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
             onClick={onMoreClick}
             aria-label={t("nav.more")}
           >
             <MoreHorizontal className="h-5 w-5 shrink-0" aria-hidden />
-            <span className="max-w-full truncate">{t("nav.more")}</span>
+            <span className="line-clamp-2 max-w-full text-center">{t("nav.more")}</span>
           </button>
         )}
       </div>
@@ -106,6 +95,7 @@ function MobileRoleTaskBar({ onMoreClick }: { onMoreClick: () => void }) {
 export default function RoleShell({ children, appRoot, mainClassName }: RoleShellProps) {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
+  const { elderClass } = useFontScale();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -158,7 +148,13 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className={cn("flex min-h-screen bg-background", user.role === "patient" && "ws-density-patient", elderClass)}>
+      <a
+        href="#main-content"
+        className="sr-only fixed left-3 top-3 z-[100] rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-lg focus:not-sr-only"
+      >
+        {t("nav.skipToContent")}
+      </a>
       {/* Sidebar - Desktop fixed, Mobile Sheet */}
       <RoleSidebar mobileOpen={mobileNavOpen} onMobileOpenChange={setMobileNavOpen} />
 
@@ -168,7 +164,7 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
         <TopBar onMenuClick={() => setMobileNavOpen(true)} />
 
         {/* Main Content */}
-        <main className={cn("ws-mobile-safe-bottom min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8", mainClassName)}>
+        <main id="main-content" tabIndex={-1} className={cn("ws-mobile-safe-bottom min-w-0 flex-1 overflow-y-auto px-[var(--ws-page-padding)] py-5 sm:py-6", mainClassName)}>
           {children}
         </main>
       </div>

@@ -10,11 +10,13 @@ class OverviewScreen extends StatelessWidget {
     required this.onOpenDevices,
     required this.onOpenSettings,
     required this.onStartGateway,
+    this.onOpenMonitor,
   });
 
   final VoidCallback onOpenDevices;
   final VoidCallback onOpenSettings;
   final VoidCallback onStartGateway;
+  final VoidCallback? onOpenMonitor;
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +188,23 @@ class OverviewScreen extends StatelessWidget {
               subtitle: strings.overviewLiveStateSubtitle,
               child: Column(
                 children: [
+                  if (state.latestPolarSample != null ||
+                      state.latestM5Sample != null) ...[
+                    CompactRowCard(
+                      icon: Icons.monitor_heart_outlined,
+                      title: state.latestPolarSample != null
+                          ? '${strings.heartRate} ${state.latestPolarSample!.heartRateBpm} bpm'
+                          : strings.velocity,
+                      subtitle: state.latestM5Sample != null
+                          ? '${strings.velocity} ${state.latestM5Sample!.velocityMs.toStringAsFixed(2)} m/s'
+                          : strings.waitingForM5Telemetry,
+                      meta: strings.live,
+                      severity: ClinicalSeverity.normal,
+                      actionLabel: strings.navMonitor,
+                      onAction: onOpenMonitor,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   CompactRowCard(
                     icon: Icons.meeting_room_outlined,
                     title:

@@ -1,6 +1,8 @@
 FROM python:3.12-slim
 
 WORKDIR /app
+LABEL org.opencontainers.image.title="Ease AI Simulator" \
+      org.opencontainers.image.description="Ease AI deterministic MQTT simulator"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev && \

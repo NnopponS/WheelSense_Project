@@ -14,8 +14,8 @@ _Static_assert(WS_FEATURE_WIFI == 1, "default Wi-Fi");
 _Static_assert(WS_FEATURE_BLE == 1, "default BLE");
 _Static_assert(WS_FEATURE_CAMERA == 1, "default camera");
 _Static_assert(WS_FEATURE_ENVIRONMENT == 1, "default environment");
-_Static_assert(WS_FEATURE_MICROPHONE == 1, "default microphone");
-_Static_assert(WS_FEATURE_SPEAKER == 1, "default speaker");
+_Static_assert(WS_FEATURE_MICROPHONE == 0, "default microphone deferred");
+_Static_assert(WS_FEATURE_SPEAKER == 0, "default speaker deferred");
 _Static_assert(WS_FEATURE_TOUCH == 1, "default touch");
 _Static_assert(WS_FEATURE_MOTION_AI == 0, "default motion AI");
 #endif
@@ -29,4 +29,3 @@ _Static_assert(WS_FEATURE_HOST_SIM == 0, "target build");
 _Static_assert(WS_FEATURE_BITSTREAM == 0, "BitStream stays disabled");
 _Static_assert(WS_FEATURE_SENSOR_STUDIO == 0, "Sensor Studio stays disabled");
 _Static_assert(WS_FEATURE_DIGITAL_TWIN == 0, "Digital Twin stays disabled");
-

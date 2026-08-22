@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function CaregiverPatientsRedirectPage() {
+export default function ObserverPatientsRedirectPage() {
   redirect("/caregiver/personnel");
 }

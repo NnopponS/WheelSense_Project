@@ -229,6 +229,44 @@ async def test_propose_turn_asks_clarification_for_vague_task_create(
 
 
 @pytest.mark.asyncio
+async def test_propose_turn_skips_clarification_lock_when_ai_primary(
+    runtime_test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """AI-primary mode (lock disabled) must let the LLM tool router decide
+    instead of locking a deterministic clarification for a vague task create."""
+    monkeypatch.setattr("app.config.settings.easeai_pipeline_v2", True)
+    monkeypatch.setattr("app.config.settings.agent_routing_mode", "llm_tools")
+    monkeypatch.setattr(
+        "app.config.settings.easeai_deterministic_answer_lock_enabled", False
+    )
+    routed_reply = AgentRuntimeProposeResponse(
+        mode="answer",
+        assistant_reply="Sure — what should this task be about, and who is it for?",
+        grounding={"classification_method": "llm_tool_router", "pipeline_version": "v2"},
+    )
+    router = AsyncMock(return_value=routed_reply)
+    orchestrator = AsyncMock()
+    monkeypatch.setattr("app.agent_runtime.service.propose_llm_tool_turn", router)
+    monkeypatch.setattr("app.agent_runtime.service.orchestrate_turn", orchestrator)
+
+    token = f"token_{runtime_test_user.id}"
+    result = await propose_turn(
+        actor_access_token=token,
+        message="create task",
+        messages=[ChatMessagePart(role="user", content="create task")],
+        conversation_id=None,
+    )
+
+    # The deterministic clarification lock must NOT fire in AI-primary mode.
+    assert result.grounding["classification_method"] != "deterministic_clarification"
+    # The LLM tool router (the ADR 0015 AI pipeline) is the primary decision-maker.
+    router.assert_awaited_once()
+    orchestrator.assert_not_called()
+    assert result.assistant_reply == routed_reply.assistant_reply
+
+
+@pytest.mark.asyncio
 async def test_propose_turn_asks_task_readiness_details_before_plan(
     runtime_test_user: User,
     monkeypatch: pytest.MonkeyPatch,

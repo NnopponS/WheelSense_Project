@@ -112,5 +112,155 @@
   "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -DWS_FEATURE_HOST_SIM=1 -DWS_TEST_EXPECT_HOST -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_feature_matrix_host.dir\\test_feature_matrix.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_feature_matrix.c",
   "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_feature_matrix.c",
   "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_feature_matrix_host.dir/test_feature_matrix.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_environment_contract.dir\\test_environment_contract.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_environment_contract.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_environment_contract.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_environment_contract.dir/test_environment_contract.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_environment_contract.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_environment.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_environment.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_environment.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_environment_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_orientation_contract.dir\\test_orientation_contract.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_orientation_contract.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_orientation_contract.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_orientation_contract.dir/test_orientation_contract.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_orientation_contract.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_imu_orientation.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_imu_orientation.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_orientation_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_environment_conversion.dir\\test_environment_conversion.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_environment_conversion.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_environment_conversion.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_environment_conversion.dir/test_environment_conversion.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_environment_conversion.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_environment.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_environment.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_environment.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_environment_conversion.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_orientation_state.dir\\test_orientation_state.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_orientation_state.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_orientation_state.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_orientation_state.dir/test_orientation_state.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_orientation_state.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_imu_orientation.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_imu_orientation.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_orientation_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_imu_orientation.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_sensor_schedule.dir\\test_sensor_schedule.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_sensor_schedule.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_sensor_schedule.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_sensor_schedule.dir/test_sensor_schedule.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_sensor_schedule.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_environment.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_environment.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_environment.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_sensor_schedule.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_environment.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_state.dir\\test_ui_state.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_ui_state.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ui_state.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_state.dir/test_ui_state.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_state.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ui_state.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ui_state.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_state.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_state.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_state.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_state.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_state.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_state.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_lvgl_state_contract.dir\\test_lvgl_state_contract.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_lvgl_state_contract.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_lvgl_state_contract.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_lvgl_state_contract.dir/test_lvgl_state_contract.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_lvgl_state_contract.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ui_state.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ui_state.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_lvgl_state_contract.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_lvgl_state_contract.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_lvgl_state_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_lvgl_state_contract.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_lvgl_state_contract.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_lvgl_state_contract.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_lvgl_state_contract.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_diagnostic_consumption.dir\\test_ui_diagnostic_consumption.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\host_sim\\tests\\test_ui_diagnostic_consumption.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/test_ui_diagnostic_consumption.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_diagnostic_consumption.dir/test_ui_diagnostic_consumption.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_diagnostic_consumption.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ui_state.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ui_state.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_diagnostic_consumption.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ui_state.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_diagnostic_consumption.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ipc_messages.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_diagnostic_consumption.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ipc_messages.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_diagnostic_consumption.dir\\C_\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_protocol.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_diagnostic_consumption.dir/C_/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_protocol.c.obj"
+},
+{
+  "directory": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage",
+  "command": "C:\\Users\\worap\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260616-ucrt-x86_64\\bin\\gcc.exe -IC:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/tests/../../shared/include -fprofile-instr-generate -fcoverage-mapping -std=gnu11 -Wall -Wextra -Werror -std=c11 -o tests\\CMakeFiles\\test_ui_diagnostic_consumption.dir\\8b91e1091ec70afd669f0f97978a8367\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c.obj -c C:\\Users\\worap\\Documents\\Project\\wheelsense-platform\\firmware\\WheelSense_E84\\shared\\source\\ws_ble_payloads.c",
+  "file": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c",
+  "output": "C:/Users/worap/Documents/Project/wheelsense-platform/firmware/WheelSense_E84/host_sim/build-coverage/tests/CMakeFiles/test_ui_diagnostic_consumption.dir/8b91e1091ec70afd669f0f97978a8367/firmware/WheelSense_E84/shared/source/ws_ble_payloads.c.obj"
 }
 ]

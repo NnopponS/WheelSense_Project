@@ -3,10 +3,22 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ArrowRight, Bell, ClipboardList, MapPin, MessageSquare, Monitor, Server, Settings, ShieldAlert, Tablet, Users, type LucideIcon } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  Building2,
+  CheckCircle2,
+  ClipboardList,
+  Settings,
+  Tablet,
+  Users,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import { api } from "@/lib/api";
+import { formatRelativeTime } from "@/lib/datetime";
 import { isDeviceOnline } from "@/lib/deviceOnline";
 import { isSmartDeviceOnline } from "@/lib/smartDeviceOnline";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
@@ -14,31 +26,19 @@ import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { useTranslation } from "@/lib/i18n";
 import type { Device, HardwareType, SmartDevice } from "@/lib/types";
 import type { ListAlertsResponse, ListDeviceActivityResponse, ListUsersResponse } from "@/lib/api/task-scope-types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CsvExportButton } from "@/components/shared/CsvExportButton";
 import DashboardMapLauncher from "@/components/dashboard/DashboardMapLauncher";
-import { RoleQuickActions } from "@/components/dashboard/RoleQuickActions";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AppPage } from "@/components/layout/AppPage";
+import { MetricCard } from "@/components/shared/MetricCard";
+import { PriorityBanner } from "@/components/shared/PriorityBanner";
+import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge";
 
 type HealthStatus = "healthy" | "warning";
 
-type MenuItem = {
-  label: string;
-  href: string;
-  note: string;
-};
-
-type MenuGroup = {
-  group: string;
-  icon: LucideIcon;
-  summary: string;
-  items: MenuItem[];
-};
-
 /** Matches `RequireRole` on `GET /api/devices/activity` - avoid polling when the session cannot read fleet activity. */
-const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_caregiver"]);
+const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_caregiver", "head_caregiver"]);
 
 const HARDWARE_ROWS: Array<{
   hardware: HardwareType;
@@ -50,7 +50,7 @@ const HARDWARE_ROWS: Array<{
   { hardware: "mobile_phone", label: "Mobile phones" },
 ];
 
-function healthVariant(status: HealthStatus) {
+function healthTone(status: HealthStatus): StatusTone {
   return status === "healthy" ? "success" : "warning";
 }
 
@@ -151,8 +151,9 @@ export default function AdminDashboardPage() {
     const active = list.filter((u) => u.is_active).length;
     const byRole = {
       admin: list.filter((u) => u.role === "admin").length,
-      head_caregiver: list.filter((u) => u.role === "head_caregiver").length,
-      caregiver: list.filter((u) => u.role === "caregiver").length,
+      head_nurse: list.filter((u) => u.role === "head_caregiver").length,
+      supervisor: list.filter((u) => u.role === "head_caregiver").length,
+      observer: list.filter((u) => u.role === "caregiver").length,
       patient: list.filter((u) => u.role === "patient").length,
     };
     return { total: list.length, active, inactive: list.length - active, byRole };
@@ -162,7 +163,7 @@ export default function AdminDashboardPage() {
     () =>
       [...(activity ?? [])]
         .sort((left, right) => right.occurred_at.localeCompare(left.occurred_at))
-        .slice(0, 6),
+        .slice(0, 5),
     [activity],
   );
   const alerts = useMemo(() => (alertsData ?? []) as ListAlertsResponse, [alertsData]);
@@ -188,155 +189,38 @@ export default function AdminDashboardPage() {
     [hasRecentDeviceSignal, totalFleet],
   );
 
-  const healthRows = useMemo(
-    () => [
+  const coreHealthRows = useMemo(() => {
+    const rows = [
+      { key: "api", label: "API", status: systemStatus.api, detail: t("admin.system.detailApi") },
       {
-        label: "API",
-        status: systemStatus.api,
-        detail: t("admin.system.detailApi"),
-        href: "/admin/settings",
-      },
-      {
+        key: "database",
         label: t("admin.system.database"),
         status: systemStatus.database,
         detail: t("admin.system.detailDatabase"),
-        href: "/admin/audit",
       },
       {
+        key: "mqtt",
         label: t("admin.labelMqttBroker"),
         status: systemStatus.mqtt,
         detail:
           totalFleet > 0
             ? formatTemplate(t("admin.system.detailMqttRegistered"), { count: totalFleet })
             : t("admin.system.detailMqttEmpty"),
-        href: "/admin/device-health",
       },
       {
+        key: "automation",
         label: t("admin.system.automationPipeline"),
         status: systemStatus.automation,
         detail: t("admin.system.detailAutomation"),
-        href: "/admin/settings",
       },
-      {
-        label: t("admin.system.groupDevices"),
-        status: (totalDevicesOffline > 0 ? "warning" : "healthy") as HealthStatus,
-        detail: formatTemplate(t("admin.system.detailOnline"), { online: totalDevicesOnline, total: totalFleet }),
-        href: "/admin/devices",
-      },
-      {
-        label: t("admin.system.smartBridge"),
-        status: (smartStats.offline > 0 ? "warning" : "healthy") as HealthStatus,
-        detail: formatTemplate(t("admin.system.detailOnline"), { online: smartStats.online, total: smartStats.total }),
-        href: "/admin/devices?tab=smart_home",
-      },
-    ],
-    [smartStats.offline, smartStats.online, smartStats.total, systemStatus.api, systemStatus.automation, systemStatus.database, systemStatus.mqtt, t, totalDevicesOffline, totalDevicesOnline, totalFleet],
-  );
+    ];
+    return [...rows].sort((a, b) => {
+      if (a.status === b.status) return 0;
+      return a.status === "warning" ? -1 : 1;
+    });
+  }, [systemStatus, t, totalFleet]);
 
-  const menuGroups = useMemo<MenuGroup[]>(
-    () => [
-      {
-        group: t("admin.system.groupPeople"),
-        icon: Users,
-        summary: t("admin.system.summaryPeople"),
-        items: [
-          {
-            label: t("admin.system.users"),
-            href: "/admin/users",
-            note: formatTemplate(t("admin.system.noteActiveAccounts"), {
-              active: userStats.active,
-              total: userStats.total,
-            }),
-          },
-          {
-            label: t("admin.openPatients"),
-            href: "/admin/patients",
-            note: formatTemplate(t("admin.system.notePatientAccounts"), { count: userStats.byRole.patient }),
-          },
-        ],
-      },
-      {
-        group: t("admin.system.groupPlaces"),
-        icon: Monitor,
-        summary: t("admin.system.summaryPlaces"),
-        items: [
-          {
-            label: t("nav.facilities"),
-            href: "/admin/facility-management",
-            note: t("admin.system.noteFacilities"),
-          },
-        ],
-      },
-      {
-        group: t("admin.system.groupDevices"),
-        icon: Tablet,
-        summary: t("admin.system.summaryDevices"),
-        items: [
-          {
-            label: t("admin.system.groupDevices"),
-            href: "/admin/devices",
-            note: formatTemplate(t("admin.system.detailOnline"), { online: totalDevicesOnline, total: totalFleet }),
-          },
-          {
-            label: t("admin.smartFleet"),
-            href: "/admin/devices?tab=smart_home",
-            note: formatTemplate(t("admin.system.detailOnline"), { online: smartStats.online, total: smartStats.total }),
-          },
-          {
-            label: t("admin.system.deviceHealth"),
-            href: "/admin/device-health",
-            note: systemStatus.mqtt === "healthy" ? t("admin.system.noteBrokerHealthy") : t("admin.system.noteBrokerReview"),
-          },
-        ],
-      },
-      {
-        group: t("admin.system.groupOperations"),
-        icon: Activity,
-        summary: t("admin.system.summaryOperations"),
-        items: [
-          {
-            label: t("admin.openAlerts"),
-            href: "/admin/alerts",
-            note: t("admin.system.noteAlerts"),
-          },
-          {
-            label: t("admin.system.audit"),
-            href: "/admin/audit",
-            note: formatTemplate(t("admin.system.noteRecentEvents"), { count: latestActivity.length }),
-          },
-          {
-            label: t("admin.system.demoControl"),
-            href: "/admin/demo-control",
-            note: t("admin.system.noteDemo"),
-          },
-        ],
-      },
-      {
-        group: t("admin.system.groupSystem"),
-        icon: Settings,
-        summary: t("admin.system.summarySystem"),
-        items: [
-          {
-            label: t("admin.system.settings"),
-            href: "/admin/settings",
-            note: t("admin.system.noteSettings"),
-          },
-        ],
-      },
-    ],
-    [
-      latestActivity.length,
-      smartStats.online,
-      smartStats.total,
-      systemStatus.mqtt,
-      t,
-      totalDevicesOnline,
-      totalFleet,
-      userStats.active,
-      userStats.byRole.patient,
-      userStats.total,
-    ],
-  );
+  const healthyCoreCount = coreHealthRows.filter((row) => row.status === "healthy").length;
 
   const adminExportRows = useMemo(
     () => [
@@ -357,77 +241,43 @@ export default function AdminDashboardPage() {
     [fleetByType, latestActivity, smartStats.online, smartStats.total, totalDevicesOffline, totalDevicesOnline, totalFleet, userStats.active, userStats.byRole.patient, userStats.total],
   );
 
-  const healthyServices = [systemStatus.api, systemStatus.database, systemStatus.mqtt, systemStatus.automation].filter(
-    (status) => status === "healthy",
-  ).length;
-  const mobileCommandActions = useMemo(
-    () => [
-      {
-        label: t("nav.alerts"),
-        description: `${criticalAlerts.length}/${alerts.length}`,
-        href: "/admin/alerts",
-        icon: ShieldAlert,
-        tone: criticalAlerts.length > 0 ? ("danger" as const) : ("neutral" as const),
-      },
-      {
-        label: t("nav.tasks"),
-        description: t("admin.system.summaryOperations"),
-        href: "/admin/tasks",
-        icon: ClipboardList,
-        tone: "warning" as const,
-      },
-      {
-        label: t("admin.system.devices"),
-        description: formatTemplate(t("admin.system.detailOnline"), { online: totalDevicesOnline, total: totalFleet }),
-        href: "/admin/devices",
-        icon: Tablet,
-        tone: totalDevicesOffline > 0 ? ("warning" as const) : ("success" as const),
-      },
-      {
-        label: t("admin.system.users"),
-        description: formatTemplate(t("admin.system.noteActiveAccounts"), {
-          active: userStats.active,
-          total: userStats.total,
-        }),
-        href: "/admin/users",
-        icon: Users,
-        tone: "primary" as const,
-      },
-      {
-        label: t("nav.facilities"),
-        description: t("admin.system.noteFacilities"),
-        href: "/admin/facility-management",
-        icon: MapPin,
-        tone: "neutral" as const,
-      },
-      {
-        label: t("admin.system.settings"),
-        description: t("admin.system.noteSettings"),
-        href: "/admin/settings",
-        icon: Settings,
-        tone: "neutral" as const,
-      },
-    ],
-    [alerts.length, criticalAlerts.length, t, totalDevicesOffline, totalDevicesOnline, totalFleet, userStats.active, userStats.total],
-  );
-
   return (
-    <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Server className="h-3.5 w-3.5" />
-            {t("admin.system.badge")}
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("admin.system.title")}</h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              {t("admin.system.subtitle")}
-            </p>
-          </div>
-        </div>
-        <div className="hidden flex-wrap gap-2 md:flex">
+    <AppPage
+      eyebrow={t("admin.system.badge")}
+      title={t("admin.system.title")}
+      description={t("admin.system.subtitle")}
+      className="animate-fade-in space-y-4 pb-6"
+      priority={
+        <PriorityBanner
+          tone={criticalAlerts.length > 0 ? "critical" : totalDevicesOffline > 0 ? "warning" : "success"}
+          title={
+            criticalAlerts.length > 0
+              ? formatTemplate(t("admin.system.priorityCriticalTitle"), { count: criticalAlerts.length })
+              : totalDevicesOffline > 0
+                ? formatTemplate(t("admin.system.priorityOfflineTitle"), { count: totalDevicesOffline })
+                : t("admin.system.priorityHealthyTitle")
+          }
+          description={
+            criticalAlerts.length > 0
+              ? t("admin.system.priorityCriticalDescription")
+              : totalDevicesOffline > 0
+                ? t("admin.system.priorityOfflineDescription")
+                : t("admin.system.priorityHealthyDescription")
+          }
+          action={
+            <Button asChild variant={criticalAlerts.length > 0 ? "destructive" : "outline"}>
+              <Link href={criticalAlerts.length > 0 ? "/admin/alerts" : "/admin/devices"}>
+                {criticalAlerts.length > 0 ? t("nav.alerts") : t("admin.system.reviewIssue")}
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            </Button>
+          }
+        />
+      }
+      actions={
+        <>
           <CsvExportButton
+            label={t("admin.system.export")}
             fileNameBase="wheelsense-admin-overview"
             headers={[
               t("admin.system.csvMetric"),
@@ -440,377 +290,177 @@ export default function AdminDashboardPage() {
           />
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/alerts">
-              <Bell className="mr-1.5 h-4 w-4" />
+              <Bell className="h-5 w-5" aria-hidden="true" />
               {t("nav.alerts")}
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/tasks">
-              <ClipboardList className="mr-1.5 h-4 w-4" />
-              {t("nav.tasks")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/support">
-              <MessageSquare className="mr-1.5 h-4 w-4" />
-              {t("nav.support")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/users">
-              <Users className="mr-1.5 h-4 w-4" />
-              {t("admin.system.users")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/devices">
-              <Tablet className="mr-1.5 h-4 w-4" />
-              {t("admin.system.devices")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/audit">
-              <Activity className="mr-1.5 h-4 w-4" />
-              {t("admin.system.audit")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
             <Link href="/admin/settings">
-              <Settings className="mr-1.5 h-4 w-4" />
+              <Settings className="h-5 w-5" aria-hidden="true" />
               {t("admin.system.settings")}
             </Link>
           </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-2 md:hidden">
-        <CsvExportButton
-          fileNameBase="wheelsense-admin-overview"
-          headers={[
-            t("admin.system.csvMetric"),
-            t("admin.system.csvArea"),
-            t("admin.system.csvTotal"),
-            t("admin.system.csvPrimaryState"),
-            t("admin.system.csvSecondaryState"),
-          ]}
-          rows={adminExportRows}
+        </>
+      }
+    >
+      <section className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          compact
+          label={t("admin.system.users")}
+          value={userStats.active}
+          description={t("admin.system.activeAccount")}
+          icon={Users}
+          href="/admin/users"
         />
-        <Button asChild size="sm" variant="outline">
-          <Link href="/admin/facility-management">
-            <MapPin className="h-4 w-4" />
-            {t("dashboard.map.fullPage")}
-          </Link>
-        </Button>
-      </div>
+        <MetricCard
+          compact
+          label={t("admin.system.fleetOnline")}
+          value={`${totalDevicesOnline}/${totalFleet}`}
+          description={formatTemplate(t("admin.system.fleetAvailability"), {
+            online: totalDevicesOnline,
+            total: totalFleet,
+            offline: totalDevicesOffline,
+          })}
+          icon={Tablet}
+          href="/admin/devices"
+          status={totalDevicesOffline > 0 ? { label: t("admin.system.statusNeedsReview"), tone: "warning" } : undefined}
+        />
+        <MetricCard
+          compact
+          label={t("admin.openAlerts")}
+          value={criticalAlerts.length}
+          description={t("admin.system.activeLower")}
+          icon={Bell}
+          href="/admin/alerts"
+          status={criticalAlerts.length > 0 ? { label: t("admin.system.statusNeedsReview"), tone: "critical" } : undefined}
+        />
+        <MetricCard
+          compact
+          label={t("admin.system.recentEvents")}
+          value={latestActivity.length}
+          description={t("admin.system.todayLower")}
+          icon={Activity}
+          href="/admin/audit"
+        />
+      </section>
 
-      <RoleQuickActions
-        title={t("admin.system.mobileActions")}
-        actions={mobileCommandActions}
-        className="md:hidden"
-      />
-
-      <DashboardMapLauncher
-        href="/admin/facility-management"
-        title={t("admin.system.liveMapTitle")}
-        description={t("admin.system.liveMapDesc")}
-        primaryLabel={criticalAlerts.length ? t("headNurse.dashboard.openEmergencyMap") : t("dashboard.map.openMap")}
-        emergencyCount={criticalAlerts.length}
-        peopleCount={userStats.active}
-        roomLabel={t("headNurse.dashboard.find")}
-        compact
-      />
-
-      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
         <Card className="border-border/70">
-          <CardHeader className="pb-3">
+          <CardHeader className="flex-row items-baseline justify-between gap-2 pb-2 space-y-0">
             <CardTitle className="text-base">{t("admin.system.systemHealth")}</CardTitle>
-            <CardDescription>
-              {t("admin.system.systemHealthDesc")}
-            </CardDescription>
+            <span className="text-sm text-muted-foreground">
+              {formatTemplate(t("admin.system.coreServicesHealthy"), { healthy: healthyCoreCount, total: coreHealthRows.length })}
+            </span>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="min-h-20 rounded-lg border border-border/70 bg-background/65 p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.system.healthyServices")}</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{healthyServices}/4</p>
-              </div>
-              <div className="min-h-20 rounded-lg border border-border/70 bg-background/65 p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.system.fleetOnline")}</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-600">
-                  {totalDevicesOnline}/{totalFleet}
-                </p>
-              </div>
-              <div className="min-h-20 rounded-lg border border-border/70 bg-background/65 p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.system.smartBridge")}</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                  {smartStats.online}/{smartStats.total}
-                </p>
-              </div>
-              <div className="min-h-20 rounded-lg border border-border/70 bg-background/65 p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.system.recentEvents")}</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{latestActivity.length}</p>
-              </div>
-            </div>
-
-            <div className="grid gap-2 md:hidden">
-              {healthRows.map((row) => (
-                <Link
-                  key={row.label}
-                  href={row.href}
-                  className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2.5 hover:bg-muted/40"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium text-foreground">{row.label}</p>
-                      <Badge variant={healthVariant(row.status)}>{healthLabel(row.status, t)}</Badge>
+          <CardContent className="space-y-1.5">
+            {coreHealthRows.map((row) =>
+              row.status === "warning" ? (
+                <div key={row.key} className="rounded-lg border border-warning/30 bg-warning-bg/50 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+                      <span className="truncate text-sm font-medium text-foreground">{row.label}</span>
                     </div>
-                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{row.detail}</p>
+                    <StatusBadge label={healthLabel(row.status, t)} tone={healthTone(row.status)} />
                   </div>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </Link>
-              ))}
-            </div>
-            <div className="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.system.service")}</TableHead>
-                    <TableHead>{t("admin.system.status")}</TableHead>
-                    <TableHead>{t("admin.system.detail")}</TableHead>
-                    <TableHead className="text-right">{t("admin.system.open")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {healthRows.map((row) => (
-                    <TableRow key={row.label}>
-                      <TableCell className="font-medium text-foreground">{row.label}</TableCell>
-                      <TableCell>
-                        <Badge variant={healthVariant(row.status)}>{healthLabel(row.status, t)}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{row.detail}</TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild size="sm" variant="ghost">
-                          <Link href={row.href}>
-                            {t("admin.system.open")}
-                            <ArrowRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  <p className="mt-1 pl-6 text-xs text-muted-foreground">{row.detail}</p>
+                </div>
+              ) : (
+                <div key={row.key} className="flex items-center gap-2 px-3 py-1.5">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                  <span className="text-sm text-foreground">{row.label}</span>
+                </div>
+              ),
+            )}
+            <div className="pt-1">
+              <Link
+                href="/admin/device-health"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+              >
+                {t("admin.system.viewAllServices")}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-border/70">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("admin.system.governanceMenuMap")}</CardTitle>
-            <CardDescription>
-              {t("admin.system.governanceMenuMapDesc")}
-            </CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{t("admin.system.recentActivity")}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-2 md:hidden">
-              {menuGroups.map((group) => {
-                const Icon = group.icon;
-                return (
-                  <div key={group.group} className="rounded-lg bg-background/65 px-3 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">{group.group}</p>
-                        <p className="line-clamp-1 text-xs text-muted-foreground">{group.summary}</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      {group.items.map((item) => (
-                        <Button key={item.label} asChild size="sm" variant="outline" className="justify-between">
-                          <Link href={item.href}>
-                            <span className="truncate">{item.label}</span>
-                            <ArrowRight className="h-4 w-4 shrink-0" />
-                          </Link>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[28%]">{t("admin.system.group")}</TableHead>
-                    <TableHead>{t("admin.system.pages")}</TableHead>
-                    <TableHead className="w-[30%]">{t("admin.system.summary")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {menuGroups.map((group) => {
-                    const Icon = group.icon;
-
-                    return (
-                      <TableRow key={group.group}>
-                        <TableCell className="align-top">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                              <Icon className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-foreground">{group.group}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatTemplate(t("admin.system.destinations"), { count: group.items.length })}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <div className="space-y-2">
-                            {group.items.map((item) => (
-                              <div key={item.label} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1">
-                                <Button asChild size="sm" variant="outline">
-                                  <Link href={item.href}>
-                                    {item.label}
-                                    <ArrowRight className="h-4 w-4" />
-                                  </Link>
-                                </Button>
-                                <span className="text-sm text-muted-foreground">{item.note}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="align-top text-sm text-muted-foreground">{group.summary}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card className="border-border/70">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("admin.system.fleetDetail")}</CardTitle>
-            <CardDescription>
-              {t("admin.system.fleetDetailDesc")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("admin.system.hardware")}</TableHead>
-                  <TableHead>{t("admin.system.csvTotal")}</TableHead>
-                  <TableHead>{t("admin.system.online")}</TableHead>
-                  <TableHead>{t("admin.system.offline")}</TableHead>
-                  <TableHead className="text-right">{t("admin.system.open")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fleetByType.map((row) => (
-                  <TableRow key={row.hardware}>
-                    <TableCell className="font-medium text-foreground">{row.label}</TableCell>
-                    <TableCell>{row.total}</TableCell>
-                    <TableCell>
-                      <span className="text-emerald-600">{row.online}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className={row.offline > 0 ? "text-amber-600" : "text-muted-foreground"}>
-                        {row.offline}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link href={`/admin/devices?tab=${row.hardware}`}>
-                          {t("admin.system.open")}
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow>
-                  <TableCell className="font-medium text-foreground">{t("admin.smartFleet")}</TableCell>
-                  <TableCell>{smartStats.total}</TableCell>
-                  <TableCell>
-                    <span className="text-emerald-600">{smartStats.online}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={smartStats.offline > 0 ? "text-amber-600" : "text-muted-foreground"}>
-                      {smartStats.offline}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button asChild size="sm" variant="ghost">
-                      <Link href="/admin/devices?tab=smart_home">
-                        {t("admin.system.open")}
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("admin.system.recentGovernance")}</CardTitle>
-            <CardDescription>
-              {t("admin.system.recentGovernanceDesc")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {latestActivity.length ? (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("admin.system.event")}</TableHead>
-                      <TableHead>{t("admin.system.summary")}</TableHead>
-                      <TableHead>{t("admin.system.time")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {latestActivity.slice(0, 4).map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-medium text-foreground">{entry.event_type}</TableCell>
-                        <TableCell className="max-w-[18rem] text-sm text-muted-foreground">
-                          {entry.summary || t("admin.system.noDescription")}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(entry.occurred_at).toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <div className="flex justify-end">
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href="/admin/audit">
-                      {t("admin.system.viewFullAudit")}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
+                <div className="divide-y divide-border/60">
+                  {latestActivity.map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between gap-3 py-1.5">
+                      <span className="min-w-0 truncate text-sm text-foreground">
+                        {entry.event_type || entry.summary || t("admin.system.noDescription")}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatRelativeTime(entry.occurred_at)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
+                <Link
+                  href="/admin/audit"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                >
+                  {t("admin.system.viewAuditLog")}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
               </>
             ) : (
-              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
-                <Activity className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">{t("admin.system.noRecentGovernance")}</p>
-              </div>
+              <p className="text-sm text-muted-foreground">{t("admin.system.noRecentActivity")}</p>
             )}
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <DashboardMapLauncher
+          variant="card"
+          href="/admin/facility-management"
+          title={t("admin.system.facilityStatus")}
+          description={t("admin.system.liveMapDesc")}
+          emergencyCount={criticalAlerts.length}
+          peopleCount={userStats.active}
+          deviceCount={`${totalDevicesOnline}/${totalFleet}`}
+        />
+
+        <Card className="border-border/70">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{t("admin.system.quickActions")}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-2">
+            <Button asChild variant="outline" size="sm" className="justify-start">
+              <Link href="/admin/users">
+                <Users className="h-4 w-4" aria-hidden="true" />
+                {t("admin.system.manageUsers")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="justify-start">
+              <Link href="/admin/facility-management">
+                <Building2 className="h-4 w-4" aria-hidden="true" />
+                {t("admin.system.addFacility")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="justify-start">
+              <Link href="/admin/devices">
+                <Tablet className="h-4 w-4" aria-hidden="true" />
+                {t("admin.system.registerDevice")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="justify-start">
+              <Link href="/admin/audit">
+                <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                {t("admin.system.viewAuditLog")}
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </AppPage>
   );
 }

@@ -8,6 +8,10 @@
         "locked-commit": "release-v1.1.1"
     },
     {
+        "asset-name": "aws-iot-device-sdk-port",
+        "locked-commit": "release-v2.7.0"
+    },
+    {
         "asset-name": "bt-fw-mur-cyw55513",
         "locked-commit": "release-v1.0.0"
     },

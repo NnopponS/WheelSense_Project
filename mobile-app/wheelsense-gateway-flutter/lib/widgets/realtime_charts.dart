@@ -1,61 +1,64 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/sensor_telemetry.dart';
 
-class GyroLineChart extends StatelessWidget {
-  const GyroLineChart({super.key, required this.samples});
-
-  final List<M5TelemetrySample> samples;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ChartFrame(
-      legend: const [
-        _LegendItem(label: 'X', color: Color(0xFF2563EB)),
-        _LegendItem(label: 'Y', color: Color(0xFF16A34A)),
-        _LegendItem(label: 'Z', color: Color(0xFFDC2626)),
-      ],
-      painter: _GyroPainter(samples),
-      empty: samples.length < 2,
-    );
-  }
-}
-
-class PolarSignalChart extends StatelessWidget {
-  const PolarSignalChart({super.key, required this.samples});
-
-  final List<PolarTelemetrySample> samples;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ChartFrame(
-      legend: const [
-        _LegendItem(label: 'HR', color: Color(0xFFBE123C)),
-        _LegendItem(label: 'SpO2', color: Color(0xFF7C3AED)),
-        _LegendItem(label: 'RSSI', color: Color(0xFF0F766E)),
-      ],
-      painter: _PolarPainter(samples),
-      empty: samples.length < 2,
-    );
-  }
-}
-
-class _ChartFrame extends StatelessWidget {
-  const _ChartFrame({
-    required this.legend,
-    required this.painter,
-    required this.empty,
+/// One plotted line. Values may contain nulls (gaps break the line).
+class ChartSeries {
+  const ChartSeries({
+    required this.label,
+    required this.color,
+    required this.values,
+    this.fallbackRange,
+    this.minimumSpan = 1,
+    this.valueFormat = _oneDecimal,
   });
 
-  final List<_LegendItem> legend;
-  final CustomPainter painter;
-  final bool empty;
+  final String label;
+  final Color color;
+  final List<double?> values;
+
+  /// Used when fewer than two non-null values exist yet, so the axis is stable
+  /// and meaningful instead of collapsing to zero.
+  final (double, double)? fallbackRange;
+  final double minimumSpan;
+  final String Function(double value) valueFormat;
+
+  static String _oneDecimal(double value) => value.toStringAsFixed(1);
+}
+
+/// Shared live line chart: y-tick labels, gap-aware series, gradient fill
+/// under the first series, and a drag/touch readout of every series value.
+class RealtimeLineChart extends StatefulWidget {
+  const RealtimeLineChart({
+    super.key,
+    required this.series,
+    required this.unit,
+    this.height = 176,
+    this.timestamps = const <DateTime>[],
+  });
+
+  final List<ChartSeries> series;
+  final String unit;
+  final double height;
+  final List<DateTime> timestamps;
+
+  @override
+  State<RealtimeLineChart> createState() => _RealtimeLineChartState();
+}
+
+class _RealtimeLineChartState extends State<RealtimeLineChart> {
+  int? _hoverIndex;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final count = widget.series.firstOrNull?.values.length ?? 0;
+    final empty = count < 2;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFFF8FBFF),
@@ -67,10 +70,34 @@ class _ChartFrame extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Wrap(spacing: 12, runSpacing: 6, children: legend),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              children: [
+                for (final s in widget.series)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: s.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${s.label} (${widget.unit})',
+                        style: theme.textTheme.labelMedium,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 176,
+              height: widget.height,
               child: empty
                   ? Center(
                       child: Text(
@@ -78,216 +105,391 @@ class _ChartFrame extends StatelessWidget {
                         style: theme.textTheme.labelMedium,
                       ),
                     )
-                  : CustomPaint(painter: painter),
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onPanDown: (details) =>
+                              _updateHover(details.localPosition, constraints),
+                          onPanUpdate: (details) =>
+                              _updateHover(details.localPosition, constraints),
+                          onPanEnd: (_) => setState(() => _hoverIndex = null),
+                          onPanCancel: () => setState(() => _hoverIndex = null),
+                          child: CustomPaint(
+                            painter: _RealtimeChartPainter(
+                              series: widget.series,
+                              hoverIndex: _hoverIndex,
+                            ),
+                            child: _hoverIndex == null
+                                ? null
+                                : Align(
+                                    alignment: Alignment.topRight,
+                                    child: _readout(theme),
+                                  ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-      ],
+  Widget _readout(ThemeData theme) {
+    final index = _hoverIndex!;
+    final time = index < widget.timestamps.length
+        ? DateFormat.Hms().format(widget.timestamps[index])
+        : '';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFDCE7F5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (time.isNotEmpty)
+            Text(time, style: theme.textTheme.labelSmall),
+          for (final s in widget.series)
+            if (s.values[index] case final value?)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: s.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '${s.label} ${s.valueFormat(value)}',
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+        ],
+      ),
     );
+  }
+
+  void _updateHover(Offset position, BoxConstraints constraints) {
+    final count = widget.series.firstOrNull?.values.length ?? 0;
+    if (count < 2 || constraints.maxWidth <= 0) {
+      return;
+    }
+    final ratio = (position.dx / constraints.maxWidth).clamp(0.0, 1.0);
+    setState(() => _hoverIndex = (ratio * (count - 1)).round());
   }
 }
 
-class _GyroPainter extends CustomPainter {
-  const _GyroPainter(this.samples);
+class _RealtimeChartPainter extends CustomPainter {
+  const _RealtimeChartPainter({required this.series, this.hoverIndex});
+
+  final List<ChartSeries> series;
+  final int? hoverIndex;
+
+  static const double _tickInset = 42;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final plot = Rect.fromLTWH(
+      _tickInset,
+      0,
+      math.max(0, size.width - _tickInset),
+      size.height,
+    );
+    _drawGrid(canvas, plot);
+
+    for (var i = 0; i < series.length; i += 1) {
+      final s = series[i];
+      final range = _rangeFor(s);
+      if (i == 0) {
+        _drawTicks(canvas, plot, range, s);
+      }
+      _drawSeries(canvas, plot, s, range, fill: i == 0);
+    }
+
+    final hover = hoverIndex;
+    if (hover != null && series.firstOrNull != null) {
+      final count = series.first.values.length;
+      final x = plot.left + plot.width * hover / (count - 1);
+      final paint = Paint()
+        ..color = const Color(0xFF94A3B8)
+        ..strokeWidth = 1;
+      canvas.drawLine(Offset(x, 0), Offset(x, plot.bottom), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RealtimeChartPainter oldDelegate) {
+    return oldDelegate.series != series || oldDelegate.hoverIndex != hoverIndex;
+  }
+
+  static (double, double) _rangeFor(ChartSeries series) {
+    final values = series.values.whereType<double>().toList();
+    if (values.length < 2) {
+      return series.fallbackRange ?? (0, series.minimumSpan);
+    }
+    final rawMin = values.reduce(math.min);
+    final rawMax = values.reduce(math.max);
+    if ((rawMax - rawMin).abs() >= series.minimumSpan) {
+      final padding = (rawMax - rawMin) * 0.12;
+      return (rawMin - padding, rawMax + padding);
+    }
+    return (rawMin - series.minimumSpan, rawMax + series.minimumSpan);
+  }
+
+  static void _drawGrid(Canvas canvas, Rect plot) {
+    final paint = Paint()
+      ..color = const Color(0xFFE1EAF5)
+      ..strokeWidth = 1;
+    for (var i = 0; i <= 4; i += 1) {
+      final y = plot.top + plot.height * i / 4;
+      canvas.drawLine(Offset(plot.left, y), Offset(plot.right, y), paint);
+    }
+  }
+
+  static void _drawTicks(Canvas canvas, Rect plot, (double, double) range,
+      ChartSeries series) {
+    final (min, max) = range;
+    for (var i = 0; i <= 4; i += 1) {
+      final value = max - (max - min) * i / 4;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: series.valueFormat(value),
+          style: const TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 10,
+          ),
+        ),
+        textDirection: ui.TextDirection.ltr,
+      )..layout(maxWidth: _tickInset - 6);
+      final y = plot.top + plot.height * i / 4;
+      tp.paint(canvas, Offset(plot.left - tp.width - 4, y - tp.height / 2));
+    }
+  }
+
+  static void _drawSeries(
+    Canvas canvas,
+    Rect plot,
+    ChartSeries series,
+    (double, double) range,
+    {required bool fill}
+  ) {
+    final (min, max) = range;
+    final values = series.values;
+    if (values.whereType<double>().length < 2) {
+      return;
+    }
+
+    Offset? point(int index) {
+      final value = values[index];
+      if (value == null) {
+        return null;
+      }
+      final x = plot.left + plot.width * index / (values.length - 1);
+      final ratio = ((value - min) / (max - min)).clamp(0.0, 1.0);
+      return Offset(x, plot.bottom - ratio * plot.height);
+    }
+
+    final path = Path();
+    var started = false;
+    final segments = <Path>[];
+    for (var index = 0; index < values.length; index += 1) {
+      final p = point(index);
+      if (p == null) {
+        if (started) {
+          segments.add(path);
+        }
+        path.reset();
+        started = false;
+        continue;
+      }
+      if (!started) {
+        path.moveTo(p.dx, p.dy);
+        started = true;
+      } else {
+        path.lineTo(p.dx, p.dy);
+      }
+    }
+    if (started) {
+      segments.add(path);
+    }
+
+    if (fill && segments.isNotEmpty) {
+      final fillPath = Path();
+      for (final segment in segments) {
+        final metricsList = segment.computeMetrics();
+        for (final metric in metricsList) {
+          final start = metric.getTangentForOffset(0)?.position;
+          final end = metric.getTangentForOffset(metric.length)?.position;
+          if (start == null || end == null) {
+            continue;
+          }
+          fillPath.addPath(segment, Offset.zero);
+          fillPath
+            ..moveTo(end.dx, plot.bottom)
+            ..lineTo(start.dx, plot.bottom)
+            ..close();
+        }
+      }
+      canvas.drawPath(
+        fillPath,
+        Paint()
+          ..color = series.color.withValues(alpha: 0.08)
+          ..style = PaintingStyle.fill,
+      );
+    }
+
+    final paint = Paint()
+      ..color = series.color
+      ..strokeWidth = 2.4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    for (final segment in segments) {
+      canvas.drawPath(segment, paint);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// WheelSense chart presets (used by PairDevices and Live Monitor).
+// ---------------------------------------------------------------------------
+
+class GyroLineChart extends StatelessWidget {
+  const GyroLineChart({super.key, required this.samples});
 
   final List<M5TelemetrySample> samples;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    _drawGrid(canvas, size);
-    final values = <double>[
-      for (final sample in samples) ...[
-        sample.gyroX,
-        sample.gyroY,
-        sample.gyroZ,
+  Widget build(BuildContext context) {
+    return RealtimeLineChart(
+      unit: '°/s',
+      timestamps: [for (final s in samples) s.timestamp],
+      series: [
+        ChartSeries(
+          label: 'Gyro X',
+          color: const Color(0xFF2563EB),
+          values: [for (final s in samples) s.gyroX],
+        ),
+        ChartSeries(
+          label: 'Gyro Y',
+          color: const Color(0xFF16A34A),
+          values: [for (final s in samples) s.gyroY],
+        ),
+        ChartSeries(
+          label: 'Gyro Z',
+          color: const Color(0xFFDC2626),
+          values: [for (final s in samples) s.gyroZ],
+        ),
       ],
-    ];
-    final range = _Range.from(values, minimumSpan: 1);
-    _drawSeries(
-      canvas,
-      size,
-      samples.map((sample) => sample.gyroX).toList(),
-      range,
-      const Color(0xFF2563EB),
     );
-    _drawSeries(
-      canvas,
-      size,
-      samples.map((sample) => sample.gyroY).toList(),
-      range,
-      const Color(0xFF16A34A),
-    );
-    _drawSeries(
-      canvas,
-      size,
-      samples.map((sample) => sample.gyroZ).toList(),
-      range,
-      const Color(0xFFDC2626),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _GyroPainter oldDelegate) {
-    return oldDelegate.samples != samples;
   }
 }
 
-class _PolarPainter extends CustomPainter {
-  const _PolarPainter(this.samples);
+class MotionLineChart extends StatelessWidget {
+  const MotionLineChart({super.key, required this.samples});
+
+  final List<M5TelemetrySample> samples;
+
+  @override
+  Widget build(BuildContext context) {
+    return RealtimeLineChart(
+      unit: 'm/s',
+      timestamps: [for (final s in samples) s.timestamp],
+      series: [
+        ChartSeries(
+          label: 'Velocity',
+          color: const Color(0xFF2563EB),
+          values: [for (final s in samples) s.velocityMs],
+          minimumSpan: 0.5,
+        ),
+      ],
+    );
+  }
+}
+
+class AccelLineChart extends StatelessWidget {
+  const AccelLineChart({super.key, required this.samples});
+
+  final List<M5TelemetrySample> samples;
+
+  @override
+  Widget build(BuildContext context) {
+    return RealtimeLineChart(
+      unit: 'g',
+      timestamps: [for (final s in samples) s.timestamp],
+      series: [
+        ChartSeries(
+          label: 'Accel X',
+          color: const Color(0xFF2563EB),
+          values: [
+            for (final s in samples) s.accelX,
+          ],
+        ),
+        ChartSeries(
+          label: 'Accel Y',
+          color: const Color(0xFF16A34A),
+          values: [
+            for (final s in samples) s.accelY,
+          ],
+        ),
+        ChartSeries(
+          label: 'Accel Z',
+          color: const Color(0xFFDC2626),
+          values: [
+            for (final s in samples) s.accelZ,
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class PolarSignalChart extends StatelessWidget {
+  const PolarSignalChart({super.key, required this.samples});
 
   final List<PolarTelemetrySample> samples;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    _drawGrid(canvas, size);
-    _drawSeries(
-      canvas,
-      size,
-      samples.map((sample) => sample.heartRateBpm.toDouble()).toList(),
-      const _Range(40, 190),
-      const Color(0xFFBE123C),
+  Widget build(BuildContext context) {
+    return RealtimeLineChart(
+      unit: 'bpm',
+      timestamps: [for (final s in samples) s.timestamp],
+      series: [
+        ChartSeries(
+          label: 'HR',
+          color: const Color(0xFFBE123C),
+          values: [
+            for (final s in samples) s.heartRateBpm.toDouble(),
+          ],
+          fallbackRange: (40, 180),
+          valueFormat: (v) => v.round().toString(),
+        ),
+        ChartSeries(
+          label: 'SpO2',
+          color: const Color(0xFF7C3AED),
+          values: [for (final s in samples) s.spo2Percent?.toDouble()],
+          fallbackRange: (90, 100),
+          valueFormat: (v) => v.round().toString(),
+        ),
+        ChartSeries(
+          label: 'RSSI',
+          color: const Color(0xFF0F766E),
+          values: [for (final s in samples) s.rssi?.toDouble()],
+          fallbackRange: (-95, -45),
+          valueFormat: (v) => v.round().toString(),
+        ),
+      ],
     );
-    _drawNullableSeries(
-      canvas,
-      size,
-      samples.map((sample) => sample.spo2Percent?.toDouble()).toList(),
-      const _Range(80, 100),
-      const Color(0xFF7C3AED),
-    );
-    _drawSeries(
-      canvas,
-      size,
-      samples.map((sample) => (sample.rssi ?? -100).toDouble()).toList(),
-      const _Range(-100, -30),
-      const Color(0xFF0F766E),
-    );
   }
-
-  @override
-  bool shouldRepaint(covariant _PolarPainter oldDelegate) {
-    return oldDelegate.samples != samples;
-  }
-}
-
-class _Range {
-  const _Range(this.min, this.max);
-
-  factory _Range.from(List<double> values, {required double minimumSpan}) {
-    final rawMin = values.reduce(math.min);
-    final rawMax = values.reduce(math.max);
-    if ((rawMax - rawMin).abs() >= minimumSpan) {
-      final padding = (rawMax - rawMin) * 0.12;
-      return _Range(rawMin - padding, rawMax + padding);
-    }
-    return _Range(rawMin - minimumSpan, rawMax + minimumSpan);
-  }
-
-  final double min;
-  final double max;
-}
-
-void _drawGrid(Canvas canvas, Size size) {
-  final paint = Paint()
-    ..color = const Color(0xFFE1EAF5)
-    ..strokeWidth = 1;
-  for (var i = 0; i <= 4; i += 1) {
-    final y = size.height * i / 4;
-    canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-  }
-}
-
-void _drawSeries(
-  Canvas canvas,
-  Size size,
-  List<double> values,
-  _Range range,
-  Color color,
-) {
-  if (values.length < 2) {
-    return;
-  }
-  final paint = Paint()
-    ..color = color
-    ..strokeWidth = 2.4
-    ..style = PaintingStyle.stroke
-    ..strokeCap = StrokeCap.round
-    ..strokeJoin = StrokeJoin.round;
-  final path = Path();
-  for (var index = 0; index < values.length; index += 1) {
-    final x = size.width * index / (values.length - 1);
-    final ratio = ((values[index] - range.min) / (range.max - range.min)).clamp(
-      0.0,
-      1.0,
-    );
-    final y = size.height - ratio * size.height;
-    if (index == 0) {
-      path.moveTo(x, y);
-    } else {
-      path.lineTo(x, y);
-    }
-  }
-  canvas.drawPath(path, paint);
-}
-
-void _drawNullableSeries(
-  Canvas canvas,
-  Size size,
-  List<double?> values,
-  _Range range,
-  Color color,
-) {
-  if (values.whereType<double>().length < 2) {
-    return;
-  }
-  final paint = Paint()
-    ..color = color
-    ..strokeWidth = 2.4
-    ..style = PaintingStyle.stroke
-    ..strokeCap = StrokeCap.round
-    ..strokeJoin = StrokeJoin.round;
-  final path = Path();
-  var hasActiveSegment = false;
-  for (var index = 0; index < values.length; index += 1) {
-    final value = values[index];
-    if (value == null) {
-      hasActiveSegment = false;
-      continue;
-    }
-    final x = size.width * index / (values.length - 1);
-    final ratio = ((value - range.min) / (range.max - range.min)).clamp(
-      0.0,
-      1.0,
-    );
-    final y = size.height - ratio * size.height;
-    if (!hasActiveSegment) {
-      path.moveTo(x, y);
-      hasActiveSegment = true;
-    } else {
-      path.lineTo(x, y);
-    }
-  }
-  canvas.drawPath(path, paint);
 }

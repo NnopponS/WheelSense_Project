@@ -3,7 +3,6 @@
 import { TrendingDown, TrendingUp, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "@/lib/i18n";
 
 interface KPIStatCardProps {
   value: string | number;
@@ -20,15 +19,15 @@ interface KPIStatCardProps {
 }
 
 const statusColors = {
-  good: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  warning: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  good: "bg-success/10 text-success-foreground border-success/20",
+  warning: "bg-warning/10 text-warning-foreground border-warning/20",
   critical: "bg-destructive/10 text-destructive border-destructive/20",
   neutral: "bg-muted/50 text-muted-foreground border-border",
 };
 
 const statusIconColors = {
-  good: "text-emerald-500",
-  warning: "text-amber-500",
+  good: "text-success-foreground",
+  warning: "text-warning-foreground",
   critical: "text-destructive",
   neutral: "text-muted-foreground",
 };
@@ -42,8 +41,6 @@ export function KPIStatCard({
   onClick,
   className,
 }: KPIStatCardProps) {
-  const { t } = useTranslation();
-
   return (
     <Card
       className={cn(

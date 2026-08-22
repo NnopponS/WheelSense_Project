@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'screens/operations_screen.dart';
+import 'screens/live_monitor_screen.dart';
+import 'screens/node_radar_screen.dart';
 import 'screens/overview_screen.dart';
 import 'screens/pair_devices_screen.dart';
+import 'screens/polar_studio_screen.dart';
 import 'screens/portal_webview_screen.dart';
 import 'screens/server_setup_screen.dart';
 import 'services/gateway_services.dart';
+import 'theme/app_palette.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -44,7 +47,9 @@ class _WheelSenseGatewayAppState extends State<WheelSenseGatewayApp> {
           return MaterialApp(
             onGenerateTitle: (context) => context.text.appTitle,
             debugShowCheckedModeBanner: false,
-            theme: buildWheelSenseTheme(),
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            themeMode: ThemeMode.system,
             locale: Locale(_localeController.language.code),
             supportedLocales: const [Locale('en'), Locale('th')],
             localizationsDelegates: const [
@@ -184,31 +189,46 @@ class _GatewayShellState extends State<GatewayShell>
         icon: Icons.dashboard_outlined,
         selectedIcon: Icons.dashboard,
         screen: OverviewScreen(
-          onOpenDevices: () => _selectDestination(1),
-          onOpenSettings: () => _selectDestination(4),
+          onOpenDevices: () => _selectDestination(5),
+          onOpenMonitor: () => _selectDestination(1),
+          onOpenSettings: () => _selectDestination(6),
           onStartGateway: () {
             unawaited(_runtime.resumeGateway(autoStartBle: true));
           },
         ),
       ),
       _ShellDestination(
-        label: strings.navDevices,
-        icon: Icons.sensors_outlined,
-        selectedIcon: Icons.sensors,
-        screen: const PairDevicesScreen(),
+        label: strings.navMonitor,
+        icon: Icons.monitor_heart_outlined,
+        selectedIcon: Icons.monitor_heart_rounded,
+        screen: LiveMonitorScreen(
+          onOpenDevices: () => _selectDestination(5),
+        ),
       ),
       _ShellDestination(
-        label: strings.navOperations,
-        icon: Icons.monitor_heart_outlined,
-        selectedIcon: Icons.monitor_heart,
-        screen: OperationsScreen(onOpenPortal: () => _selectDestination(3)),
+        label: strings.navPolarStudio,
+        icon: Icons.favorite_outline_rounded,
+        selectedIcon: Icons.favorite_rounded,
+        screen: const PolarStudioScreen(),
+      ),
+      _ShellDestination(
+        label: strings.navNodeRadar,
+        icon: Icons.radar_outlined,
+        selectedIcon: Icons.radar_rounded,
+        screen: const NodeRadarScreen(),
       ),
       _ShellDestination(
         label: strings.navPortal,
         icon: Icons.web_asset_outlined,
-        selectedIcon: Icons.web_asset,
+        selectedIcon: Icons.web_asset_rounded,
         screen: const PortalWebViewScreen(),
         fullBleed: true,
+      ),
+      _ShellDestination(
+        label: strings.navDevices,
+        icon: Icons.sensors_outlined,
+        selectedIcon: Icons.sensors,
+        screen: const PairDevicesScreen(),
       ),
       _ShellDestination(
         label: strings.navSettings,
@@ -255,29 +275,16 @@ class _BrandMark extends StatelessWidget {
         height: 44,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF0E7490), Color(0xFF22D3EE)],
+            colors: [AppPalette.brandStrong, AppPalette.brandLuminous],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Image.asset(
-              'assets/brand/logo.png',
-              width: 30,
-              height: 30,
-              errorBuilder: (_, _, _) => Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-              ),
-            ),
-          ],
+        child: const Icon(
+          Icons.accessibility_new_rounded,
+          color: Colors.white,
+          size: 24,
         ),
       ),
     );
@@ -311,8 +318,19 @@ class _ShellHeader extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('WheelSense', style: theme.textTheme.labelLarge),
-                Text(title, style: theme.textTheme.titleLarge),
+                Text(
+                  'WheelSense Platform',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppPalette.brand,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
           ),
@@ -329,8 +347,8 @@ class _ConnectionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
     final runtime = GatewayServicesScope.of(context);
+
     return StreamBuilder<GatewayStatus>(
       stream: runtime.statuses,
       initialData: runtime.status,
@@ -353,7 +371,7 @@ class _ConnectionPill extends StatelessWidget {
                 Icon(
                   Icons.circle,
                   size: 10,
-                  color: online ? const Color(0xFF15803D) : colors.secondary,
+                  color: online ? AppPalette.success : colors.secondary,
                 ),
                 const SizedBox(width: 8),
                 Text(_label(context, status.mode)),

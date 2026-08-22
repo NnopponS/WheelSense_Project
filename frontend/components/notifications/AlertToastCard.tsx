@@ -48,11 +48,11 @@ export function AlertToastCard({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
         queryClient.invalidateQueries({ queryKey: ["head-nurse", "alerts"] }),
-        queryClient.invalidateQueries({ queryKey: ["observer", "alerts"] }),
-        queryClient.invalidateQueries({ queryKey: ["supervisor", "emergency"] }),
-        queryClient.invalidateQueries({ queryKey: ["observer", "dashboard", "alerts"] }),
+        queryClient.invalidateQueries({ queryKey: ["caregiver", "alerts"] }),
+        queryClient.invalidateQueries({ queryKey: ["head_caregiver", "emergency"] }),
+        queryClient.invalidateQueries({ queryKey: ["caregiver", "dashboard", "alerts"] }),
         queryClient.invalidateQueries({ queryKey: ["head-nurse", "dashboard", "alerts"] }),
-        queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "alerts"] }),
+        queryClient.invalidateQueries({ queryKey: ["head_caregiver", "dashboard", "alerts"] }),
       ]);
     } catch {
       sonnerToast.error(t("notifications.toastAckFailed"));
@@ -64,27 +64,29 @@ export function AlertToastCard({
   return (
     <div
       className={cn(
-        "pointer-events-auto w-[min(100vw-1.5rem,22rem)] rounded-lg border border-border bg-card p-3 text-left shadow-lg",
+        "pointer-events-auto w-[min(100vw-1.5rem,24rem)] rounded-xl border border-border bg-card p-4 text-left shadow-lg",
         "border-l-[3px] border-l-muted-foreground/35",
         visualEmphasis === "interrupt" && "ws-alert-toast-interrupt p-3.5",
       )}
+      role={visualEmphasis === "interrupt" ? "alert" : "status"}
+      aria-live={visualEmphasis === "interrupt" ? "assertive" : "polite"}
     >
-      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      <p className="text-sm font-medium text-muted-foreground">
         {alertType}
       </p>
       <p
         className={cn(
           "mt-1 font-semibold leading-snug text-foreground",
-          visualEmphasis === "interrupt" ? "text-base" : "text-sm",
+          visualEmphasis === "interrupt" ? "text-lg" : "text-base",
         )}
       >
         {title}
       </p>
       {description ? (
-        <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
+        <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
       {patientContext ? (
-        <div className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+        <div className="mt-2 space-y-0.5 text-sm text-muted-foreground">
           <p className="font-medium text-foreground/90">{patientContext.nameLine}</p>
           <p>{patientContext.roomLine}</p>
         </div>

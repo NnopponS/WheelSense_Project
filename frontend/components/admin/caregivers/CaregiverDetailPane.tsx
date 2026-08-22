@@ -48,7 +48,6 @@ import {
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
-import { canonicalizeRole } from "@/lib/roles";
 import { formatStaffRoleLabel } from "@/lib/staffRoleLabel";
 import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/profileImageProcess";
 
@@ -187,12 +186,6 @@ function roomSearchText(room: Room): string {
     .join(" ");
 }
 
-function formatShiftType(value: string): string {
-  const found = SHIFT_TYPE_OPTIONS.find((option) => option.value === value);
-  if (found) return found.label;
-  return value || "-";
-}
-
 const SHIFT_BADGE: Record<string, string> = {
   regular: "bg-primary-fixed/60 text-primary",
   overtime: "bg-tertiary-fixed/60 text-tertiary",
@@ -230,6 +223,7 @@ function ZoneDialog({
   onClose: () => void;
   onSubmit: () => void;
 }) {
+  const { t } = useTranslation();
   const zoneNameInputId = useId();
   const roomLabelId = useId();
   const roomInputId = useId();
@@ -244,16 +238,16 @@ function ZoneDialog({
     >
       <DialogContent className="w-[min(100%-1.5rem,42rem)] max-h-[92vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Add zone" : "Edit zone"}</DialogTitle>
+          <DialogTitle>{mode === "create" ? t("caregivers.addZone") : t("caregivers.editZone")}</DialogTitle>
           <DialogDescription>
-            Assign the zone to a room and keep the ward map aligned.
+            {t("caregivers.zoneDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 px-6 pb-2 pt-1">
           <div>
             <label htmlFor={zoneNameInputId} className="text-xs font-medium text-foreground-variant">
-              Zone name
+              {t("caregivers.zoneName")}
             </label>
             <input
               id={zoneNameInputId}
@@ -262,7 +256,7 @@ function ZoneDialog({
               onChange={(e) =>
                 setDraft((prev) => ({ ...prev, zoneName: e.target.value }))
               }
-              placeholder="Ward A / Night round / Mobility watch"
+              placeholder={t("caregivers.zoneNamePlaceholder")}
             />
           </div>
 
@@ -272,7 +266,7 @@ function ZoneDialog({
               htmlFor={roomInputId}
               className="text-xs font-medium text-foreground-variant"
             >
-              Room
+              {t("floorplan.label")}
             </label>
             <div className="mt-1">
               <SearchableListboxPicker
@@ -282,14 +276,14 @@ function ZoneDialog({
                 options={roomOptions}
                 search={roomSearch}
                 onSearchChange={setRoomSearch}
-                searchPlaceholder="Search by facility, floor, room, id, node"
+                searchPlaceholder={t("caregivers.roomSearchPlaceholder")}
                 selectedOptionId={
                   draft.roomId === null ? ROOM_NONE_ID : String(draft.roomId)
                 }
                 onSelectOption={(id) => {
                   if (id === ROOM_NONE_ID) {
                     setDraft((prev) => ({ ...prev, roomId: null }));
-                    setRoomSearch("No room");
+                    setRoomSearch(t("floorplan.summaryNone"));
                     return;
                   }
                   const selected = roomOptions.find((opt) => opt.id === id);
@@ -302,9 +296,9 @@ function ZoneDialog({
                   setRoomSearch(selectedTitle);
                 }}
                 disabled={roomLoading}
-                listboxAriaLabel="Select room"
-                noMatchMessage="No matching rooms"
-                emptyStateMessage="No rooms available in this workspace"
+                listboxAriaLabel={t("floorplan.selectRoom")}
+                noMatchMessage={t("caregivers.noMatchingRooms")}
+                emptyStateMessage={t("caregivers.noRoomsAvailable")}
                 emptyNoMatch={roomEmptyNoMatch}
                 listPresentation="portal"
                 listboxZIndex={170}
@@ -312,7 +306,7 @@ function ZoneDialog({
             </div>
             {roomEmptyPool ? (
               <p className="mt-1 text-xs text-foreground-variant">
-                No rooms are available yet. You can still leave this zone unassigned.
+                {t("caregivers.noRoomsHint")}
               </p>
             ) : null}
           </div>
@@ -320,7 +314,7 @@ function ZoneDialog({
           {mode === "edit" ? (
             <div>
               <label className="text-xs font-medium text-foreground-variant">
-                Active status
+                {t("caregivers.activeStatus")}
               </label>
               <Select
                 value={draft.isActive ? "active" : "inactive"}
@@ -332,17 +326,17 @@ function ZoneDialog({
                 }
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={t("caregivers.selectStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="active">{t("patients.statusActive")}</SelectItem>
+                  <SelectItem value="inactive">{t("patients.statusInactive")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           ) : (
             <p className="text-xs text-foreground-variant">
-              New zones are created as active assignments.
+              {t("caregivers.newZoneActiveHint")}
             </p>
           )}
 
@@ -356,7 +350,7 @@ function ZoneDialog({
             onClick={onClose}
             disabled={submitting}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -364,7 +358,11 @@ function ZoneDialog({
             onClick={onSubmit}
             disabled={submitting}
           >
-            {submitting ? "Saving..." : mode === "create" ? "Add zone" : "Save changes"}
+            {submitting
+              ? t("common.saving")
+              : mode === "create"
+                ? t("caregivers.addZone")
+                : t("caregivers.editStaffSave")}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -391,6 +389,7 @@ function ShiftDialog({
   onClose: () => void;
   onSubmit: () => void;
 }) {
+  const { t } = useTranslation();
   const shiftDateInputId = useId();
   const startTimeInputId = useId();
   const endTimeInputId = useId();
@@ -405,9 +404,9 @@ function ShiftDialog({
     >
       <DialogContent className="w-[min(100%-1.5rem,42rem)] max-h-[92vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Add shift" : "Edit shift"}</DialogTitle>
+          <DialogTitle>{mode === "create" ? t("caregivers.addShift") : t("caregivers.editShift")}</DialogTitle>
           <DialogDescription>
-            Keep the shift schedule consistent with structured date and time fields.
+            {t("caregivers.shiftDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -418,7 +417,7 @@ function ShiftDialog({
                 htmlFor={shiftDateInputId}
                 className="text-xs font-medium text-foreground-variant"
               >
-                Shift date
+                {t("caregivers.shiftDate")}
               </label>
               <input
                 id={shiftDateInputId}
@@ -432,7 +431,7 @@ function ShiftDialog({
             </div>
             <div>
               <label className="text-xs font-medium text-foreground-variant">
-                Shift type
+                {t("caregivers.shiftType")}
               </label>
               <Select
                 value={draft.shiftType}
@@ -441,12 +440,12 @@ function ShiftDialog({
                 }
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t("caregivers.selectShiftType")} />
                 </SelectTrigger>
                 <SelectContent>
                   {SHIFT_TYPE_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(`caregivers.shiftType.${option.value}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -460,7 +459,7 @@ function ShiftDialog({
                 htmlFor={startTimeInputId}
                 className="text-xs font-medium text-foreground-variant"
               >
-                Start time
+                {t("caregivers.startTime")}
               </label>
               <input
                 id={startTimeInputId}
@@ -477,7 +476,7 @@ function ShiftDialog({
                 htmlFor={endTimeInputId}
                 className="text-xs font-medium text-foreground-variant"
               >
-                End time
+                {t("caregivers.endTime")}
               </label>
               <input
                 id={endTimeInputId}
@@ -496,14 +495,14 @@ function ShiftDialog({
               htmlFor={notesInputId}
               className="text-xs font-medium text-foreground-variant"
             >
-              Notes
+              {t("adminCaregivers.notesLabel")}
             </label>
             <textarea
               id={notesInputId}
               className="input-field mt-1 min-h-[96px] w-full resize-y text-sm"
               value={draft.notes}
               onChange={(e) => setDraft((prev) => ({ ...prev, notes: e.target.value }))}
-              placeholder="Optional handoff or schedule notes"
+              placeholder={t("caregivers.shiftNotesPlaceholder")}
             />
           </div>
 
@@ -517,7 +516,7 @@ function ShiftDialog({
             onClick={onClose}
             disabled={submitting}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -525,7 +524,11 @@ function ShiftDialog({
             onClick={onSubmit}
             disabled={submitting}
           >
-            {submitting ? "Saving..." : mode === "create" ? "Add shift" : "Save changes"}
+            {submitting
+              ? t("common.saving")
+              : mode === "create"
+                ? t("caregivers.addShift")
+                : t("caregivers.editStaffSave")}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -626,8 +629,8 @@ function UserAccountItem({
                 onChange={(e) => setRole(e.target.value as User["role"])}
               >
                 <option value="admin">{t("shell.roleAdmin")}</option>
-                <option value="head_caregiver">{t("shell.roleSupervisor")}</option>
-                <option value="caregiver">{t("shell.roleObserver")}</option>
+                <option value="head_caregiver">{t("shell.roleHeadCaregiver")}</option>
+                <option value="caregiver">{t("shell.roleCaregiver")}</option>
                 <option value="patient">{t("shell.rolePatient")}</option>
               </select>
             </div>
@@ -763,8 +766,11 @@ export default function CaregiverDetailPane({
   );
   const canManageAccounts = Boolean(user && hasCapability(user.role, "users.manage"));
   const canEditCaregiverPhoto = Boolean(user && hasCapability(user.role, "patients.manage"));
-  /** Ward-lead directory: useful for caregivers/head-caregivers and for head-caregiver peer lookup (excludes self below). */
-  const showHeadNurseGuide = caregiver.role === "caregiver" || canonicalizeRole(caregiver.role) === "head_caregiver";
+  /** Ward-lead directory: useful for observers/head-caregivers and for head-nurse peer lookup (excludes self below). */
+  const showHeadNurseGuide =
+    caregiver.role === "caregiver" ||
+    caregiver.role === "head_caregiver" ||
+    caregiver.role === "head_caregiver";
 
   const roomsEndpoint = "/rooms";
   const { data: rooms, isLoading: roomsLoading } = useQuery({
@@ -828,8 +834,8 @@ export default function CaregiverDetailPane({
     retry: 3,
   });
   const headNurses = useMemo(() => {
-    const all = (allStaffCaregivers ?? []).filter((c) => canonicalizeRole(c.role) === "head_caregiver");
-    if (canonicalizeRole(caregiver.role) === "head_caregiver") {
+    const all = (allStaffCaregivers ?? []).filter((c) => c.role === "head_caregiver");
+    if (caregiver.role === "head_caregiver") {
       return all.filter((c) => c.id !== caregiver.id);
     }
     return all;
@@ -862,7 +868,7 @@ export default function CaregiverDetailPane({
     [linkedUserIds, staffSchedulesQuery.data],
   );
   const hasAnyHeadNurseInWorkspace = useMemo(
-    () => (allStaffCaregivers ?? []).some((c) => canonicalizeRole(c.role) === "head_caregiver"),
+    () => (allStaffCaregivers ?? []).some((c) => c.role === "head_caregiver"),
     [allStaffCaregivers],
   );
   const refetchShifts = useCallback(() => refetchOrThrow(refetchShiftsBase), [refetchShiftsBase]);
@@ -1340,7 +1346,7 @@ export default function CaregiverDetailPane({
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("personnel.firstName")}</span><input className="input-field w-full text-sm" value={profileDraft.first_name} onChange={(e) => setProfileDraft((p) => ({ ...p, first_name: e.target.value }))} /></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("personnel.lastName")}</span><input className="input-field w-full text-sm" value={profileDraft.last_name} onChange={(e) => setProfileDraft((p) => ({ ...p, last_name: e.target.value }))} /></label>
-                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={profileDraft.role} onChange={(e) => setProfileDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_caregiver">{t("shell.roleSupervisor")}</option><option value="caregiver">{t("shell.roleObserver")}</option></select></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={profileDraft.role} onChange={(e) => setProfileDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_caregiver">{t("shell.roleHeadCaregiver")}</option><option value="caregiver">{t("shell.roleCaregiver")}</option></select></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.employeeCode")}</span><input className="input-field w-full text-sm" value={profileDraft.employee_code} onChange={(e) => setProfileDraft((p) => ({ ...p, employee_code: e.target.value }))} /></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.department")}</span><input className="input-field w-full text-sm" value={profileDraft.department} onChange={(e) => setProfileDraft((p) => ({ ...p, department: e.target.value }))} /></label>
                     <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.specialty")}</span><input className="input-field w-full text-sm" value={profileDraft.specialty} onChange={(e) => setProfileDraft((p) => ({ ...p, specialty: e.target.value }))} /></label>
@@ -1498,7 +1504,7 @@ export default function CaregiverDetailPane({
                   {headNursesLoading ? (
                     <div className="flex justify-center py-6"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
                   ) : headNurses.length === 0 ? (
-                    <p className="text-sm text-foreground-variant">{canonicalizeRole(caregiver.role) === "head_caregiver" && hasAnyHeadNurseInWorkspace ? t("caregivers.headNursesPeerOnlySelf") : t("caregivers.headNursesEmpty")}</p>
+                    <p className="text-sm text-foreground-variant">{caregiver.role === "head_caregiver" && hasAnyHeadNurseInWorkspace ? t("caregivers.headNursesPeerOnlySelf") : t("caregivers.headNursesEmpty")}</p>
                   ) : (
                     <ul className="divide-y divide-outline-variant/10">
                       {headNurses.map((hn) => (
@@ -1530,7 +1536,7 @@ export default function CaregiverDetailPane({
                   <h2 className="text-sm font-semibold text-foreground">{t("patients.sectionLinkedAccounts")}</h2>
                 </div>
                 {linkedUsers.length === 0 ? (
-                  <p className="text-sm text-foreground-variant">No user account linked to this caregiver record.</p>
+                  <p className="text-sm text-foreground-variant">{t("caregivers.noLinkedAccountRecord")}</p>
                 ) : (
                   <ul className="space-y-3" role="list">
                     {linkedUsers.map((u) => (
@@ -1561,7 +1567,7 @@ export default function CaregiverDetailPane({
                     <h2 className="text-sm font-semibold text-foreground">{t("caregivers.sectionZones")}</h2>
                   </div>
                   {canManageSchedule && (
-                    <button type="button" className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={openCreateZone}>+ Add</button>
+                    <button type="button" className="min-h-11 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90" onClick={openCreateZone}>+ {t("common.add")}</button>
                   )}
                 </div>
                 {zonesLoading ? (
@@ -1580,17 +1586,17 @@ export default function CaregiverDetailPane({
                             <div className="min-w-0">
                               <p className="font-semibold text-foreground text-sm">{z.zone_name || formatRoomLabel(room) || "—"}</p>
                               <p className="text-foreground-variant">{formatRoomContext(room)}</p>
-                              <p className="text-foreground-variant">Patients: {patientCount}</p>
+                              <p className="text-foreground-variant">{t("dashboard.ward.patients")}: {patientCount}</p>
                             </div>
                             <div className="flex flex-col items-end gap-1">
                               <span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${z.is_active ? "care-normal" : "bg-surface-container text-outline"}`}>{z.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
-                              {mapHref && <Link href={mapHref} className="text-[9px] font-semibold uppercase text-primary hover:underline">Map</Link>}
+                              {mapHref && <Link href={mapHref} className="text-sm font-semibold text-primary hover:underline">{t("dashboard.map.openMap")}</Link>}
                             </div>
                           </div>
                           {canManageSchedule && (
                             <div className="mt-2 flex gap-2">
-                              <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => openEditZone(z)}>Edit</button>
-                              <button type="button" className="text-xs font-semibold text-critical hover:underline" onClick={() => void handleDeleteZone(z.id)}>Delete</button>
+                              <button type="button" className="text-sm font-semibold text-primary hover:underline" onClick={() => openEditZone(z)}>{t("common.edit")}</button>
+                              <button type="button" className="text-sm font-semibold text-critical hover:underline" onClick={() => void handleDeleteZone(z.id)}>{t("common.delete")}</button>
                             </div>
                           )}
                         </li>
@@ -1605,10 +1611,10 @@ export default function CaregiverDetailPane({
                 <div className="mb-4 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-primary" aria-hidden />
-                    <h2 className="text-sm font-semibold text-foreground">Shift schedule</h2>
+                    <h2 className="text-sm font-semibold text-foreground">{t("caregivers.shiftSchedule")}</h2>
                   </div>
                   {canManageSchedule && (
-                    <button type="button" className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={openCreateShift}>+ Add</button>
+                    <button type="button" className="min-h-11 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90" onClick={openCreateShift}>+ {t("common.add")}</button>
                   )}
                 </div>
                 {shiftsLoading ? (
@@ -1624,12 +1630,12 @@ export default function CaregiverDetailPane({
                             <p className="font-medium text-foreground">{formatDate(s.shift_date)}</p>
                             <p className="text-foreground-variant">{formatTime(s.start_time)} – {formatTime(s.end_time)}{s.notes ? ` · ${s.notes}` : ""}</p>
                           </div>
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${SHIFT_BADGE[s.shift_type] ?? "bg-surface-container text-outline"}`}>{formatShiftType(s.shift_type)}</span>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-sm font-semibold ${SHIFT_BADGE[s.shift_type] ?? "bg-surface-container text-outline"}`}>{t(`caregivers.shiftType.${s.shift_type}`)}</span>
                         </div>
                         {canManageSchedule && (
                           <div className="mt-1.5 flex gap-2">
-                            <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => openEditShift(s)}>Edit</button>
-                            <button type="button" className="text-xs font-semibold text-critical hover:underline" onClick={() => void handleDeleteShift(s.id)}>Delete</button>
+                            <button type="button" className="text-sm font-semibold text-primary hover:underline" onClick={() => openEditShift(s)}>{t("common.edit")}</button>
+                            <button type="button" className="text-sm font-semibold text-critical hover:underline" onClick={() => void handleDeleteShift(s.id)}>{t("common.delete")}</button>
                           </div>
                         )}
                       </li>

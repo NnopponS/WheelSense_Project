@@ -27,6 +27,9 @@ services:
 
   wheelsense-simulator:
     # No fixed container_name: avoids conflict with orphaned containers from older stacks
+    labels:
+      org.opencontainers.image.title: "Ease AI Simulator"
+      org.opencontainers.image.description: "Ease AI deterministic MQTT simulator"
     build:
       context: .
       dockerfile: Dockerfile.simulator

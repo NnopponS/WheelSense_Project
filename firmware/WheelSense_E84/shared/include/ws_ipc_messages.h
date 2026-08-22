@@ -25,6 +25,11 @@
 #define WS_PAYLOAD_CAL_CMD_SIZE  6u  /* u16 + f32 */
 #define WS_PAYLOAD_DIAG_SIZE     6u  /* u16 + u32 */
 
+/* Boot-time hardware diagnostic IDs. */
+#define WS_DIAG_EVENT_CM33_NS_BOOT_READY 0x0001u
+#define WS_DIAG_EVENT_CM55_BOOT_ACK       0x0002u
+#define WS_DIAG_EVENT_CM33_NS_ACK         0x0003u
+
 /* --- Payload size accessor --- */
 
 /*

@@ -10,6 +10,7 @@ import {
   getNavConfig,
   filterNavItemsByCapability,
   partitionNavByGroup,
+  isNavItemActive,
   type RoleNavConfig,
   type NavItem,
 } from "@/lib/sidebarConfig";
@@ -73,7 +74,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
   const router = useRouter();
   const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreExpanded, setMoreExpanded] = useState(false);
 
   const navConfig: RoleNavConfig = user ? getNavConfig(user.role) : [];
 
@@ -83,6 +84,10 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
     : [];
 
   const { primary: primaryConfig, more: moreItems } = partitionNavByGroup(filteredConfig);
+  const moreHasActiveItem = moreItems.some((item) =>
+    isNavItemActive(item, pathname, searchParams, user?.role),
+  );
+  const moreOpen = moreHasActiveItem || moreExpanded;
 
   function handleLogout() {
     logout();
@@ -90,27 +95,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
   }
 
   function isActive(item: NavItem): boolean {
-    if (item.activeForPaths?.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
-    const base = item.href.split("?")[0];
-
-    if (item.activeWhenQueryMatch) {
-      const { param, value } = item.activeWhenQueryMatch;
-      if (!(pathname === base || pathname.startsWith(`${base}/`))) return false;
-      return searchParams.get(param) === value;
-    }
-
-    const rolePath = user?.role ? user.role.replaceAll("_", "-") : "";
-    const isRoleRoot =
-      base === `/${rolePath}` ||
-      (user?.role === "admin" && base === "/admin");
-    if (isRoleRoot) {
-      if (item.inactiveWhenQueryMatch && pathname === base) {
-        const { param, value } = item.inactiveWhenQueryMatch;
-        if (searchParams.get(param) === value) return false;
-      }
-      return pathname === base;
-    }
-    return pathname === base || pathname.startsWith(`${base}/`);
+    return isNavItemActive(item, pathname, searchParams, user?.role);
   }
 
   function closeMobileNav() {
@@ -127,16 +112,15 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
         href={item.href}
         onClick={closeMobileNav}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium transition-colors group",
+          "group flex min-h-12 items-center gap-3 rounded-lg border-l-4 px-3 py-2 text-base font-medium transition-colors",
           active
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            ? "border-primary bg-[var(--ws-selected-surface)] text-[var(--ws-selected-foreground)]"
+            : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
+        aria-current={active ? "page" : undefined}
       >
-        <Icon className={cn("h-6 w-6 shrink-0", active ? "text-primary-foreground" : "text-muted-foreground")} />
-        <span className="flex-1">{t(item.key)}</span>
-        {item.badge && <span className="ml-auto flex h-2 w-2 rounded-full bg-destructive" />}
-        {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+        <Icon className={cn("h-6 w-6 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden="true" />
+        <span className="line-clamp-2 flex-1">{t(item.key)}</span>
       </Link>
     );
   }
@@ -150,8 +134,8 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
             <Logo size={28} className="text-primary" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-bold leading-tight text-foreground">{t("shell.platformName")}</h1>
-            <p className="text-xs text-muted-foreground">{t("shell.platformSubtitle")}</p>
+            <p className="truncate text-base font-bold leading-tight text-foreground">{t("shell.platformName")}</p>
+            <p className="text-sm text-muted-foreground">{t("shell.platformSubtitle")}</p>
           </div>
         </div>
 
@@ -176,7 +160,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
                 <div>
                   <button
                     type="button"
-                    onClick={() => setMoreOpen((v) => !v)}
+                    onClick={() => setMoreExpanded((value) => !value)}
                     aria-expanded={moreOpen}
                     aria-controls="role-sidebar-more-list"
                     className={cn(
@@ -184,13 +168,14 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
                       "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
-                    <MoreHorizontal className="h-6 w-6 shrink-0 text-muted-foreground" />
+                    <MoreHorizontal className="h-6 w-6 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <span className="flex-1 text-left">{t("nav.more")}</span>
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 shrink-0 transition-transform",
                         moreOpen ? "rotate-180" : "rotate-0",
                       )}
+                      aria-hidden="true"
                     />
                   </button>
                   {moreOpen && (
@@ -214,7 +199,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
             }}
             className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
-            <LogOut className="h-6 w-6 shrink-0" />
+            <LogOut className="h-6 w-6 shrink-0" aria-hidden="true" />
             <span className="flex-1 text-left">{t("auth.logout")}</span>
           </button>
         </div>
@@ -229,7 +214,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
               <UserAvatar username={user.username} profileImageUrl={user.profile_image_url} sizePx={32} />
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{user.username}</p>
-                <p className="text-xs text-muted-foreground">{t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}</p>
+                <p className="text-sm text-muted-foreground">{t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}</p>
               </div>
             </Link>
           </div>

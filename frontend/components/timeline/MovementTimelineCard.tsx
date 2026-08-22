@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import type { TimelineEventOut } from "@/lib/api/task-scope-types";
+import { useTranslation } from "@/lib/i18n";
 
 type TimelineEventLike = Partial<TimelineEventOut> & {
   id?: number | string;
@@ -174,6 +175,7 @@ export function MovementTimelineCard({
   embedded = false,
   className,
 }: MovementTimelineCardProps) {
+  const { t } = useTranslation();
   const sortedEvents = useMemo(() => {
     return [...events]
       .filter((event) => Boolean(event.timestamp || event.description || event.event_type))
@@ -191,7 +193,9 @@ export function MovementTimelineCard({
   );
 
   const latest = sortedEvents[sortedEvents.length - 1] ?? null;
-  const title = roomLabel?.trim() ? `Movement History - ${roomLabel.trim()}` : "Movement History";
+  const title = roomLabel?.trim()
+    ? `${t("timeline.movementHistory")} - ${roomLabel.trim()}`
+    : t("timeline.movementHistory");
   const shellClass = embedded
     ? "rounded-xl border border-outline-variant/25 bg-surface/70"
     : "rounded-2xl border border-outline-variant/25 bg-surface shadow-sm";
@@ -216,23 +220,23 @@ export function MovementTimelineCard({
           </div>
         </div>
         <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground sm:items-end">
-          <span>{latest?.timestamp ? formatDateTime(latest.timestamp) : "No recent timestamp"}</span>
+          <span>{latest?.timestamp ? formatDateTime(latest.timestamp) : t("timeline.noTimestamp")}</span>
           <Badge variant="outline" className="rounded-full">
-            Latest {sortedEvents.length} event{sortedEvents.length === 1 ? "" : "s"}
+            {t("timeline.latestEvents")} {sortedEvents.length}
           </Badge>
         </div>
       </div>
 
       {sortedEvents.length === 0 ? (
         <div className="mt-4 rounded-xl border border-dashed border-outline-variant/40 bg-muted/20 p-4 text-sm text-muted-foreground">
-          No timeline events recorded yet.
+          {t("timeline.movementEmpty")}
         </div>
       ) : (
         <div className={cn("mt-4 grid gap-4", !compact && geometryPoints.length > 0 ? "lg:grid-cols-[0.95fr_1.05fr]" : "grid-cols-1")}>
           <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/45 p-3">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
               <Route className="h-4 w-4 text-primary" />
-              Movement Timeline
+              {t("timeline.movementTitle")}
             </div>
             <ol className="space-y-0">
               {sortedEvents.map((event, index) => (
@@ -246,7 +250,7 @@ export function MovementTimelineCard({
                     <p className="truncate text-sm font-medium text-foreground">{eventLocation(event)}</p>
                     <p className="truncate text-xs text-muted-foreground">{prettyEventType(event.event_type)}</p>
                     <p className="truncate text-[11px] text-muted-foreground/80">
-                      Provenance: {eventSourceLabel(event)}
+                      {t("timeline.provenance")}: {eventSourceLabel(event)}
                     </p>
                   </div>
                 </li>
@@ -254,8 +258,12 @@ export function MovementTimelineCard({
             </ol>
             <div className="mt-2 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-foreground">
               <Footprints className="h-4 w-4 text-primary" />
-              <span>Total distance:</span>
-              <span className="tabular-nums">{totalDistance > 0 ? `${Math.round(totalDistance)} meters` : "not reported"}</span>
+              <span>{t("timeline.totalDistance")}:</span>
+              <span className="tabular-nums">
+                {totalDistance > 0
+                  ? `${Math.round(totalDistance)} ${t("timeline.meters")}`
+                  : t("timeline.notReported")}
+              </span>
             </div>
           </div>
 

@@ -46,7 +46,7 @@ from app.agent_runtime.entity_resolution import (
 from app.agent_runtime.task_request import normalize_task_arguments
 
 logger = logging.getLogger("wheelsense.llm_tool_router")
-_AI_RESPONSE_TIMEOUT_SECONDS = 45
+_AI_RESPONSE_TIMEOUT_SECONDS = 90
 
 MCP_TOOL_READ_ONLY_ROUTING: frozenset[str] = read_only_tools(frozenset(_WORKSPACE_TOOL_REGISTRY.keys()))
 
@@ -174,7 +174,10 @@ def _validate_calls_for_role(
 
 def _explicitly_requests_patient_list(message: str) -> bool:
     lowered = (message or "").lower()
-    return bool(re.search(r"\b(?:list|show|display)\b.*\bpatients?\b", lowered))
+    return bool(
+        re.search(r"\b(?:list|show|display)\b.*\bpatients?\b", lowered)
+        or re.search(r"\b(?:who|where)\s+(?:is|are)\s+[A-Z]", message or "")
+    )
 
 
 def _normalize_task_creation_calls(message: str, calls: list[ParsedToolCall]) -> list[ParsedToolCall]:
@@ -206,7 +209,17 @@ def _router_system_prompt(role: str) -> str:
         "Pick zero or more MCP tools that best satisfy the latest user message. "
         "Use tools for WheelSense live data or mutations; respond with a normal assistant message "
         "only for pure chit-chat with no data need. "
+        "For identity/name questions like 'Who is Robert?' or 'Where is Jane?', "
+        "call `list_visible_patients` (and `list_staff` if appropriate) to find matching names, "
+        "then the system will auto-fetch details for any matches. "
         "Do not invent tool arguments; omit optional parameters when unknown. "
+        "For name lookups, leave `list_visible_patients` arguments empty. "
+        "For patient-specific tools like `get_patient_vitals` or `get_patient_timeline`, "
+        "pass `patient_id` as an integer. If you only know the patient name, "
+        "call `list_visible_patients` first and the system will resolve the name. "
+        "For medications, use `list_prescriptions` (not `list_medications`). "
+        "For floorplan/location maps, use `get_floorplan_presence` or `get_floorplan_layout` "
+        "with empty arguments to auto-resolve the default facility. "
         "For multiple independent reads you may issue multiple tool calls. "
         "Use the exact snake_case function names from the provided tool schema; never camelCase aliases. "
         "For tasks shown on `/admin/tasks`, use `list_task_management_tasks` and "
@@ -556,6 +569,83 @@ def _build_execution_plan_from_calls(
     )
 
 
+def _looks_like_identity_lookup(message: str) -> bool:
+    lowered = (message or "").lower()
+    # Match: "who is X", "where is X" with a capitalized name (avoids "who is the admin", "who are you").
+    has_name_question = bool(
+        re.search(r"\b(?:who|where)\s+(?:is|are)\s+[A-Z]", message or "")
+    )
+    # Match: "find X", "lookup X" with a name-like token (at least 2 chars, starts with letter).
+    has_find_command = bool(
+        re.search(r"\b(?:find|lookup)\s+([a-zA-Z][a-zA-Z0-9_\-. ]{1,40})", lowered)
+    )
+    return has_name_question or has_find_command
+
+
+async def _resolve_patient_id_args(
+    access_token: str,
+    tool_name: str,
+    arguments: dict[str, Any],
+    message: str,
+    cache: dict[str, int],
+    call_mcp_tool,
+) -> dict[str, Any]:
+    """If the LLM passed a patient name as patient_id, resolve it to a real int ID."""
+    # Clean patient_id: resolve string names to int IDs for any tool that has patient_id.
+    raw = arguments.get("patient_id")
+    if raw is not None and not isinstance(raw, int):
+        # It's a string — could be a name or a numeric string.
+        try:
+            arguments["patient_id"] = int(raw)
+        except (TypeError, ValueError):
+            # It's a name — look it up via list_visible_patients.
+            name_key = str(raw).strip().lower()
+            if name_key in cache:
+                arguments["patient_id"] = cache[name_key]
+            else:
+                try:
+                    rows = await call_mcp_tool(access_token, "list_visible_patients", {})
+                    if isinstance(rows, list):
+                        for row in rows:
+                            if not isinstance(row, dict):
+                                continue
+                            display = str(row.get("display_name") or row.get("nickname") or "").lower()
+                            first = str(row.get("first_name") or "").lower()
+                            last = str(row.get("last_name") or "").lower()
+                            pid = row.get("id")
+                            if pid is None:
+                                continue
+                            if name_key in display or name_key in f"{first} {last}" or name_key == first or name_key == last:
+                                cache[name_key] = int(pid)
+                                arguments["patient_id"] = int(pid)
+                                break
+                except Exception:
+                    logger.exception("patient name resolution failed for %r", raw)
+    # Clean limit: ensure it's an int.
+    raw_limit = arguments.get("limit")
+    if raw_limit is not None and not isinstance(raw_limit, int):
+        try:
+            arguments["limit"] = int(raw_limit)
+        except (TypeError, ValueError):
+            arguments.pop("limit", None)
+    # Drop None values that the LLM may have included explicitly.
+    arguments = {k: v for k, v in arguments.items() if v is not None}
+    return arguments
+
+
+def _identity_lookup_calls(role: str, message: str) -> list[ParsedToolCall]:
+    """Return list/search calls for a user-supplied name."""
+    calls: list[ParsedToolCall] = []
+    allowed = get_role_mcp_tool_allowlist().get(role, set())
+    # Try patient list first.
+    if "list_visible_patients" in allowed:
+        calls.append(ParsedToolCall(id="name_lookup_patient", name="list_visible_patients", arguments={}))
+    # Also search staff if the role can see staff.
+    if "list_staff" in allowed:
+        calls.append(ParsedToolCall(id="name_lookup_staff", name="list_staff", arguments={}))
+    return calls
+
+
 async def propose_llm_tool_turn(
     *,
     actor_access_token: str,
@@ -633,7 +723,7 @@ async def propose_llm_tool_turn(
             except Exception:
                 logger.exception("Ollama tool routing completion failed")
 
-            if not calls:
+            if not calls and not ai_chat._copilot_marked_unavailable():
                 try:
                     calls = await collect_copilot_json_tool_calls(
                         db=db,
@@ -647,14 +737,18 @@ async def propose_llm_tool_turn(
                     logger.exception("JSON tool-call fallback failed")
 
         if not calls and assistant_side_text:
-            return AgentRuntimeProposeResponse(
-                mode="answer",
-                assistant_reply=assistant_side_text,
-                grounding={
-                    "confidence": 0.9,
-                    "classification_method": "llm_tools_router_text",
-                },
-            )
+            # Deterministic fallback for identity/name lookups.
+            if _looks_like_identity_lookup(message):
+                calls = _identity_lookup_calls(role, message)
+            if not calls:
+                return AgentRuntimeProposeResponse(
+                    mode="answer",
+                    assistant_reply=assistant_side_text,
+                    grounding={
+                        "confidence": 0.9,
+                        "classification_method": "llm_tools_router_text",
+                    },
+                )
 
         calls = _validate_calls_for_role(role, calls, message=message)
         if not calls:
@@ -666,9 +760,14 @@ async def propose_llm_tool_turn(
         if all(is_tool_read_only(c.name) for c in calls):
             tool_results: list[tuple[str, Any]] = []
             routed_results: list[tuple[str, dict[str, Any], Any]] = []
+            # Pre-resolve patient name → id when the LLM passed a string patient_id.
+            patient_cache: dict[str, int] = {}
             for c in calls:
                 try:
                     arguments = dict(c.arguments)
+                    arguments = await _resolve_patient_id_args(
+                        actor_access_token, c.name, arguments, message, patient_cache, call_mcp_tool
+                    )
                     result = await call_mcp_tool(actor_access_token, c.name, arguments)
                     tool_results.append((c.name, result))
                     routed_results.append((c.name, arguments, result))

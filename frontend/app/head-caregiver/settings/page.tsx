@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function HeadCaregiverSettingsRedirectPage() {
+export default function SupervisorSettingsRedirectPage() {
   redirect("/account");
 }

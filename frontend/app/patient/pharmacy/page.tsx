@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
+import { AppPage } from "@/components/layout/AppPage";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
@@ -277,13 +278,14 @@ export default function PatientPharmacyPage() {
   const canRequest = hasPatientProfile && activePrescriptions.length > 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{t("patient.pharmacy.title")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("patient.pharmacy.subtitle")}
-        </p>
-      </div>
+    <AppPage
+      title={t("patient.pharmacy.title")}
+      description={t("patient.pharmacy.subtitle")}
+      breadcrumbs={[
+        { label: t("nav.dashboard"), href: "/patient" },
+        { label: t("nav.pharmacy") },
+      ]}
+    >
 
       <Card>
         <CardHeader>
@@ -323,7 +325,7 @@ export default function PatientPharmacyPage() {
                   )}
                 />
                 {form.formState.errors.prescriptionId ? (
-                  <p className="text-xs text-destructive">
+                  <p className="text-sm text-critical-foreground" role="alert">
                     {form.formState.errors.prescriptionId.message}
                   </p>
                 ) : null}
@@ -391,12 +393,12 @@ export default function PatientPharmacyPage() {
       <DataTableCard
         title={t("patient.pharmacy.activeRxTitle")}
         description={t("patient.pharmacy.activeRxDesc")}
+        mobileMode="cards"
         data={prescriptionRows}
         columns={prescriptionColumns}
         isLoading={prescriptionsQuery.isLoading}
         emptyText={t("patient.pharmacy.emptyActiveRx")}
         rightSlot={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
-        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-patient-prescriptions",
           headers: ["Prescription ID", "Medication", "Dosage", "Frequency", "Route", "Status", "Created"],
@@ -415,12 +417,12 @@ export default function PatientPharmacyPage() {
       <DataTableCard
         title={t("patient.pharmacy.ordersTitle")}
         description={t("patient.pharmacy.ordersDesc")}
+        mobileMode="cards"
         data={orderRows}
         columns={orderColumns}
         isLoading={ordersQuery.isLoading}
         emptyText={t("patient.pharmacy.emptyOrders")}
         rightSlot={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
-        mobileMode="cards"
         csvExport={{
           fileNameBase: "wheelsense-patient-pharmacy-orders",
           headers: ["Order ID", "Order number", "Prescription", "Pharmacy", "Quantity", "Refills remaining", "Status", "Requested", "Fulfilled"],
@@ -437,6 +439,6 @@ export default function PatientPharmacyPage() {
           ],
         }}
       />
-    </div>
+    </AppPage>
   );
 }

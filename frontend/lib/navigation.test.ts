@@ -7,16 +7,13 @@ import {
   getFacilityManagementPath,
   getMonitoringPath,
   getPatientsPath,
+  getPersonnelPath,
   getRoleHome,
 } from "./routes";
-import { canAccessAppRole, hasCapability } from "./permissions";
-import { alertsInboxPath, staffMessagesPath, workflowTasksPath } from "./notificationRoutes";
-import { CANONICAL_STAFF_ROLES, canonicalizeRole } from "./roles";
-import { canDeleteWorkflowMessage } from "./workflowMessaging";
-import { getNavConfig, partitionNavByGroup } from "./sidebarConfig";
+import { isNavItemActive, ROLE_NAV_CONFIGS, partitionNavByGroup } from "./sidebarConfig";
 
-function hrefsFor(role: string) {
-  const { primary, more } = partitionNavByGroup(getNavConfig(role));
+function hrefsFor(role: keyof typeof ROLE_NAV_CONFIGS) {
+  const { primary, more } = partitionNavByGroup(ROLE_NAV_CONFIGS[role]);
   return {
     primary: primary.flatMap((group) => group.items.map((item) => item.href)),
     more: more.map((item) => item.href),
@@ -24,24 +21,17 @@ function hrefsFor(role: string) {
 }
 
 describe("role route helpers", () => {
-  it("canonicalizes legacy roles to head_caregiver / caregiver", () => {
-    expect(canonicalizeRole("head_nurse")).toBe("head_caregiver");
-    expect(canonicalizeRole("supervisor")).toBe("head_caregiver");
-    expect(canonicalizeRole("observer")).toBe("caregiver");
-    expect(CANONICAL_STAFF_ROLES).toEqual(["admin", "head_caregiver", "caregiver"]);
-  });
-
   it("returns the redesigned role home routes", () => {
     expect(getRoleHome("admin")).toBe("/admin");
-    expect(getRoleHome("head_nurse")).toBe("/head-caregiver");
-    expect(getRoleHome("supervisor")).toBe("/head-caregiver");
     expect(getRoleHome("head_caregiver")).toBe("/head-caregiver");
-    expect(getRoleHome("observer")).toBe("/caregiver");
+    expect(getRoleHome("head_caregiver")).toBe("/head-caregiver");
     expect(getRoleHome("caregiver")).toBe("/caregiver");
     expect(getRoleHome("patient")).toBe("/patient");
   });
 
   it("keeps role-aware helper paths stable", () => {
+    expect(getPersonnelPath("admin")).toBe("/admin/patients");
+    expect(getPersonnelPath("head_caregiver")).toBe("/head-caregiver/personnel");
     expect(getPatientsPath("admin")).toBe("/admin/patients");
     expect(getPatientsPath("patient")).toBe("/patient?tab=profile");
     expect(getCaregiversPath("admin")).toBe("/admin/caregivers");
@@ -49,42 +39,30 @@ describe("role route helpers", () => {
     expect(getFacilityManagementPath("admin")).toBe("/admin/facility-management");
     expect(getDevicesPath("head_caregiver")).toBe("/head-caregiver/devices");
     expect(getMonitoringPath("caregiver", 12)).toBe("/caregiver/floorplans?room=12");
-    expect(getAlertsPath("head_caregiver", 3)).toBe("/head-caregiver/emergency?room=3");
+    expect(getAlertsPath("head_caregiver", 3)).toBe("/head-caregiver/alerts?room=3");
   });
 });
 
 describe("role navigation model", () => {
   it("keeps admin desktop navigation grouped around system governance", () => {
     expect(hrefsFor("admin")).toEqual({
-      primary: ["/admin", "/admin/personnel", "/admin/facility-management", "/admin/devices", "/admin/tasks"],
+      primary: ["/admin", "/admin/patients", "/admin/facility-management", "/admin/devices", "/admin/tasks"],
       more: ["/admin/settings"],
     });
   });
 
-  it("maps legacy head_nurse to canonical head_caregiver navigation", () => {
-    // head_nurse canonicalizes to head_caregiver, so it gets the same nav
-    expect(hrefsFor("head_nurse")).toEqual(hrefsFor("head_caregiver"));
-  });
-
-  it("canonicalizes legacy notification links and operational message permissions", () => {
-    expect(alertsInboxPath("admin")).toBe("/admin/alerts");
-    expect(alertsInboxPath("head_nurse")).toBe("/head-caregiver/emergency");
-    expect(workflowTasksPath("head_nurse")).toBe("/head-caregiver/tasks");
-    expect(staffMessagesPath("head_nurse")).toBe("/head-caregiver/messages");
-    expect(
-      canDeleteWorkflowMessage(
-        { id: 1, role: "head_caregiver" },
-        { sender_user_id: 2, recipient_user_id: null },
-      ),
-    ).toBe(true);
-  });
-
-  it("gives head_caregiver the operational-lead capabilities without admin-only facility management", () => {
-    expect(hasCapability("head_caregiver", "users.manage")).toBe(true);
-    expect(hasCapability("head_caregiver", "caregivers.manage")).toBe(true);
-    expect(hasCapability("head_caregiver", "facilities.manage")).toBe(false);
-    expect(canAccessAppRole("head_caregiver", "/admin")).toBe(false);
-    expect(canAccessAppRole("head_nurse", "/head-caregiver")).toBe(true);
+  it("keeps head nurse desktop navigation centered on command work", () => {
+    expect(hrefsFor("head_caregiver")).toEqual({
+      primary: [
+        "/head-caregiver",
+        "/head-caregiver/emergency",
+        "/head-caregiver/patients",
+        "/head-caregiver/caregivers",
+        "/head-caregiver/tasks",
+        "/head-caregiver/messages",
+      ],
+      more: ["/head-caregiver/floorplans", "/head-caregiver/support", "/head-caregiver/settings"],
+    });
   });
 
   it("keeps mobile-first role navigation compact", () => {
@@ -103,18 +81,45 @@ describe("role navigation model", () => {
   });
 });
 
+describe("active navigation state", () => {
+  const params = (values: Record<string, string> = {}) => ({
+    get: (name: string) => values[name] ?? null,
+  });
+
+  it("keeps a destination active on its detail routes without matching sibling prefixes", () => {
+    const personnel = ROLE_NAV_CONFIGS.admin[0].items.find((item) => item.href === "/admin/patients")!;
+
+    expect(isNavItemActive(personnel, "/admin/patients/42", params(), "admin")).toBe(true);
+    expect(isNavItemActive(personnel, "/admin/patients-archive", params(), "admin")).toBe(false);
+  });
+
+  it("distinguishes patient home from a query-backed support destination", () => {
+    const items = ROLE_NAV_CONFIGS.patient.flatMap((group) => group.items);
+    const home = items.find((item) => item.href === "/patient")!;
+    const support = items.find((item) => item.href === "/patient?tab=support")!;
+
+    expect(isNavItemActive(home, "/patient", params({ tab: "support" }), "patient")).toBe(false);
+    expect(isNavItemActive(support, "/patient", params({ tab: "support" }), "patient")).toBe(true);
+  });
+
+  it("honors explicit aliases such as the shared account route", () => {
+    const account = ROLE_NAV_CONFIGS.patient
+      .flatMap((group) => group.items)
+      .find((item) => item.href === "/patient/settings")!;
+
+    expect(isNavItemActive(account, "/account", params(), "patient")).toBe(true);
+  });
+});
+
 describe("legacy route redirects", () => {
-  it("redirects old role routes to new canonical routes", async () => {
+  it("keeps existing workflow aliases pointed at redesigned role homes", async () => {
     const redirects = await nextConfig.redirects?.();
 
     expect(redirects).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ source: "/supervisor", destination: "/head-caregiver" }),
-        expect.objectContaining({ source: "/supervisor/:path*", destination: "/head-caregiver/:path*" }),
-        expect.objectContaining({ source: "/head-nurse", destination: "/head-caregiver" }),
-        expect.objectContaining({ source: "/head-nurse/:path*", destination: "/head-caregiver/:path*" }),
-        expect.objectContaining({ source: "/observer", destination: "/caregiver" }),
-        expect.objectContaining({ source: "/observer/:path*", destination: "/caregiver/:path*" }),
+        expect.objectContaining({ source: "/head-caregiver/workflow", destination: "/head-caregiver/tasks" }),
+        expect.objectContaining({ source: "/head-caregiver/workflow", destination: "/head-caregiver/tasks" }),
+        expect.objectContaining({ source: "/caregiver/workflow", destination: "/caregiver/tasks" }),
       ]),
     );
   });

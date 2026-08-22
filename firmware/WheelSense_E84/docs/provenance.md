@@ -25,8 +25,10 @@ Project Creator was used because a GitHub source archive alone does not contain 
 | `shared/source/ws_ble_payloads.c` | WheelSense original (P1.5) | BLE size check implementation |
 | `shared/include/ws_ipc_queue.h` | WheelSense original (P1.6) | Bounded IPC message queue API |
 | `shared/source/ws_ipc_queue.c` | WheelSense original (P1.6) | Ring buffer FIFO with diagnostic counters and drop policy |
-| `shared/include/ws_ipc_transport.h` | WheelSense original (P1.6) | Cross-core shared memory transport API |
-| `shared/source/ws_ipc_transport.c` | WheelSense original (P1.6) | Shared-memory queue transport (sender/receiver) |
+| `shared/include/ws_ipc_transport.h` | WheelSense original (P1.6) | Cross-core transport API and target MTB-IPC shared storage |
+| `shared/source/ws_ipc_transport.c` | WheelSense original (P1.6) | Official MTB-IPC v1.2.0 target queues plus deterministic host transport |
+| `shared/include/ws_environment.h` | WheelSense original (P3) | Environment lifecycle, conversion, validation, and latest-sample publication contract |
+| `shared/source/ws_environment.c` | WheelSense original (P3) | Validated SHT4X/DPS368 latest-good cache with target critical-section protection |
 | `host_sim/tests/test_feature_matrix.c` | WheelSense original | Compile-time feature matrix |
 | `host_sim/tests/test_shared_types.c` | WheelSense original | Compile-time width/field/status checks |
 | `host_sim/tests/test_protocol.c` | WheelSense original (P1.4) | 27 golden-vector and malformed-input test cases |
@@ -45,10 +47,15 @@ Phase 1 P1.1–P1.6 did not copy TESA IPC source, old medical UI code, old-board
 |---|---|---|
 | `common.mk` | Official generated target plus WheelSense feature variables/guards | Use the Project Creator BSP and freeze build policy |
 | `proj_cm33_ns/Makefile` | Add shared include path, WheelSense compile definitions, and shared source files (P1.4/P1.5/P1.6) | Non-Secure product contract |
-| `proj_cm55/Makefile` | Add shared include path, conditional BMM350_I3C component by touch flag, unconditional MBEDTLS/LWIP/CYBSP_WIFI_CAPABLE (board capability + shared lib header requirement), conditional PREBUILD for bmm350 fix, shared source files (P1.4/P1.5/P1.6) | CM55 product contract; --gc-sections strips unused WiFi/sensor code from ELF when features off |
+| `proj_cm55/Makefile` | Add shared include path, unconditional MBEDTLS/LWIP/CYBSP_WIFI_CAPABLE (board capability + shared lib header requirement), shared source files (P1.4/P1.5/P1.6/P3), and remove the unused BMM350 component/prebuild from the BMI270-only touch profile | CM55 product contract; --gc-sections strips unused WiFi/sensor code from ELF when features off |
 | `proj_cm33_ns/main.c` | Add ws_ipc_transport sender init + shared queue in .cy_shared_socmem (P1.6) | Wire IPC sender in inter-core shared SRAM |
-| `proj_cm55/source/main.c` | Add ws_ipc_transport receiver init + shared queue in .cy_shared_socmem (P1.6) | Wire IPC receiver in inter-core shared SRAM |
-| `bsps/TARGET_APP_KIT_PSE84_AI/mtb_ipc_config.h` | Reserve IPC channel 1 and IRQs for WheelSense (P1.6) | Separate from SRF channel 0 |
+| `proj_cm55/source/main.c` | Add MTB-IPC receiver/boot handshake and environment cache initialization (P1.6/P3) | Wire cross-core coordination and target environment service lifecycle |
+| `proj_cm55/source/initd.c` | Add one internal PDM/BMI270/DPS368/SHT4X stream owner and polling task (P3/P4 checkpoint) | Start the existing upstream managers without a second hardware owner or Sensor Studio/USB runtime dependency |
+| `proj_cm55/devices/dev_bmi270.c` | Check read success before remap/data access and emit one successful-acquisition diagnostic (P3) | Fail closed on bus errors and prove real-board acquisition without enabling motion AI |
+| `proj_cm55/devices/dev_dps368.c` | Publish successful converted samples; fail closed on register-read errors (P3) | Reuse the existing bus owner without accepting failed reads |
+| `proj_cm55/devices/dev_sht4x.c` | Publish successful converted samples; fail closed and reset state after read errors (P3) | Reuse the existing bus owner without accepting failed reads |
+| `proj_cm55/devices/dev_pdm_pcm.c` | Emit one frame-capture diagnostic after the four upstream startup-discard frames (P4 checkpoint) | Prove real PCM16 frame arrival without logging or transmitting raw microphone data |
+| `bsps/TARGET_APP_KIT_PSE84_AI/mtb_ipc_config.h` | Reserve IPC instance/data channels, semaphores, and unique per-core IRQs for WheelSense (P1.6) | Coexist with SRF while satisfying MTB-IPC cross-core IRQ rules |
 | `bsps/TARGET_APP_KIT_PSE84_AI/COMPONENT_CM55/TOOLCHAIN_GCC_ARM/pse84_ns_cm55.ld` | Add .cy_shared_socmem section for inter-core shared queue (P1.6) | Map shared queue to m33_m55_shared region |
 | `common.mk` | Gate IM_ENABLE_* defines by WS_FEATURE_* flags (P1.2 fix) | Conditional feature compilation |
 | `.gitignore`, `firmware/.gitignore` | Ignore reproducible dependency caches | Prevent managed library vendoring |
@@ -58,4 +65,3 @@ CM33 Secure `main.c` still content-matches the Project Creator baseline. Build m
 ## Future reuse rule
 
 Every copied or adapted upstream file must add its URL, exact revision, original path, local path, license, modifications, and verification here before the phase can close. A repository URL without a revision and path is insufficient provenance.
-

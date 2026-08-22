@@ -25,7 +25,7 @@ import type {
 } from "@/lib/api/task-scope-types";
 
 /** Matches server `ROLE_CLINICAL_STAFF` for `GET /api/workflow/tasks` (patients are forbidden). */
-const WORKFLOW_TASKS_ROLES = new Set(["admin", "head_nurse", "supervisor", "observer"]);
+const WORKFLOW_TASKS_ROLES = new Set(["admin", "head_caregiver", "caregiver"]);
 
 const ALERT_POLL_MS = 10_000;
 const DEFAULT_POLL_MS = 30_000;
@@ -191,10 +191,10 @@ export function useNotifications(): UseNotificationsReturn {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
   const authReady = Boolean(user);
-  const role = (user?.role ?? "observer") as AppRole;
+  const role = (user?.role ?? "caregiver") as AppRole;
   const canListWorkflowTasks = Boolean(user?.role && WORKFLOW_TASKS_ROLES.has(user.role));
   const canAcknowledgeAlerts =
-    role === "admin" || role === "head_nurse" || role === "supervisor" || role === "observer";
+    role === "admin" || role === "head_caregiver" || role === "caregiver";
 
   const alertToastBootstrap = useRef(false);
   const alertToastIds = useRef<Set<number>>(new Set());
@@ -264,7 +264,7 @@ export function useNotifications(): UseNotificationsReturn {
         }
 
         const visualEmphasis =
-          role === "observer" && level === "toastSound" ? "interrupt" : "standard";
+          role === "caregiver" && level === "toastSound" ? "interrupt" : "standard";
 
         toast.custom(
           (toastId) => (

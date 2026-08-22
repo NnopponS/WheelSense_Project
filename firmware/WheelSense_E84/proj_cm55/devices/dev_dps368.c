@@ -42,10 +42,11 @@
 #include <stdio.h>
 #include "protocol/protocol.h"
 #include "protocol/pb_encode.h"
-#include "clock.h"
+#include "ws_clock.h"
 #include "dev_dps368.h"
 #include <mtb_xensiv_dps3xx.h>
 #include "common.h"
+#include "ws_environment.h"
 
 /*******************************************************************************
 * Macros
@@ -396,12 +397,24 @@ static bool _read_hw(dev_dps368_t* dps, mtb_hal_i2c_t* i2c)
     uint8_t read_reg_len = XENSIV_DPS3XX_PSR_TMP_READ_LEN;
     uint8_t raw_value[XENSIV_DPS3XX_PSR_TMP_READ_LEN];
 
-    mtb_xensiv_dps3xx_reg_read(&dps->dps3xx, read_reg_addr, raw_value, read_reg_len);
+    if (mtb_xensiv_dps3xx_reg_read(&dps->dps3xx, read_reg_addr, raw_value,
+                                   read_reg_len) != CY_RSLT_SUCCESS)
+    {
+        return false;
+    }
 
     int32_t press_raw = (int32_t)(raw_value[2]) + (raw_value[1] << 8) + (raw_value[0] << 16);
     int32_t temp_raw = (int32_t)(raw_value[5]) + (raw_value[4] << 8) + (raw_value[3] << 16);
     pressure = mtb_xensiv_dps3xx_calc_pressure(&dps->dps3xx, press_raw);
     temperature = mtb_xensiv_dps3xx_calc_temperature(&dps->dps3xx, temp_raw);
+    static bool ws_cache_sample_reported = false;
+    if (ws_environment_publish_dps368(clock_get_tick() * 10u,
+                                      temperature, pressure) == WS_STATUS_READY &&
+        !ws_cache_sample_reported)
+    {
+        printf("[EASE_AI] DPS368 sample cache PASS\r\n");
+        ws_cache_sample_reported = true;
+    }
 
     if(dps->stream_mode == DPS_MODE_STREAM_COMBINED)
     {
@@ -919,7 +932,7 @@ bool dev_dps368_register(protocol_t* protocol, mtb_hal_i2c_t* i2c)
         DPS_OPTION_KEY_FREQUENCY,
         "Frequency",
         "Sample frequency (Hz). As frequency goes up, oversampling goes down.",
-        3,
+        0,
         (const char* []) { "8 Hz", "16 Hz", "32 Hz", "64 Hz", "128 Hz" },
         5);
 
