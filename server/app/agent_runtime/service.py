@@ -878,6 +878,14 @@ def _is_patient_timeline_request(message: str) -> bool:
     )
 
 
+def _is_adl_request(message: str) -> bool:
+    lowered = (message or "").lower()
+    return bool(
+        re.search(r"\b(adl|activities\s+of\s+daily\s+living|barthel|functional\s+independence)\b", lowered)
+        or any(token in message for token in ("วิเคราะห์ adl", "adl", "กิจกรรมประจำวัน", "ความสามารถในการทำกิจกรรม"))
+    )
+
+
 def _is_device_status_request(message: str) -> bool:
     lowered = (message or "").lower()
     has_thai_device = "อุปกรณ์" in message
@@ -1143,6 +1151,7 @@ async def _try_deterministic_read_answer(
     wants_identity = _is_identity_request(message)
     wants_page_context = _is_page_context_request(message)
     wants_patient_navigation = _is_patient_detail_navigation_request(message)
+    wants_adl = _is_adl_request(message)
     if not lock_enabled:
         wants_timeline = False
         wants_location = False
@@ -1161,6 +1170,7 @@ async def _try_deterministic_read_answer(
         or wants_identity
         or wants_page_context
         or wants_patient_navigation
+        or wants_adl
     ):
         return None
 
@@ -1209,6 +1219,62 @@ async def _try_deterministic_read_answer(
                 ],
             ),
         )
+
+    if wants_adl:
+        roster = await _call_mcp_tool(actor_access_token, "list_visible_patients", {})
+        _ingest_patient_context_from_tool_result(conversation_id, "list_visible_patients", roster, {})
+        tool_results.append(("list_visible_patients", roster))
+        patients = [row for row in roster if isinstance(row, dict)] if isinstance(roster, list) else []
+        hits = resolve_patient_mentions(message, patients)
+        for hit in hits:
+            pid = hit.get("id")
+            if pid is None:
+                continue
+            adl_args = {"patient_id": int(pid)}
+            adl = await _call_mcp_tool(actor_access_token, "get_patient_adl_analysis", adl_args)
+            tool_results.append(("get_patient_adl_analysis", adl))
+        # Build deterministic ADL reply
+        adl_sections: list[str] = []
+        for _name, result in tool_results:
+            if not isinstance(result, dict):
+                continue
+            analysis = result.get("adl_analysis")
+            if not isinstance(analysis, dict) or not analysis:
+                continue
+            pname = str(result.get("patient_name") or analysis.get("name") or f"Patient #{result.get('patient_id')}")
+            total = analysis.get("total")
+            max_total = analysis.get("max_total", 20)
+            tier = analysis.get("tier")
+            tier_label = analysis.get("tier_label", "")
+            method = analysis.get("method", "")
+            notes = analysis.get("notes") or []
+            lines = [f"{pname}:"]
+            if total is not None:
+                lines.append(f"- Barthel ADL: {total}/{max_total}  Tier {tier} ({tier_label})")
+            if method:
+                lines.append(f"- Method: {method}")
+            for note in notes[:4]:
+                lines.append(f"- {note}")
+            adl_sections.append("\n".join(lines))
+        if adl_sections:
+            heading = "วิเคราะห์ ADL:" if locale == "th" else "ADL Analysis:"
+            reply = heading + "\n" + "\n\n".join(adl_sections)
+            return AgentRuntimeProposeResponse(
+                mode="answer",
+                assistant_reply=reply,
+                grounding=attach_response_cards(
+                    {
+                        "tool_names": [name for name, _ in tool_results],
+                        "tool_results": [
+                            {"tool_name": name, "result": result}
+                            for name, result in tool_results
+                        ],
+                        "confidence": 0.95,
+                        "classification_method": grounding_method,
+                    },
+                    cards_for_tool_results(tool_results),
+                ),
+            )
 
     if wants_timeline or wants_location or wants_patient_navigation:
         roster = await _call_mcp_tool(actor_access_token, "list_visible_patients", {})
@@ -1874,7 +1940,7 @@ async def propose_turn(
     if settings.easeai_pipeline_v2:
         llm_tools_attempted = settings.agent_routing_mode == "llm_tools"
         classifier = get_classifier()
-        if _is_task_management_create_request(message) and settings.agent_routing_mode != "llm_tools":
+        if _is_task_management_create_request(message):
             mode, plan, _, confidence = await _plan_for_message(
                 message,
                 conversation_id=conversation_id,
@@ -1888,6 +1954,13 @@ async def propose_turn(
             ):
                 async with AsyncSessionLocal() as db:
                     user, workspace = await _load_runtime_actor_context(db, actor_access_token)
+                    # Resolve patient and staff names to IDs for task creation steps
+                    from app.agent_runtime.llm_tool_router import _resolve_patient_and_staff_for_task
+                    for step in plan.steps:
+                        if step.tool_name == "create_task_management_task":
+                            step.arguments = await _resolve_patient_and_staff_for_task(
+                                workspace.id, message, dict(step.arguments or {})
+                            )
                     provider_attempts: list[dict[str, object]] = []
                     assistant_reply = await _collect_plan_confirmation_reply_or_fallback(
                         db=db,

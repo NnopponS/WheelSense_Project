@@ -218,19 +218,29 @@ async def _resolve_patient_and_staff_for_task(
         if name_match:
             staff_name = name_match.group(1).strip().lower()
             try:
+                from app.models.users import User as UserModel
                 async with AsyncSessionLocal() as db:
-                    cg_stmt = select(CareGiver).where(
-                        CareGiver.workspace_id == workspace_id,
-                        or_(
-                            CareGiver.first_name.ilike(f"%{staff_name}%"),
-                            CareGiver.last_name.ilike(f"%{staff_name}%"),
-                        ),
+                    # Join users -> caregivers to find staff by name.
+                    # Multiple users may link to the same caregiver (e.g. admin + ada.m);
+                    # prefer the non-bootstrap user (username != "admin") when ambiguous.
+                    user_stmt = (
+                        select(UserModel)
+                        .join(CareGiver, UserModel.caregiver_id == CareGiver.id)
+                        .where(
+                            UserModel.workspace_id == workspace_id,
+                            UserModel.is_active.is_(True),
+                            or_(
+                                CareGiver.first_name.ilike(f"%{staff_name}%"),
+                                CareGiver.last_name.ilike(f"%{staff_name}%"),
+                            ),
+                        )
+                        .order_by(UserModel.username.asc())
                     )
-                    cg_rows = (await db.execute(cg_stmt)).scalars().all()
-                    if len(cg_rows) == 1:
-                        cg = cg_rows[0]
-                        if cg.user_id:
-                            args["assigned_user_id"] = int(cg.user_id)
+                    user_rows = (await db.execute(user_stmt)).scalars().all()
+                    if user_rows:
+                        # Prefer non-"admin" username when multiple matches
+                        preferred = next((u for u in user_rows if u.username != "admin"), user_rows[0])
+                        args["assigned_user_id"] = int(preferred.id)
             except Exception:
                 logger.debug("staff DB resolution skipped", exc_info=True)
 
@@ -336,6 +346,19 @@ def _is_adl_request(message: str) -> bool:
         re.search(r"\b(adl|activities\s+of\s+daily\s+living|barthel|functional\s+independence)\b", lowered)
         or any(token in message for token in ("วิเคราะห์ adl", "adl", "กิจกรรมประจำวัน", "ความสามารถในการทำกิจกรรม"))
     )
+
+
+def _is_task_creation_request(message: str) -> bool:
+    """Detect task creation intent in English or Thai."""
+    text = message or ""
+    lowered = text.lower()
+    has_create = bool(re.search(r"\b(create|add|make|new|assign)\b", lowered)) or any(
+        token in text for token in ("สร้าง", "เพิ่ม", "ทำ", "มอบหมาย")
+    )
+    has_task = bool(re.search(r"\b(tasks?|todo|work item|checkup|check)\b", lowered)) or any(
+        token in text for token in ("งาน", "ทาสก์", "ตรวจ")
+    )
+    return has_create and has_task
 
 
 def _is_device_status_followup(message: str) -> bool:
@@ -847,6 +870,12 @@ async def propose_llm_tool_turn(
             if _looks_like_identity_lookup(message):
                 calls = _identity_lookup_calls(role, message)
             if not calls:
+                # If this looks like a task creation request but the LLM didn't
+                # propose any tools, fall through to the intent classifier which
+                # has a deterministic task plan path. Don't trust hallucinated
+                # "task created" text from the LLM.
+                if _is_task_creation_request(message):
+                    return None
                 return AgentRuntimeProposeResponse(
                     mode="answer",
                     assistant_reply=assistant_side_text,
@@ -859,7 +888,7 @@ async def propose_llm_tool_turn(
         calls = _validate_calls_for_role(role, calls, message=message)
         if not calls:
             return None
-        calls = await _normalize_task_creation_calls(actor.workspace_id, message, calls)
+        calls = await _normalize_task_creation_calls(user.workspace_id, message, calls)
         if not calls:
             return None
 
