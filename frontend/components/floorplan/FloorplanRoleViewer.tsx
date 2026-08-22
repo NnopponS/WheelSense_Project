@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -20,6 +21,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { EntityHeader } from "@/components/shared/EntityHeader";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { refetchOrThrow } from "@/lib/refetchOrThrow";
@@ -32,6 +34,7 @@ import {
   type FloorplanRoomShape,
 } from "@/lib/floorplanLayout";
 import { useTranslation } from "@/lib/i18n";
+import { getCaregiverDetailPath, getPatientDetailPath } from "@/lib/routes";
 import { matchFloorRoomFromLayoutLabel } from "@/lib/floorplanRoomResolve";
 import { floorplanRoomIdToNumeric } from "@/lib/monitoringWorkspace";
 import type { Facility, Floor, Room, SmartDevice } from "@/lib/types";
@@ -313,6 +316,16 @@ function SummaryStat({
   );
 }
 
+function getOccupantHref(item: RoomOccupant, userRole: string): string | null {
+  if (item.actor_type === "patient" && item.patient_id != null) {
+    return getPatientDetailPath(userRole, item.patient_id);
+  }
+  if (item.actor_type === "staff" && item.caregiver_id != null) {
+    return getCaregiverDetailPath(userRole, item.caregiver_id);
+  }
+  return null;
+}
+
 function OccupantList({
   title,
   items,
@@ -322,6 +335,9 @@ function OccupantList({
   items: RoomOccupant[];
   emptyText: string;
 }) {
+  const { user } = useAuth();
+  const userRole = user?.role ?? "admin";
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -334,29 +350,43 @@ function OccupantList({
         </div>
       ) : (
         <div className="space-y-2">
-          {items.map((item) => (
-            <div
-              key={`${item.actor_type}-${item.actor_id}`}
-              className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-3 py-3"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{item.display_name}</p>
-                  <p className="mt-1 text-xs text-foreground-variant">
-                    {item.subtitle || item.role || formatSourceLabel(item.source)}
-                  </p>
+          {items.map((item) => {
+            const href = getOccupantHref(item, userRole);
+            const content = (
+              <div
+                className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-3 py-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{item.display_name}</p>
+                    <p className="mt-1 text-xs text-foreground-variant">
+                      {item.subtitle || item.role || formatSourceLabel(item.source)}
+                    </p>
+                  </div>
+                  <Badge variant={item.actor_type === "patient" ? "success" : "secondary"}>
+                    {item.actor_type}
+                  </Badge>
                 </div>
-                <Badge variant={item.actor_type === "patient" ? "success" : "secondary"}>
-                  {item.actor_type}
-                </Badge>
+                {item.updated_at ? (
+                  <p className="mt-2 text-[11px] text-foreground-variant">
+                    Updated {formatRelativeTime(item.updated_at)}
+                  </p>
+                ) : null}
               </div>
-              {item.updated_at ? (
-                <p className="mt-2 text-[11px] text-foreground-variant">
-                  Updated {formatRelativeTime(item.updated_at)}
-                </p>
-              ) : null}
-            </div>
-          ))}
+            );
+            if (href) {
+              return (
+                <Link
+                  key={`${item.actor_type}-${item.actor_id}`}
+                  href={href}
+                  className="block transition-colors hover:opacity-90"
+                >
+                  {content}
+                </Link>
+              );
+            }
+            return <div key={`${item.actor_type}-${item.actor_id}`}>{content}</div>;
+          })}
         </div>
       )}
     </div>
