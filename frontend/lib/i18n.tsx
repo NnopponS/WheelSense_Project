@@ -10,7 +10,7 @@ import {
 } from "react";
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   WheelSense i18n — lightweight EN/TH translation system
+   Ease AI i18n — lightweight EN/TH translation system
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export type Locale = "en" | "th";
@@ -565,8 +565,8 @@ const translations = {
   "auth.usernameRequired": { en: "Username is required", th: "กรุณากรอกชื่อผู้ใช้" },
   "auth.passwordRequired": { en: "Password is required", th: "กรุณากรอกรหัสผ่าน" },
   "auth.documentTitle": {
-    en: "Sign In — WheelSense Smart Care Platform",
-    th: "เข้าสู่ระบบ — WheelSense แพลตฟอร์มดูแลอัจฉริยะ",
+    en: "Sign In — Ease AI Smart Care Platform",
+    th: "เข้าสู่ระบบ — Ease AI แพลตฟอร์มดูแลอัจฉริยะ",
   },
   "auth.failed": { en: "Login failed", th: "เข้าสู่ระบบไม่สำเร็จ" },
   "auth.heroTitleLine1": { en: "Smart Wheelchair", th: "รถเข็นอัจฉริยะ" },
@@ -580,8 +580,8 @@ const translations = {
   "auth.heroMetricUptime": { en: "Uptime", th: "พร้อมใช้งาน" },
   "auth.togglePasswordVisibility": { en: "Toggle password visibility", th: "แสดงหรือซ่อนรหัสผ่าน" },
   "auth.platformVersion": {
-    en: "WheelSense Smart Care Platform v1.0",
-    th: "WheelSense แพลตฟอร์มดูแลอัจฉริยะ v1.0",
+    en: "Ease AI Smart Care Platform v1.0",
+    th: "Ease AI แพลตฟอร์มดูแลอัจฉริยะ v1.0",
   },
   "demoControl.heroBadge": { en: "Manual testing suite", th: "ชุดทดสอบด้วยมือ" },
   "demoControl.heroTitle": { en: "Admin demo control panel", th: "แผงควบคุมเดโมผู้ดูแลระบบ" },
@@ -695,7 +695,7 @@ const translations = {
   "shell.searchNavigationEmpty": { en: "No matching pages.", th: "ไม่พบหน้าที่ตรงกัน" },
   "shell.searchNavigationGroup": { en: "Available pages", th: "หน้าที่ใช้ได้" },
   "shell.viewMode": { en: "View mode", th: "โหมดมุมมอง" },
-  "shell.platformName": { en: "WheelSense", th: "WheelSense" },
+  "shell.platformName": { en: "Ease AI", th: "Ease AI" },
   "shell.platformSubtitle": { en: "Smart Care Platform", th: "แพลตฟอร์มดูแลอัจฉริยะ" },
   "shell.roleAdmin": { en: "Admin", th: "ผู้ดูแลระบบ" },
   "shell.roleHeadNurse": { en: "Head Caregiver", th: "หัวหน้าผู้ดูแล" },
@@ -1156,8 +1156,8 @@ const translations = {
   // ── Dashboard ────────────────────────────────────────────────────────
   "dash.title": { en: "Dashboard", th: "แดชบอร์ด" },
   "dash.subtitle": {
-    en: "WheelSense system overview",
-    th: "ภาพรวมระบบ WheelSense",
+    en: "Ease AI system overview",
+    th: "ภาพรวมระบบ Ease AI",
   },
   "dash.totalPatients": { en: "Total Patients", th: "ผู้ป่วยทั้งหมด" },
   "dash.activeAlerts": { en: "Active Alerts", th: "การแจ้งเตือนที่ใช้งานอยู่" },
@@ -2312,7 +2312,7 @@ const translations = {
     en: "How sign-in works in this workspace, and which login account is tied to each staff or patient record.",
     th: "วิธีเข้าสู่ระบบในพื้นที่ทำงานนี้ และบัญชีล็อกอินเชื่อมกับบุคลากรหรือผู้ป่วยคนใด",
   },
-  "accountMgmt.authCardTitle": { en: "Authentication in WheelSense", th: "การยืนยันตัวตนใน WheelSense" },
+  "accountMgmt.authCardTitle": { en: "Authentication in Ease AI", th: "การยืนยันตัวตนใน Ease AI" },
   "accountMgmt.authPrimary": {
     en: "Primary method: username and password. The login form posts to `/api/auth/login`; the Next proxy stores the returned JWT in an HttpOnly `ws_token` cookie and forwards it to the backend on later API calls.",
     th: "วิธีหลัก: ชื่อผู้ใช้และรหัสผ่าน ฟอร์มล็อกอินส่งไปที่ `/api/auth/login`; จากนั้น Next proxy จะเก็บ JWT ไว้ในคุกกี้ HttpOnly `ws_token` และส่งต่อไป backend สำหรับคำขอ API ถัดไป",
@@ -3457,8 +3457,8 @@ const translations = {
   "admin.ml.msgNoSavedModel": { en: "No saved model found", th: "ไม่พบโมเดลที่บันทึกไว้" },
   "admin.ml.statusUnknown": { en: "Unknown", th: "ไม่ทราบ" },
   "admin.ml.sessionHardwareNote": {
-    en: "This button only calls your WheelSense backend. Pick a device that is already registered and sending telemetry (e.g. RSSI over MQTT). The browser does not pair over USB or Bluetooth to the M5StickC Plus2.",
-    th: "ปุ่มนี้เรียกเซิร์ฟเวอร์ WheelSense เท่านั้น เลือกอุปกรณ์ที่ลงทะเบียนและส่งข้อมูลแล้ว (เช่น RSSI ผ่าน MQTT) เบราว์เซอร์ไม่ได้จับคู่ USB หรือ Bluetooth กับ M5StickC Plus2",
+    en: "This button only calls your Ease AI backend. Pick a device that is already registered and sending telemetry (e.g. RSSI over MQTT). The browser does not pair over USB or Bluetooth to the M5StickC Plus2.",
+    th: "ปุ่มนี้เรียกเซิร์ฟเวอร์ Ease AI เท่านั้น เลือกอุปกรณ์ที่ลงทะเบียนและส่งข้อมูลแล้ว (เช่น RSSI ผ่าน MQTT) เบราว์เซอร์ไม่ได้จับคู่ USB หรือ Bluetooth กับ M5StickC Plus2",
   },
 
   // ── Profile ──────────────────────────────────────────────────────────
@@ -3503,7 +3503,7 @@ const translations = {
     th: "อัปโหลดรูปไม่สำเร็จ ลองอีกครั้ง",
   },
   "profile.avatar.errorUploadEndpointMissing": {
-    en: "The upload endpoint is missing on the API server (404). Restart the WheelSense backend so it loads the latest routes (e.g. uvicorn on port 8000), or check WHEELSENSE_API_ORIGIN points at the correct server.",
+    en: "The upload endpoint is missing on the API server (404). Restart the Ease AI backend so it loads the latest routes (e.g. uvicorn on port 8000), or check WHEELSENSE_API_ORIGIN points at the correct server.",
     th: "เซิร์ฟเวอร์ API ไม่มี endpoint สำหรับอัปโหลดรูป (404) — รีสตาร์ท backend ให้โหลดโค้ดล่าสุด (เช่น uvicorn ที่พอร์ต 8000) หรือตรวจสอบว่า WHEELSENSE_API_ORIGIN ชี้ไปเซิร์ฟเวอร์ที่ถูกต้อง",
   },
   "profile.avatar.success": {

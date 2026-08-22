@@ -11,7 +11,7 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "WheelSense — Smart Wheelchair Care Platform",
+  title: "Ease AI — Smart Wheelchair Care Platform",
   description:
     "Intelligent wheelchair patient care platform with fall detection, health monitoring, and real-time alerts.",
 };

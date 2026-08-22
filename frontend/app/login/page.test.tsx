@@ -76,12 +76,12 @@ describe("LoginPage", () => {
 
   it("updates the localized document title", () => {
     renderLogin();
-    expect(document.title).toBe("Sign In — WheelSense Smart Care Platform");
+    expect(document.title).toBe("Sign In — Ease AI Smart Care Platform");
     fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
 
     fireEvent.click(screen.getByRole("button", { name: "Switch to Thai" }));
 
-    expect(document.title).toBe("เข้าสู่ระบบ — WheelSense แพลตฟอร์มดูแลอัจฉริยะ");
+    expect(document.title).toBe("เข้าสู่ระบบ — Ease AI แพลตฟอร์มดูแลอัจฉริยะ");
     expect(document.documentElement.lang).toBe("th");
     expect(screen.getByText("กรุณากรอกชื่อผู้ใช้")).toBeInTheDocument();
     expect(screen.getByText("กรุณากรอกรหัสผ่าน")).toBeInTheDocument();
