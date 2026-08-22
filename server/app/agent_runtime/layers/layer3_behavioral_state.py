@@ -17,6 +17,7 @@ from app.agent_runtime.layers.observability import PipelineEventEmitter
 from app.db.session import AsyncSessionLocal
 from app.models.agent_runtime import BehavioralState
 from app.models.base import utcnow
+from app.services.adl_service import adl_analysis_for_patient
 
 logger = logging.getLogger("wheelsense.agent_runtime.layer3")
 
@@ -129,6 +130,18 @@ def schedule_behavioral_state_refresh(
 
     async def _runner() -> None:
         try:
+            try:
+                async with AsyncSessionLocal() as db:
+                    adl = await adl_analysis_for_patient(
+                        db,
+                        ws_id=actor.workspace_id,
+                        patient_id=actor.patient_id,
+                    )
+                    if adl:
+                        snapshot["adl_analysis"] = adl
+            except Exception:
+                # ADL is advisory; do not block behavioral state on it.
+                pass
             row = await _persist_with_new_session(actor=actor, state_snapshot=snapshot)
             elapsed_ms = max(0, (time.monotonic_ns() - started_ns) // 1_000_000)
             _emit(

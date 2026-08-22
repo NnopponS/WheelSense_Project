@@ -1,0 +1,224 @@
+{
+  "workspace_id": 13,
+  "scale": "collin_wade_0_20",
+  "tiers": {
+    "1": {"label": "Independent / Mild Dependence", "min": 12, "max": 19},
+    "2": {"label": "Moderate Dependence", "min": 5, "max": 11},
+    "3": {"label": "Severe / Total Dependence", "min": 0, "max": 4}
+  },
+  "rooms": {
+    "157": "Room 401",
+    "158": "Room 402",
+    "159": "Room 403",
+    "160": "Room 404",
+    "161": "Room 405",
+    "162": "Room 406",
+    "163": "Toilet",
+    "169": "Shower",
+    "164": "Dining Room",
+    "165": "Main Hall",
+    "166": "Physiotherapy Room",
+    "167": "Nurses' Station",
+    "168": "Garden Lounge"
+  },
+  "residents": [
+    {
+      "patient_id": 69,
+      "first_name": "Eleanor",
+      "last_name": "Price",
+      "nickname": "Eleanor",
+      "home_room_id": 162,
+      "tier": 1,
+      "barthel": {
+        "bowels": 2,
+        "bladder": 2,
+        "grooming": 1,
+        "toilet_use": 2,
+        "feeding": 2,
+        "transfers": 3,
+        "mobility": 1,
+        "dressing": 2,
+        "stairs": 0,
+        "bathing": 1,
+        "total": 16
+      },
+      "schedule": {
+        "shower_weekdays": [6, 2, 5],
+        "pt_weekdays": [0, 2, 4],
+        "night_toilet_weekdays": [2],
+        "tray_breakfast_weekdays": [],
+        "tray_lunch_weekdays": [],
+        "tray_dinner_weekdays": [],
+        "nurses_weekdays": [],
+        "lounge": true,
+        "staff_toilet_every_n_days": 0,
+        "escorted_meals": false
+      }
+    },
+    {
+      "patient_id": 70,
+      "first_name": "Robert",
+      "last_name": "Chen",
+      "nickname": "Robert",
+      "home_room_id": 161,
+      "tier": 1,
+      "barthel": {
+        "bowels": 2,
+        "bladder": 1,
+        "grooming": 1,
+        "toilet_use": 2,
+        "feeding": 2,
+        "transfers": 2,
+        "mobility": 1,
+        "dressing": 2,
+        "stairs": 0,
+        "bathing": 1,
+        "total": 14
+      },
+      "schedule": {
+        "shower_weekdays": [0, 3],
+        "pt_weekdays": [0, 1, 2, 3, 4],
+        "night_toilet_weekdays": [0, 2, 4],
+        "tray_breakfast_weekdays": [],
+        "tray_lunch_weekdays": [],
+        "tray_dinner_weekdays": [],
+        "nurses_weekdays": [1],
+        "lounge": true,
+        "staff_toilet_every_n_days": 0,
+        "escorted_meals": false
+      }
+    },
+    {
+      "patient_id": 71,
+      "first_name": "Margaret",
+      "last_name": "Lewis",
+      "nickname": "Maggie",
+      "home_room_id": 160,
+      "tier": 2,
+      "barthel": {
+        "bowels": 1,
+        "bladder": 1,
+        "grooming": 0,
+        "toilet_use": 1,
+        "feeding": 1,
+        "transfers": 1,
+        "mobility": 1,
+        "dressing": 1,
+        "stairs": 0,
+        "bathing": 0,
+        "total": 7
+      },
+      "schedule": {
+        "shower_weekdays": [1, 4],
+        "pt_weekdays": [1, 3],
+        "night_toilet_weekdays": [5],
+        "tray_breakfast_weekdays": [6, 2],
+        "tray_lunch_weekdays": [],
+        "tray_dinner_weekdays": [],
+        "nurses_weekdays": [0, 3],
+        "lounge": true,
+        "staff_toilet_every_n_days": 0,
+        "escorted_meals": true
+      }
+    },
+    {
+      "patient_id": 72,
+      "first_name": "Daniel",
+      "last_name": "Carter",
+      "nickname": "Dan",
+      "home_room_id": 159,
+      "tier": 2,
+      "barthel": {
+        "bowels": 1,
+        "bladder": 1,
+        "grooming": 0,
+        "toilet_use": 1,
+        "feeding": 1,
+        "transfers": 2,
+        "mobility": 1,
+        "dressing": 1,
+        "stairs": 0,
+        "bathing": 0,
+        "total": 8
+      },
+      "schedule": {
+        "shower_weekdays": [2],
+        "pt_weekdays": [0],
+        "night_toilet_weekdays": [],
+        "tray_breakfast_weekdays": [],
+        "tray_lunch_weekdays": [1, 4],
+        "tray_dinner_weekdays": [6],
+        "nurses_weekdays": [0, 2, 4],
+        "lounge": false,
+        "staff_toilet_every_n_days": 0,
+        "escorted_meals": true
+      }
+    },
+    {
+      "patient_id": 73,
+      "first_name": "Grace",
+      "last_name": "Wilson",
+      "nickname": "Grace",
+      "home_room_id": 158,
+      "tier": 3,
+      "barthel": {
+        "bowels": 0,
+        "bladder": 0,
+        "grooming": 0,
+        "toilet_use": 0,
+        "feeding": 1,
+        "transfers": 1,
+        "mobility": 0,
+        "dressing": 0,
+        "stairs": 0,
+        "bathing": 0,
+        "total": 2
+      },
+      "schedule": {
+        "shower_weekdays": [],
+        "pt_weekdays": [],
+        "night_toilet_weekdays": [],
+        "tray_breakfast_weekdays": [0, 1, 2, 3, 4, 5, 6],
+        "tray_lunch_weekdays": [0, 1, 2, 3, 4, 5, 6],
+        "tray_dinner_weekdays": [0, 1, 2, 3, 4, 5, 6],
+        "nurses_weekdays": [1, 4],
+        "lounge": false,
+        "staff_toilet_every_n_days": 2,
+        "escorted_meals": true
+      }
+    },
+    {
+      "patient_id": 74,
+      "first_name": "Samuel",
+      "last_name": "Ortiz",
+      "nickname": "Sam",
+      "home_room_id": 157,
+      "tier": 3,
+      "barthel": {
+        "bowels": 0,
+        "bladder": 0,
+        "grooming": 0,
+        "toilet_use": 0,
+        "feeding": 1,
+        "transfers": 0,
+        "mobility": 0,
+        "dressing": 0,
+        "stairs": 0,
+        "bathing": 0,
+        "total": 1
+      },
+      "schedule": {
+        "shower_weekdays": [],
+        "pt_weekdays": [],
+        "night_toilet_weekdays": [],
+        "tray_breakfast_weekdays": [0, 1, 2, 3, 4, 5, 6],
+        "tray_lunch_weekdays": [0, 1, 2, 3, 4, 5, 6],
+        "tray_dinner_weekdays": [0, 1, 2, 3, 4, 5, 6],
+        "nurses_weekdays": [3],
+        "lounge": false,
+        "staff_toilet_every_n_days": 0,
+        "escorted_meals": true
+      }
+    }
+  ]
+}

@@ -21,6 +21,7 @@ from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.activity import TimelineEventCreate, TimelineEventOut
 from app.services.activity import activity_service
+from app.services.adl_service import adl_analysis_for_patient
 
 router = APIRouter()
 
@@ -84,4 +85,15 @@ async def get_timeline_event(
         raise HTTPException(404, "Timeline event not found")
     await _scope_timeline_patient_id(db, ws.id, current_user, event.patient_id)
     return event
+
+
+@router.get("/adl/{patient_id}", response_model=dict)
+async def get_adl_analysis(
+    patient_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
+):
+    await _scope_timeline_patient_id(db, ws.id, current_user, patient_id)
+    return await adl_analysis_for_patient(db, ws.id, patient_id)
 
