@@ -4053,6 +4053,20 @@ const translations = {
     th: "เป็นสรุปเพื่อการปฏิบัติงานเท่านั้น ไม่ใช่การวินิจฉัยทางคลินิก",
   },
 
+  "patient.feature.healthProfile": { en: "Health Profile", th: "โปรไฟล์สุขภาพ" },
+  "patient.feature.healthProfileSub": { en: "Baseline, vitals & trends", th: "ค่าพื้นฐาน สัญญาณชีพ และแนวโน้ม" },
+  "patient.feature.predictingAnomaly": { en: "Predicting Anomaly", th: "คาดการณ์ความผิดปกติ" },
+  "patient.feature.predictingAnomalySub": { en: "AI risk & abnormal signals", th: "ความเสี่ยง AI และสัญญาณผิดปกติ" },
+  "patient.feature.optimizePlan": { en: "Optimize Daily Health Plan", th: "ปรับแผนสุขภาพประจำวัน" },
+  "patient.feature.optimizePlanSub": { en: "Recommended care actions", th: "การดูแลที่แนะนำ" },
+  "patient.feature.emergencyAlert": { en: "Emergency Alert", th: "การแจ้งเตือนฉุกเฉิน" },
+  "patient.feature.emergencyAlertSub": { en: "Escalation & contacts", th: "การเร่งดำเนินการและผู้ติดต่อ" },
+  "patient.feature.noContact": { en: "No contact on file", th: "ไม่มีผู้ติดต่อ" },
+  "patient.feature.unresolved": { en: "unresolved", th: "ยังไม่ได้รับการแก้ไข" },
+  "patient.feature.criticalCondition": { en: "Critical condition detected", th: "ตรวจพบสภาวะวิกฤต" },
+  "patient.feature.viewAlert": { en: "View alert", th: "ดูการแจ้งเตือน" },
+  "patient.feature.addContact": { en: "Add emergency contact", th: "เพิ่มผู้ติดต่อฉุกเฉิน" },
+
   "patient.page.notLinkedTitle": { en: "Account Not Linked", th: "บัญชียังไม่เชื่อมโยง" },
   "patient.page.notLinkedBody": {
     en: "Please ask a staff member to connect your tablet to your care profile.",
