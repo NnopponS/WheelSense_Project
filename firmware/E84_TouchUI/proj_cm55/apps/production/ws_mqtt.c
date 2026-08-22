@@ -35,6 +35,47 @@ static volatile bool s_apply_requested;
 static cy_mqtt_t s_mqtt_handle;
 static uint8_t s_net_buffer[WS_MQTT_NET_BUFFER_SIZE];
 
+static bool copy_json_string(const char *json, size_t json_len,
+                             const char *key, char *out, size_t out_size)
+{
+    char needle[40];
+    (void)snprintf(needle, sizeof(needle), "\"%s\"", key);
+    const size_t needle_len = strlen(needle);
+    if ((NULL == json) || (0U == out_size) || (needle_len >= json_len))
+    {
+        return false;
+    }
+
+    for (size_t i = 0U; i + needle_len < json_len; i++)
+    {
+        if (0 != memcmp(&json[i], needle, needle_len))
+        {
+            continue;
+        }
+        size_t p = i + needle_len;
+        while ((p < json_len) && ((' ' == json[p]) || (':' == json[p])))
+        {
+            p++;
+        }
+        if ((p >= json_len) || ('\"' != json[p++]))
+        {
+            return false;
+        }
+        size_t n = 0U;
+        while ((p < json_len) && ('\"' != json[p]))
+        {
+            if (n + 1U < out_size)
+            {
+                out[n++] = json[p];
+            }
+            p++;
+        }
+        out[n] = '\0';
+        return (p < json_len);
+    }
+    return false;
+}
+
 static void mqtt_event_cb(cy_mqtt_t mqtt_handle, cy_mqtt_event_t event,
                           void *user_data)
 {
@@ -44,6 +85,30 @@ static void mqtt_event_cb(cy_mqtt_t mqtt_handle, cy_mqtt_event_t event,
     {
         printf("[MQTT] disconnected\r\n");
         s_status.state = WS_MQTT_STATE_WAIT_NET;
+    }
+    else if (CY_MQTT_EVENT_TYPE_PUBLISH_RECEIVE == event.type)
+    {
+        const cy_mqtt_received_msg_info_t *msg =
+            &event.data.pub_msg.received_message;
+        char room[WS_MQTT_ASSIGNMENT_MAX_LEN] = {0};
+        char patient[WS_MQTT_ASSIGNMENT_MAX_LEN] = {0};
+        const bool have_room = copy_json_string(msg->payload, msg->payload_len,
+                                                "room_name", room,
+                                                sizeof(room));
+        const bool have_patient =
+            copy_json_string(msg->payload, msg->payload_len, "patient_name",
+                             patient, sizeof(patient));
+        if (have_room || have_patient)
+        {
+            (void)snprintf(s_status.room_name, sizeof(s_status.room_name),
+                           "%s", have_room ? room : "not assigned");
+            (void)snprintf(s_status.patient_name,
+                           sizeof(s_status.patient_name), "%s",
+                           have_patient ? patient : "not assigned");
+            s_status.assignment_received = true;
+            printf("[MQTT] assignment room=%s patient=%s\r\n",
+                   s_status.room_name, s_status.patient_name);
+        }
     }
 }
 
@@ -162,6 +227,18 @@ static bool mqtt_setup_and_connect(void)
     printf("[MQTT] connected to %s:%u as %s\r\n",
            s_status.broker, (unsigned)s_status.port, s_status.node_id);
     s_status.state = WS_MQTT_STATE_CONNECTED;
+    char assignment_topic[WS_MQTT_TOPIC_MAX];
+    build_topic(assignment_topic, sizeof(assignment_topic), "assignment");
+    cy_mqtt_subscribe_info_t sub = {
+        .qos = CY_MQTT_QOS1,
+        .topic = assignment_topic,
+        .topic_len = (uint16_t)strlen(assignment_topic),
+    };
+    if (CY_RSLT_SUCCESS != cy_mqtt_subscribe(s_mqtt_handle, &sub, 1U))
+    {
+        printf("[MQTT] assignment subscribe failed\r\n");
+        s_status.err_count++;
+    }
     publish_registration();
     publish_status();
     return true;

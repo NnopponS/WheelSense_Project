@@ -1,7 +1,7 @@
-/* EaseAI E84 production episode (all on CM55).
+/* EaseAI E84 production episode (UI/network/sensors/AI on CM55; BLE on CM33 NS).
  *
  * Four-page touchscreen UI on one screen (tabview):
- *   Dash    - live sensor values + tap counter + link status
+ *   Dash    - live environment gauges + room/patient assignment
  *   Camera  - live OV7675 320x240 preview
  *   WiFi    - scan list + on-screen keyboard credential entry + join
  *   MQTT    - broker/port/node-id entry + connect + publish counters
@@ -12,13 +12,12 @@
 
 #include "app_interface.h"
 
+#include "edge_ai.h"
 #include "edge_camera.h"
 #include "sensor_bus.h"
 #include "ws_mqtt.h"
 #include "ws_wifi.h"
 
-#include "bmi270_reader.h"
-#include "bmm350_reader.h"
 #include "dps368_reader.h"
 #include "sht4x_reader.h"
 
@@ -40,6 +39,10 @@
 #define COLOR_BAD    lv_color_hex(0xF87171)
 #define COLOR_BTN_BG lv_color_hex(0x334155)
 
+/* Calibrated on the enclosed EaseAI board: 32.90 C indicated at 22.00 C
+ * ambient. Keep this physical calibration knob for each enclosure revision. */
+#define WS_SHT4X_TEMP_OFFSET_X100 (-1090)
+
 static void fmt_fixed(char *buf, size_t size, int32_t value,
                       uint32_t scale, int decimals)
 {
@@ -56,16 +59,6 @@ static void fmt_x100(char *buf, size_t size, int32_t value)
     fmt_fixed(buf, size, value, 100U, 2);
 }
 
-static void fmt_x1000(char *buf, size_t size, int32_t value)
-{
-    fmt_fixed(buf, size, value, 1000U, 3);
-}
-
-static void fmt_x10(char *buf, size_t size, int32_t value)
-{
-    fmt_fixed(buf, size, value, 10U, 1);
-}
-
 /* ---- shared state ------------------------------------------------------- */
 
 typedef struct
@@ -73,15 +66,11 @@ typedef struct
     volatile int32_t sht_temp_x100;
     volatile int32_t sht_hum_x100;
     volatile int32_t dps_pressure_x100;
-    volatile int32_t dps_temp_x100;
-    volatile int32_t bmi_acc_mgx1000;
-    volatile int32_t bmi_gyr_x100;
-    volatile int32_t mag_heading_x10;
     volatile uint32_t seq;
 } ws_snapshot_t;
 
 static ws_snapshot_t s_snap;
-static bool s_sht4x_ok, s_dps368_ok, s_bmi270_ok, s_bmm350_ok;
+static bool s_sht4x_ok, s_dps368_ok;
 static bool s_camera_ok;
 
 /* ---- widgets ------------------------------------------------------------ */
@@ -90,30 +79,32 @@ static lv_obj_t *s_tabview;
 static lv_obj_t *s_status_wifi;
 static lv_obj_t *s_status_mqtt;
 
-static lv_obj_t *s_dash_sht;
-static lv_obj_t *s_dash_dps;
-static lv_obj_t *s_dash_bmi;
-static lv_obj_t *s_dash_bmm;
-static lv_obj_t *s_dash_counter;
+static lv_obj_t *s_temp_arc;
+static lv_obj_t *s_hum_arc;
+static lv_obj_t *s_pressure_arc;
+static lv_obj_t *s_temp_value;
+static lv_obj_t *s_hum_value;
+static lv_obj_t *s_pressure_value;
+static lv_obj_t *s_assignment_room;
+static lv_obj_t *s_assignment_patient;
 
 static lv_obj_t *s_cam_canvas;
 static lv_obj_t *s_cam_status;
-static LV_ATTRIBUTE_MEM_ALIGN uint16_t
+static lv_obj_t *s_ai_status;
+CY_SECTION(".cy_gpu_buf") static LV_ATTRIBUTE_MEM_ALIGN uint16_t
     s_cam_pixels[EDGE_CAMERA_WIDTH * EDGE_CAMERA_HEIGHT];
 
 static lv_obj_t *s_wifi_list;
 static lv_obj_t *s_wifi_ssid_ta;
 static lv_obj_t *s_wifi_pass_ta;
 static lv_obj_t *s_wifi_status;
-static lv_obj_t *s_wifi_keyboard;
+static char s_wifi_ssid_rows[WS_WIFI_MAX_SCAN_RESULTS][WS_WIFI_SSID_MAX_LEN];
 
 static lv_obj_t *s_mqtt_broker_ta;
 static lv_obj_t *s_mqtt_port_ta;
 static lv_obj_t *s_mqtt_node_ta;
 static lv_obj_t *s_mqtt_status;
-static lv_obj_t *s_mqtt_keyboard;
-
-static uint32_t s_tap_count;
+static lv_obj_t *s_keyboard;
 
 enum
 {
@@ -133,22 +124,6 @@ static lv_obj_t *make_card(lv_obj_t *parent, int32_t w, int32_t h)
     lv_obj_set_style_pad_all(card, 10, 0);
     lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
     return card;
-}
-
-static lv_obj_t *make_value_label(lv_obj_t *parent, const char *title)
-{
-    lv_obj_t *title_label = lv_label_create(parent);
-    lv_label_set_text(title_label, title);
-    lv_obj_set_style_text_color(title_label, COLOR_MUTED, 0);
-    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_14, 0);
-    lv_obj_set_pos(title_label, 0, 0);
-
-    lv_obj_t *value = lv_label_create(parent);
-    lv_label_set_text(value, "--");
-    lv_obj_set_style_text_color(value, COLOR_TEXT, 0);
-    lv_obj_set_style_text_font(value, &lv_font_montserrat_20, 0);
-    lv_obj_set_pos(value, 0, 22);
-    return value;
 }
 
 static lv_obj_t *make_button(lv_obj_t *parent, const char *text,
@@ -171,61 +146,73 @@ static lv_obj_t *make_button(lv_obj_t *parent, const char *text,
 
 /* ---- Dash tab ----------------------------------------------------------- */
 
-static void counter_event(lv_event_t *event)
+static lv_obj_t *make_gauge(lv_obj_t *parent, const char *title,
+                            const char *unit, int32_t min, int32_t max,
+                            lv_color_t color, int32_t x,
+                            lv_obj_t **value_label)
 {
-    (void)event;
-    s_tap_count++;
-    lv_label_set_text_fmt(s_dash_counter, "%lu",
-                          (unsigned long)s_tap_count);
+    lv_obj_t *card = make_card(parent, 250, 220);
+    lv_obj_set_pos(card, x, 5);
+
+    lv_obj_t *heading = lv_label_create(card);
+    lv_label_set_text(heading, title);
+    lv_obj_set_style_text_color(heading, COLOR_MUTED, 0);
+    lv_obj_set_style_text_font(heading, &lv_font_montserrat_14, 0);
+    lv_obj_align(heading, LV_ALIGN_TOP_MID, 0, 0);
+
+    lv_obj_t *arc = lv_arc_create(card);
+    lv_obj_set_size(arc, 160, 160);
+    lv_arc_set_range(arc, min, max);
+    lv_arc_set_bg_angles(arc, 135, 45);
+    lv_obj_set_style_arc_width(arc, 14, LV_PART_MAIN);
+    lv_obj_set_style_arc_color(arc, COLOR_BORDER, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(arc, 14, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(arc, color, LV_PART_INDICATOR);
+    lv_obj_remove_style(arc, NULL, LV_PART_KNOB);
+    lv_obj_clear_flag(arc, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_align(arc, LV_ALIGN_CENTER, 0, 14);
+
+    *value_label = lv_label_create(card);
+    lv_label_set_text(*value_label, "--");
+    lv_obj_set_style_text_color(*value_label, COLOR_TEXT, 0);
+    lv_obj_set_style_text_font(*value_label, &lv_font_montserrat_24, 0);
+    lv_obj_align(*value_label, LV_ALIGN_CENTER, 0, 10);
+
+    lv_obj_t *unit_label = lv_label_create(card);
+    lv_label_set_text(unit_label, unit);
+    lv_obj_set_style_text_color(unit_label, COLOR_MUTED, 0);
+    lv_obj_align(unit_label, LV_ALIGN_CENTER, 0, 36);
+    return arc;
 }
 
 static void build_dash_tab(lv_obj_t *tab)
 {
-    lv_obj_t *sht_card = make_card(tab, 370, 80);
-    lv_obj_set_pos(sht_card, 5, 5);
-    s_dash_sht = make_value_label(sht_card, "SHT4x  temperature / humidity");
+    s_temp_arc = make_gauge(tab, "TEMPERATURE", "C", -10, 50,
+                            lv_color_hex(0xF97316), 5, &s_temp_value);
+    s_hum_arc = make_gauge(tab, "HUMIDITY", "%RH", 0, 100,
+                           lv_color_hex(0x38BDF8), 265, &s_hum_value);
+    s_pressure_arc = make_gauge(tab, "PRESSURE", "hPa", 950, 1050,
+                                lv_color_hex(0xA78BFA), 525,
+                                &s_pressure_value);
 
-    lv_obj_t *dps_card = make_card(tab, 370, 80);
-    lv_obj_set_pos(dps_card, 5, 90);
-    s_dash_dps = make_value_label(dps_card, "DPS368  pressure / temperature");
+    lv_obj_t *assignment = make_card(tab, 770, 120);
+    lv_obj_set_pos(assignment, 5, 235);
+    lv_obj_t *title = lv_label_create(assignment);
+    lv_label_set_text(title, "SERVER ASSIGNMENT");
+    lv_obj_set_style_text_color(title, COLOR_ACCENT, 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
 
-    lv_obj_t *bmi_card = make_card(tab, 370, 80);
-    lv_obj_set_pos(bmi_card, 5, 175);
-    s_dash_bmi = make_value_label(bmi_card, "BMI270  |acc| / |gyro|");
+    s_assignment_room = lv_label_create(assignment);
+    lv_label_set_text(s_assignment_room, "Room: waiting for server");
+    lv_obj_set_style_text_color(s_assignment_room, COLOR_TEXT, 0);
+    lv_obj_set_style_text_font(s_assignment_room, &lv_font_montserrat_20, 0);
+    lv_obj_set_pos(s_assignment_room, 0, 28);
 
-    lv_obj_t *bmm_card = make_card(tab, 370, 80);
-    lv_obj_set_pos(bmm_card, 5, 260);
-    s_dash_bmm = make_value_label(bmm_card, "BMM350  compass heading");
-
-    lv_obj_t *counter_card = make_card(tab, 400, 170);
-    lv_obj_set_pos(counter_card, 380, 5);
-    lv_obj_t *hint = lv_label_create(counter_card);
-    lv_label_set_text(hint, "Tap counter");
-    lv_obj_set_style_text_color(hint, COLOR_MUTED, 0);
-    lv_obj_set_style_text_font(hint, &lv_font_montserrat_14, 0);
-    lv_obj_set_pos(hint, 0, 0);
-
-    s_dash_counter = lv_label_create(counter_card);
-    lv_label_set_text(s_dash_counter, "0");
-    lv_obj_set_style_text_color(s_dash_counter, COLOR_ACCENT, 0);
-    lv_obj_set_style_text_font(s_dash_counter, &lv_font_montserrat_40, 0);
-    lv_obj_set_pos(s_dash_counter, 0, 24);
-
-    lv_obj_t *tap_button = make_button(counter_card, "TAP", COLOR_BTN_BG,
-                                       120, 60, counter_event);
-    lv_obj_set_pos(tap_button, 250, 40);
-
-    lv_obj_t *cam_note = make_card(tab, 400, 190);
-    lv_obj_set_pos(cam_note, 380, 180);
-    lv_obj_t *note = lv_label_create(cam_note);
-    lv_label_set_text(note,
-                      "Camera preview: CAMERA tab\n"
-                      "WiFi setup:     WIFI tab\n"
-                      "MQTT setup:     MQTT tab\n"
-                      "Sensor JSON-lines on UART 115200");
-    lv_obj_set_style_text_color(note, COLOR_MUTED, 0);
-    lv_obj_set_style_text_font(note, &lv_font_montserrat_14, 0);
-    lv_obj_set_pos(note, 0, 4);
+    s_assignment_patient = lv_label_create(assignment);
+    lv_label_set_text(s_assignment_patient, "Patient: not assigned");
+    lv_obj_set_style_text_color(s_assignment_patient, COLOR_MUTED, 0);
+    lv_obj_set_style_text_font(s_assignment_patient, &lv_font_montserrat_18, 0);
+    lv_obj_set_pos(s_assignment_patient, 390, 30);
 }
 
 /* ---- Camera tab --------------------------------------------------------- */
@@ -234,17 +221,53 @@ static void camera_ui_timer(lv_timer_t *timer)
 {
     (void)timer;
     const uint32_t active_tab = lv_tabview_get_tab_active(s_tabview);
-    if (WS_TAB_CAMERA == active_tab)
+    edge_camera_status_t status;
+    (void)memset(&status, 0, sizeof(status));
+    if (s_camera_ok && edge_camera_poll(s_cam_pixels, &status))
     {
-        edge_camera_status_t status;
-        (void)memset(&status, 0, sizeof(status));
-        if (s_camera_ok && edge_camera_poll(s_cam_pixels, &status))
+        static TickType_t last_ai_submit = 0U;
+        const TickType_t now = xTaskGetTickCount();
+        if ((now - last_ai_submit) >= pdMS_TO_TICKS(1000U))
         {
+            edge_ai_submit_frame(s_cam_pixels);
+            last_ai_submit = now;
+        }
+
+        if (WS_TAB_CAMERA == active_tab)
+        {
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT != 0)
+            SCB_CleanDCache_by_Addr((uint32_t *)s_cam_pixels,
+                                    sizeof(s_cam_pixels));
+#endif
             lv_obj_invalidate(s_cam_canvas);
             lv_label_set_text_fmt(s_cam_status,
-                                  "OV7675 LIVE  320x240  %lu FPS",
-                                  (unsigned long)status.fps);
+                                  "OV7675 LIVE  %lu FPS  light:%u  pixels:%lu",
+                                  (unsigned long)status.fps,
+                                  (unsigned)status.average_luma,
+                                  (unsigned long)status.nonzero_samples);
         }
+    }
+
+    const edge_ai_status_t *ai = edge_ai_status();
+    if (!ai->ready)
+    {
+        lv_label_set_text(s_ai_status, "Edge AI: loading model...");
+        lv_obj_set_style_text_color(s_ai_status, COLOR_MUTED, 0);
+    }
+    else if (!ai->inference_ok)
+    {
+        lv_label_set_text(s_ai_status, "Edge AI ready - waiting for frame");
+        lv_obj_set_style_text_color(s_ai_status, COLOR_ACCENT, 0);
+    }
+    else
+    {
+        lv_label_set_text_fmt(s_ai_status,
+                              ai->fall_risk
+                                  ? "FALL RISK\nSitting confidence: %u%%"
+                                  : "Monitoring posture\nSitting confidence: %u%%",
+                              (unsigned)ai->sitting_percent);
+        lv_obj_set_style_text_color(s_ai_status,
+                                    ai->fall_risk ? COLOR_BAD : COLOR_GOOD, 0);
     }
 }
 
@@ -267,10 +290,11 @@ static void build_camera_tab(lv_obj_t *tab)
         s_cam_status, s_camera_ok ? COLOR_ACCENT : COLOR_BAD, 0);
     lv_obj_set_pos(s_cam_status, 10, 335);
 
-    lv_obj_t *hint = lv_label_create(tab);
-    lv_label_set_text(hint, "No AI model: raw DVP stream only");
-    lv_obj_set_style_text_color(hint, COLOR_MUTED, 0);
-    lv_obj_set_pos(hint, 420, 20);
+    s_ai_status = lv_label_create(tab);
+    lv_label_set_text(s_ai_status, "Edge AI: loading model...");
+    lv_obj_set_style_text_color(s_ai_status, COLOR_MUTED, 0);
+    lv_obj_set_style_text_font(s_ai_status, &lv_font_montserrat_20, 0);
+    lv_obj_set_pos(s_ai_status, 420, 20);
 }
 
 /* ---- WiFi tab ----------------------------------------------------------- */
@@ -294,9 +318,7 @@ static void connect_event(lv_event_t *event)
 
 static void network_clicked(lv_event_t *event)
 {
-    lv_obj_t *btn = lv_event_get_target(event);
     const char *ssid = lv_event_get_user_data(event);
-    (void)btn;
     if (NULL != ssid)
     {
         lv_textarea_set_text(s_wifi_ssid_ta, ssid);
@@ -305,11 +327,19 @@ static void network_clicked(lv_event_t *event)
 
 static void textarea_focus_event(lv_event_t *event)
 {
-    lv_obj_t *keyboard = lv_event_get_user_data(event);
-    if (NULL != keyboard)
+    if (NULL != s_keyboard)
     {
-        lv_keyboard_set_textarea(keyboard, lv_event_get_target(event));
+        lv_keyboard_set_textarea(s_keyboard, lv_event_get_target(event));
+        lv_obj_remove_flag(s_keyboard, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_move_foreground(s_keyboard);
     }
+}
+
+static void keyboard_close_event(lv_event_t *event)
+{
+    (void)event;
+    lv_keyboard_set_textarea(s_keyboard, NULL);
+    lv_obj_add_flag(s_keyboard, LV_OBJ_FLAG_HIDDEN);
 }
 
 static void build_wifi_tab(lv_obj_t *tab)
@@ -363,14 +393,10 @@ static void build_wifi_tab(lv_obj_t *tab)
     lv_obj_set_width(s_wifi_status, 376);
     lv_obj_set_pos(s_wifi_status, 0, 190);
 
-    s_wifi_keyboard = lv_keyboard_create(tab);
-    lv_obj_set_size(s_wifi_keyboard, 786, 180);
-    lv_obj_set_pos(s_wifi_keyboard, 5, 285);
-    lv_keyboard_set_textarea(s_wifi_keyboard, s_wifi_ssid_ta);
     lv_obj_add_event_cb(s_wifi_ssid_ta, textarea_focus_event,
-                        LV_EVENT_FOCUSED, s_wifi_keyboard);
+                        LV_EVENT_FOCUSED, NULL);
     lv_obj_add_event_cb(s_wifi_pass_ta, textarea_focus_event,
-                        LV_EVENT_FOCUSED, s_wifi_keyboard);
+                        LV_EVENT_FOCUSED, NULL);
 }
 
 /* ---- MQTT tab ----------------------------------------------------------- */
@@ -445,16 +471,12 @@ static void build_mqtt_tab(lv_obj_t *tab)
     lv_obj_set_style_text_color(note, COLOR_MUTED, 0);
     lv_obj_set_pos(note, 520, 20);
 
-    s_mqtt_keyboard = lv_keyboard_create(tab);
-    lv_obj_set_size(s_mqtt_keyboard, 786, 150);
-    lv_obj_set_pos(s_mqtt_keyboard, 5, 285);
-    lv_keyboard_set_textarea(s_mqtt_keyboard, s_mqtt_broker_ta);
     lv_obj_add_event_cb(s_mqtt_broker_ta, textarea_focus_event,
-                        LV_EVENT_FOCUSED, s_mqtt_keyboard);
+                        LV_EVENT_FOCUSED, NULL);
     lv_obj_add_event_cb(s_mqtt_port_ta, textarea_focus_event,
-                        LV_EVENT_FOCUSED, s_mqtt_keyboard);
+                        LV_EVENT_FOCUSED, NULL);
     lv_obj_add_event_cb(s_mqtt_node_ta, textarea_focus_event,
-                        LV_EVENT_FOCUSED, s_mqtt_keyboard);
+                        LV_EVENT_FOCUSED, NULL);
 }
 
 /* ---- 1 Hz UI refresh (LVGL task) ---------------------------------------- */
@@ -509,30 +531,35 @@ static void ui_refresh_timer(lv_timer_t *timer)
         for (uint8_t i = 0U; i < wifi->scan_count; i++)
         {
             char line[48];
+            (void)snprintf(s_wifi_ssid_rows[i], sizeof(s_wifi_ssid_rows[i]),
+                           "%s", results[i].ssid);
             (void)snprintf(line, sizeof(line), "%s  (%ld)", results[i].ssid,
                            (long)results[i].rssi);
             lv_obj_t *btn = lv_list_add_button(s_wifi_list, LV_SYMBOL_WIFI,
                                                line);
             lv_obj_add_event_cb(btn, network_clicked, LV_EVENT_CLICKED,
-                                (void *)results[i].ssid);
+                                s_wifi_ssid_rows[i]);
         }
         ws_wifi_consume_scan_results();
     }
 
     fmt_x100(a, sizeof(a), s_snap.sht_temp_x100);
     fmt_x100(b, sizeof(b), s_snap.sht_hum_x100);
-    lv_label_set_text_fmt(s_dash_sht, "%s C   %s %%RH", a, b);
+    lv_label_set_text(s_temp_value, a);
+    lv_label_set_text(s_hum_value, b);
+    lv_arc_set_value(s_temp_arc, s_snap.sht_temp_x100 / 100);
+    lv_arc_set_value(s_hum_arc, s_snap.sht_hum_x100 / 100);
 
     fmt_x100(a, sizeof(a), s_snap.dps_pressure_x100);
-    fmt_x100(b, sizeof(b), s_snap.dps_temp_x100);
-    lv_label_set_text_fmt(s_dash_dps, "%s hPa   %s C", a, b);
+    lv_label_set_text(s_pressure_value, a);
+    lv_arc_set_value(s_pressure_arc, s_snap.dps_pressure_x100 / 100);
 
-    fmt_x1000(a, sizeof(a), s_snap.bmi_acc_mgx1000);
-    fmt_x100(b, sizeof(b), s_snap.bmi_gyr_x100);
-    lv_label_set_text_fmt(s_dash_bmi, "%s g   %s dps", a, b);
-
-    fmt_x10(a, sizeof(a), s_snap.mag_heading_x10);
-    lv_label_set_text_fmt(s_dash_bmm, "%s deg", a);
+    lv_label_set_text_fmt(s_assignment_room, "Room: %s",
+                          mqtt->assignment_received ? mqtt->room_name
+                                                    : "waiting for server");
+    lv_label_set_text_fmt(s_assignment_patient, "Patient: %s",
+                          mqtt->assignment_received ? mqtt->patient_name
+                                                    : "not assigned");
 
     lv_label_set_text_fmt(s_mqtt_status,
                           "%s\npub:%lu err:%lu\nbroker %s:%u",
@@ -550,21 +577,15 @@ static void sensor_task(void *arg)
     (void)arg;
     char payload[512];
     char temperature[24], humidity[24], pressure[24];
-    char acceleration[24], gyroscope[24], heading[24];
 
     s_sht4x_ok = (CY_RSLT_SUCCESS ==
                   sht4x_reader_init(&sensor_i2c_controller_hal_obj));
     s_dps368_ok = (CY_RSLT_SUCCESS ==
                    dps368_reader_init(&sensor_i2c_controller_hal_obj));
-    s_bmi270_ok = (CY_RSLT_SUCCESS ==
-                   bmi270_reader_init(&sensor_i2c_controller_hal_obj));
-    s_bmm350_ok = (CY_RSLT_SUCCESS ==
-                   bmm350_reader_init(CYBSP_I3C_CONTROLLER_HW,
-                                      &CYBSP_I3C_CONTROLLER_context));
 
-    printf("[SENSOR] init sht4x=%d dps368=%d bmi270=%d bmm350=%d\r\n",
-           (int)s_sht4x_ok, (int)s_dps368_ok, (int)s_bmi270_ok,
-           (int)s_bmm350_ok);
+    printf("[SENSOR] init sht4x=%d dps368=%d temp_offset_x100=%d\r\n",
+           (int)s_sht4x_ok, (int)s_dps368_ok,
+           WS_SHT4X_TEMP_OFFSET_X100);
 
     for (;;)
     {
@@ -574,7 +595,9 @@ static void sensor_task(void *arg)
         sht4x_sample_t sht;
         if (s_sht4x_ok && sht4x_reader_poll(&sht))
         {
-            s_snap.sht_temp_x100 = (int32_t)(sht.temperature_c * 100.0f);
+            s_snap.sht_temp_x100 =
+                (int32_t)(sht.temperature_c * 100.0f) +
+                WS_SHT4X_TEMP_OFFSET_X100;
             s_snap.sht_hum_x100 = (int32_t)(sht.humidity_rh * 100.0f);
             printf("{\"sensor\":\"sht4x\",\"t_cx100\":%ld,\"h_rhx100\":%ld,\"seq\":%lu}\r\n",
                    (long)s_snap.sht_temp_x100, (long)s_snap.sht_hum_x100,
@@ -589,9 +612,8 @@ static void sensor_task(void *arg)
         if (s_dps368_ok && dps368_reader_poll(&dps))
         {
             s_snap.dps_pressure_x100 = (int32_t)(dps.pressure_hpa * 100.0f);
-            s_snap.dps_temp_x100 = (int32_t)(dps.temperature_c * 100.0f);
-            printf("{\"sensor\":\"dps368\",\"p_hpax100\":%ld,\"t_cx100\":%ld,\"seq\":%lu}\r\n",
-                   (long)s_snap.dps_pressure_x100, (long)s_snap.dps_temp_x100,
+            printf("{\"sensor\":\"dps368\",\"p_hpax100\":%ld,\"seq\":%lu}\r\n",
+                   (long)s_snap.dps_pressure_x100,
                    (unsigned long)s_snap.seq);
         }
         else if (!s_dps368_ok)
@@ -599,52 +621,23 @@ static void sensor_task(void *arg)
             printf("{\"sensor\":\"dps368\",\"error\":\"init failed\"}\r\n");
         }
 
-        bmi270_sample_t imu;
-        if (s_bmi270_ok && bmi270_reader_poll(&imu))
-        {
-            s_snap.bmi_acc_mgx1000 = (int32_t)(imu.acc_mag_g * 1000.0f);
-            s_snap.bmi_gyr_x100 = (int32_t)(imu.gyr_mag_dps * 100.0f);
-            printf("{\"sensor\":\"bmi270\",\"acc_mgx1000\":%ld,\"gyr_dpsx100\":%ld,\"seq\":%lu}\r\n",
-                   (long)s_snap.bmi_acc_mgx1000, (long)s_snap.bmi_gyr_x100,
-                   (unsigned long)s_snap.seq);
-        }
-        else if (!s_bmi270_ok)
-        {
-            printf("{\"sensor\":\"bmi270\",\"error\":\"init failed\"}\r\n");
-        }
-
-        bmm350_sample_t mag;
-        if (s_bmm350_ok && bmm350_reader_poll(&mag))
-        {
-            s_snap.mag_heading_x10 = (int32_t)(mag.heading_deg * 10.0f);
-            printf("{\"sensor\":\"bmm350\",\"head_dgx10\":%ld,\"seq\":%lu}\r\n",
-                   (long)s_snap.mag_heading_x10,
-                   (unsigned long)s_snap.seq);
-        }
-        else if (!s_bmm350_ok)
-        {
-            printf("{\"sensor\":\"bmm350\",\"error\":\"init failed\"}\r\n");
-        }
-
         fmt_x100(temperature, sizeof(temperature), s_snap.sht_temp_x100);
         fmt_x100(humidity, sizeof(humidity), s_snap.sht_hum_x100);
         fmt_x100(pressure, sizeof(pressure), s_snap.dps_pressure_x100);
-        fmt_x1000(acceleration, sizeof(acceleration),
-                  s_snap.bmi_acc_mgx1000);
-        fmt_x100(gyroscope, sizeof(gyroscope), s_snap.bmi_gyr_x100);
-        fmt_x10(heading, sizeof(heading), s_snap.mag_heading_x10);
         (void)snprintf(payload, sizeof(payload),
                        "{\"protocolVersion\":1,\"device_id\":\"%s\","
                        "\"node_id\":\"%s\",\"status\":\"online\","
                        "\"seq\":%lu,\"camera_ready\":%s,"
+                       "\"edge_ai\":{\"ready\":%s,\"fall_risk\":%s,"
+                       "\"sitting_confidence_pct\":%u},"
                        "\"environment\":{\"temperatureC\":%s,"
-                       "\"humidityPct\":%s,\"pressureHpa\":%s},"
-                       "\"imu\":{\"accelMagnitudeG\":%s,"
-                       "\"gyroMagnitudeDps\":%s,\"headingDeg\":%s}}",
+                       "\"humidityPct\":%s,\"pressureHpa\":%s}}",
                        ws_mqtt_status()->node_id, ws_mqtt_status()->node_id,
                        (unsigned long)s_snap.seq, s_camera_ok ? "true" : "false",
-                       temperature, humidity, pressure, acceleration, gyroscope,
-                       heading);
+                       edge_ai_status()->ready ? "true" : "false",
+                       edge_ai_status()->fall_risk ? "true" : "false",
+                       (unsigned)edge_ai_status()->sitting_percent,
+                       temperature, humidity, pressure);
         ws_mqtt_publish_telemetry(payload);
     }
 }
@@ -685,11 +678,25 @@ void example_main(lv_obj_t *parent)
     lv_obj_t *tab_mqtt = lv_tabview_add_tab(s_tabview, "MQTT");
 
     s_camera_ok = edge_camera_init();
+    const bool edge_ai_started = edge_ai_start();
 
     build_dash_tab(tab_dash);
     build_camera_tab(tab_cam);
     build_wifi_tab(tab_wifi);
     build_mqtt_tab(tab_mqtt);
+
+    s_keyboard = lv_keyboard_create(parent);
+    lv_obj_set_size(s_keyboard, 760, 220);
+    lv_obj_align(s_keyboard, LV_ALIGN_CENTER, 0, 90);
+    lv_obj_set_style_bg_color(s_keyboard, COLOR_CARD, 0);
+    lv_obj_set_style_border_color(s_keyboard, COLOR_ACCENT, 0);
+    lv_obj_set_style_border_width(s_keyboard, 2, 0);
+    lv_obj_set_style_radius(s_keyboard, 14, 0);
+    lv_obj_add_event_cb(s_keyboard, keyboard_close_event,
+                        LV_EVENT_READY, NULL);
+    lv_obj_add_event_cb(s_keyboard, keyboard_close_event,
+                        LV_EVENT_CANCEL, NULL);
+    lv_obj_add_flag(s_keyboard, LV_OBJ_FLAG_HIDDEN);
 
     if (!s_camera_ok)
     {
@@ -711,5 +718,6 @@ void example_main(lv_obj_t *parent)
     lv_timer_create(ui_refresh_timer, 1000U, NULL);
     lv_timer_create(camera_ui_timer, 100U, NULL);
 
-    printf("[PRODUCTION] episode ready (camera=%d)\r\n", (int)s_camera_ok);
+    printf("[PRODUCTION] episode ready (camera=%d edge_ai=%d)\r\n",
+           (int)s_camera_ok, (int)edge_ai_started);
 }

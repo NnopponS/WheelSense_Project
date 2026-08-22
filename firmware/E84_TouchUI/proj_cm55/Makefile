@@ -57,7 +57,7 @@ VERBOSE=
 # FREERTOS RTOS_AWARE       : required by all episodes (LVGL timer task + app tasks)
 # BMM350_I3C                : BMM350 magnetometer via I3C (interactive sensor episodes)
 # LWIP MBEDTLS              : WiFi middleware stack (hmi-menu wifi episodes)
-COMPONENTS+=FREERTOS RTOS_AWARE BMM350_I3C LWIP MBEDTLS SECURE_SOCKETS
+COMPONENTS+=FREERTOS RTOS_AWARE LWIP MBEDTLS SECURE_SOCKETS ML_TFLM ML_INT8x8 U55
 
 ifeq ($(CONFIG_DISPLAY), WF101JTYAHMNB0_DISP)
 DEFINES += MTB_DISPLAY_EK79007AD3 MTB_CTP_ILI2511
@@ -99,6 +99,7 @@ DISABLE_COMPONENTS=
 
 CORE=CM55
 CORE_NAME=CM55_0
+NPU=U55
 
 # By default the build system automatically looks in the Makefile's directory
 # tree for source code and builds it. The SOURCES variable can be used to
@@ -128,7 +129,7 @@ INCLUDES += $(shell find ./app_sensor -type d 2>/dev/null)
 
 # Add additional defines to the build process (without a leading -D).
 # CYBSP_WIFI_CAPABLE required by wifi-core-freertos-lwip-mbedtls middleware
-DEFINES+=CY_RETARGET_IO_CONVERT_LF_TO_CRLF _BAREMETAL=0 CYBSP_WIFI_CAPABLE
+DEFINES+=CY_RETARGET_IO_CONVERT_LF_TO_CRLF _BAREMETAL=0 CYBSP_WIFI_CAPABLE TF_LITE_STATIC_MEMORY
 # PSE84's minimal crypto profile omits the TLS APIs required by secure-sockets.
 # Use the full Mbed TLS profile plus Infineon's Wi-Fi middleware overrides.
 DEFINES+=MBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"'
@@ -148,6 +149,7 @@ CY_IGNORE += $(SEARCH_lvgl)/src/draw/sw/blend/neon $(SEARCH_lvgl)/src/core/lv_re
 # Episodes catalog (reference copies of all 14 episodes) — NOT compiled.
 # The active episode lives in ./apps/ and is compiled normally.
 CY_IGNORE += ../../episodes
+CY_IGNORE += ./app_sensor/bmi270 ./app_sensor/bmm350
 
 # MQTT depends on the secure-sockets abstraction even for plain TCP port 1883.
 

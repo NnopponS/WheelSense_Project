@@ -1,0 +1,41 @@
+# lib/types.ts
+
+- Token · interface · L7-L10 — interface Token
+- User · interface · L12-L26 — interface User
+- Workspace · interface · L30-L35 — interface Workspace
+- MedicalConditionEntry · type · L39-L39 — type MedicalConditionEntry = string | Record<string, unknown>;
+- PatientPastSurgery · interface · L41-L45 — interface PatientPastSurgery
+- PatientMedication · interface · L47-L52 — interface PatientMedication
+- Patient · interface · L54-L78 — interface Patient
+- PatientContact · interface · L80-L90 — interface PatientContact
+- HardwareType · type · L94-L98 — type HardwareType = | "wheelchair" | "node" | "polar_sense" | "mobile_phone";
+- Device · interface · L101-L111 — interface Device
+- SmartDevice · interface · L114-L125 — interface SmartDevice
+- DeviceActivityEvent · interface · L128-L137 — interface DeviceActivityEvent
+- DevicePatientLink · interface · L139-L144 — interface DevicePatientLink
+- DeviceCaregiverLink · interface · L146-L151 — interface DeviceCaregiverLink
+- DeviceLocationInfo · interface · L153-L162 — interface DeviceLocationInfo
+- DeviceRealtimeSnapshot · interface · L164-L179 — interface DeviceRealtimeSnapshot
+- DevicePolarVitals · interface · L181-L187 — interface DevicePolarVitals
+- DeviceLatestPhoto · interface · L189-L194 — interface DeviceLatestPhoto
+- DeviceDetail · interface · L197-L205 — interface DeviceDetail extends Device
+- Room · interface · L209-L224 — interface Room
+- VitalReading · interface · L228-L239 — interface VitalReading
+- Alert · interface · L243-L258 — interface Alert
+- RoomOccupant · interface · L260-L272 — interface RoomOccupant
+- RoomSmartDeviceStateSummary · interface · L274-L281 — interface RoomSmartDeviceStateSummary
+- RoomCameraSummary · interface · L283-L289 — interface RoomCameraSummary
+- WorkflowClaimRequest · interface · L291-L293 — interface WorkflowClaimRequest
+- WorkflowHandoffRequest · interface · L295-L300 — interface WorkflowHandoffRequest
+- DemoActorMoveRequest · interface · L302-L305 — interface DemoActorMoveRequest
+- TimelineEvent · interface · L309-L321 — interface TimelineEvent
+- Caregiver · interface · L325-L343 — interface Caregiver
+- Facility · interface · L347-L356 — interface Facility
+- Floor · interface · L358-L366 — interface Floor
+- FacilityHierarchy · interface · L368-L383 — interface FacilityHierarchy
+- HealthObservation · interface · L387-L403 — interface HealthObservation
+- DeviceAssignment · interface · L407-L414 — interface DeviceAssignment
+- FloorplanAsset · interface · L418-L431 — interface FloorplanAsset
+- Specialist · interface · L433-L446 — interface Specialist
+- Prescription · interface · L448-L464 — interface Prescription
+- PharmacyOrder · interface · L466-L481 — interface PharmacyOrder

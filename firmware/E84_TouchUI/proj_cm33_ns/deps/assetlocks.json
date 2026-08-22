@@ -1,11 +1,23 @@
 [
     {
+        "asset-name": "abstraction-rtos",
+        "locked-commit": "release-v1.13.0"
+    },
+    {
         "asset-name": "async-transfer",
         "locked-commit": "release-v1.1.0"
     },
     {
         "asset-name": "bt-fw-mur-cyw55513",
         "locked-commit": "release-v1.0.0"
+    },
+    {
+        "asset-name": "btstack",
+        "locked-commit": "release-v4.1.5"
+    },
+    {
+        "asset-name": "clib-support",
+        "locked-commit": "release-v1.9.0"
     },
     {
         "asset-name": "cmsis",
@@ -22,6 +34,10 @@
     {
         "asset-name": "device-db",
         "locked-commit": "release-v4.35.0"
+    },
+    {
+        "asset-name": "freertos",
+        "locked-commit": "release-v10.6.202"
     },
     {
         "asset-name": "mtb-dsl-pse8xxgp",

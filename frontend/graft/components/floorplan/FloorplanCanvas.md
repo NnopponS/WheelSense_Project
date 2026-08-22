@@ -1,0 +1,22 @@
+# components/floorplan/FloorplanCanvas.tsx
+
+- FloorplanRoomTone · type · L10-L10 — type FloorplanRoomTone = "critical" | "warning" | "success" | "info";
+- FloorplanRoomChip · type · L12-L15 — type FloorplanRoomChip = { label: string; tone?: FloorplanRoomTone; };
+- FloorplanRoomMeta · type · L17-L26 — type FloorplanRoomMeta = { chips?: FloorplanRoomChip[]; detailLines?: string[]; tone?: FloorplanRoomTone; presenceDots?: string[]; /** Same length as presenceDots when set: profile links for map initials */ presenceHrefs?: (string | null)[]; /** Same length as presenceDots: hosted profile image URL or null (initials fallback) */ presenceAvatarUrls?: (string | null)[]; };
+- clampZoom · function · L36-L38 — function clampZoom(z: number): number
+- clampRoom · function · L40-L47 — function clampRoom(r: FloorplanRoomShape): FloorplanRoomShape
+- snapToGrid · function · L49-L51 — function snapToGrid(value: number): number
+- snapRoom · function · L53-L61 — function snapRoom(room: FloorplanRoomShape): FloorplanRoomShape
+- initialsFromPresenceLabel · function · L63-L69 — function initialsFromPresenceLabel(value: string): string
+- PresenceFace · function · L71-L89 — function PresenceFace({ label, avatarUrl }: { label: string; avatarUrl: string | null })
+- computeFitViewToRooms · function · L92-L121 — function computeFitViewToRooms(rooms: FloorplanRoomShape[]): { zoom: number; pan: { x: number; y: number } }
+- applyResize · function · L123-L158 — function applyResize( corner: "nw" | "ne" | "sw" | "se", room: FloorplanRoomShape, x: number, y: number, ): FloorplanRoomShape
+- DragState · type · L160-L181 — type DragState = | { kind: "move"; id: string; pointerId: number; point0: { x: number; y: number }; room0: FloorplanRoomShape; } | { kind: "resize"; corner: "nw" | "ne" | "sw" | "se"; id: string; pointerId: number; orig: FloorplanRoomShape; } | { kind: "pan"; pointerId: number; ptr0: { x: number; y: number }; pan0: { x: number; y: number }; } | null;
+- FloorplanCanvas · function · L183-L616 — function FloorplanCanvas({ rooms, onRoomsChange, selectedId, onSelect, readOnly = false, enableZoom, compact = false, roomMetaById = {}, fitContentOnMount = false, }: { rooms: FloorplanRoomShape[]; onRoomsChange: (next: FloorplanRoomShape[]) => void; selectedId: string | null; onSelect: (id: string | null) => void; /** When true: no drag/resize; rooms are clickable only to highlight (via onSelect). */ readOnly?: boolean; /** Show zoom controls and allow Ctrl/Cmd + wheel zoom */ enableZoom?: boolean; /** Reduce height and hide zoom controls for dashboard surfaces. */ compact?: boolean; roomMetaById?: Record<string, FloorplanRoomMeta | null | undefined>; /** After first non-empty layout, set zoom/pan to frame all rooms (does not refit on every edit). */ fitContentOnMount?: boolean; })
+- startMove · function · L260-L278 — function startMove(room: FloorplanRoomShape, event: React.PointerEvent)
+- startResize · function · L280-L302 — function startResize( corner: "nw" | "ne" | "sw" | "se", room: FloorplanRoomShape, event: React.PointerEvent, )
+- onSvgPointerDown · function · L315-L325 — function onSvgPointerDown(event: React.PointerEvent<SVGSVGElement>)
+- onSvgPointerMove · function · L327-L360 — function onSvgPointerMove(event: React.PointerEvent<SVGSVGElement>)
+- onSvgPointerUp · function · L362-L371 — function onSvgPointerUp()
+- roomToneClasses · function · L373-L400 — function roomToneClasses(tone?: FloorplanRoomTone)
+- onWheelZoom · function · L406-L412 — onWheelZoom = (event: WheelEvent)

@@ -1,0 +1,24 @@
+diff --git a/proj_cm55/Makefile b/proj_cm55/Makefile
+--- a/proj_cm55/Makefile
++++ b/proj_cm55/Makefile
+@@ -149,7 +149,7 @@ CY_IGNORE+=$(SEARCH_cmsis)/COMPONENT_CMSIS_NN/Source/ConvolutionFunctions/arm_de
+ # Camera type selection options
+ # CAM_USB for USB Camera
+ # CAM_DVP for DVP Camera
+-CAMERA_TYPE = CAM_USB
++CAMERA_TYPE = CAM_DVP
+ 
+ # Check which camera is being used
+ ifeq (CAM_USB, $(CAMERA_TYPE))
+diff --git a/proj_cm55/source/lcd_task.c b/proj_cm55/source/lcd_task.c
+--- a/proj_cm55/source/lcd_task.c
++++ b/proj_cm55/source/lcd_task.c
+@@ -993,7 +993,7 @@ void cm55_ns_gfx_task(void *arg)
+     {
+         dvp_bgr565_frames[i].width = CAMERA_WIDTH;
+         dvp_bgr565_frames[i].height = CAMERA_HEIGHT;
+-        dvp_bgr565_frames[i].format = VG_LITE_BGR565;
++        dvp_bgr565_frames[i].format = VG_LITE_RGB565;
+         dvp_bgr565_frames[i].image_mode = VG_LITE_NORMAL_IMAGE_MODE;
+         vglite_status = vg_lite_allocate(&dvp_bgr565_frames[i]);
+         if (VG_LITE_SUCCESS != vglite_status)

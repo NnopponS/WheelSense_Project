@@ -6,6 +6,7 @@
 
 #define WS_MQTT_HOST_MAX_LEN (64U)
 #define WS_MQTT_NODE_MAX_LEN (24U)
+#define WS_MQTT_ASSIGNMENT_MAX_LEN (48U)
 
 typedef enum
 {
@@ -24,6 +25,9 @@ typedef struct
     char broker[WS_MQTT_HOST_MAX_LEN];
     uint16_t port;
     char node_id[WS_MQTT_NODE_MAX_LEN];
+    volatile bool assignment_received;
+    char room_name[WS_MQTT_ASSIGNMENT_MAX_LEN];
+    char patient_name[WS_MQTT_ASSIGNMENT_MAX_LEN];
 } ws_mqtt_status_t;
 
 /* Starts the MQTT worker. Stays WAIT_NET until the WiFi link is up. */

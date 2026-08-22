@@ -106,15 +106,26 @@ bool edge_camera_poll(uint16_t *destination,
                                  sizeof(s_frames[index]));
 #endif
 
-    (void)memcpy(destination, s_frames[index], sizeof(s_frames[index]));
+    /* OV7675 transmits each RGB565 pixel most-significant byte first.  The
+     * CM55 and LVGL store RGB565 as native little-endian uint16_t values. */
+    for (uint32_t i = 0U; i < (EDGE_CAMERA_WIDTH * EDGE_CAMERA_HEIGHT); i++)
+    {
+        const uint16_t camera_pixel = s_frames[index][i];
+        destination[i] = (uint16_t)((camera_pixel << 8U) |
+                                    (camera_pixel >> 8U));
+    }
 
     uint32_t total_difference = 0U;
+    uint32_t total_luma = 0U;
+    uint32_t nonzero_samples = 0U;
     uint32_t sample_index = 0U;
     for (uint32_t y = 4U; y < EDGE_CAMERA_HEIGHT; y += 8U)
     {
         for (uint32_t x = 4U; x < EDGE_CAMERA_WIDTH; x += 8U)
         {
             uint8_t luma = rgb565_luma(destination[y * EDGE_CAMERA_WIDTH + x]);
+            total_luma += luma;
+            nonzero_samples += (0U != destination[y * EDGE_CAMERA_WIDTH + x]);
             if (s_have_previous)
             {
                 uint8_t previous = s_previous_luma[sample_index];
@@ -142,9 +153,21 @@ bool edge_camera_poll(uint16_t *destination,
     status->ready = true;
     status->activity_score =
         total_difference / (MOTION_GRID_X * MOTION_GRID_Y);
+    status->nonzero_samples = nonzero_samples;
+    status->average_luma =
+        (uint8_t)(total_luma / (MOTION_GRID_X * MOTION_GRID_Y));
     status->activity = s_have_previous &&
                        (status->activity_score >= MOTION_THRESHOLD);
     status->frame_count = s_frame_count;
     status->fps = s_fps;
+
+    static bool first_frame_logged = false;
+    if (!first_frame_logged)
+    {
+        (void)printf("[CAMERA] first frame light=%u pixels=%lu\n",
+                     (unsigned)status->average_luma,
+                     (unsigned long)status->nonzero_samples);
+        first_frame_logged = true;
+    }
     return true;
 }

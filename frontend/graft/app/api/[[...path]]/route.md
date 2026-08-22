@@ -1,0 +1,21 @@
+# app/api/[[...path]]/route.ts
+
+- getBackendOrigin · function · L10-L16 — function getBackendOrigin()
+- fallbackResponseForApiPath · function · L30-L60 — function fallbackResponseForApiPath(pathname: string)
+- decodeJwtPayload · function · L62-L73 — function decodeJwtPayload(token: string | null): Record<string, unknown> | null
+- authCookieBase · function · L75-L82 — function authCookieBase()
+- maxAgeFromJwt · function · L84-L94 — function maxAgeFromJwt(token: string): number
+- getCurrentSessionId · function · L96-L99 — function getCurrentSessionId(token: string | null): string | null
+- setAuthCookie · function · L101-L106 — function setAuthCookie(response: NextResponse, token: string)
+- clearAuthCookie · function · L108-L113 — function clearAuthCookie(response: NextResponse)
+- setImpersonationBackupCookie · function · L115-L120 — function setImpersonationBackupCookie(response: NextResponse, token: string)
+- clearImpersonationBackupCookie · function · L122-L127 — function clearImpersonationBackupCookie(response: NextResponse)
+- proxyToBackend · function · L129-L221 — async function proxyToBackend(req: NextRequest, pathSegments: string[] | undefined)
+- fetchWithTimeout · function · L166-L173 — async function fetchWithTimeout()
+- handleAuthLogin · function · L223-L236 — async function handleAuthLogin(req: NextRequest, pathSegments: string[] | undefined)
+- handleImpersonationStart · function · L238-L254 — async function handleImpersonationStart(req: NextRequest, pathSegments: string[] | undefined)
+- handleImpersonationStop · function · L256-L266 — async function handleImpersonationStop(req: NextRequest)
+- handleAuthLogout · function · L268-L277 — async function handleAuthLogout(req: NextRequest, pathSegments: string[] | undefined)
+- handleDeleteSession · function · L279-L291 — async function handleDeleteSession(req: NextRequest, pathSegments: string[] | undefined)
+- RouteCtx · type · L293-L293 — type RouteCtx = { params: Promise<{ path?: string[] }> };
+- handle · function · L295-L316 — async function handle(req: NextRequest, ctx: RouteCtx)

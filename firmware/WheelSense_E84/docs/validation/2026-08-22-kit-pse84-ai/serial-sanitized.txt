@@ -1,0 +1,24 @@
+[EASE_AI] IPC CM33_NS<->CM55 bidirectional boot probe PASS
+[INFO] syslog: System log started
+[INFO] fs: Mounting LFS drive
+[INFO] initd: pdm: Initialized device.
+[INFO] initd: bmi270: Initialized device.
+[INFO] initd: dps368: Initialized device.
+[INFO] initd: SHT4X: Initialized device.
+[INFO] initd: pdm_pcm: Configured device mode=Mono, sample rate=16 kHz, gain=5 dB
+[INFO] initd: [EASE_AI] BMI270 sample acquisition PASS
+[INFO] initd: bmi270: Configured device. mode=0, rate=50 Hz, frames/chunk=1, gyro=500dps, accel=8G
+[INFO] initd: dps368: Configured device. rate=8 Hz, mode=0
+[INFO] initd: [EASE_AI] SHT4X sample cache PASS
+[INFO] initd: SHT4X: Configured device. mode=0, rate=10 Hz
+[INFO] ws_sensor: [EASE_AI] PDM PCM16 frame capture PASS
+[INFO] ws_sensor: [EASE_AI] DPS368 sample cache PASS
+[INFO] usb: USB Task started
+[INFO] wifi: Wi-Fi Connection Manager initialized
+[INFO] wifi: Secure Socket initialized
+
+Sanitization: chip serial, probe serial, MAC address, and verbose wireless firmware metadata removed.
+Negative observation: no AMIC, BGT60 radar, or BMM350 initialization line was emitted.
+Historical RED observation: the first 120-second run emitted no sample-cache marker because no stream owner started either manager. The final image adds one internal owner and the successful markers above confirm converted sample delivery; physical accuracy, effective timing, and soak behavior remain unverified.
+Boundary: BMI270 acquisition is confirmed, but no display mounting/axis transform or touch transform was physically verified; no automatic screen rotation is claimed.
+Boundary: PDM PCM16 frame arrival is confirmed, but the upstream 1,024-sample interrupt-copy buffer is not the required 160/320-sample ring/level/DMA service and no acoustic quality is claimed.

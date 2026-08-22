@@ -78,17 +78,17 @@ cy_rslt_t dps368_driver_read_hpa_c(float *pressure_hpa, float *temperature_c)
         return DPS368_DRIVER_RSLT_BAD_ARG;
     }
 
-    cy_float32_t pressure_pa = 0.0f;
+    cy_float32_t pressure = 0.0f;
     cy_float32_t temperature = 0.0f;
 
-    cy_rslt_t rslt = xensiv_dps3xx_read(&s_sensor, &pressure_pa, &temperature);
+    cy_rslt_t rslt = xensiv_dps3xx_read(&s_sensor, &pressure, &temperature);
     if (CY_RSLT_SUCCESS != rslt)
     {
         return rslt;
     }
 
-    /* Convert pressure from Pa to hPa to match UI unit. */
-    *pressure_hpa = ((float)pressure_pa) / 100.0f;
+    /* The XENSIV driver compensation routine already returns hPa. */
+    *pressure_hpa = (float)pressure;
     *temperature_c = (float)temperature;
     return CY_RSLT_SUCCESS;
 }

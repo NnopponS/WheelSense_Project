@@ -1,0 +1,22 @@
+# clangd configuration for WheelSense E84 firmware.
+# The host_sim CMake build exports compile_commands.json; this file tells
+# clangd where to find it and adds the shared include path for files that
+# are compiled as part of the host_sim test targets but live outside the
+# host_sim directory tree (shared/source/*.c).
+
+CompileFlags:
+  CompilationDatabase: firmware/WheelSense_E84/host_sim/build
+  Add:
+    - -isystemC:/Users/worap/AppData/Local/Microsoft/WinGet/Packages/MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/llvm-mingw-20260616-ucrt-x86_64/lib/clang/22/include
+    - -isystemC:/Users/worap/AppData/Local/Microsoft/WinGet/Packages/MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/llvm-mingw-20260616-ucrt-x86_64/include
+
+---
+
+If:
+  PathMatch: firmware/WheelSense_E84/shared/.*
+CompileFlags:
+  Add:
+    - -Ifirmware/WheelSense_E84/shared/include
+    - -std=c11
+    - -Wall
+    - -Wextra

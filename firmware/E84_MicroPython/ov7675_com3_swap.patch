@@ -1,0 +1,23 @@
+diff --git a/mtb_dvp_camera_ov7675_def.h b/mtb_dvp_camera_ov7675_def.h
+--- a/mtb_dvp_camera_ov7675_def.h
++++ b/mtb_dvp_camera_ov7675_def.h
+@@ -58,6 +58,7 @@
+ #define OV7675_VER_NUM                        0x73U         /* Product VERION. */
+ 
+ #define OV7675_COM3_REG                       0x0CU         /* Control 3. */
++#define OV7675_COM3_SWAP_BYTES_MASK           0x40U         /* Swap output data MSB and LSB. */
+ #define OV7675_COM3_DCW_BITS                  0x0CU         /* Output format, bit 3 and 2 */
+ 
+ #define OV7675_COM4_REG                       0x0DU         /* Control 4. */
+diff --git a/mtb_dvp_camera_ov7675.c b/mtb_dvp_camera_ov7675.c
+--- a/mtb_dvp_camera_ov7675.c
++++ b/mtb_dvp_camera_ov7675.c
+@@ -375,6 +375,8 @@ ov7675_status_t OV7675_OutputFormat(ov7675_handler_t* handle,
+     OV7675_ModifyReg(handle, OV7675_COM7_REG, OV7675_COM7_OUT_FMT_BITS, outputFormatConfig->com7);
+     OV7675_ModifyReg(handle, OV7675_COM15_REG, OV7675_COM15_RGB_FMT_BITS,
+                      outputFormatConfig->com15);
++    OV7675_ModifyReg(handle, OV7675_COM3_REG, OV7675_COM3_SWAP_BYTES_MASK,
++                     OV7675_COM3_SWAP_BYTES_MASK);
+ 
+     /* Mirror the image */
+     OV7675_ModifyReg(handle, OV7675_MVFP_REG, OV7675_MVFP_MIRROR_MASK, OV7675_MVFP_MIRROR_MASK);

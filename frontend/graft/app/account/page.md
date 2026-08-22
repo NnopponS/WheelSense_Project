@@ -1,0 +1,23 @@
+# app/account/page.tsx
+
+- LinkedCaregiver · type · L34-L48 — type LinkedCaregiver = Partial< Pick< Caregiver, | "id" | "first_name" | "last_name" | "department" | "employee_code" | "specialty" | "license_number" | "emergency_contact_name" | "emergency_contact_phone" | "photo_url" > >;
+- LinkedPatientProfile · type · L50-L64 — type LinkedPatientProfile = { id: number; first_name: string; last_name: string; nickname: string; date_of_birth: string | null; gender: string; height_cm: number | null; weight_kg: number | null; blood_type: string; allergies: string[]; notes: string; photo_url: string; is_active: boolean; };
+- MeProfileResponse · type · L66-L70 — type MeProfileResponse = { user: User; linked_caregiver?: LinkedCaregiver | null; linked_patient?: LinkedPatientProfile | null; };
+- PatientRecordFormState · type · L72-L84 — type PatientRecordFormState = { first_name: string; last_name: string; nickname: string; date_of_birth: string; gender: string; height_cm: string; weight_kg: string; blood_type: string; allergiesText: string; notes: string; photo_url: string; };
+- patientFormFromLinked · function · L86-L106 — function patientFormFromLinked(p: LinkedPatientProfile): PatientRecordFormState
+- normalizeAllergyLines · function · L108-L113 — function normalizeAllergyLines(text: string): string[]
+- allergiesEqual · function · L115-L120 — function allergiesEqual(a: string[], b: string[]): boolean
+- ProfileFormState · type · L122-L134 — type ProfileFormState = { username: string; email: string; phone: string; caregiver_first_name: string; caregiver_last_name: string; caregiver_department: string; caregiver_employee_code: string; caregiver_specialty: string; caregiver_license_number: string; caregiver_emergency_contact_name: string; caregiver_emergency_contact_phone: string; };
+- fromProfile · function · L136-L152 — function fromProfile(profile: MeProfileResponse, fallbackUser: User): ProfileFormState
+- withFallback · function · L154-L156 — function withFallback(user: User): MeProfileResponse
+- AccountPage · function · L158-L1150 — function AccountPage()
+- handlePickFile · function · L325-L353 — async function handlePickFile(event: ChangeEvent<HTMLInputElement>)
+- handleUrlChange · function · L355-L367 — function handleUrlChange(value: string)
+- patchProfileImage · function · L369-L379 — async function patchProfileImage(nextUrl: string | null)
+- handleSavePhoto · function · L381-L411 — async function handleSavePhoto()
+- handleRemovePhoto · function · L413-L432 — async function handleRemovePhoto()
+- handleSaveProfile · function · L434-L567 — async function handleSaveProfile(scope: "account" | "patient")
+- parseOptFloat · function · L497-L502 — parseOptFloat = (raw: string): number | null
+- handleChangePassword · function · L569-L597 — async function handleChangePassword()
+- Field · function · L1152-L1174 — function Field({ label, value, onChange, type = "text", }: { label: string; value: string; onChange: (next: string) => void; type?: string; })
+- InfoRow · function · L1176-L1194 — function InfoRow({ icon: Icon, label, value, }: { icon: ComponentType<{ className?: string }>; label: string; value: string; })

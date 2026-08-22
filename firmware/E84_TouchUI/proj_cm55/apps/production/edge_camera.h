@@ -14,6 +14,8 @@ typedef struct
     uint32_t activity_score;
     uint32_t frame_count;
     uint32_t fps;
+    uint32_t nonzero_samples;
+    uint8_t average_luma;
 } edge_camera_status_t;
 
 bool edge_camera_init(void);

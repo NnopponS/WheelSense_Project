@@ -1,0 +1,23 @@
+# app/admin/ml-calibration/MlCalibrationClient.tsx
+
+- TabKey · type · L30-L30 — type TabKey = "localization" | "motion";
+- Room · interface · L32-L37 — interface Room
+- Device · interface · L39-L44 — interface Device
+- Facility · interface · L46-L49 — interface Facility
+- Floor · interface · L51-L56 — interface Floor
+- LocalizationModelInfo · interface · L58-L62 — interface LocalizationModelInfo
+- LocalizationReadiness · interface · L64-L91 — interface LocalizationReadiness
+- MotionModelInfo · interface · L93-L98 — interface MotionModelInfo
+- MotionTrainResponse · interface · L100-L102 — interface MotionTrainResponse
+- MlCalibrationClient · function · L104-L973 — function MlCalibrationClient()
+- showMsg · function · L258-L261 — showMsg = (text: string, type: "success" | "error" | "info" = "info")
+- handleStartLocSession · function · L265-L279 — handleStartLocSession = async ()
+- handleRecordLocSample · function · L281-L316 — handleRecordLocSample = async ()
+- handleStopLocSession · function · L318-L329 — handleStopLocSession = async ()
+- handleSaveLocalizationStrategy · function · L331-L345 — handleSaveLocalizationStrategy = async ()
+- handleTrainLoc · function · L347-L358 — handleTrainLoc = async ()
+- handleRepairReadiness · function · L360-L384 — handleRepairReadiness = async ()
+- handleStartRecord · function · L387-L400 — handleStartRecord = async ()
+- handleStopRecord · function · L402-L411 — handleStopRecord = async ()
+- handleTrainMotion · function · L413-L424 — handleTrainMotion = async ()
+- handleSaveMotion · function · L426-L433 — handleSaveMotion = async ()

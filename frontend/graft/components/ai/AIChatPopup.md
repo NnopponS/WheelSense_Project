@@ -1,0 +1,40 @@
+# components/ai/AIChatPopup.tsx
+
+- ExecutionPlan · type · L33-L33 — type ExecutionPlan = components["schemas"]["ExecutionPlan"];
+- JsonRecord · type · L34-L34 — type JsonRecord = Record<string, unknown>;
+- InlineActionStatus · type · L35-L35 — type InlineActionStatus = "proposed" | "confirming" | "executing" | "executed" | "rejected" | "failed";
+- InlineActionState · type · L37-L44 — type InlineActionState = { status: InlineActionStatus; currentStepIndex: number; completedSteps: number[]; failedSteps: number[]; stepResults: StepResult[]; error?: string | null; };
+- SpeechRecognitionAlternativeLike · type · L46-L49 — type SpeechRecognitionAlternativeLike = { transcript: string; confidence?: number; };
+- SpeechRecognitionResultLike · type · L51-L55 — type SpeechRecognitionResultLike = { readonly isFinal: boolean; readonly length: number; [index: number]: SpeechRecognitionAlternativeLike; };
+- SpeechRecognitionResultListLike · type · L57-L60 — type SpeechRecognitionResultListLike = { readonly length: number; [index: number]: SpeechRecognitionResultLike; };
+- SpeechRecognitionEventLike · type · L62-L65 — type SpeechRecognitionEventLike = Event & { readonly resultIndex: number; readonly results: SpeechRecognitionResultListLike; };
+- SpeechRecognitionErrorEventLike · type · L67-L70 — type SpeechRecognitionErrorEventLike = Event & { readonly error?: string; readonly message?: string; };
+- SpeechRecognitionLike · type · L72-L83 — type SpeechRecognitionLike = { continuous: boolean; interimResults: boolean; lang: string; maxAlternatives: number; onend: (() => void) | null; onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null; onresult: ((event: SpeechRecognitionEventLike) => void) | null; abort: () => void; start: () => void; stop: () => void; };
+- SpeechRecognitionConstructor · type · L85-L85 — type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+- Window · interface · L88-L91 — interface Window
+- Message · type · L94-L103 — type Message = { id: string; role: "user" | "assistant"; content: string; grounding?: JsonRecord | null; executionResult?: JsonRecord | null; metadata?: JsonRecord | null; proposal?: ActionProposal | null; actionState?: InlineActionState | null; };
+- Conversation · type · L104-L104 — type Conversation = { id: number; title: string | null; updated_at: string };
+- ProposedAction · type · L106-L113 — type ProposedAction = { action_id?: string | number | null; title?: string | null; description?: string | null; risk_level?: string | null; params?: JsonRecord | null; payload?: JsonRecord | null; };
+- ActionProposal · type · L115-L126 — type ActionProposal = { proposal_id?: string | number | null; reply?: string | null; assistant_reply?: string | null; summary?: string | null; actions?: ProposedAction[] | null; mode?: "answer" | "plan"; execution_plan?: ExecutionPlan | null; ai_trace?: AITraceChip[] | null; provider_attempts?: ProviderAttemptTrace[] | null; grounding?: JsonRecord | null; };
+- ExecuteResponse · type · L128-L142 — type ExecuteResponse = { reply?: string | null; result?: unknown; message?: string | null; execution_result?: JsonRecord | null; step_results?: Array<{ step_id: string; tool_name?: string; success: boolean; message?: string; error?: string; result?: unknown; executed_at?: string; }>; };
+- newMessageId · function · L144-L147 — function newMessageId(prefix: string): string
+- asRecord · function · L149-L151 — function asRecord(value: unknown): JsonRecord | null
+- asArray · function · L153-L155 — function asArray(value: unknown): unknown[]
+- asString · function · L157-L159 — function asString(value: unknown): string
+- hasThaiText · function · L161-L163 — function hasThaiText(value: string): boolean
+- speechLangForText · function · L165-L167 — function speechLangForText(value: string, fallback = "en-US"): string
+- stripForSpeech · function · L169-L177 — function stripForSpeech(value: string): string
+- initialActionState · function · L179-L188 — function initialActionState(status: InlineActionStatus = "proposed"): InlineActionState
+- coerceExecutionPlan · function · L190-L198 — function coerceExecutionPlan(proposal: ActionProposal | null): ExecutionPlan | null
+- shouldRenderProposal · function · L200-L202 — function shouldRenderProposal(proposal: ActionProposal | null): boolean
+- mergeGrounding · function · L204-L216 — function mergeGrounding(metadata: JsonRecord | null, explicit?: unknown): JsonRecord | null
+- coerceProposalFromMetadata · function · L218-L236 — function coerceProposalFromMetadata(metadata: JsonRecord | null): ActionProposal | null
+- coerceActionStateFromMetadata · function · L238-L256 — function coerceActionStateFromMetadata( metadata: JsonRecord | null, proposal: ActionProposal | null, executionResult: JsonRecord | null, ): InlineActionState | null
+- normalizeHistoryMessage · function · L258-L285 — function normalizeHistoryMessage(item: { id?: number | string; role: string; content: string; metadata?: JsonRecord | null; grounding?: JsonRecord | null; execution_result?: JsonRecord | null; executionResult?: JsonRecord | null; }): Message
+- assistantHasRenderablePayload · function · L287-L289 — function assistantHasRenderablePayload(message: Message): boolean
+- ThinkingIndicator · function · L291-L305 — function ThinkingIndicator({ label }: { label: string })
+- InlineActionBlock · function · L307-L382 — function InlineActionBlock({ messageId, proposal, state, onConfirm, onReject, }: { messageId: string; proposal: ActionProposal; state: InlineActionState | null | undefined; onConfirm: (messageId: string, proposal: ActionProposal) => void; onReject: (messageId: string, proposal: ActionProposal) => void; })
+- AIChatPopup · function · L384-L1227 — function AIChatPopup({ onClose }: { onClose?: () => void } = {})
+- handleOpenAi · function · L534-L538 — function handleOpenAi(event: Event)
+- handleNewChat · function · L544-L550 — function handleNewChat()
+- handleDeleteConversation · function · L552-L567 — async function handleDeleteConversation(id: number)

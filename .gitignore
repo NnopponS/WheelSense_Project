@@ -135,3 +135,5 @@ Thesis/oldsession.md
 
 # graft's local repository settings — not committed.
 /.graft/
+/graft/.cache/
+**/graft/.cache/

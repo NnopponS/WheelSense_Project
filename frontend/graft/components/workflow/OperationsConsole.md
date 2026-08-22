@@ -1,0 +1,39 @@
+# components/workflow/OperationsConsole.tsx
+
+- ConsoleRole · type · L84-L84 — type ConsoleRole = "admin" | "supervisor" | "observer";
+- ConsoleTab · type · L85-L85 — type ConsoleTab = "queue" | "transfer" | "coordination" | "audit" | "reports";
+- WorkflowItemType · type · L86-L86 — type WorkflowItemType = "task" | "schedule" | "directive";
+- AssignmentMode · type · L87-L87 — type AssignmentMode = "role" | "person";
+- RecurrencePreset · type · L88-L88 — type RecurrencePreset = "once" | "every_shift" | "daily" | "weekdays" | "weekly" | "advanced";
+- ReportTemplateId · type · L89-L94 — type ReportTemplateId = | "ward-overview" | "alert-summary" | "vitals-window" | "handover-notes" | "workflow-audit";
+- SummaryTone · type · L95-L95 — type SummaryTone = "info" | "warning" | "critical" | "success";
+- WorkflowListRow · type · L97-L110 — type WorkflowListRow = { id: number; itemType: WorkflowItemType; title: string; patientName: string; patientId: number | null; ownerLabel: string; status: string; timestamp: string; secondaryLabel: string; notePreview: string; routingRole: string | null; routingUserId: number | null; };
+- TaskFormState · type · L112-L121 — type TaskFormState = { patientId: string; title: string; description: string; priority: string; dueAt: string; assignmentMode: AssignmentMode; assignedRole: string; assignedUserId: string; };
+- ScheduleFormState · type · L123-L134 — type ScheduleFormState = { patientId: string; title: string; scheduleType: string; startsAt: string; recurrencePreset: RecurrencePreset; recurrenceRule: string; notes: string; assignmentMode: AssignmentMode; assignedRole: string; assignedUserId: string; };
+- DirectiveFormState · type · L136-L144 — type DirectiveFormState = { patientId: string; title: string; directiveText: string; assignmentMode: AssignmentMode; targetRole: string; targetUserId: string; effectiveFrom: string; };
+- MessageFormState · type · L146-L153 — type MessageFormState = { targetMode: AssignmentMode; recipientRole: string; recipientUserId: string; patientId: string; subject: string; body: string; };
+- HandoverFormState · type · L155-L162 — type HandoverFormState = { patientId: string; targetRole: string; shiftDate: string; shiftLabel: string; priority: string; note: string; };
+- TransferDialogState · type · L164-L167 — type TransferDialogState = { mode: "claim" | "handoff"; row: WorkflowListRow; } | null;
+- SummaryMetric · type · L169-L174 — type SummaryMetric = { label: string; value: number; tone: SummaryTone; icon: typeof Bell; };
+- ReportView · type · L176-L183 — type ReportView = { title: string; subtitle: string; columns: ReportColumn[]; rows: ReportRow[]; metrics: SummaryMetric[]; note: string; };
+- PatientLike · type · L185-L190 — type PatientLike = { id: number; first_name: string; last_name: string; care_level?: string | null; };
+- formatConsoleError · function · L244-L248 — function formatConsoleError(error: unknown, fallback: string): string
+- tabFromSearch · function · L250-L255 — function tabFromSearch(value: string | null): ConsoleTab
+- consoleTabFromSearchParams · function · L262-L270 — function consoleTabFromSearchParams(searchParams: URLSearchParams): ConsoleTab
+- stripLegacyConsoleTabFromTabQP · function · L272-L275 — function stripLegacyConsoleTabFromTabQP(next: URLSearchParams)
+- labelPatient · function · L277-L280 — function labelPatient(patient: PatientLike | undefined, unitWideLabel: string): string
+- labelUser · function · L282-L290 — function labelUser(user: UserSearchResult): string
+- optionalNumber · function · L292-L294 — function optionalNumber(value: string): number | null
+- optionalRole · function · L296-L298 — function optionalRole(value: string): string | null
+- toIsoOrNull · function · L300-L302 — function toIsoOrNull(value: string): string | null
+- toRequiredIso · function · L304-L306 — function toRequiredIso(value: string): string
+- recurrenceRuleForPreset · function · L308-L325 — function recurrenceRuleForPreset(preset: RecurrencePreset): string
+- statusVariant · function · L327-L333 — function statusVariant(status: string)
+- priorityVariant · function · L335-L340 — function priorityVariant(value: string)
+- isOpenWorkflowStatus · function · L342-L344 — function isOpenWorkflowStatus(status: string): boolean
+- reportToneForCount · function · L346-L351 — function reportToneForCount(count: number): SummaryTone
+- toMs · function · L353-L357 — function toMs(value: string | null | undefined): number | null
+- withinWindow · function · L359-L363 — function withinWindow(value: string | null | undefined, hours: number, nowMs: number): boolean
+- buildReportView · function · L365-L679 — function buildReportView(params: { templateId: ReportTemplateId; windowHours: number; auditDomain: string; patients: ListPatientsResponse; alerts: Alert[]; vitals: VitalReading[]; handovers: HandoverNoteOut[]; auditEvents: AuditTrailEventOut[]; wardSummary: GetWardSummaryResponse | null; alertSummary: GetAlertSummaryResponse | null; vitalsAverage: GetVitalsAveragesResponse | null; tasks: ListWorkflowTasksResponse; directives: ListWorkflowDirectivesResponse; unitWide: string; t: (key: TranslationKey) => string; }): ReportView
+- OperationsConsole · function · L681-L2899 — function OperationsConsole({ role, title, subtitle, }: { role: ConsoleRole; title: string; subtitle: string; })
+- invalidateConsoleData · function · L1035-L1037 — async function invalidateConsoleData()
