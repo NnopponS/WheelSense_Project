@@ -1,6 +1,5 @@
 "use client";
 
-import type { ChangeEvent, ReactNode } from "react";
 import Link from "next/link";
 import { Phone, Siren } from "lucide-react";
 import type { Caregiver, PatientContact } from "@/lib/types";

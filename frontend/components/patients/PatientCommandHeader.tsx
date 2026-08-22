@@ -4,7 +4,7 @@ import type { ChangeEvent, ReactNode } from "react";
 import Image from "next/image";
 import { CalendarDays, Droplets, MapPin, Ruler, User, Weight } from "lucide-react";
 import type { Patient, Room } from "@/lib/types";
-import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import { ageYears } from "@/lib/age";
 import { bodyMassIndex, bmiCategory } from "@/lib/patientMetrics";
 import { cn } from "@/lib/utils";
@@ -238,17 +238,3 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </label>
   );
 }
-
-/* i18n keys referenced (kept here to satisfy TranslationKey typing expectations):
- * patients.mobilityWalker, patients.mobilityIndependent, profile.avatar.removePhoto,
- * profile.avatar.localFileLabel, common.cancel, common.save, common.saving, common.edit
- */
-export type _HeaderTranslationKeys =
-  | "patients.mobilityWalker"
-  | "patients.mobilityIndependent"
-  | "profile.avatar.removePhoto"
-  | "profile.avatar.localFileLabel"
-  | "common.cancel"
-  | "common.save"
-  | "common.saving"
-  | "common.edit";

@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MedicalConditionEntry, Patient, PatientMedication, PatientPastSurgery } from "@/lib/types";
 import { useTranslation } from "@/lib/i18n";
