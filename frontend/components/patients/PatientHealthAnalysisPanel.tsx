@@ -15,6 +15,7 @@ import {
   TREND_RANGE_OPTIONS,
   type TrendRange,
 } from "@/components/patients/healthAnalysisParts";
+import { AdlAnalysisCard } from "@/components/patients/AdlAnalysisCard";
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
@@ -321,6 +322,7 @@ export function PatientHealthAnalysisPanel({
         isFetching={query.isFetching}
         onRefresh={() => void refreshAnalysis()}
       />
+      <AdlAnalysisCard patientId={patientId} />
       <HealthBaselineRow data={data} />
       <HealthTrendsWorkspace
         trendRange={trendRange}
