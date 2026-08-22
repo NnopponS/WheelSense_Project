@@ -50,7 +50,7 @@ function MobileRoleTaskBar({ onMoreClick }: { onMoreClick: () => void }) {
       className="ws-role-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/98 px-2 pt-2 shadow-[0_-14px_35px_-28px_rgb(15_23_42/0.5)] lg:hidden"
       aria-label={t("shell.mobileNavigation")}
     >
-      <div className={cn("mx-auto grid max-w-md gap-1", gridColsClass === "grid-cols-5" ? "grid-cols-5" : gridColsClass === "grid-cols-4" ? "grid-cols-4" : gridColsClass === "grid-cols-3" ? "grid-cols-3" : "grid-cols-2")}>
+      <div className={cn("grid w-full gap-1", gridColsClass === "grid-cols-5" ? "grid-cols-5" : gridColsClass === "grid-cols-4" ? "grid-cols-4" : gridColsClass === "grid-cols-3" ? "grid-cols-3" : "grid-cols-2")}>
         {displayItems.map((item) => {
           const Icon = item.icon;
           const active = isNavItemActive(item, pathname, searchParams, user.role);
