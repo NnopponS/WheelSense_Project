@@ -237,6 +237,7 @@ export function TasksPageLayout({
           <UnifiedTaskKanbanBoard
             tasks={visibleTasks}
             isLoading={isLoading}
+            onCreateTask={canCreate && !showArchived ? () => setShowCreateDialog(true) : undefined}
             onTaskClick={setSelectedTask}
             onStatusChange={canExecute && !showArchived ? handleStatusChange : undefined}
             canManage={canManage}

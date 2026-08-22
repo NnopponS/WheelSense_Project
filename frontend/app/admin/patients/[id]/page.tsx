@@ -762,19 +762,50 @@ export default function PatientDetailPage() {
             errorAbout={cardErrors.about}
           />
 
-          {/* ── 2. FOUR FEATURE NAV / SUMMARY CARDS ────────────────────── */}
-          <FeatureNavCards
-            riskLevel={healthRiskLevel}
-            riskFactorCount={healthRiskFactorCount}
-            recommendationCount={healthRecommendationCount}
-            hasEmergencyContact={Boolean(primaryContact)}
-            severeAnomalyActive={severeAnomalyActive}
-          />
+          {/* ── 2. MAIN DASHBOARD GRID (main 70% + right rail 30%) ─────── */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-10">
+            {/* EMERGENCY RAIL — first in DOM and mobile reading order */}
+            <aside className="space-y-4 xl:col-span-3 xl:col-start-8 xl:row-start-1">
+              <EmergencyAlertRail
+                contact={primaryContact}
+                severeAnomalyActive={severeAnomalyActive}
+                anomalySummary={anomalySummary}
+                isEditing={editingCard === "emergency"}
+                isSaving={savingCard === "emergency"}
+                canEdit={canEditPatient}
+                draft={emergencyDraft}
+                onDraftChange={(patch) => setCardDrafts((p) => {
+                  const map: Record<string, keyof typeof cardDrafts> = {
+                    name: "emergency_contact_name",
+                    relationship: "emergency_contact_relationship",
+                    phone: "emergency_contact_phone",
+                    email: "emergency_contact_email",
+                    notes: "emergency_contact_notes",
+                  };
+                  const next = { ...p };
+                  for (const [k, v] of Object.entries(patch)) {
+                    const mapped = map[k];
+                    if (mapped) (next as Record<string, unknown>)[mapped] = v;
+                  }
+                  return next;
+                })}
+                onStartEdit={() => startEditingCard("emergency")}
+                onCancelEdit={cancelEditingCard}
+                onSave={() => void saveCard("emergency")}
+                error={cardErrors.emergency}
+              />
+            </aside>
 
-          {/* ── 3. MAIN DASHBOARD GRID (main 70% + right rail 30%) ─────── */}
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             {/* MAIN COLUMN */}
-            <div className="space-y-4 xl:col-span-2">
+            <div className="space-y-4 xl:col-span-7 xl:col-start-1 xl:row-span-2 xl:row-start-1">
+              {/* ── 3. FOUR FEATURE NAV / SUMMARY CARDS ──────────────────── */}
+              <FeatureNavCards
+                riskLevel={healthRiskLevel}
+                riskFactorCount={healthRiskFactorCount}
+                recommendationCount={healthRecommendationCount}
+                hasEmergencyContact={Boolean(primaryContact)}
+                severeAnomalyActive={severeAnomalyActive}
+              />
 
               {/* AI Health Analysis (anomaly + baseline + trends + optimize + risk factors) */}
               <PatientHealthAnalysisPanel patientId={Number(id)} />
@@ -836,37 +867,8 @@ export default function PatientDetailPage() {
               </ProfileCard>
             </div>
 
-            {/* RIGHT RAIL */}
-            <aside className="space-y-4 xl:order-none order-first">
-              <EmergencyAlertRail
-                contact={primaryContact}
-                severeAnomalyActive={severeAnomalyActive}
-                anomalySummary={anomalySummary}
-                isEditing={editingCard === "emergency"}
-                isSaving={savingCard === "emergency"}
-                canEdit={canEditPatient}
-                draft={emergencyDraft}
-                onDraftChange={(patch) => setCardDrafts((p) => {
-                  const map: Record<string, keyof typeof cardDrafts> = {
-                    name: "emergency_contact_name",
-                    relationship: "emergency_contact_relationship",
-                    phone: "emergency_contact_phone",
-                    email: "emergency_contact_email",
-                    notes: "emergency_contact_notes",
-                  };
-                  const next = { ...p };
-                  for (const [k, v] of Object.entries(patch)) {
-                    const mapped = map[k];
-                    if (mapped) (next as Record<string, unknown>)[mapped] = v;
-                  }
-                  return next;
-                })}
-                onStartEdit={() => startEditingCard("emergency")}
-                onCancelEdit={cancelEditingCard}
-                onSave={() => void saveCard("emergency")}
-                error={cardErrors.emergency}
-              />
-
+            {/* STAFF RAIL — follows clinical content on mobile */}
+            <aside className="space-y-4 xl:col-span-3 xl:col-start-8 xl:row-start-2">
               <AssignedStaffCard
                 staffCount={caregiverDraftIds.length}
                 canManage={canManageResponsibleStaff}

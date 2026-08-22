@@ -35,8 +35,8 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
           aria-pressed={locale === option.value}
           aria-label={option.value === "en" ? t("shell.languageEnglish") : t("shell.languageThai")}
           className={cn(
-            "min-h-8 min-w-9 rounded-md px-2.5 text-xs leading-none transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-            compact && "min-w-8 px-2",
+            "min-h-11 min-w-11 rounded-md px-2.5 text-xs leading-none transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            compact && "px-2",
             locale === option.value
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:bg-background/60 hover:text-foreground",

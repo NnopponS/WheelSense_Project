@@ -132,7 +132,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
             <Logo size={28} className="text-primary" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-bold leading-tight text-foreground">{t("shell.platformName")}</h1>
+            <p className="truncate text-base font-bold leading-tight text-foreground">{t("shell.platformName")}</p>
             <p className="text-sm text-muted-foreground">{t("shell.platformSubtitle")}</p>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, AlertTriangle, HeartPulse, Phone, Siren, Sparkles } from "lucide-react";
+import { Activity, AlertTriangle, ClipboardCheck, HeartPulse, Phone, Siren } from "lucide-react";
 import type { HealthRiskLevel } from "@/lib/patientHealthAnalysis";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -40,12 +40,12 @@ function FeatureCard({ title, subtitle, icon: Icon, accent, targetId, status, st
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       }}
       className={cn(
-        "group flex w-full flex-col gap-2 rounded-xl border border-outline-variant/20 bg-card p-4 text-left shadow-sm transition-colors",
+        "group flex min-h-11 w-full flex-col gap-1 rounded-xl border border-outline-variant/20 bg-card p-3 text-left transition-colors sm:gap-2 sm:p-4",
         accentStyle.ring,
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", accentStyle.iconBg)}>
+        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9", accentStyle.iconBg)}>
           <Icon className={cn("h-4.5 w-4.5", accentStyle.iconText)} aria-hidden />
         </div>
         {status && (
@@ -56,9 +56,9 @@ function FeatureCard({ title, subtitle, icon: Icon, accent, targetId, status, st
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold leading-tight text-foreground">{title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+        <p className="mt-0.5 hidden text-xs text-muted-foreground sm:block">{subtitle}</p>
       </div>
-      {children}
+      {children ? <div className="hidden sm:block">{children}</div> : null}
     </button>
   );
 }
@@ -133,7 +133,7 @@ export function FeatureNavCards({
       <FeatureCard
         title={t("patient.feature.optimizePlan")}
         subtitle={t("patient.feature.optimizePlanSub")}
-        icon={Sparkles}
+        icon={ClipboardCheck}
         accent="green"
         targetId="optimize-health-plan"
         status={recommendationCount > 0 ? String(recommendationCount) : "—"}

@@ -380,9 +380,9 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap gap-3">
-          <div className="h-9 flex-1 min-w-[200px] bg-muted rounded animate-pulse" />
-          <div className="h-9 w-32 bg-muted rounded animate-pulse" />
-          <div className="h-9 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-11 flex-1 min-w-[200px] bg-muted rounded animate-pulse" />
+          <div className="h-11 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-11 w-32 bg-muted rounded animate-pulse" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -409,13 +409,13 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
             placeholder={t("tasks.kanban.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 pl-9"
+            className="h-11 pl-9"
             aria-label={t("tasks.kanban.ariaSearch")}
           />
         </div>
 
         <Select value={taskTypeFilter} onValueChange={setTaskTypeFilter}>
-          <SelectTrigger className="h-9 w-32" aria-label={t("tasks.kanban.filterType")}>
+          <SelectTrigger className="h-11 w-32" aria-label={t("tasks.kanban.filterType")}>
             <SelectValue placeholder={t("tasks.kanban.typePlaceholder")} />
           </SelectTrigger>
           <SelectContent>
@@ -426,7 +426,7 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
         </Select>
 
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="h-9 w-32" aria-label={t("tasks.kanban.filterPriority")}>
+          <SelectTrigger className="h-11 w-32" aria-label={t("tasks.kanban.filterPriority")}>
             <SelectValue placeholder={t("tasks.kanban.priorityPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
@@ -442,7 +442,7 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 gap-1.5 text-muted-foreground"
+            className="h-11 gap-1.5 text-muted-foreground"
             onClick={clearFilters}
             aria-label={t("tasks.kanban.clearFiltersAria")}
           >
@@ -451,8 +451,8 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
           </Button>
         )}
 
-        {canManage && onCreateTask && (
-          <Button size="sm" className="h-9 gap-1.5 ml-auto" onClick={onCreateTask}>
+        {hasAnyTasks && canManage && onCreateTask && (
+          <Button size="sm" className="h-11 gap-1.5 ml-auto" onClick={onCreateTask}>
             <Plus className="h-4 w-4" />
             {t("tasks.kanban.createTask")}
           </Button>
@@ -460,7 +460,7 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
       </div>
 
       {!hasAnyTasks ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <div className="flex flex-col items-center justify-center py-12 gap-4">
           <ListTodo className="h-12 w-12 text-muted-foreground/30" />
           <div className="text-center">
             <p className="text-lg font-medium text-foreground">{t("tasks.kanban.emptyTitle")}</p>
@@ -474,7 +474,7 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
           )}
         </div>
       ) : !hasFilteredTasks ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <div className="flex flex-col items-center justify-center py-12 gap-4">
           <Search className="h-12 w-12 text-muted-foreground/30" />
           <div className="text-center">
             <p className="text-lg font-medium text-foreground">{t("tasks.kanban.noMatchesTitle")}</p>

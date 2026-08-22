@@ -187,7 +187,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
             <div className="ml-1 flex min-w-0 items-center gap-2 border-l border-border pl-2 sm:ml-2 sm:pl-3">
               <Link
               href="/account"
-              className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
               aria-label={t("shell.openAccountSettings")}
             >
               <UserAvatar

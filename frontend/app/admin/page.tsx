@@ -316,7 +316,11 @@ export default function AdminDashboardPage() {
           compact
           label={t("admin.system.fleetOnline")}
           value={`${totalDevicesOnline}/${totalFleet}`}
-          description={t("admin.system.onlineLower")}
+          description={formatTemplate(t("admin.system.fleetAvailability"), {
+            online: totalDevicesOnline,
+            total: totalFleet,
+            offline: totalDevicesOffline,
+          })}
           icon={Tablet}
           href="/admin/devices"
           status={totalDevicesOffline > 0 ? { label: t("admin.system.statusNeedsReview"), tone: "warning" } : undefined}

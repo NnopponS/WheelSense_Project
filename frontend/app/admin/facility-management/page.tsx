@@ -378,7 +378,7 @@ function FacilityManagementPageContent() {
             <CardContent>
               {isLoading ? (
                 <div className="flex min-h-48 items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  <div className="h-11 w-11 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                 </div>
               ) : filteredFacilities.length === 0 ? (
                 <div className="text-center py-12">
@@ -402,7 +402,7 @@ function FacilityManagementPageContent() {
                       <div className="flex items-start justify-between gap-3">
                         <button
                           type="button"
-                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          className="flex min-h-11 min-w-0 flex-1 items-start gap-3 text-left"
                           onClick={() => {
                             setSelectedFacilityId(facility.id);
                             setActiveTab("floors");
@@ -425,7 +425,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-11 w-11"
                               aria-label={t("facilityMgmt.editFacility")}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -437,7 +437,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-destructive"
+                              className="h-11 w-11 text-destructive"
                               aria-label={t("facilityMgmt.deleteFacility")}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -490,7 +490,7 @@ function FacilityManagementPageContent() {
                 </div>
               ) : floorsQuery.isLoading ? (
                 <div className="flex min-h-48 items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  <div className="h-11 w-11 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                 </div>
               ) : floors.length === 0 ? (
                 <div className="text-center py-12">
@@ -514,7 +514,7 @@ function FacilityManagementPageContent() {
                       <div className="flex items-start justify-between gap-3">
                         <button
                           type="button"
-                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          className="flex min-h-11 min-w-0 flex-1 items-start gap-3 text-left"
                           onClick={() => {
                             setSelectedFloorId(floor.id);
                             setActiveTab("editor");
@@ -536,7 +536,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-11 w-11"
                               aria-label={t("facilityMgmt.editFloor")}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -548,7 +548,7 @@ function FacilityManagementPageContent() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-destructive"
+                              className="h-11 w-11 text-destructive"
                               aria-label={t("facilityMgmt.deleteFloor")}
                               onClick={(e) => {
                                 e.stopPropagation();

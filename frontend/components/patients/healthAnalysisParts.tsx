@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -431,21 +431,22 @@ function HealthTrendChart({
         <p className="text-[11px] text-muted-foreground">{metric.unit}</p>
       </div>
       {hasData ? (
-        <div className="h-40">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+        <div className="h-64 min-h-64 min-w-0">
+          <ResponsiveContainer width="100%" height={256} minWidth={0} minHeight={256}>
+            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.55} />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                minTickGap={18}
+                minTickGap={30}
+                interval="preserveStartEnd"
                 tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                width={36}
+                width={40}
                 tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
               />
               <Tooltip
@@ -466,12 +467,13 @@ function HealthTrendChart({
                 strokeWidth={2}
                 dot={false}
                 connectNulls
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="flex h-40 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/10 text-xs text-muted-foreground">
+        <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/10 text-xs text-muted-foreground">
           {t("patient.health.trendsEmpty")}
         </div>
       )}
@@ -491,6 +493,8 @@ export function HealthTrendsWorkspace({
   className?: string;
 }) {
   const { t } = useTranslation();
+  const [selectedMetricKey, setSelectedMetricKey] = useState<(typeof TREND_METRICS)[number]["key"]>("heart_rate_bpm");
+  const selectedMetric = TREND_METRICS.find((metric) => metric.key === selectedMetricKey) ?? TREND_METRICS[0];
   return (
     <section id="health-trends" className={cn("scroll-mt-32 rounded-2xl border border-border/60 bg-card shadow-sm", className)}>
       <div className="flex flex-col gap-3 border-b border-border/50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -503,13 +507,13 @@ export function HealthTrendsWorkspace({
             <p className="text-xs text-muted-foreground">{t("patient.health.trendsDesc")}</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-1 rounded-full border border-border/60 bg-muted/20 p-1">
+        <div className="flex flex-wrap gap-1 rounded-lg border border-border/60 bg-muted/20 p-1">
           {TREND_RANGE_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               className={cn(
-                "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+                "min-h-11 rounded-md px-3 py-2 text-xs font-semibold transition-colors",
                 trendRange === option.value
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-background hover:text-foreground",
@@ -521,10 +525,28 @@ export function HealthTrendsWorkspace({
           ))}
         </div>
       </div>
-      <div className="grid gap-3 p-4 md:grid-cols-2">
-        {TREND_METRICS.map((metric) => (
-          <HealthTrendChart key={metric.key} metric={metric} data={trendSeries} t={t} />
-        ))}
+      <div className="border-b border-border/50 px-4 py-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label={t("patient.health.metricSelector")}>
+          {TREND_METRICS.map((metric) => (
+            <button
+              key={metric.key}
+              type="button"
+              className={cn(
+                "min-h-11 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+                selectedMetric.key === metric.key
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+              aria-pressed={selectedMetric.key === metric.key}
+              onClick={() => setSelectedMetricKey(metric.key)}
+            >
+              {t(metric.labelKey)}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="min-w-0 p-4">
+        <HealthTrendChart metric={selectedMetric} data={trendSeries} t={t} />
       </div>
     </section>
   );

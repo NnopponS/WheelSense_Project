@@ -82,11 +82,18 @@ export function PatientCommandHeader({
       : patient.gender === "female" ? t("patients.genderFemale")
         : patient.gender === "other" ? t("patients.genderOther")
           : patient.gender || "—";
+  const detailMetrics = [
+    { icon: CalendarDays, label: t("patients.detailDob"), value: patient.date_of_birth ? new Date(patient.date_of_birth + "T12:00:00").toLocaleDateString(localeTag, { year: "numeric", month: "short", day: "numeric" }) : "—" },
+    { icon: Ruler, label: t("patients.heightCm"), value: patient.height_cm != null ? `${patient.height_cm} cm` : "—" },
+    { icon: Weight, label: t("patients.weightKg"), value: patient.weight_kg != null ? `${patient.weight_kg} kg` : "—" },
+    { icon: User, label: t("patients.detailBmi"), value: bmi != null ? `${bmi}` : "—", sub: bmi != null ? bmiLabel : undefined },
+    { icon: Droplets, label: t("patients.bloodType"), value: patient.blood_type || "—" },
+  ];
 
   return (
     <section
       className={cn(
-        "sticky top-0 z-20 rounded-2xl border border-outline-variant/20 bg-surface/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-surface/80",
+        "rounded-xl border border-outline-variant/20 bg-surface sm:sticky sm:top-0 sm:z-20",
         className,
       )}
     >
@@ -104,10 +111,10 @@ export function PatientCommandHeader({
         </div>
       )}
 
-      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:p-5">
+      <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
         {/* Avatar column */}
         <div className="flex shrink-0 flex-col items-center gap-1.5">
-          <div className="relative h-20 w-20 overflow-hidden rounded-xl border-2 border-outline-variant/25 bg-gradient-to-br from-primary/20 to-primary/5 sm:h-24 sm:w-24">
+          <div className="relative h-16 w-16 overflow-hidden rounded-xl border-2 border-outline-variant/25 bg-primary/10 sm:h-24 sm:w-24">
             {canEdit && (
               <label htmlFor={photoInputId} className={cn("absolute inset-0 z-[5] cursor-pointer", photoBusy && "pointer-events-none")} aria-hidden="true" />
             )}
@@ -123,7 +130,7 @@ export function PatientCommandHeader({
             )}
           </div>
           {canEdit && (
-            <label htmlFor={photoInputId} className="flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-center text-xs font-medium text-primary hover:bg-primary/10">{t("profile.avatar.localFileLabel")}</label>
+            <label htmlFor={photoInputId} className="hidden min-h-11 cursor-pointer items-center rounded-lg px-2 text-center text-xs font-medium text-primary hover:bg-primary/10 sm:flex">{t("profile.avatar.localFileLabel")}</label>
           )}
           <input id={photoInputId} type="file" accept="image/*" disabled={photoBusy} onChange={onPickPhoto} className="sr-only" />
           {photoError && <p className="text-center text-xs text-destructive">{photoError}</p>}
@@ -168,7 +175,7 @@ export function PatientCommandHeader({
           ) : (
             <>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl">{patient.first_name} {patient.last_name}</h1>
+                <h2 className="text-lg font-bold leading-tight text-foreground sm:text-2xl">{patient.first_name} {patient.last_name}</h2>
                 <p className="text-sm text-foreground-variant">
                   {age != null ? `${age} ${t("patients.years")}` : "—"} · {genderLabel}
                 </p>
@@ -208,24 +215,35 @@ export function PatientCommandHeader({
       </div>
 
       {/* Inline vital stats bar */}
-      {!isEditing && (
-        <div className="grid grid-cols-2 gap-px border-t border-outline-variant/15 bg-outline-variant/10 sm:grid-cols-5">
-          {[
-            { icon: CalendarDays, label: t("patients.detailDob"), value: patient.date_of_birth ? new Date(patient.date_of_birth + "T12:00:00").toLocaleDateString(localeTag, { year: "numeric", month: "short", day: "numeric" }) : "—" },
-            { icon: Ruler, label: t("patients.heightCm"), value: patient.height_cm != null ? `${patient.height_cm} cm` : "—" },
-            { icon: Weight, label: t("patients.weightKg"), value: patient.weight_kg != null ? `${patient.weight_kg} kg` : "—" },
-            { icon: User, label: t("patients.detailBmi"), value: bmi != null ? `${bmi}` : "—", sub: bmi != null ? bmiLabel : undefined },
-            { icon: Droplets, label: t("patients.bloodType"), value: patient.blood_type || "—" },
-          ].map(({ icon: Icon, label, value, sub }) => (
-            <div key={label} className="flex flex-col items-center gap-0.5 bg-surface/80 px-3 py-2.5 text-center">
-              <Icon className="mb-0.5 h-3.5 w-3.5 text-primary/70" />
-              <span className="text-[10px] font-medium tracking-wide text-foreground-variant">{label}</span>
-              <span className="text-sm font-semibold text-foreground tabular-nums">{value}</span>
-              {sub && <span className="text-[10px] text-foreground-variant">{sub}</span>}
+      {!isEditing ? (
+        <>
+          <details className="border-t border-outline-variant/15 sm:hidden">
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80">
+              {t("patients.moreDetails")}
+            </summary>
+            <div className="grid grid-cols-2 gap-px bg-outline-variant/10">
+              {detailMetrics.map(({ icon: Icon, label, value, sub }) => (
+                <div key={label} className="flex flex-col items-center gap-0.5 bg-surface px-3 py-2.5 text-center">
+                  <Icon className="mb-0.5 h-3.5 w-3.5 text-primary/70" aria-hidden="true" />
+                  <span className="text-[10px] font-medium tracking-wide text-foreground-variant">{label}</span>
+                  <span className="text-sm font-semibold text-foreground tabular-nums">{value}</span>
+                  {sub ? <span className="text-[10px] text-foreground-variant">{sub}</span> : null}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </details>
+          <div className="hidden grid-cols-5 gap-px border-t border-outline-variant/15 bg-outline-variant/10 sm:grid">
+            {detailMetrics.map(({ icon: Icon, label, value, sub }) => (
+              <div key={label} className="flex flex-col items-center gap-0.5 bg-surface px-3 py-2.5 text-center">
+                <Icon className="mb-0.5 h-3.5 w-3.5 text-primary/70" aria-hidden="true" />
+                <span className="text-[10px] font-medium tracking-wide text-foreground-variant">{label}</span>
+                <span className="text-sm font-semibold text-foreground tabular-nums">{value}</span>
+                {sub ? <span className="text-[10px] text-foreground-variant">{sub}</span> : null}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }
