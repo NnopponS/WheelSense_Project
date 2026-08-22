@@ -73,6 +73,7 @@ _REQUIRED_SCOPE: dict[str, str | None] = {
     "get_patient_vitals": "patients.read",
     "get_patient_health_analysis": "patients.read",
     "get_patient_timeline": "patients.read",
+    "get_patient_adl_analysis": "patients.read",
     "create_workflow_task": "workflow.write",
     "create_task_management_task": "workflow.write",
     "update_workflow_task_status": "workflow.write",

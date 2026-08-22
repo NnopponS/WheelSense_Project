@@ -92,6 +92,7 @@ from app.services.workflow import (
     schedule_service,
 )
 from app.services.activity import activity_service
+from app.services.adl_service import adl_analysis_for_patient
 from app.services.device_management import build_device_detail, build_device_summary, dispatch_command
 from app.services.service_requests import service_request_service
 from app.services.shift_checklist import shift_checklist_service
@@ -1188,6 +1189,41 @@ async def get_patient_timeline(patient_id: int, limit: int = 50) -> dict[str, An
                 }
                 for e in events
             ],
+        }
+
+
+@mcp.tool(
+    name="get_patient_adl_analysis",
+    description="Get Barthel ADL (Activities of Daily Living) analysis for a patient from their room occupancy timeline.",
+    annotations=mcp_types.ToolAnnotations(
+        title="Get Patient ADL Analysis",
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
+async def get_patient_adl_analysis(patient_id: int) -> dict[str, Any]:
+    actor = require_actor_context()
+    _require_scope("patients.read")
+    async with AsyncSessionLocal() as db:
+        await assert_patient_record_access_db(db, actor.workspace_id, _actor_user(), patient_id)
+        patient = await patient_service.get(db, ws_id=actor.workspace_id, id=patient_id)
+        analysis = await adl_analysis_for_patient(db, ws_id=actor.workspace_id, patient_id=patient_id)
+        return {
+            "patient_id": patient_id,
+            "patient_name": patient_display_name(
+                {
+                    "id": patient.id,
+                    "first_name": patient.first_name,
+                    "last_name": patient.last_name,
+                    "nickname": patient.nickname,
+                }
+            )
+            if patient
+            else f"Patient #{patient_id}",
+            "adl_analysis": analysis,
         }
 
 
@@ -3421,6 +3457,7 @@ _WORKSPACE_TOOL_REGISTRY: dict[str, Callable[..., Awaitable[Any]]] = {
     "get_patient_vitals": get_patient_vitals,
     "get_patient_health_analysis": get_patient_health_analysis,
     "get_patient_timeline": get_patient_timeline,
+    "get_patient_adl_analysis": get_patient_adl_analysis,
     "create_workflow_task": create_workflow_task,
     "create_task_management_task": create_task_management_task,
     "update_workflow_task_status": update_workflow_task_status,
