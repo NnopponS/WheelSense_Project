@@ -481,7 +481,9 @@ function normalizeColumns(rows: JsonRecord[], rawColumns: unknown[]): Column[] {
     .filter(Boolean) as Column[];
   if (parsed.length > 0) return parsed;
   const keys = new Set<string>();
-  rows.slice(0, 5).forEach((row) => Object.keys(row).slice(0, 6).forEach((key) => keys.add(key)));
+  rows.slice(0, 5).forEach((row) => Object.keys(row).forEach((key) => keys.add(key)));
+  // Prefer human-readable room_name over raw room_id
+  if (keys.has("room_name")) keys.delete("room_id");
   return [...keys].map((key) => ({ key, label: key.replace(/_/g, " ") }));
 }
 

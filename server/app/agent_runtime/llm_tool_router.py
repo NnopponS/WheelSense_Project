@@ -9,12 +9,14 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.api.dependencies import resolve_current_user_from_token
 from app.config import settings
 from app.db.session import AsyncSessionLocal
 from app.models.core import Workspace
+from app.models.patients import Patient
+from app.models.caregivers import CareGiver
 from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
 from app.mcp.tool_catalog import get_tool_policy, is_tool_read_only, read_only_tools
 from app.schemas.agent_runtime import (
@@ -180,7 +182,66 @@ def _explicitly_requests_patient_list(message: str) -> bool:
     )
 
 
-def _normalize_task_creation_calls(message: str, calls: list[ParsedToolCall]) -> list[ParsedToolCall]:
+async def _resolve_patient_and_staff_for_task(
+    workspace_id: int,
+    message: str,
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Resolve patient and staff names from the message to IDs using the DB.
+
+    Best-effort: if the DB is unavailable or the user context is missing,
+    returns the arguments unchanged so the LLM-proposed args still work.
+    """
+    args = dict(arguments)
+    text = message or ""
+    if not text:
+        return args
+
+    # Resolve patient_id if missing
+    if args.get("patient_id") is None:
+        try:
+            async with AsyncSessionLocal() as db:
+                stmt = select(Patient).where(Patient.workspace_id == workspace_id)
+                rows = (await db.execute(stmt)).scalars().all()
+                hits = resolve_patient_mentions(text, [
+                    {"id": r.id, "first_name": r.first_name, "last_name": r.last_name, "nickname": r.nickname}
+                    for r in rows
+                ])
+                if len(hits) == 1:
+                    args["patient_id"] = int(hits[0]["id"])
+        except Exception:
+            logger.debug("patient DB resolution skipped", exc_info=True)
+
+    # Resolve assigned_user_id if missing and a name is mentioned after ให้ or "for"
+    if args.get("assigned_user_id") is None and not args.get("assign_to_self"):
+        name_match = re.search(r"(?:ให้|for|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", text)
+        if name_match:
+            staff_name = name_match.group(1).strip().lower()
+            try:
+                async with AsyncSessionLocal() as db:
+                    cg_stmt = select(CareGiver).where(
+                        CareGiver.workspace_id == workspace_id,
+                        or_(
+                            CareGiver.first_name.ilike(f"%{staff_name}%"),
+                            CareGiver.last_name.ilike(f"%{staff_name}%"),
+                        ),
+                    )
+                    cg_rows = (await db.execute(cg_stmt)).scalars().all()
+                    if len(cg_rows) == 1:
+                        cg = cg_rows[0]
+                        if cg.user_id:
+                            args["assigned_user_id"] = int(cg.user_id)
+            except Exception:
+                logger.debug("staff DB resolution skipped", exc_info=True)
+
+    return args
+
+
+async def _normalize_task_creation_calls(
+    workspace_id: int,
+    message: str,
+    calls: list[ParsedToolCall],
+) -> list[ParsedToolCall]:
     has_task_create = any(c.name == "create_task_management_task" for c in calls)
     if not has_task_create:
         return calls
@@ -190,11 +251,13 @@ def _normalize_task_creation_calls(message: str, calls: list[ParsedToolCall]) ->
         if c.name == "list_visible_patients" and not _explicitly_requests_patient_list(message):
             continue
         if c.name == "create_task_management_task":
+            base_args = normalize_task_arguments(message, dict(c.arguments or {}))
+            resolved_args = await _resolve_patient_and_staff_for_task(workspace_id, message, base_args)
             normalized.append(
                 ParsedToolCall(
                     id=c.id,
                     name=c.name,
-                    arguments=normalize_task_arguments(message, dict(c.arguments or {})),
+                    arguments=resolved_args,
                 )
             )
             continue
@@ -217,6 +280,9 @@ def _router_system_prompt(role: str) -> str:
         "For patient-specific tools like `get_patient_vitals` or `get_patient_timeline`, "
         "pass `patient_id` as an integer. If you only know the patient name, "
         "call `list_visible_patients` first and the system will resolve the name. "
+        "For ADL (Activities of Daily Living) / Barthel analysis / กิจกรรมประจำวัน / วิเคราะห์ ADL, "
+        "use `get_patient_adl_analysis` with `patient_id`. If you only know the name, "
+        "call `list_visible_patients` first and the system will auto-fetch ADL for matches. "
         "For medications, use `list_prescriptions` (not `list_medications`). "
         "For floorplan/location maps, use `get_floorplan_presence` or `get_floorplan_layout` "
         "with empty arguments to auto-resolve the default facility. "
@@ -225,12 +291,13 @@ def _router_system_prompt(role: str) -> str:
         "For tasks shown on `/admin/tasks`, use `list_task_management_tasks` and "
         "`create_task_management_task`. Do not use patient-record tools for task requests. "
         "`create_workflow_task` is only for legacy workflow care_tasks, not the Task Management page. "
-        "Before calling `create_task_management_task`, the latest user request must include target "
-        "patient/room/ward, assignee or `assign_to_self`, deadline `due_at` as ISO 8601 when clear, "
-        "priority, checklist steps, and result/report requirements. Use the `checklist` array for "
-        "concrete steps and `report_template` for structured result fields when the request names "
-        "what staff must record. If any of those details are missing, ask a clarifying question instead of "
-        "calling a tool. "
+        "Before calling `create_task_management_task`, the latest user request must include at minimum "
+        "the target patient/room/ward and an assignee or `assign_to_self`. Deadline `due_at` as ISO 8601, "
+        "priority, checklist steps, and result/report requirements are helpful but optional — "
+        "proceed with sensible defaults (priority 'normal', empty checklist) when they are missing. "
+        "Use the `checklist` array for concrete steps and `report_template` for structured result fields "
+        "when the request names what staff must record. "
+        "Only ask a clarifying question if the target patient or assignee is unclear. "
         "If any mutation is needed, include those tools — the user will confirm before execution."
     )
 
@@ -260,6 +327,14 @@ def _is_timeline_request(message: str) -> bool:
     return bool(
         re.search(r"\b(timeline|movement\s+history|activity\s+history|history)\b", lowered)
         or any(token in message for token in ("ไทม์ไลน์", "ประวัติ", "เหตุการณ์", "กิจกรรม"))
+    )
+
+
+def _is_adl_request(message: str) -> bool:
+    lowered = (message or "").lower()
+    return bool(
+        re.search(r"\b(adl|activities\s+of\s+daily\s+living|barthel|functional\s+independence)\b", lowered)
+        or any(token in message for token in ("วิเคราะห์ adl", "adl", "กิจกรรมประจำวัน", "ความสามารถในการทำกิจกรรม"))
     )
 
 
@@ -397,6 +472,32 @@ def _timeline_sections(tool_results: list[tuple[str, dict[str, Any], Any]]) -> l
     return sections
 
 
+def _adl_sections(tool_results: list[tuple[str, dict[str, Any], Any]]) -> list[str]:
+    sections: list[str] = []
+    for tool_name, _arguments, result in tool_results:
+        if tool_name != "get_patient_adl_analysis" or not isinstance(result, dict):
+            continue
+        analysis = result.get("adl_analysis")
+        if not isinstance(analysis, dict) or not analysis:
+            continue
+        name = str(result.get("patient_name") or analysis.get("name") or f"Patient #{result.get('patient_id')}")
+        total = analysis.get("total")
+        max_total = analysis.get("max_total", 20)
+        tier = analysis.get("tier")
+        tier_label = analysis.get("tier_label", "")
+        method = analysis.get("method", "")
+        notes = analysis.get("notes") or []
+        lines = [f"{name}:"]
+        if total is not None:
+            lines.append(f"- Barthel ADL: {total}/{max_total}  Tier {tier} ({tier_label})")
+        if method:
+            lines.append(f"- Method: {method}")
+        for note in notes[:4]:
+            lines.append(f"- {note}")
+        sections.append("\n".join(lines))
+    return sections
+
+
 def _deterministic_answer_from_read_results(
     *,
     message: str,
@@ -415,6 +516,11 @@ def _deterministic_answer_from_read_results(
         sections = _timeline_sections(tool_results)
         if sections:
             heading = "ไทม์ไลน์ล่าสุด:" if locale == "th" else "Timeline:"
+            blocks.append(heading + "\n" + "\n\n".join(sections))
+    if _is_adl_request(message):
+        sections = _adl_sections(tool_results)
+        if sections:
+            heading = "วิเคราะห์ ADL:" if locale == "th" else "ADL Analysis:"
             blocks.append(heading + "\n" + "\n\n".join(sections))
     if blocks:
         return "\n\n".join(blocks)
@@ -753,7 +859,7 @@ async def propose_llm_tool_turn(
         calls = _validate_calls_for_role(role, calls, message=message)
         if not calls:
             return None
-        calls = _normalize_task_creation_calls(message, calls)
+        calls = await _normalize_task_creation_calls(actor.workspace_id, message, calls)
         if not calls:
             return None
 
@@ -823,6 +929,22 @@ async def propose_llm_tool_turn(
                     result = await call_mcp_tool(actor_access_token, "get_patient_details", args)
                     tool_results.append(("get_patient_details", result))
                     routed_results.append(("get_patient_details", args, result))
+
+            if patient_rows and _is_adl_request(message):
+                hits = resolve_patient_mentions(message, patient_rows)
+                adl_ids = {
+                    int(arguments.get("patient_id"))
+                    for tool_name, arguments, _result in routed_results
+                    if tool_name == "get_patient_adl_analysis" and arguments.get("patient_id") is not None
+                }
+                for hit in hits:
+                    pid = hit.get("id")
+                    if pid is None or int(pid) in adl_ids:
+                        continue
+                    args = {"patient_id": int(pid)}
+                    result = await call_mcp_tool(actor_access_token, "get_patient_adl_analysis", args)
+                    tool_results.append(("get_patient_adl_analysis", result))
+                    routed_results.append(("get_patient_adl_analysis", args, result))
 
             provider_attempts: list[dict[str, object]] = []
             assistant_reply = _deterministic_answer_from_read_results(

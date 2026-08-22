@@ -142,7 +142,7 @@ def normalize_task_create_title(text: str) -> str:
 
 def extract_task_due_at(text: str) -> str | None:
     explicit = re.search(
-        r"\b(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2})(?::(\d{2}))?)?\b",
+        r"\b(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2})(?:(\d{2}))?)?\b",
         text or "",
         flags=re.IGNORECASE,
     )
@@ -157,20 +157,43 @@ def extract_task_due_at(text: str) -> str | None:
         text or "",
         flags=re.IGNORECASE,
     )
-    if not relative:
-        return None
+    if relative:
+        base_date = datetime.now(timezone.utc).date()
+        if relative.group(1).lower() == "tomorrow":
+            base_date += timedelta(days=1)
+        hour = int(relative.group(2) or 17)
+        minute = int(relative.group(3) or 0)
+        suffix = (relative.group(4) or "").lower()
+        if suffix == "pm" and hour < 12:
+            hour += 12
+        if suffix == "am" and hour == 12:
+            hour = 0
+        return datetime.combine(base_date, time(hour, minute, tzinfo=timezone.utc)).isoformat()
 
-    base_date = datetime.now(timezone.utc).date()
-    if relative.group(1).lower() == "tomorrow":
-        base_date += timedelta(days=1)
-    hour = int(relative.group(2) or 17)
-    minute = int(relative.group(3) or 0)
-    suffix = (relative.group(4) or "").lower()
-    if suffix == "pm" and hour < 12:
-        hour += 12
-    if suffix == "am" and hour == 12:
-        hour = 0
-    return datetime.combine(base_date, time(hour, minute, tzinfo=timezone.utc)).isoformat()
+    # Thai relative dates: วันนี้ (today), พรุ่งนี้ (tomorrow), มะรืน (day after tomorrow)
+    thai_time = re.search(
+        r"(?:เวลา|ตอน|ช่วง)?\s*(\d{1,2})(?::(\d{2}))?\s*(?:น\.?|นาฬิกา)?",
+        text or "",
+    )
+    thai_date = re.search(r"(วันนี้|พรุ่งนี้|มะรืน)", text or "")
+    if thai_date:
+        base_date = datetime.now(timezone.utc).date()
+        if thai_date.group(1) == "พรุ่งนี้":
+            base_date += timedelta(days=1)
+        elif thai_date.group(1) == "มะรืน":
+            base_date += timedelta(days=2)
+        hour = int(thai_time.group(1)) if thai_time else 17
+        minute = int(thai_time.group(2) or 0) if thai_time else 0
+        return datetime.combine(base_date, time(hour, minute, tzinfo=timezone.utc)).isoformat()
+
+    # Thai time only (assume today if no date found)
+    if thai_time:
+        base_date = datetime.now(timezone.utc).date()
+        hour = int(thai_time.group(1))
+        minute = int(thai_time.group(2) or 0)
+        return datetime.combine(base_date, time(hour, minute, tzinfo=timezone.utc)).isoformat()
+
+    return None
 
 
 def extract_task_priority(text: str) -> str:
@@ -188,6 +211,13 @@ def extract_task_assignee(text: str) -> dict[str, Any]:
     lowered = (text or "").lower()
     args: dict[str, Any] = {}
     if re.search(r"\b(?:assign(?:ed)?\s+to|assignee|for|to)?\s*(?:me|myself|self)\b", lowered):
+        args["assign_to_self"] = True
+        args.pop("assigned_role", None)
+        args.pop("assigned_user_id", None)
+        return args
+
+    # Thai: ให้ฉัน / มอบหมายให้ตัวเอง = assign to self
+    if re.search(r"\b(?:ให้ฉัน|มอบหมายให้ตัวเอง|ให้ตัวเอง)\b", text or ""):
         args["assign_to_self"] = True
         args.pop("assigned_role", None)
         args.pop("assigned_user_id", None)

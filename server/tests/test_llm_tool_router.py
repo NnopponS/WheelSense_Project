@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from app.agent_runtime.llm_tool_router import (
     MCP_TOOL_READ_ONLY_ROUTING,
     _normalize_task_creation_calls,
@@ -85,7 +87,7 @@ def test_normalize_task_creation_calls_uses_structured_clarification_fields() ->
         ParsedToolCall(id="2", name="list_visible_patients", arguments={}),
     ]
 
-    out = _normalize_task_creation_calls(message, calls)
+    out = asyncio.run(_normalize_task_creation_calls(13, message, calls))
 
     assert [call.name for call in out] == ["create_task_management_task"]
     args = out[0].arguments

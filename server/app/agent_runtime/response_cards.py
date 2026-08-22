@@ -368,6 +368,14 @@ def cards_for_tool_result(tool_name: str | None, result: Any) -> list[dict[str, 
                 task=payload,
             )
         )
+    elif tool_name == "get_patient_adl_analysis" and isinstance(payload, dict):
+        cards.append(
+            make_response_card(
+                "patient_health_analysis",
+                title="ADL Analysis",
+                analysis=payload,
+            )
+        )
     elif isinstance(payload, list) and all(isinstance(row, dict) for row in payload):
         table = _table_card(
             title=tool_name.replace("_", " ").title(),
