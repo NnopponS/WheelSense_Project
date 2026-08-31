@@ -154,7 +154,3 @@ Comprehensive documentation is available in [`docs/wiki/`](docs/wiki/README.md):
 
 - `docs/plans/*` are planning documents. Keep them for context, but verify behavior against runtime code.
 - `.agents/changes/*` are change logs, not canonical architecture docs.
-
-## License
-
-See project files for license terms.
