@@ -1,0 +1,36 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/ios-ipa.yml
+      - mobile-app/wheelsense-gateway-flutter/**
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile-app/wheelsense-gateway-flutter
+    steps:
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build ios --release --no-codesign
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          ditto -c -k --sequesterRsrc --keepParent build/ios/ipa/Payload build/ios/ipa/WheelSense.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheelsense-ios-unsigned-ipa
+          path: mobile-app/wheelsense-gateway-flutter/build/ios/ipa/WheelSense.ipa
+          if-no-files-found: error
+
