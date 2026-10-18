@@ -1,0 +1,76 @@
+/* Hallmark component refinement: P5 H5 E5 S5 R5 V4. Existing operational tokens, compact fleet rows. */
+.summary { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; flex-shrink: 0; margin: 0; padding: .5rem 1rem; border-block: 1px solid var(--border); }
+.summary > div { display: flex; align-items: center; gap: .75rem; }
+.summary dt { font-size: .8125rem; color: var(--muted-foreground); }
+.summary dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.summary a { display: inline-flex; min-height: 2.75rem; align-items: center; border-radius: .25rem; }
+.summary a:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.primary { display: grid; min-width: 0; gap: 1rem; }
+.fleet { display: flex; min-width: 0; flex-direction: column; align-self: start; box-shadow: none; }
+.fleetHeader { flex-shrink: 0; flex-flow: row wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; padding: .75rem 1rem .5rem; }
+.fleetHeader h3 { font-size: 1rem; line-height: 1.5; }
+.fleetUpdated { margin: 0; color: var(--muted-foreground); font-size: .75rem; line-height: 1.5; }
+.fleetContents { min-height: 0; padding: 0 1rem; }
+.fleetRows { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.fleetRow { display: grid; grid-template-columns: minmax(0,1fr) minmax(2rem,3.5rem) 8rem; align-items: center; gap: .75rem; min-height: 2rem; padding-block: .25rem; }
+.fleetRow + .fleetRow { border-top: 1px solid var(--border); }
+.fleetCategory { display: flex; min-width: 0; align-items: center; gap: .5rem; font-size: .875rem; line-height: 1.4; overflow-wrap: anywhere; }
+.fleetIndicator { width: .375rem; height: .375rem; flex-shrink: 0; border-radius: 50%; background: var(--muted-foreground); }
+.fleetRow[data-state="online"] .fleetIndicator { background: var(--success); }
+.fleetRow[data-state="partial"] .fleetIndicator { background: var(--warning); }
+.fleetBar { height: 3px; overflow: hidden; border-radius: 2px; background: var(--muted); }
+.fleetBar > span { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.fleetReading { display: flex; align-items: baseline; justify-content: end; flex-wrap: wrap; gap: .125rem .375rem; max-width: 8rem; }
+.fleetCount { font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fleetStatus { color: var(--muted-foreground); font-size: .75rem; }
+.fleetFooter { flex-shrink: 0; flex-wrap: wrap; gap: .25rem .75rem; padding: .5rem 1rem; border-top: 1px solid var(--border); }
+.fleetNote { flex: 1 1 9rem; margin: 0; color: var(--muted-foreground); font-size: .75rem; line-height: 1.5; }
+.fleetActions { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-left: auto; }
+.fleetLink { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .5rem; border-radius: var(--radius-sm); font-size: .8125rem; font-weight: 500; color: var(--primary); }
+.fleetLink:hover { text-decoration: underline; text-underline-offset: .2em; }
+.fleetLink:focus-visible, .fleetContents:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+@media(max-width:479px) {
+  .fleetRow { grid-template-columns: minmax(0,1fr) 2rem 6.5rem; gap: .5rem; }
+}
+.attention { min-width: 0; }
+.alertList { list-style: none; padding: 0; margin: 0; }
+.alertList > li + li { border-top: 1px solid var(--border); }
+.mapPreview { display: flex; flex-shrink: 0; border-top: 1px solid var(--border); padding-top: .25rem; }
+.priority { flex-shrink: 0; }
+@media(min-width:1024px) and (min-height:640px) {
+  .primary { align-items: start; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); }
+
+
+  .attention { display: flex; min-height: 0; flex-direction: column; }
+  .attention > div { flex-shrink: 0; margin-bottom: .25rem; }
+  .alertList { max-height: 18rem; overflow-y: auto; overscroll-behavior: contain; }
+  .alertList a { padding-block: .5rem; min-height: 4rem; }
+  .priority { padding: .625rem .875rem; }
+  .priority h2 { font-size: 1rem; }
+  .priority p { font-size: .8125rem; }
+}
+
+.page { gap: .875rem; }
+.fleetRow { grid-template-columns: minmax(0,1fr) 3rem minmax(8rem, 12rem); }
+.fleetCategory { min-height: 2.5rem; border-radius: var(--radius-sm); }
+.fleetCategory:hover { color: var(--primary); }
+.fleetCategory:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.fleetReading { max-width: none; }
+.fleetDetail { width: 100%; text-align: end; color: var(--muted-foreground); font-size: .6875rem; }
+.secondary { display: grid; align-items: start; gap: 1rem; min-width: 0; }
+.operations { display: flex; min-width: 0; flex-direction: column; gap: .75rem; }
+.sectionHeader { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; }
+.sectionHeader h2 { font-size: 1rem; font-weight: 600; }
+.sectionHeader a { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .5rem; color: var(--primary); font-size: .8125rem; }
+.activityList { list-style: none; margin: 0; padding: 0; max-height: 13rem; overflow-y: auto; }
+.activityList li { padding-block: .5rem; border-bottom: 1px solid var(--border); }
+.quickActions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 .75rem; }
+.quickActions a { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .375rem .25rem; border-bottom: 1px solid var(--border); border-radius: var(--radius-sm); font-size: .8125rem; }
+.quickActions a:hover { background: var(--muted); }
+.context { display: grid; gap: 1rem; padding-top: .875rem; border-top: 1px solid var(--border); }
+.contextLinks { display: flex; flex-wrap: wrap; gap: .25rem 1rem; font-size: .8125rem; align-content: start; }
+.contextLinks a { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .5rem; color: var(--primary); }
+@media(min-width:1024px) { .secondary { grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); } .context { grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; } }
+@media(max-width:479px) { .fleetRow { grid-template-columns: minmax(0,1fr) 1.25rem minmax(6.5rem, 9rem); gap: .375rem; } .quickActions { grid-template-columns: 1fr; } }
+
+@media(min-width:1024px) and (pointer:fine) { .fleetCategory { min-height: 1.5rem; } }

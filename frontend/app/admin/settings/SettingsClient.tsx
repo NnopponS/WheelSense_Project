@@ -56,7 +56,8 @@ export default function AdminSettingsClient() {
       ]}
     >
 
-      <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <nav aria-label={t("settings.title")} className="flex flex-wrap gap-1 border-b border-border pb-3 lg:flex-col lg:self-start lg:border-b-0 lg:border-r lg:pr-4">
         {([
           ["profile", "settings.tabProfile"],
           ["ai", "settings.tabAi"],
@@ -67,15 +68,17 @@ export default function AdminSettingsClient() {
           <Button
             key={key}
             type="button"
-            variant={tab === key ? "default" : "outline"}
+            variant={tab === key ? "secondary" : "ghost"}
             size="sm"
+            aria-current={tab === key ? "page" : undefined}
+            className="justify-start"
             onClick={() => setTab(key)}
           >
             {t(labelKey)}
           </Button>
         ))}
-      </div>
-
+      </nav>
+      <div className="min-w-0">
       {tab === "profile" ? (
         <div className="space-y-6">
           <Card>
@@ -119,6 +122,8 @@ export default function AdminSettingsClient() {
       ) : null}
 
       {tab === "system" ? <MlCalibrationClient embedded /> : null}
+      </div>
+      </div>
     </AppPage>
   );
 }

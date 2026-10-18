@@ -19,6 +19,8 @@ interface AppPageProps {
   width?: "reading" | "content" | "wide" | "full";
   className?: string;
   showHeader?: boolean;
+  /** Bounded desktop workspace; mobile and short viewports retain natural flow. */
+  workspace?: boolean;
 }
 
 const widthClasses: Record<NonNullable<AppPageProps["width"]>, string> = {
@@ -39,10 +41,11 @@ export function AppPage({
   width = "wide",
   className,
   showHeader = true,
+  workspace = false,
 }: AppPageProps) {
   return (
-    <div className={cn("mx-auto w-full space-y-6", widthClasses[width], className)}>
-      {showHeader ? <header className="space-y-3">
+    <div className={cn("ws-app-page mx-auto flex w-full min-w-0 flex-col gap-6", workspace && "ws-workspace-page", widthClasses[width], className)}>
+      {showHeader ? <header className="flex flex-col gap-4 pb-1">
         {breadcrumbs?.length ? (
           <nav aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
@@ -52,7 +55,7 @@ export function AppPage({
                   <li key={`${item.label}-${index}`} className="flex min-w-0 items-center gap-1.5">
                     {index > 0 ? <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
                     {item.href && !current ? (
-                      <Link className="rounded-sm hover:text-foreground" href={item.href}>
+                      <Link className="rounded-sm text-muted-foreground hover:text-foreground" href={item.href}>
                         {item.label}
                       </Link>
                     ) : (
@@ -69,14 +72,12 @@ export function AppPage({
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 max-w-3xl">
-            {eyebrow ? (
-              <p className="mb-1 text-sm font-semibold text-primary">{eyebrow}</p>
-            ) : null}
-            <h1 className="text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
+            {eyebrow ? <span className="sr-only">{eyebrow}</span> : null}
+            <h1 className="text-2xl font-semibold leading-tight tracking-[-0.03em] text-foreground sm:text-3xl">
               {title}
             </h1>
             {description ? (
-              <p className="mt-2 max-w-2xl text-base leading-relaxed text-muted-foreground">
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {description}
               </p>
             ) : null}
@@ -86,7 +87,7 @@ export function AppPage({
       </header> : null}
 
       {priority}
-      {children}
+      {workspace ? <div className="ws-workspace-body">{children}</div> : children}
     </div>
   );
 }

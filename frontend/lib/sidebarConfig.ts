@@ -5,6 +5,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   Bell,
   Bug,
   ClipboardEdit,
@@ -102,164 +103,78 @@ export function isNavItemActive(
  * Each role has its own set of navigation groups and items
  */
 export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
-  /** Admin role — Blueprint: System Overview, People, Facilities, Devices, Operations, System */
   admin: [
-    {
-      items: [
-        {
-          key: "nav.admin.overview",
-          href: "/admin",
-          icon: LayoutDashboard,
-        },
-        {
-          key: "nav.admin.people",
-          href: "/admin/patients",
-          icon: Users,
-          requiredCapability: "patients.read",
-          activeForPaths: ["/admin/caregivers", "/admin/patients", "/admin/account-management", "/admin/users"],
-        },
-        {
-          key: "nav.admin.facilities",
-          href: "/admin/facility-management",
-          icon: MapPin,
-          requiredCapability: "facilities.read",
-          activeForPaths: ["/admin/floorplans", "/admin/facilities"],
-        },
-        {
-          key: "nav.admin.devices",
-          href: "/admin/devices",
-          icon: Tablet,
-          requiredCapability: "devices.read",
-          activeForPaths: ["/admin/smart-devices", "/admin/device-health"],
-        },
-        {
-          key: "nav.admin.operations",
-          href: "/admin/tasks",
-          icon: ClipboardEdit,
-          requiredCapability: "workflow.manage",
-          activeForPaths: ["/admin/workflow", "/admin/shift-checklists", "/admin/timeline", "/admin/messages", "/admin/demo-control", "/admin/support", "/admin/alerts"],
-        },
-        {
-          key: "nav.admin.system",
-          href: "/admin/settings",
-          icon: Settings,
-          activeForPaths: ["/admin/audit", "/admin/audit-log", "/admin/ml-calibration", "/admin/profile"],
-          group: "more",
-        },
-      ],
-    },
+    { items: [{ key: "redesign.nav.overview", href: "/admin", icon: LayoutDashboard, mobilePriority: 1 }] },
+    { categoryKey: "redesign.nav.people", items: [
+      { key: "redesign.nav.residents", href: "/admin/patients", icon: Users, requiredCapability: "patients.read", mobilePriority: 2 },
+      { key: "redesign.nav.staff", href: "/admin/caregivers", icon: Users, requiredCapability: "caregivers.read" },
+    ] },
+    { categoryKey: "redesign.nav.facilities", items: [
+      { key: "redesign.nav.rooms", href: "/admin/facility-management", icon: MapPin, requiredCapability: "facilities.read", activeForPaths: ["/admin/floorplans", "/admin/facilities", "/admin/monitoring"] },
+    ] },
+    { categoryKey: "redesign.nav.monitoring", items: [
+      { key: "nav.devices", href: "/admin/devices", icon: Tablet, requiredCapability: "devices.read", activeForPaths: ["/admin/smart-devices", "/admin/device-health"] },
+    ] },
+    { categoryKey: "redesign.nav.operations", items: [
+      { key: "nav.alerts", href: "/admin/alerts", icon: Bell, requiredCapability: "alerts.read", mobilePriority: 3 },
+      { key: "nav.tasks", href: "/admin/tasks", icon: ClipboardEdit, requiredCapability: "workflow.manage", activeForPaths: ["/admin/workflow", "/admin/shift-checklists", "/admin/timeline"], mobilePriority: 4 },
+      { key: "nav.headNurse.messages", href: "/admin/messages", icon: Inbox, requiredCapability: "messages.manage" },
+      { key: "nav.headNurse.support", href: "/admin/support", icon: Bug },
+    ] },
+    { categoryKey: "redesign.nav.admin", items: [
+      { key: "nav.settings", href: "/admin/settings", icon: Settings, activeForPaths: ["/admin/profile", "/account"] },
+      { key: "nav.users", href: "/admin/account-management", icon: Users, requiredCapability: "users.manage", activeForPaths: ["/admin/users"], group: "more" },
+      { key: "nav.auditLog", href: "/admin/audit", icon: ClipboardEdit, activeForPaths: ["/admin/audit-log"], group: "more" },
+      { key: "nav.mlCalibration", href: "/admin/ml-calibration", icon: Activity, group: "more" },
+      { key: "nav.demoControl", href: "/admin/demo-control", icon: Monitor, group: "more" },
+    ] },
   ],
-
-  /** Head Caregiver role — Blueprint: Queue, Patients, Tasks, Messages, More */
   head_caregiver: [
-    {
-      items: [
-        {
-          key: "nav.headNurse.queue",
-          href: "/head-caregiver",
-          icon: LayoutDashboard,
-          badge: "alerts",
-          mobilePriority: 1,
-        },
-        {
-          key: "nav.headNurse.emergency",
-          href: "/head-caregiver/emergency",
-          icon: ShieldAlert,
-          badge: "alerts",
-          mobilePriority: 5,
-        },
-        {
-          key: "nav.headNurse.patients",
-          href: "/head-caregiver/patients",
-          icon: Users,
-          requiredCapability: "patients.read",
-          activeForPaths: ["/head-caregiver/prescriptions"],
-          mobilePriority: 3,
-        },
-        {
-          key: "nav.headNurse.caregivers",
-          href: "/head-caregiver/caregivers",
-          icon: Users,
-          requiredCapability: "caregivers.read",
-          mobilePriority: 4,
-        },
-        {
-          key: "nav.headNurse.tasks",
-          href: "/head-caregiver/tasks",
-          icon: ClipboardEdit,
-          requiredCapability: "workflow.manage",
-          activeForPaths: [
-            "/head-caregiver/workflow",
-            "/head-caregiver/calendar",
-            "/head-caregiver/directives",
-          ],
-          mobilePriority: 2,
-        },
-        {
-          key: "nav.headNurse.messages",
-          href: "/head-caregiver/messages",
-          icon: Inbox,
-          requiredCapability: "messages.manage",
-          mobilePriority: 4,
-        },
-        { key: "nav.headNurse.map", href: "/head-caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/head-caregiver/monitoring"] },
-        { key: "nav.headNurse.support", href: "/head-caregiver/support", icon: Bug, group: "more" },
-        { key: "nav.headNurse.account", href: "/head-caregiver/settings", icon: Settings, group: "more" },
-      ],
-    },
+    { items: [{ key: "redesign.nav.overview", href: "/head-caregiver", icon: LayoutDashboard, mobilePriority: 1 }] },
+    { categoryKey: "redesign.nav.people", items: [
+      { key: "redesign.nav.residents", href: "/head-caregiver/patients", icon: Users, requiredCapability: "patients.read", activeForPaths: ["/head-caregiver/personnel", "/head-caregiver/prescriptions"], mobilePriority: 3 },
+      { key: "redesign.nav.staff", href: "/head-caregiver/caregivers", icon: Users, requiredCapability: "caregivers.read" },
+    ] },
+    { categoryKey: "redesign.nav.facilities", items: [
+      { key: "redesign.nav.rooms", href: "/head-caregiver/floorplans", icon: MapPin, activeForPaths: ["/head-caregiver/monitoring", "/head-caregiver/facility-management"] },
+    ] },
+    { categoryKey: "redesign.nav.monitoring", items: [
+      { key: "nav.devices", href: "/head-caregiver/devices", icon: Tablet, requiredCapability: "devices.read" },
+    ] },
+    { categoryKey: "redesign.nav.operations", items: [
+      { key: "nav.headNurse.emergency", href: "/head-caregiver/emergency", icon: ShieldAlert, badge: "alerts", activeForPaths: ["/head-caregiver/alerts"], mobilePriority: 2 },
+      { key: "nav.tasks", href: "/head-caregiver/tasks", icon: ClipboardEdit, requiredCapability: "workflow.manage", activeForPaths: ["/head-caregiver/workflow", "/head-caregiver/calendar", "/head-caregiver/directives", "/head-caregiver/reports"], mobilePriority: 4 },
+      { key: "nav.headNurse.messages", href: "/head-caregiver/messages", icon: Inbox, requiredCapability: "messages.manage" },
+      { key: "nav.headNurse.support", href: "/head-caregiver/support", icon: Bug },
+    ] },
+    { categoryKey: "redesign.nav.admin", items: [
+      { key: "nav.headNurse.account", href: "/head-caregiver/settings", icon: Settings, activeForPaths: ["/account", "/head-caregiver/account-management"] },
+      { key: "nav.mlCalibration", href: "/head-caregiver/ml-calibration", icon: Activity, group: "more" },
+    ] },
   ],
-
-  // Legacy aliases — canonicalized at runtime via canonicalizeRole
   head_nurse: [],
   supervisor: [],
-
-  /** Caregiver role — Blueprint: Today, Patients, Alerts, Handover, More */
   caregiver: [
-    {
-      items: [
-        {
-          key: "nav.observer.today",
-          href: "/caregiver",
-          icon: LayoutDashboard,
-          mobilePriority: 1,
-        },
-        {
-          key: "nav.observer.tasks",
-          href: "/caregiver/tasks",
-          icon: ClipboardEdit,
-          requiredCapability: "workflow.manage",
-          mobilePriority: 2,
-        },
-        {
-          key: "nav.observer.patients",
-          href: "/caregiver/patients",
-          icon: Users,
-          requiredCapability: "patients.read",
-          activeForPaths: ["/caregiver/prescriptions"],
-          mobilePriority: 4,
-        },
-        {
-          key: "nav.observer.alerts",
-          href: "/caregiver/alerts",
-          icon: Bell,
-          badge: "alerts",
-          mobilePriority: 3,
-        },
-        {
-          key: "nav.observer.handover",
-          href: "/caregiver/messages",
-          icon: Inbox,
-          requiredCapability: "messages.manage",
-          mobilePriority: 5,
-        },
-        { key: "nav.observer.support", href: "/caregiver/support", icon: Bug, group: "more" },
-        { key: "nav.observer.map", href: "/caregiver/floorplans", icon: MapPin, group: "more", activeForPaths: ["/caregiver/monitoring"] },
-        { key: "nav.observer.account", href: "/caregiver/settings", icon: Settings, group: "more" },
-      ],
-    },
+    { items: [{ key: "nav.observer.today", href: "/caregiver", icon: LayoutDashboard, mobilePriority: 1 }] },
+    { categoryKey: "redesign.nav.people", items: [
+      { key: "redesign.nav.residents", href: "/caregiver/patients", icon: Users, requiredCapability: "patients.read", activeForPaths: ["/caregiver/personnel", "/caregiver/prescriptions"], mobilePriority: 4 },
+    ] },
+    { categoryKey: "redesign.nav.facilities", items: [
+      { key: "redesign.nav.rooms", href: "/caregiver/floorplans", icon: MapPin, activeForPaths: ["/caregiver/monitoring", "/caregiver/facility-management"] },
+    ] },
+    { categoryKey: "redesign.nav.monitoring", items: [
+      { key: "nav.devices", href: "/caregiver/devices", icon: Tablet, requiredCapability: "devices.read" },
+    ] },
+    { categoryKey: "redesign.nav.operations", items: [
+      { key: "nav.observer.alerts", href: "/caregiver/alerts", icon: Bell, badge: "alerts", mobilePriority: 2 },
+      { key: "nav.observer.tasks", href: "/caregiver/tasks", icon: ClipboardEdit, requiredCapability: "workflow.manage", mobilePriority: 3 },
+      { key: "nav.observer.handover", href: "/caregiver/messages", icon: Inbox, requiredCapability: "messages.manage" },
+      { key: "nav.observer.support", href: "/caregiver/support", icon: Bug },
+    ] },
+    { categoryKey: "redesign.nav.admin", items: [
+      { key: "nav.observer.account", href: "/caregiver/settings", icon: Settings, activeForPaths: ["/account", "/caregiver/account-management"] },
+    ] },
   ],
-
-  // Legacy alias — canonicalized at runtime
   observer: [],
 
   /** Patient role — Blueprint: Home, Schedule, Medicine, Messages, Room */

@@ -23,6 +23,7 @@ from app.models.chat import ChatConversation, WorkspaceAISettings
 from app.models.chat_actions import ChatAction
 from app.models.core import Workspace
 from app.models.users import User
+from app.roles import role_is_allowed
 from app.schemas.agent_runtime import ExecutionPlan, ExecutionPlanStep
 from app.schemas.chat import ChatMessagePart
 from app.schemas.chat_actions import ChatActionProposeIn
@@ -407,7 +408,7 @@ def _normalize_action_timestamps(action: ChatAction) -> ChatAction:
 
 
 def _is_action_visible_to_user(action: ChatAction, user: User) -> bool:
-    if user.role in WORKSPACE_ACTION_MANAGER_ROLES:
+    if role_is_allowed(user.role, WORKSPACE_ACTION_MANAGER_ROLES):
         return True
     return action.proposed_by_user_id == user.id
 
@@ -1205,7 +1206,7 @@ async def list_chat_actions(
     stmt = select(ChatAction).where(ChatAction.workspace_id == ws_id)
     if conversation_id is not None:
         stmt = stmt.where(ChatAction.conversation_id == conversation_id)
-    if user.role not in WORKSPACE_ACTION_MANAGER_ROLES:
+    if not role_is_allowed(user.role, WORKSPACE_ACTION_MANAGER_ROLES):
         stmt = stmt.where(ChatAction.proposed_by_user_id == user.id)
     result = await db.execute(stmt.order_by(ChatAction.created_at.desc()).limit(limit))
     return list(result.scalars().all())
@@ -1222,7 +1223,7 @@ async def propose_chat_action(
         conv = await db.get(ChatConversation, payload.conversation_id)
         if conv is None or conv.workspace_id != ws_id:
             raise HTTPException(status_code=404, detail="Conversation not found")
-        if actor.role not in WORKSPACE_ACTION_MANAGER_ROLES and conv.user_id != actor.id:
+        if not role_is_allowed(actor.role, WORKSPACE_ACTION_MANAGER_ROLES) and conv.user_id != actor.id:
             raise HTTPException(status_code=403, detail="Operation not permitted")
 
     if payload.action_type == "mcp_tool":

@@ -107,39 +107,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-surface">
+    <div className="flex min-h-screen bg-background">
       {/* Left — Hero panel */}
-      <div className="hidden lg:flex lg:w-[44%] bg-primary text-primary-foreground">
-        <div className="flex w-full flex-col justify-between p-12">
+      <div className="ws-insight hidden lg:flex lg:w-[46%]">
+        <div className="flex w-full flex-col justify-between gap-12 p-12 xl:p-16">
           <div className="flex items-center gap-3">
-            <Logo size={64} variant="inverse" />
+            <Logo size={36} variant="inverse" />
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-3xl font-bold leading-tight">
-              {t("auth.heroTitleLine1")}
-              <br />
-              {t("auth.heroTitleLine2")}
+            <h2 className="max-w-md text-4xl font-semibold leading-tight tracking-tight text-foreground">
+              {t("redesign.signinTitle")}
             </h2>
-            <p className="max-w-md text-base leading-relaxed text-primary-foreground/80">
-              {t("auth.heroDescription")}
+            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
+              {t("redesign.signinBody")}
             </p>
           </div>
 
-          <div className="flex gap-8 text-sm text-primary-foreground/70">
-            <div>
-              <p className="text-2xl font-bold text-primary-foreground">24/7</p>
-              <p>{t("auth.heroMetricMonitoring")}</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-primary-foreground">{"<"}3s</p>
-              <p>{t("auth.heroMetricAlertResponse")}</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-primary-foreground">99.9%</p>
-              <p>{t("auth.heroMetricUptime")}</p>
-            </div>
-          </div>
+          <p className="border-t border-border pt-6 text-sm text-muted-foreground">{t("redesign.signinNote")}</p>
         </div>
       </div>
 
@@ -153,7 +138,7 @@ export default function LoginPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <Logo size={64} />
+            <Logo size={36} />
           </div>
 
           <h1 className="text-2xl font-bold text-foreground mb-1">

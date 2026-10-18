@@ -362,9 +362,9 @@ export default function ObserverDashboardPage() {
 
       <section
         aria-label={t("observer.page.roleDuties")}
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="ws-stat-strip grid grid-cols-2 xl:grid-cols-4"
       >
-        <MetricCard
+        <MetricCard compact
           label={t("observer.page.statAlerts")}
           value={activeAlerts.length}
           description={t("observer.page.statActiveZone")}
@@ -379,7 +379,7 @@ export default function ObserverDashboardPage() {
           href="/caregiver/alerts"
           hrefLabel={t("dash.viewAll")}
         />
-        <MetricCard
+        <MetricCard compact
           label={t("observer.page.statMyTasks")}
           value={myTasks.length}
           description={t("observer.page.statPending")}
@@ -394,7 +394,7 @@ export default function ObserverDashboardPage() {
           href="/caregiver/tasks"
           hrefLabel={t("dash.viewAll")}
         />
-        <MetricCard
+        <MetricCard compact
           label={t("observer.page.statChecklist")}
           value={`${shiftStats.percent}%`}
           description={`${shiftStats.completed}/${shiftStats.total} ${t("observer.page.statCompletedSuffix")}`}
@@ -407,7 +407,7 @@ export default function ObserverDashboardPage() {
             tone: shiftStats.remaining > 0 ? "info" : "success",
           }}
         />
-        <MetricCard
+        <MetricCard compact
           label={t("observer.page.statMyPatients")}
           value={myPatients.length}
           description={t("observer.page.statAssignedToday")}

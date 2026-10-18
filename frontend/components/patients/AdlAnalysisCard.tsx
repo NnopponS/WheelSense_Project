@@ -43,8 +43,8 @@ const ADL_ITEM_ORDER = [
 ];
 
 function tierBadgeColor(tier: number) {
-  if (tier === 1) return "bg-emerald-100 text-emerald-800 border-emerald-200";
-  if (tier === 2) return "bg-amber-100 text-amber-800 border-amber-200";
+  if (tier === 1) return "bg-success-bg text-emerald-800 border-emerald-200";
+  if (tier === 2) return "bg-warning-bg text-warning-foreground border-warning/30";
   return "bg-rose-100 text-rose-800 border-rose-200";
 }
 
@@ -113,13 +113,13 @@ export function AdlAnalysisCard({ patientId }: { patientId: number }) {
                 key={key}
                 className="rounded-lg border border-outline-variant/20 p-2"
               >
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   {key.replace(/_/g, " ")}
                 </p>
                 <p className="text-lg font-semibold">
                   {item.score}/{item.max}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {item.confidence}
                 </p>
               </div>

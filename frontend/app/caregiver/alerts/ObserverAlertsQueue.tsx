@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
 import { buildRoomByIdMap, formatPatientRoomLine } from "@/lib/alertPatientLocation";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { ResolveAlertButton } from "@/components/shared/ResolveAlertButton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
@@ -219,20 +220,11 @@ export default function ObserverAlertsQueue() {
               </Button>
             ) : null}
             {row.original.status === "active" || row.original.status === "acknowledged" ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="border-success/40 text-success-foreground hover:bg-success-bg"
-                disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
-                onClick={() => {
+              <ResolveAlertButton alertTitle={row.original.title} disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id} onConfirm={() => {
                   setPendingAlertId(row.original.id);
                   setActionError(null);
                   updateAlertMutation.mutate({ id: row.original.id, status: "resolved" });
-                }}
-              >
-                {t("alerts.resolve")}
-              </Button>
+                }} />
             ) : null}
             <Button asChild size="sm" variant="outline">
               <Link

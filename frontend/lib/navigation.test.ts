@@ -44,40 +44,26 @@ describe("role route helpers", () => {
 });
 
 describe("role navigation model", () => {
-  it("keeps admin desktop navigation grouped around system governance", () => {
-    expect(hrefsFor("admin")).toEqual({
-      primary: ["/admin", "/admin/patients", "/admin/facility-management", "/admin/devices", "/admin/tasks"],
-      more: ["/admin/settings"],
-    });
+  it("makes every administrative domain and advanced destination reachable", () => {
+    const config = ROLE_NAV_CONFIGS.admin;
+    expect(config.map(group => group.categoryKey).filter(Boolean)).toEqual([
+      "redesign.nav.people", "redesign.nav.facilities", "redesign.nav.monitoring", "redesign.nav.operations", "redesign.nav.admin",
+    ]);
+    const { primary, more } = hrefsFor("admin");
+    expect(primary).toEqual(expect.arrayContaining(["/admin/patients", "/admin/caregivers", "/admin/devices", "/admin/alerts", "/admin/tasks", "/admin/settings"]));
+    expect(more).toEqual(expect.arrayContaining(["/admin/account-management", "/admin/audit", "/admin/ml-calibration", "/admin/demo-control"]));
   });
 
-  it("keeps head nurse desktop navigation centered on command work", () => {
-    expect(hrefsFor("head_caregiver")).toEqual({
-      primary: [
-        "/head-caregiver",
-        "/head-caregiver/emergency",
-        "/head-caregiver/patients",
-        "/head-caregiver/caregivers",
-        "/head-caregiver/tasks",
-        "/head-caregiver/messages",
-      ],
-      more: ["/head-caregiver/floorplans", "/head-caregiver/support", "/head-caregiver/settings"],
-    });
+  it.each(["admin", "head_caregiver", "caregiver", "patient"])("does not duplicate destinations for %s", role => {
+    const links = ROLE_NAV_CONFIGS[role].flatMap(group => group.items.map(item => item.href));
+    expect(new Set(links).size).toBe(links.length);
   });
 
-  it("keeps mobile-first role navigation compact", () => {
-    expect(hrefsFor("head_caregiver")).toEqual({
-      primary: ["/head-caregiver", "/head-caregiver/emergency", "/head-caregiver/patients", "/head-caregiver/caregivers", "/head-caregiver/tasks", "/head-caregiver/messages"],
-      more: ["/head-caregiver/floorplans", "/head-caregiver/support", "/head-caregiver/settings"],
-    });
-    expect(hrefsFor("caregiver")).toEqual({
-      primary: ["/caregiver", "/caregiver/tasks", "/caregiver/patients", "/caregiver/alerts", "/caregiver/messages"],
-      more: ["/caregiver/support", "/caregiver/floorplans", "/caregiver/settings"],
-    });
-    expect(hrefsFor("patient")).toEqual({
-      primary: ["/patient", "/patient/schedule", "/patient/pharmacy", "/patient/messages", "/patient/room-controls"],
-      more: ["/patient?tab=support", "/patient/settings"],
-    });
+  it("keeps clinical destinations inside their role routes", () => {
+    for (const role of ["head_caregiver", "caregiver"] as const) {
+      const root = role.replaceAll("_", "-");
+      expect(ROLE_NAV_CONFIGS[role].flatMap(group => group.items).every(item => item.href.startsWith(`/${root}`))).toBe(true);
+    }
   });
 });
 
@@ -87,7 +73,7 @@ describe("active navigation state", () => {
   });
 
   it("keeps a destination active on its detail routes without matching sibling prefixes", () => {
-    const personnel = ROLE_NAV_CONFIGS.admin[0].items.find((item) => item.href === "/admin/patients")!;
+    const personnel = ROLE_NAV_CONFIGS.admin.flatMap(group => group.items).find((item) => item.href === "/admin/patients")!;
 
     expect(isNavItemActive(personnel, "/admin/patients/42", params(), "admin")).toBe(true);
     expect(isNavItemActive(personnel, "/admin/patients-archive", params(), "admin")).toBe(false);

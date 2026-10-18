@@ -11,6 +11,7 @@ import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { AppPage } from "@/components/layout/AppPage";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { Badge } from "@/components/ui/badge";
+import { ResolveAlertButton } from "@/components/shared/ResolveAlertButton";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -240,21 +241,14 @@ export default function HeadNurseAlertsPage() {
                 </Button>
               ) : null}
               {row.original.status !== "resolved" ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
-                  onClick={() => {
+                <ResolveAlertButton alertTitle={row.original.title} disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id} onConfirm={() => {
                     setPendingAlertId(row.original.id);
                     setActionError(null);
                     updateAlertMutation.mutate({
                       id: row.original.id,
                       status: "resolved",
                     });
-                  }}
-                >
-                  {t("clinical.action.resolve")}
-                </Button>
+                  }} />
               ) : null}
               <Button asChild size="sm" variant="outline">
                 <Link href={href}>{t("headNurse.alerts.openPatient")}</Link>

@@ -12,6 +12,7 @@ import { hasCapability, type AppRole } from "@/lib/permissions";
 import RoleSidebar from "./RoleSidebar";
 import TopBar from "./TopBar";
 import AIChatPopup from "./ai/AIChatPopup";
+import { EaseAIFab } from "./ai/EaseAIFab";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { MoreHorizontal } from "lucide-react";
@@ -39,15 +40,16 @@ function MobileRoleTaskBar({ onMoreClick }: { onMoreClick: () => void }) {
     .filter((item) => item.mobilePriority != null)
     .sort((a, b) => (a.mobilePriority ?? 99) - (b.mobilePriority ?? 99));
   const fallbackPrimaryItems = allItems.filter((item) => item.group !== "more");
-  const displayItems = (mobilePriorityItems.length > 0 ? mobilePriorityItems : fallbackPrimaryItems).slice(0, 5);
+  const displayItems = (mobilePriorityItems.length > 0 ? mobilePriorityItems : fallbackPrimaryItems).slice(0, 4);
   const displayHrefs = new Set(displayItems.map((item) => item.href));
   const overflowItems = allItems.filter((item) => !displayHrefs.has(item.href));
-  const needsMoreButton = displayItems.length < 5 && overflowItems.length > 0;
+  const needsMoreButton = overflowItems.length > 0;
+  const moreActive = overflowItems.some((item) => isNavItemActive(item, pathname, searchParams, user.role));
   const gridColsClass = `grid-cols-${displayItems.length + (needsMoreButton ? 1 : 0)}`;
 
   return (
     <nav
-      className="ws-role-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/98 px-2 pt-2 shadow-[0_-14px_35px_-28px_rgb(15_23_42/0.5)] lg:hidden"
+      className="ws-role-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-2 pt-1 backdrop-blur-lg lg:hidden"
       aria-label={t("shell.mobileNavigation")}
     >
       <div className={cn("grid w-full gap-1", gridColsClass === "grid-cols-5" ? "grid-cols-5" : gridColsClass === "grid-cols-4" ? "grid-cols-4" : gridColsClass === "grid-cols-3" ? "grid-cols-3" : "grid-cols-2")}>
@@ -59,22 +61,24 @@ function MobileRoleTaskBar({ onMoreClick }: { onMoreClick: () => void }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl px-1 text-sm font-medium leading-tight transition-colors",
-                active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                "relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium leading-tight transition-colors",
+                active ? "text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               )}
               aria-current={active ? "page" : undefined}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden />
-              <span className="line-clamp-2 max-w-full text-center">{t(item.key)}</span>
+              <span className="max-w-full truncate text-center">{t(item.key)}</span>
             </Link>
           );
         })}
         {needsMoreButton && (
           <button
             type="button"
-            className="relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl px-1 text-sm font-medium leading-tight text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            className={cn("relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium leading-tight transition-colors hover:bg-muted/60", moreActive ? "text-primary" : "text-muted-foreground")}
             onClick={onMoreClick}
             aria-label={t("nav.more")}
+            aria-haspopup="dialog"
+            aria-current={moreActive ? "page" : undefined}
           >
             <MoreHorizontal className="h-5 w-5 shrink-0" aria-hidden />
             <span className="line-clamp-2 max-w-full text-center">{t("nav.more")}</span>
@@ -148,7 +152,7 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
   if (!user) return null;
 
   return (
-    <div className={cn("flex min-h-screen bg-background", user.role === "patient" && "ws-density-patient", elderClass)}>
+    <div className={cn("ws-shell flex min-h-screen bg-background", user.role === "patient" && "ws-density-patient", elderClass)}>
       <a
         href="#main-content"
         className="sr-only fixed left-3 top-3 z-[100] rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-lg focus:not-sr-only"
@@ -159,17 +163,18 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
       <RoleSidebar mobileOpen={mobileNavOpen} onMobileOpenChange={setMobileNavOpen} />
 
       {/* Main Content Area */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[var(--sidebar-width)]">
+      <div className="ws-shell-content flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[var(--sidebar-width)]">
         {/* Top Navigation Bar */}
         <TopBar onMenuClick={() => setMobileNavOpen(true)} />
 
         {/* Main Content */}
-        <main id="main-content" tabIndex={-1} className={cn("ws-mobile-safe-bottom min-w-0 flex-1 overflow-y-auto px-[var(--ws-page-padding)] py-5 sm:py-6", mainClassName)}>
+        <main id="main-content" tabIndex={-1} className={cn("ws-shell-main ws-mobile-safe-bottom min-w-0 flex-1 px-[var(--ws-page-padding)] py-5 sm:py-6", mainClassName)}>
           {children}
         </main>
       </div>
 
       {/* AI Chat Popup */}
+      <EaseAIFab />
       <AIChatPopup />
       <MobileRoleTaskBar onMoreClick={() => setMobileNavOpen(true)} />
     </div>

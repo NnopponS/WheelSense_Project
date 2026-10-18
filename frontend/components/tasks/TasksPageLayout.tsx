@@ -12,11 +12,11 @@ import { UnifiedTaskCommandBar } from "@/components/head-nurse/tasks/UnifiedTask
 import { useTasks, useUpdateTask, useDeleteTask, useSubmitTaskReport, useTaskReports } from "@/hooks/useTasks";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Calendar, ListChecks, ListTodo, Plus, BarChart3 } from "lucide-react";
+import { Archive, ArchiveRestore, Calendar, ListChecks, ListTodo, Plus, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildCsvFromRows, downloadCsvFile } from "@/lib/csv";
 import { AppPage } from "@/components/layout/AppPage";
+import styles from "./task-workspace.module.css";
 
 export interface TasksPageLayoutProps {
   /** Page title */
@@ -124,6 +124,7 @@ export function TasksPageLayout({
 
   return (
     <AppPage
+      workspace
       title={title}
       description={description}
       breadcrumbs={[
@@ -133,26 +134,9 @@ export function TasksPageLayout({
       actions={
         <div className="flex flex-wrap items-center gap-2">
             {/* View Toggle */}
-            <Tabs 
-              value={viewMode} 
-              onValueChange={(v) => setViewMode(v as "kanban" | "calendar" | "stats")}
-              className="hidden sm:block"
-            >
-              <TabsList className="grid w-[300px] grid-cols-3">
-                <TabsTrigger value="kanban" className="gap-2">
-                  <ListTodo className="h-4 w-4" />
-                  {t("tasks.kanban")}
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {t("tasks.calendar")}
-                </TabsTrigger>
-                <TabsTrigger value="stats" className="gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  {t("tasks.stats")}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="hidden gap-1 rounded-lg border border-border p-1 sm:flex" role="group" aria-label={t("tasks.taskManagement")}>
+              {(["kanban", "calendar", "stats"] as const).map((mode) => <Button key={mode} variant={viewMode === mode ? "default" : "ghost"} size="sm" aria-pressed={viewMode === mode} onClick={() => setViewMode(mode)}>{t(`tasks.${mode}`)}</Button>)}
+            </div>
 
             {/* Mobile View Toggle */}
             <div className="flex sm:hidden rounded-lg border p-1">
@@ -210,12 +194,16 @@ export function TasksPageLayout({
               <Button
                 variant="outline"
                 size="sm"
+                aria-label={showArchived ? t("tasks.showActive") : t("tasks.showArchived")}
+                aria-pressed={showArchived}
+                title={showArchived ? t("tasks.showActive") : t("tasks.showArchived")}
                 onClick={() => {
                   setShowArchived((prev) => !prev);
                   setSelectedTask(null);
                 }}
               >
-                {showArchived ? t("tasks.showActive") : t("tasks.showArchived")}
+                {showArchived ? <ArchiveRestore className="size-4 sm:hidden" aria-hidden="true" /> : <Archive className="size-4 sm:hidden" aria-hidden="true" />}
+                <span className="sr-only sm:not-sr-only">{showArchived ? t("tasks.showActive") : t("tasks.showArchived")}</span>
               </Button>
             )}
         </div>
@@ -223,21 +211,18 @@ export function TasksPageLayout({
     >
 
       {/* Stats Bar */}
-      <div className="rounded-xl border border-border bg-card p-4">
-        <UnifiedTaskCommandBar 
-          tasks={visibleTasks} 
-          isLoading={isLoading} 
-          onExport={handleExport}
-        />
-      </div>
+      <UnifiedTaskCommandBar
+        tasks={visibleTasks}
+        isLoading={isLoading}
+        onExport={handleExport}
+      />
 
       {/* Main Content */}
-      <div className="min-h-0 overflow-auto">
+      <div className={viewMode === "kanban" ? styles.boardView : styles.secondaryView}>
         {viewMode === "kanban" && (
           <UnifiedTaskKanbanBoard
             tasks={visibleTasks}
             isLoading={isLoading}
-            onCreateTask={canCreate && !showArchived ? () => setShowCreateDialog(true) : undefined}
             onTaskClick={setSelectedTask}
             onStatusChange={canExecute && !showArchived ? handleStatusChange : undefined}
             canManage={canManage}

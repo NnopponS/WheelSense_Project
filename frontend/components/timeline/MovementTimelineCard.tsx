@@ -249,7 +249,7 @@ export function MovementTimelineCard({
                   <div className="min-w-0 pb-3">
                     <p className="truncate text-sm font-medium text-foreground">{eventLocation(event)}</p>
                     <p className="truncate text-xs text-muted-foreground">{prettyEventType(event.event_type)}</p>
-                    <p className="truncate text-[11px] text-muted-foreground/80">
+                    <p className="truncate text-xs text-muted-foreground">
                       {t("timeline.provenance")}: {eventSourceLabel(event)}
                     </p>
                   </div>

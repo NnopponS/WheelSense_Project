@@ -2,26 +2,32 @@ from __future__ import annotations
 
 """Chat action endpoints (propose -> confirm -> execute)."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import re
 
 import httpx
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_active_user, get_current_user_workspace, get_db
+from app.config import settings
 from app.agent_runtime.response_cards import (
     attach_response_cards,
     cards_for_execution_result,
     chat_message_metadata,
     normalize_response_cards,
 )
+from app.models.activity import ActivityTimeline
 from app.models.chat import ChatConversation, ChatMessage
-from app.models.core import Workspace
+from app.models.core import Room, Workspace
+from app.models.patients import Patient
 from app.models.users import User
 from app.roles import role_is_allowed
 from app.schemas.agent_runtime import ExecutionPlan
 from app.schemas.chat import ChatMessagePart
+from app.schemas.tasks import TaskCreate
 from app.schemas.chat_actions import (
     ChatActionConfirmIn,
     ChatActionExecuteIn,
@@ -33,12 +39,201 @@ from app.schemas.chat_actions import (
     ChatActionProposeIn,
 )
 from app.services import agent_runtime_client, ai_chat
+from app.services.tasks import task_service
 
 router = APIRouter()
 
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+_ROOM_PROMPT_RE = re.compile(r"\broom\s*0*(\d{1,4})\b", re.IGNORECASE)
+
+
+def _room_name_from_prompt(message: str) -> str | None:
+    match = _ROOM_PROMPT_RE.search(message or "")
+    if not match:
+        return None
+    return f"Room {int(match.group(1))}"
+
+
+def _is_demo_movement_prompt(message: str) -> bool:
+    lowered = (message or "").lower()
+    return (
+        "room" in lowered
+        and ("where did" in lowered or "movement history" in lowered or "where has" in lowered)
+        and ("past hour" in lowered or "last hour" in lowered or "1 hour" in lowered)
+    )
+
+
+def _is_demo_blood_pressure_task_prompt(message: str) -> bool:
+    lowered = (message or "").lower()
+    return (
+        "room" in lowered
+        and "blood pressure" in lowered
+        and bool(re.search(r"\b(create|add|make)\b", lowered))
+        and "task" in lowered
+    )
+
+
+async def _resolve_room_patient(
+    db: AsyncSession,
+    workspace_id: int,
+    room_name: str,
+) -> tuple[Room, Patient] | None:
+    room = (
+        await db.execute(
+            select(Room).where(Room.workspace_id == workspace_id, Room.name == room_name)
+        )
+    ).scalar_one_or_none()
+    if room is None:
+        return None
+    patient = (
+        await db.execute(
+            select(Patient).where(
+                Patient.workspace_id == workspace_id,
+                Patient.room_id == room.id,
+                Patient.is_active.is_(True),
+            )
+        )
+    ).scalars().first()
+    if patient is None:
+        return None
+    return room, patient
+
+
+async def _maybe_handle_simulator_demo_prompt(
+    *,
+    db: AsyncSession,
+    workspace: Workspace,
+    user: User,
+    conversation: ChatConversation | None,
+    message: str,
+) -> ChatActionProposalResponse | None:
+    """Deterministic simulator-only fast path for the two pitch-video AI prompts."""
+    if not settings.is_simulator_mode:
+        return None
+    room_name = _room_name_from_prompt(message)
+    if room_name is None:
+        return None
+    resolved = await _resolve_room_patient(db, workspace.id, room_name)
+    if resolved is None:
+        return ChatActionProposalResponse(
+            mode="answer",
+            assistant_reply=f"I could not find an active resident assigned to {room_name}.",
+            reply=f"I could not find an active resident assigned to {room_name}.",
+            summary="No matching resident was found.",
+            grounding={"source": "simulator_demo", "room_name": room_name},
+        )
+    room, patient = resolved
+    patient_name = f"{patient.first_name} {patient.last_name}".strip()
+    now = _utcnow()
+
+    if _is_demo_movement_prompt(message):
+        cutoff = now - timedelta(hours=1)
+        rows = list(
+            (
+                await db.execute(
+                    select(ActivityTimeline)
+                    .where(
+                        ActivityTimeline.workspace_id == workspace.id,
+                        ActivityTimeline.patient_id == patient.id,
+                        ActivityTimeline.timestamp >= cutoff,
+                    )
+                    .order_by(ActivityTimeline.timestamp.asc())
+                )
+            )
+            .scalars()
+            .all()
+        )
+        movement_rows = [row for row in rows if row.event_type == "room_enter" and row.room_name]
+        stops: list[str] = []
+        for row in movement_rows:
+            if not stops or stops[-1] != row.room_name:
+                stops.append(row.room_name)
+        if not stops:
+            stops = [room.name]
+        path_text = " → ".join(stops)
+        reply = (
+            f"In the past hour, {patient_name} moved through {path_text}. "
+            f"Latest recorded location: {stops[-1]}."
+        )
+        grounding = {
+            "source": "activity_timeline",
+            "simulator_demo": True,
+            "patient_id": patient.id,
+            "patient_name": patient_name,
+            "room_name": room.name,
+            "window_hours": 1,
+            "movement": [
+                {
+                    "timestamp": row.timestamp.isoformat() if row.timestamp else None,
+                    "room_name": row.room_name,
+                    "description": row.description,
+                }
+                for row in movement_rows
+            ],
+        }
+    elif _is_demo_blood_pressure_task_prompt(message):
+        if not role_is_allowed(user.role, {"admin", "head_caregiver"}):
+            return None
+        due_at = now + timedelta(hours=8)
+        created = await task_service.create_task(
+            db,
+            workspace.id,
+            actor_user_id=user.id,
+            actor_user_role=user.role,
+            obj_in=TaskCreate(
+                task_type="specific",
+                title=f"Blood pressure check - {patient.first_name}",
+                description=f"Measure and record blood pressure for {patient_name} in {room.name}.",
+                priority="high",
+                patient_id=patient.id,
+                assigned_role="caregiver",
+                due_at=due_at,
+                ends_at=due_at,
+            ),
+        )
+        reply = (
+            f"Created a pending blood pressure task for {patient_name} in {room.name}. "
+            "It has been added to the care workflow."
+        )
+        grounding = {
+            "source": "task_management",
+            "simulator_demo": True,
+            "task_id": created.id,
+            "task_title": created.title,
+            "task_status": created.status,
+            "patient_id": patient.id,
+            "patient_name": patient_name,
+            "room_name": room.name,
+        }
+    else:
+        return None
+
+    metadata = chat_message_metadata(grounding=grounding, mode="answer")
+    if conversation is not None:
+        conversation.updated_at = now
+        db.add(conversation)
+        db.add(
+            ChatMessage(
+                conversation_id=conversation.id,
+                role="assistant",
+                content=reply,
+                ui_metadata=metadata,
+            )
+        )
+        await db.commit()
+
+    return ChatActionProposalResponse(
+        mode="answer",
+        assistant_reply=reply,
+        reply=reply,
+        summary=reply,
+        grounding=grounding,
+        metadata=metadata,
+    )
 
 
 async def _collect_assistant_reply(
@@ -195,6 +390,16 @@ async def propose_action(
                 content=last_user.content,
             )
         )
+
+    simulator_demo_response = await _maybe_handle_simulator_demo_prompt(
+        db=db,
+        workspace=workspace,
+        user=user,
+        conversation=conversation,
+        message=body.message,
+    )
+    if simulator_demo_response is not None:
+        return simulator_demo_response
 
     # Prefer token attached by auth dependency (always set after successful JWT validation).
     # Parsing Authorization alone can miss edge cases; MCP/agent-runtime must receive the real JWT.

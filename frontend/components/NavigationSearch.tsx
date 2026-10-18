@@ -52,7 +52,7 @@ export function NavigationSearch() {
     <>
       <button
         type="button"
-        className="flex h-11 w-full cursor-pointer items-center gap-3 rounded-[var(--radius-control)] border border-input bg-input px-4 text-left text-sm text-muted-foreground shadow-sm transition-colors hover:border-ring/60 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="flex h-11 w-full cursor-pointer items-center gap-3 rounded-[var(--radius-control)] border border-border bg-card px-3 text-left text-sm text-muted-foreground transition-colors hover:border-ring/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         onClick={() => setOpen(true)}
         aria-label={t("shell.searchNavigation")}
       >

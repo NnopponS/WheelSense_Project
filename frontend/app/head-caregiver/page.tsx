@@ -683,8 +683,8 @@ export default function HeadNurseDashboardPage() {
         tasks={tasks}
       />
 
-      <section className="grid auto-rows-fr gap-3 md:grid-cols-3">
-        <MetricCard
+      <section className="ws-stat-strip grid grid-cols-1 md:grid-cols-3">
+        <MetricCard compact
           label={t("headNurse.situation.unreadMessages")}
           value={unreadMessages.length}
           description={formatTemplate(t("headNurse.situation.totalInboxMessages"), { count: messages.length })}
@@ -694,7 +694,7 @@ export default function HeadNurseDashboardPage() {
           status={unreadMessages.length > 0 ? { label: t("headNurse.dashboard.unread"), tone: "warning" } : undefined}
         />
 
-        <MetricCard
+        <MetricCard compact
           label={t("headNurse.situation.handoverReview")}
           value={highPriorityHandovers.length}
           description={formatTemplate(t("headNurse.situation.notesAcrossShifts"), { count: handovers.length })}
@@ -706,7 +706,7 @@ export default function HeadNurseDashboardPage() {
           }
         />
 
-        <MetricCard
+        <MetricCard compact
           label={t("headNurse.situation.deviceLocationWarnings")}
           value={deviceWarningRows.length + roomlessPatientRows.length}
           description={formatTemplate(t("headNurse.situation.deviceRoomWarnings"), {
@@ -740,7 +740,7 @@ export default function HeadNurseDashboardPage() {
                   <span className="block text-sm font-semibold leading-tight">
                     {action.label}
                   </span>
-                  <span className="block text-sm font-normal leading-tight opacity-80">
+                  <span className="block text-sm font-normal leading-tight">
                     {action.detail}
                   </span>
                 </span>
@@ -788,7 +788,7 @@ export default function HeadNurseDashboardPage() {
                       <Link
                         key={alert.id}
                         href={alert.patient_id ? `/head-caregiver/personnel/${alert.patient_id}` : "/head-caregiver/alerts"}
-                        className="group flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 transition-colors hover:bg-muted/40"
+                        className="group flex items-start justify-between gap-3 border-b border-border px-1 py-3 transition-colors hover:bg-muted/40"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -855,7 +855,7 @@ export default function HeadNurseDashboardPage() {
                       <Link
                         key={patient.id}
                         href={`/head-caregiver/personnel/${patient.id}`}
-                        className="group flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 transition-colors hover:bg-muted/40"
+                        className="group flex items-start justify-between gap-3 border-b border-border px-1 py-3 transition-colors hover:bg-muted/40"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -921,7 +921,7 @@ export default function HeadNurseDashboardPage() {
                 staffWorkloadRows.map((entry) => (
                   <div
                     key={entry.key}
-                    className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3"
+                    className="flex items-start justify-between gap-3 border-b border-border px-1 py-3"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -1002,7 +1002,7 @@ export default function HeadNurseDashboardPage() {
                     return (
                       <div
                         key={task.id}
-                        className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3"
+                        className="flex items-start justify-between gap-3 border-b border-border px-1 py-3"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -1072,7 +1072,7 @@ export default function HeadNurseDashboardPage() {
                       <Link
                         key={message.id}
                         href="/head-caregiver/messages"
-                        className="group flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 transition-colors hover:bg-muted/40"
+                        className="group flex items-start justify-between gap-3 border-b border-border px-1 py-3 transition-colors hover:bg-muted/40"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -1116,7 +1116,7 @@ export default function HeadNurseDashboardPage() {
                     return (
                       <div
                         key={handover.id}
-                        className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3"
+                        className="flex items-start justify-between gap-3 border-b border-border px-1 py-3"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -1193,7 +1193,7 @@ export default function HeadNurseDashboardPage() {
                 deviceWarningRows.map((entry) => (
                   <div
                     key={entry.device.id}
-                    className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3"
+                    className="flex items-start justify-between gap-3 border-b border-border px-1 py-3"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -1235,7 +1235,7 @@ export default function HeadNurseDashboardPage() {
                     <Link
                       key={entry.patient.id}
                       href={`/head-caregiver/personnel/${entry.patient.id}`}
-                      className="group flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 transition-colors hover:bg-muted/40"
+                      className="group flex items-start justify-between gap-3 border-b border-border px-1 py-3 transition-colors hover:bg-muted/40"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
+import { DataState } from "@/components/layout/DataState";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AdminAlertsTable,
@@ -28,6 +31,7 @@ function parseError(error: unknown, fallback: string) {
 export default function AdminAlertsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<AdminAlertFilterStatus>("all");
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
@@ -59,6 +63,8 @@ export default function AdminAlertsPage() {
   });
 
   const alerts = (alertsQuery.data ?? []) as Alert[];
+  const alertId = Number(searchParams.get("alert"));
+  useAlertRowHighlight(Number.isSafeInteger(alertId) && alertId > 0 ? alertId : null, alertsQuery.isSuccess);
 
   return (
     <AppPage
@@ -71,6 +77,7 @@ export default function AdminAlertsPage() {
       ]}
     >
       <FilterBar
+        className="ws-alert-filters"
         searchValue={search}
         onSearchChange={setSearch}
         searchLabel={t("common.search")}
@@ -82,7 +89,7 @@ export default function AdminAlertsPage() {
           setFilter("all");
         }}
       >
-        <div className="min-w-48 flex-1">
+        <div className="min-w-0 flex-1">
           <label htmlFor="admin-alert-status" className="mb-1 block text-sm font-medium text-foreground">
             {t("headNurse.alerts.filterStatusPlaceholder")}
           </label>
@@ -106,14 +113,14 @@ export default function AdminAlertsPage() {
         </div>
       ) : null}
 
-      <AdminAlertsTable
+      {alertsQuery.isError ? <DataState kind="error" title={t("redesign.unavailable")} actionLabel={t("redesign.retry")} onAction={() => void alertsQuery.refetch()} /> : <AdminAlertsTable
         alerts={alerts}
         isLoading={alertsQuery.isLoading}
         filter={filter}
         search={search}
         onUpdateStatus={(id, status) => updateAlertMutation.mutate({ id, status })}
-        canAcknowledge
-      />
+        canAcknowledge={!updateAlertMutation.isPending}
+      />}
     </AppPage>
   );
 }

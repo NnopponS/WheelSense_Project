@@ -18,16 +18,16 @@ type FeatureCardProps = {
 
 const ACCENT_STYLES: Record<FeatureCardProps["accent"], { ring: string; iconBg: string; iconText: string }> = {
   blue: { ring: "hover:border-primary/40", iconBg: "bg-primary/10", iconText: "text-primary" },
-  red: { ring: "hover:border-red-400", iconBg: "bg-red-50", iconText: "text-red-500" },
-  green: { ring: "hover:border-emerald-400", iconBg: "bg-emerald-50", iconText: "text-emerald-600" },
-  emergency: { ring: "hover:border-red-500", iconBg: "bg-red-100", iconText: "text-red-600" },
+  red: { ring: "hover:border-critical", iconBg: "bg-critical-bg", iconText: "text-critical" },
+  green: { ring: "hover:border-success", iconBg: "bg-success-bg", iconText: "text-success" },
+  emergency: { ring: "hover:border-critical", iconBg: "bg-critical-bg", iconText: "text-critical" },
 };
 
 const STATUS_STYLES: Record<NonNullable<FeatureCardProps["statusTone"]>, string> = {
   neutral: "bg-surface-container-high text-foreground-variant",
-  warning: "bg-amber-100 text-amber-700",
-  critical: "bg-red-100 text-red-700",
-  success: "bg-emerald-100 text-emerald-700",
+  warning: "bg-warning-bg text-warning-foreground",
+  critical: "bg-critical-bg text-critical-foreground",
+  success: "bg-success-bg text-success-foreground",
 };
 
 function FeatureCard({ title, subtitle, icon: Icon, accent, targetId, status, statusTone = "neutral", children }: FeatureCardProps) {
@@ -37,10 +37,10 @@ function FeatureCard({ title, subtitle, icon: Icon, accent, targetId, status, st
       type="button"
       onClick={() => {
         const el = document.getElementById(targetId);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (el) el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
       }}
       className={cn(
-        "group flex min-h-11 w-full flex-col gap-1 rounded-xl border border-outline-variant/20 bg-card p-3 text-left transition-colors sm:gap-2 sm:p-4",
+        "group flex min-h-11 w-full flex-col gap-1 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted sm:gap-2",
         accentStyle.ring,
       )}
     >
@@ -49,7 +49,7 @@ function FeatureCard({ title, subtitle, icon: Icon, accent, targetId, status, st
           <Icon className={cn("h-4.5 w-4.5", accentStyle.iconText)} aria-hidden />
         </div>
         {status && (
-          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", STATUS_STYLES[statusTone])}>
+          <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold uppercase", STATUS_STYLES[statusTone])}>
             {status}
           </span>
         )}
@@ -84,12 +84,12 @@ export function FeatureNavCards({
     riskLevel === "critical" ? t("patient.health.risk.high")
       : riskLevel === "warning" ? t("patient.health.risk.moderate")
         : riskLevel === "watch" ? t("patient.health.risk.watch")
-          : t("patient.health.risk.normal");
+          : riskLevel == null ? t("redesign.noRisk") : t("patient.health.risk.normal");
   const anomalyTone: FeatureCardProps["statusTone"] =
     riskLevel === "critical" ? "critical"
       : riskLevel === "warning" ? "warning"
         : riskLevel === "watch" ? "neutral"
-          : "success";
+          : riskLevel == null ? "neutral" : "success";
 
   const emergencyStatus = severeAnomalyActive
     ? t("patient.feature.criticalCondition")
@@ -99,7 +99,7 @@ export function FeatureNavCards({
     : hasEmergencyContact ? "success" : "warning";
 
   return (
-    <div className={cn("grid grid-cols-2 gap-3 lg:grid-cols-4", className)}>
+    <div className={cn("grid grid-cols-2 gap-1 border-b border-border pb-3 lg:grid-cols-4", className)}>
       {/* Health Profile — blue */}
       <FeatureCard
         title={t("patient.feature.healthProfile")}
@@ -122,7 +122,7 @@ export function FeatureNavCards({
         statusTone={anomalyTone}
       >
         {riskFactorCount > 0 && (
-          <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <Activity className="h-3 w-3" aria-hidden />
             {riskFactorCount} {t("patient.health.riskFactors").toLowerCase()}
           </p>
@@ -151,7 +151,7 @@ export function FeatureNavCards({
         statusTone={emergencyTone}
       >
         {!hasEmergencyContact && (
-          <p className="flex items-center gap-1 text-[11px] text-amber-600">
+          <p className="flex items-center gap-1 text-xs text-warning">
             <Phone className="h-3 w-3" aria-hidden />
             {t("patient.feature.addContact")}
           </p>

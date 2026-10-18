@@ -56,7 +56,7 @@ function MapLauncherMetric({
     >
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
         <Icon className="h-3.5 w-3.5" />
-        <span className="line-clamp-1">{label}</span>
+        <span className="line-clamp-1 text-foreground">{label}</span>
       </div>
       <p className="mt-1 truncate text-xl font-semibold tabular-nums text-current">{value}</p>
     </div>

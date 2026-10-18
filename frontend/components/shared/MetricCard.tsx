@@ -34,18 +34,18 @@ export function MetricCard({
 }: MetricCardProps) {
   if (compact) {
     const body = (
-      <CardContent className="flex h-full flex-col gap-2 p-3.5 sm:p-4">
+      <CardContent className="flex h-full flex-col gap-3 p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="flex size-6 items-center justify-center text-muted-foreground">
             <Icon className="h-4 w-4" aria-hidden="true" />
           </div>
           {status ? <StatusBadge label={status.label} tone={status.tone} /> : null}
         </div>
         <div className="min-w-0">
-          <p className="ws-tabular-nums text-2xl font-bold leading-none tracking-tight text-foreground">{value}</p>
+          <p className="ws-tabular-nums text-3xl font-semibold leading-none tracking-tight text-foreground">{value}</p>
           <p className="mt-1 text-xs font-medium text-muted-foreground">
             {label}
-            {description ? <span className="text-muted-foreground/80"> · {description}</span> : null}
+            {description ? <span className="text-muted-foreground"> · {description}</span> : null}
           </p>
         </div>
       </CardContent>

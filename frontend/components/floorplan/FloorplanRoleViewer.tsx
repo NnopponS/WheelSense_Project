@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import overviewStyles from "./overview-floorplan.module.css";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { EntityHeader } from "@/components/shared/EntityHeader";
@@ -47,6 +49,8 @@ import FloorplanCanvas, {
 type Props = {
   className?: string;
   compact?: boolean;
+  /** Compact saved-layout preview used only by the admin Overview. */
+  overview?: boolean;
   showPresence?: boolean;
   initialFacilityId?: number | null;
   initialFloorId?: number | null;
@@ -147,10 +151,12 @@ function describeNodeStatus(room: PresenceRoom | null): string {
 function getPredictionChip(room: PresenceRoom): FloorplanRoomChip | null {
   if (!room.prediction_hint) return null;
   if ((room.prediction_hint as { model_type?: string }).model_type === "max_rssi") return null;
-  const confidence = Math.round((room.prediction_hint.confidence ?? 0) * 100);
+  const rawConfidence = room.prediction_hint.confidence;
+  if (rawConfidence == null || !Number.isFinite(rawConfidence)) return { label: "ML observation · confidence unavailable", tone: "info" };
+  const confidence = Math.round(rawConfidence * 100);
   return {
     label: `${confidence}% prediction`,
-    tone: confidence >= 80 ? "success" : confidence >= 60 ? "warning" : "critical",
+    tone: "info",
   };
 }
 
@@ -593,6 +599,7 @@ function RoomInspectorContent({
 export default function FloorplanRoleViewer({
   className = "",
   compact = false,
+  overview = false,
   showPresence = true,
   initialFacilityId = null,
   initialFloorId = null,
@@ -604,8 +611,7 @@ export default function FloorplanRoleViewer({
     const seg = pathname.split("/").filter(Boolean)[0];
     if (
       seg === "admin" ||
-      seg === "head-nurse" ||
-      seg === "head_caregiver" ||
+      seg === "head-caregiver" ||
       seg === "caregiver"
     ) {
       return `/${seg}`;
@@ -616,10 +622,12 @@ export default function FloorplanRoleViewer({
   const [floorId, setFloorId] = useState<number | "">(() => initialFloorId ?? "");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "floorplan">("floorplan");
+  const [roomSearch, setRoomSearch] = useState("");
+  const [alertsOnly, setAlertsOnly] = useState(false);
   const [captureMessage, setCaptureMessage] = useState<string | null>(null);
   const [captureBusy, setCaptureBusy] = useState(false);
 
-  const { data: facilities, isLoading: loadingFac } = useQuery({
+  const { data: facilities, isLoading: loadingFac, error: facilitiesError } = useQuery({
     queryKey: ["shared", "floorplan-role-viewer", "facilities"],
     queryFn: () => api.get<Facility[]>("/facilities"),
     staleTime: getQueryStaleTimeMs("/facilities"),
@@ -641,7 +649,7 @@ export default function FloorplanRoleViewer({
 
   const floorsEndpoint =
     effectiveFacilityId === "" ? null : `/facilities/${effectiveFacilityId}/floors`;
-  const { data: floors, isLoading: loadingFloors } = useQuery({
+  const { data: floors, isLoading: loadingFloors, error: floorsError } = useQuery({
     queryKey: ["shared", "floorplan-role-viewer", "floors", floorsEndpoint],
     queryFn: () => api.get<Floor[]>(floorsEndpoint!),
     enabled: Boolean(floorsEndpoint),
@@ -682,7 +690,7 @@ export default function FloorplanRoleViewer({
 
   const floorRoomsEndpoint =
     effectiveFloorId === "" ? null : `/rooms?floor_id=${effectiveFloorId}`;
-  const { data: floorRooms, isLoading: loadingFloorRooms } = useQuery({
+  const { data: floorRooms, isLoading: loadingFloorRooms, error: floorRoomsError } = useQuery({
     queryKey: ["shared", "floorplan-role-viewer", "floor-rooms", floorRoomsEndpoint],
     queryFn: () => api.get<Room[]>(floorRoomsEndpoint!),
     enabled: Boolean(floorRoomsEndpoint),
@@ -805,6 +813,13 @@ export default function FloorplanRoleViewer({
     return next;
   }, [roomEntries, roleBase]);
 
+  const hasSavedGeometry = normalizeFloorplanRooms(layoutRes?.layout_json).length > 0;
+  const filteredRoomEntries = roomEntries.filter(entry => {
+    const query = roomSearch.trim().toLocaleLowerCase();
+    const searchable = [entry.room.label, ...getRoomOccupants(entry.presenceRoom).map(person => person.display_name)].join(" ").toLocaleLowerCase();
+    return (!query || searchable.includes(query)) && (!alertsOnly || (entry.presenceRoom?.alert_count ?? 0) > 0);
+  });
+
   const presenceRooms = useMemo(() => presenceData?.rooms ?? [], [presenceData?.rooms]);
   const occupiedRooms = useMemo(
     () =>
@@ -906,96 +921,22 @@ export default function FloorplanRoleViewer({
 
   const headerClass = compact ? "space-y-2" : "space-y-4";
   const shellClass = compact ? "p-3 sm:p-4" : "p-4 sm:p-5";
+  const roomDirectory = (
+    <div className="grid max-h-[720px] grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
+      {filteredRoomEntries.length === 0 ? <p className="p-4 text-sm text-muted-foreground">{t("redesign.noRooms")}</p> : filteredRoomEntries.map(entry => {
+        const meta = roomMetaById[entry.room.id];
+        return <button key={entry.room.id} type="button"
+          className={`flex min-h-24 flex-col gap-2 rounded-lg border bg-card p-4 text-left transition-colors hover:bg-muted ${entry.room.id === visibleSelectedId ? "border-primary ring-1 ring-primary" : "border-border"}`}
+          onClick={() => setSelectedId(entry.room.id)} aria-pressed={entry.room.id === visibleSelectedId}>
+          <span className="text-base font-semibold">{entry.room.label}</span>
+          <span className="flex flex-wrap gap-1">{meta?.chips?.map((chip, index) => <StatusBadge key={index} tone={chip.tone} label={chip.label} />)}</span>
+          <span className="text-sm text-muted-foreground">{meta?.detailLines?.join(" · ") || describeNodeStatus(entry.presenceRoom)}</span>
+        </button>;
+      })}
+    </div>
+  );
 
-  if (!loadingFac && safeFacilities.length === 0) {
-    return (
-      <section className={`surface-card overflow-hidden ${shellClass} ${className}`.trim()}>
-        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground">
-          <MapPin className="h-4 w-4 text-primary" />
-          {t("floorplan.viewTitle")}
-        </h3>
-        <p className="text-sm text-foreground-variant">{t("floorplan.noFacilities")}</p>
-      </section>
-    );
-  }
-
-  return (
-    <section className={`surface-card overflow-hidden ${shellClass} ${className}`.trim()}>
-      <div className={headerClass}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <MapPin className="h-4 w-4 text-primary" />
-              {compact ? "Ward monitoring summary" : "Live operations map"}
-            </h3>
-            <p className="mt-1 text-sm text-foreground-variant">
-              {compact
-                ? "Room occupancy, alerts, and node freshness in one glance."
-                : "Readable room cards, occupancy context, and room-level inspection for staff operations."}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
-            {!compact ? (
-            <div
-              className="inline-flex rounded-lg border border-border p-1"
-              role="group"
-          aria-label={t("floorplan.displayMode")}
-            >
-              <Button
-                type="button"
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                className="px-3 text-sm"
-                onClick={() => setViewMode("list")}
-                aria-pressed={viewMode === "list"}
-              >
-                List
-              </Button>
-              <Button
-                type="button"
-                variant={viewMode === "floorplan" ? "default" : "ghost"}
-                size="sm"
-                className="px-3 text-sm"
-                onClick={() => setViewMode("floorplan")}
-                aria-pressed={viewMode === "floorplan"}
-              >
-                Floorplan
-              </Button>
-            </div>
-            ) : null}
-            <Badge variant="outline">{presenceRooms.length || rooms.length} rooms</Badge>
-            <Badge variant="success">{occupiedRooms} occupied</Badge>
-            <Badge variant={totalAlerts > 0 ? "destructive" : "outline"}>{totalAlerts} alerts</Badge>
-            <Badge variant={staleNodes > 0 ? "warning" : "outline"}>{staleNodes} stale</Badge>
-          </div>
-        </div>
-
-        {!compact ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <SummaryStat icon={Users} label="Occupied rooms" value={occupiedRooms} tone="success" />
-            <SummaryStat
-              icon={ShieldAlert}
-              label="Active alerts"
-              value={totalAlerts}
-              tone={totalAlerts > 0 ? "critical" : "info"}
-            />
-            <SummaryStat
-              icon={Wifi}
-              label="Online nodes"
-              value={onlineNodes}
-              tone={onlineNodes > 0 ? "success" : "warning"}
-            />
-            <SummaryStat
-              icon={Activity}
-              label="Stale nodes"
-              value={staleNodes}
-              tone={staleNodes > 0 ? "warning" : "success"}
-            />
-          </div>
-        ) : null}
-      </div>
-
+  const scopePickers = (
       <div className="mb-4 grid gap-2 sm:grid-cols-2 sm:gap-3">
         <div>
           <label
@@ -1054,6 +995,166 @@ export default function FloorplanRoleViewer({
           </select>
         </div>
       </div>
+  );
+
+  if (overview) {
+    const presenceAvailable = Boolean(presenceData) && !presenceError;
+    const recordedOccupancy = presenceRooms.filter(room => getRoomOccupants(room).length > 0).length;
+    const offlineNodes = presenceRooms.filter(room => room.node_status === "offline").length;
+    const staleOnly = presenceRooms.filter(room => room.node_status !== "offline" && (room.node_status === "stale" || (room.staleness_seconds ?? 0) >= 300)).length;
+    const unknownNodes = roomEntries.filter(entry => !entry.presenceRoom || entry.presenceRoom.node_status === "unmapped").length;
+    const scopeError = facilitiesError || floorsError || floorRoomsError;
+    const count = (value: number) => presenceAvailable ? value : "—";
+    return <section className={`${overviewStyles.panel} ${className}`} aria-labelledby="ward-title">
+      <div className={overviewStyles.header}>
+        <h2 id="ward-title">{t("overview.ward")}</h2>
+        <Link href="/admin/monitoring">{t("workspace.mapPreview")}<MapPin aria-hidden className="size-4" /></Link>
+      </div>
+      <dl className={overviewStyles.metrics}>
+        {[
+          [t("overview.rooms"), scopeError || loadingFac || loadingFloors || canvasLoading ? "—" : floorRooms?.length ?? rooms.length],
+          [t("overview.occupied"), count(recordedOccupancy)],
+          [t("overview.roomAlerts"), count(totalAlerts)],
+          [t("overview.stale"), count(staleOnly)],
+          [t("overview.offline"), count(offlineNodes)],
+          [t("overview.unmapped"), count(unknownNodes)],
+        ].map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+      </dl>
+      <div className={overviewStyles.scope}>{scopePickers}</div>
+      {scopeError ? <p role="status" className="text-sm text-muted-foreground">{t("redesign.unavailable")}</p>
+        : loadingFac || loadingFloors || canvasLoading ? <p role="status" className="py-4 text-sm text-muted-foreground">{t("common.loading")}</p>
+        : !safeFacilities.length ? <p className="text-sm text-muted-foreground">{t("floorplan.noFacilities")}</p>
+        : !safeFloors.length ? <p className="text-sm text-muted-foreground">{t("floorplan.noFloors")}</p>
+        : layoutError ? <p role="status" className="text-sm text-muted-foreground">{t("floorplan.layoutError")}</p>
+        : !rooms.length ? <p className="text-sm text-muted-foreground">{t("floorplan.emptyLayout")}</p>
+        : <>
+          {hasSavedGeometry ? <div className={overviewStyles.canvas}>
+            <FloorplanCanvas key={`${effectiveFacilityId}-${effectiveFloorId}`} readOnly compact fillViewport fitContentOnMount enableZoom
+              rooms={rooms} onRoomsChange={() => {}} selectedId={visibleSelectedId} onSelect={setSelectedId}
+              roomMetaById={presenceAvailable ? Object.fromEntries(Object.entries(roomMetaById).map(([id, meta]) => [id, { tone: meta.tone }])) : {}} />
+          </div> : <p className="text-xs text-muted-foreground">{t("redesign.noGeometry")}</p>}
+          <div className={hasSavedGeometry ? overviewStyles.mobileRooms : overviewStyles.directory}>
+            {roomEntries.map(entry => <Button key={entry.room.id} type="button" variant={visibleSelectedId === entry.room.id ? "secondary" : "outline"}
+              aria-pressed={visibleSelectedId === entry.room.id} onClick={() => setSelectedId(entry.room.id)} className="h-auto min-h-11 justify-between whitespace-normal text-left">
+              <span>{entry.room.label}</span><span className="text-xs text-muted-foreground">{presenceAvailable && entry.presenceRoom ? `${entry.presenceRoom.alert_count ?? 0} ${t("overview.roomAlerts")}` : t("redesign.unavailable")}</span>
+            </Button>)}
+          </div>
+          <label className={overviewStyles.roomPicker}>
+            <span>{t("overview.inspectRoom")}</span>
+            <select className="input-field min-w-0 flex-1 text-sm" value={visibleSelectedId ?? ""} onChange={event => setSelectedId(event.target.value || null)}>
+              <option value="">{t("overview.selectRoom")}</option>
+              {roomEntries.map(entry => <option key={entry.room.id} value={entry.room.id}>{entry.room.label}</option>)}
+            </select>
+          </label>
+          {selectedRoomEntry ? <div className={overviewStyles.selection} aria-live="polite">
+            <strong>{selectedRoomEntry.room.label}</strong>
+            {presenceAvailable && selectedPresenceRoom ? <>
+              <span>{t(`overview.node.${selectedPresenceRoom.node_status ?? "unmapped"}`)} · {selectedPresenceRoom.alert_count ?? 0} {t("overview.roomAlerts")}</span>
+              <span>{selectedOccupants.length ? selectedOccupants.map((person,index) => {
+                const href = presenceHrefForOccupant(person,roleBase);
+                return <span key={`${person.actor_type}-${person.actor_id}`}>{index ? ", " : ""}{href ? <Link href={href}>{person.display_name}</Link> : person.display_name}</span>;
+              }) : t("overview.noOccupants")}</span>
+              {selectedPresenceRoom.computed_at ? <time dateTime={selectedPresenceRoom.computed_at}>{formatDateTime(selectedPresenceRoom.computed_at)}</time> : null}
+            </> : <span>{t("redesign.unavailable")}</span>}
+          </div> : null}
+        </>}
+      <p role={presenceError ? "status" : undefined} className="mt-2 text-xs text-muted-foreground">
+        {presenceError ? t("overview.presenceUnavailable") : presenceData ? `${t("patient.roomControls.lastUpdated")}: ${formatDateTime(presenceData.computed_at)}` : t("overview.presencePending")}
+      </p>
+    </section>;
+  }
+
+  if (!loadingFac && safeFacilities.length === 0) {
+    return (
+      <section className={`surface-card overflow-hidden ${shellClass} ${className}`.trim()}>
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground">
+          <MapPin className="h-4 w-4 text-primary" />
+          {t("floorplan.viewTitle")}
+        </h3>
+        <p className="text-sm text-foreground-variant">{t("floorplan.noFacilities")}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className={`surface-card overflow-hidden ${shellClass} ${className}`.trim()}>
+      <div className={headerClass}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <MapPin className="h-4 w-4 text-primary" />
+              {compact ? "Ward monitoring summary" : "Live operations map"}
+            </h3>
+            <p className="mt-1 text-sm text-foreground-variant">
+              {compact
+                ? "Room occupancy, alerts, and node freshness in one glance."
+                : "Readable room cards, occupancy context, and room-level inspection for staff operations."}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+            {!compact ? (
+            <div
+              className="hidden rounded-lg border border-border p-1 md:inline-flex"
+              role="group"
+          aria-label={t("floorplan.displayMode")}
+            >
+              <Button
+                type="button"
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className="px-3 text-sm"
+                onClick={() => setViewMode("list")}
+                aria-pressed={viewMode === "list"}
+              >
+                List
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === "floorplan" ? "default" : "ghost"}
+                size="sm"
+                className="px-3 text-sm"
+                onClick={() => { setViewMode("floorplan"); setRoomSearch(""); setAlertsOnly(false); }}
+                disabled={!hasSavedGeometry}
+                aria-pressed={viewMode === "floorplan"}
+              >
+                Floorplan
+              </Button>
+            </div>
+            ) : null}
+            <Badge variant="outline">{presenceRooms.length || rooms.length} rooms</Badge>
+            <Badge variant="outline">{presenceData ? occupiedRooms : "—"} occupied</Badge>
+            <Badge variant={totalAlerts > 0 ? "destructive" : "outline"}>{presenceData ? totalAlerts : "—"} alerts</Badge>
+            <Badge variant={staleNodes > 0 ? "warning" : "outline"}>{presenceData ? staleNodes : "—"} stale</Badge>
+          </div>
+        </div>
+
+        {!compact ? (
+          <div className="ws-stat-strip grid grid-cols-2 xl:grid-cols-4">
+            <SummaryStat icon={Users} label="Occupied rooms" value={occupiedRooms} tone="success" />
+            <SummaryStat
+              icon={ShieldAlert}
+              label="Active alerts"
+              value={totalAlerts}
+              tone={totalAlerts > 0 ? "critical" : "info"}
+            />
+            <SummaryStat
+              icon={Wifi}
+              label="Online nodes"
+              value={onlineNodes}
+              tone={onlineNodes > 0 ? "success" : "warning"}
+            />
+            <SummaryStat
+              icon={Activity}
+              label="Stale nodes"
+              value={staleNodes}
+              tone={staleNodes > 0 ? "warning" : "success"}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      {scopePickers}
 
       {effectiveFacilityId !== "" && effectiveFloorId !== "" && loadingFloors === false ? (
         safeFloors.length === 0 ? (
@@ -1070,7 +1171,7 @@ export default function FloorplanRoleViewer({
           <p className="text-sm text-error">{t("floorplan.layoutError")}</p>
         ) : rooms.length === 0 ? (
           <p className="text-sm text-foreground-variant">{t("floorplan.emptyLayout")}</p>
-        ) : compact ? (
+        ) : compact && hasSavedGeometry ? (
           <>
             <FloorplanCanvas
               readOnly
@@ -1093,60 +1194,15 @@ export default function FloorplanRoleViewer({
         ) : (
           <>
             <div className="min-w-0 space-y-3 overflow-hidden rounded-lg border border-border/60 bg-surface-container-low/40 p-2 sm:p-3">
-              {viewMode === "list" ? (
-                <div className="grid max-h-[720px] auto-rows-fr grid-cols-1 gap-2 overflow-y-auto pr-2 sm:grid-cols-2">
-                  {roomEntries.map((entry) => {
-                    const meta = roomMetaById[entry.room.id];
-                    const toneClass =
-                      meta?.tone === "critical"
-                        ? "border-critical/40 bg-critical-container/45"
-                        : meta?.tone === "warning"
-                          ? "border-warning/40 bg-warning-container/45"
-                          : meta?.tone === "success"
-                            ? "border-success/40 bg-success-container/45"
-                            : "border-border bg-surface-container-low";
-                    return (
-                      <button
-                        key={entry.room.id}
-                        type="button"
-                        className={`flex min-h-24 w-full flex-col rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${entry.room.id === visibleSelectedId ? "ring-2 ring-primary" : ""} ${toneClass}`}
-                        onClick={() => setSelectedId(entry.room.id)}
-                        aria-pressed={entry.room.id === visibleSelectedId}
-                        aria-label={`Open details for ${entry.room.label}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="truncate text-base font-semibold">{entry.room.label}</div>
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {meta?.chips?.map((chip, index) => (
-                            <StatusBadge
-                              key={`${chip.label}-${index}`}
-                              tone={chip.tone}
-                              label={chip.label}
-                            />
-                          ))}
-                        </div>
-                        {meta?.detailLines && meta.detailLines.length > 0 && (
-                          <div className="mt-2 flex flex-col gap-1 text-sm text-foreground-variant">
-                            {meta.detailLines.map((line, idx) => (
-                              <span key={idx} className="truncate">{line}</span>
-                            ))}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <FloorplanCanvas
-                  readOnly
-                  rooms={rooms}
-                  onRoomsChange={() => {}}
-                  selectedId={visibleSelectedId}
-                  onSelect={setSelectedId}
-                  roomMetaById={roomMetaById}
-                />
-              )}
+              {!hasSavedGeometry ? <p className="px-2 py-3 text-sm text-muted-foreground">{t("redesign.noGeometry")}</p> : null}
+              <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row">
+                <Input aria-label={t("redesign.roomSearch")} placeholder={t("redesign.roomSearch")} value={roomSearch} onChange={event => setRoomSearch(event.target.value)} />
+                <Button type="button" variant={alertsOnly ? "secondary" : "outline"} aria-pressed={alertsOnly} onClick={() => setAlertsOnly(value => !value)}>{t("redesign.alertRooms")}</Button>
+              </div>
+              {viewMode === "list" || !hasSavedGeometry || roomSearch || alertsOnly ? roomDirectory : <>
+                <div className="ws-floorplan-list">{roomDirectory}</div>
+                <div className="ws-floorplan-map"><FloorplanCanvas readOnly rooms={rooms} onRoomsChange={() => {}} selectedId={visibleSelectedId} onSelect={setSelectedId} roomMetaById={roomMetaById} /></div>
+              </>}
               <div
                 className="rounded-lg border border-outline-variant/20 bg-card px-3 py-3 text-sm text-foreground-variant"
                 role={presenceError ? "status" : undefined}

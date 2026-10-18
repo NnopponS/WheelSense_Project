@@ -58,7 +58,7 @@ export function FilterBar({
 
   return (
     <section
-      className={cn("rounded-xl border border-border bg-card p-4", className)}
+      className={cn("border-b border-border pb-4", className)}
       aria-label={ariaLabel ?? t("common.filtersAria")}
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
@@ -102,7 +102,7 @@ export function FilterBar({
         ) : null}
         {children ? <div className="flex flex-1 flex-wrap items-end gap-3">{children}</div> : null}
         <div className="flex flex-wrap items-center gap-2">
-          {onReset ? (
+          {onReset && hasActiveFilters ? (
             <Button type="button" variant="outline" onClick={onReset} disabled={!hasActiveFilters}>
               <RotateCcw className="h-4 w-4" aria-hidden="true" />
               {resolvedResetLabel}

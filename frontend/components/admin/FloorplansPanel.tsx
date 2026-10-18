@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import type { ListPatientsResponse } from "@/lib/api/task-scope-types";
@@ -19,7 +19,15 @@ import {
   provisionRoomsForUnmappedFloorplanNodes,
 } from "@/lib/floorplanSaveProvision";
 import type { Device, DeviceDetail, Facility, Floor, Room, SmartDevice } from "@/lib/types";
-import FloorplanCanvas from "@/components/floorplan/FloorplanCanvas";
+import FloorplanCanvas, { type FloorplanRoomMeta } from "@/components/floorplan/FloorplanCanvas";
+import { RoomInspectorFrame } from "@/components/floorplan/RoomInspectorFrame";
+import { FacilityRoomInsights } from "@/components/floorplan/FacilityRoomInsights";
+import { FloorplanLayers } from "@/components/floorplan/FloorplanLayers";
+import { useFloorplanDraft } from "@/hooks/useFloorplanDraft";
+import { readFloorplanBackground, validateFloorplanRooms, applyReferenceCoordinates, REFERENCE_BACKGROUND } from "@/lib/floorplanEditor";
+import type { FloorplanPresenceOut } from "@/lib/api/task-scope-types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import SearchableListboxPicker from "@/components/shared/SearchableListboxPicker";
 import {
   bootstrapRoomsFromDbFloor,
@@ -35,13 +43,23 @@ import {
   ChevronRight,
   Layers,
   MapPin,
+  Maximize2,
+  Minimize2,
   Pencil,
   Plus,
   Save,
   Trash2,
   UserPlus,
   X,
+  Undo2,
+  Redo2,
+  Eye,
+  Search,
 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import styles from "./facility-workspace.module.css";
 
 function resolveShapeRoomId(shape: FloorplanRoomShape, floorRooms: Room[] | null | undefined): number | null {
   return resolveLayoutShapeToFloorRoomId(shape, floorRooms ?? undefined);
@@ -87,15 +105,74 @@ export type FloorplansPanelExternalScope = {
 
 export default function FloorplansPanel({
   embedded = false,
+  workspace = false,
+  scopeControls,
   externalScope = null,
+  onDirtyChange,
+  onFloorChange,
+  onBusyChange,
 }: {
   embedded?: boolean;
+  workspace?: boolean;
+  scopeControls?: ReactNode;
   /** Parent-selected facility/floor (e.g. Facility management tabs). Hides duplicate building/floor pickers. */
   externalScope?: FloorplansPanelExternalScope | null;
+  onDirtyChange?: (dirty: boolean) => void;
+  onFloorChange?: (floorId: number) => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [immersive, setImmersive] = useState(false);
+  const [mobileMap, setMobileMap] = useState(false);
+  const fullscreenOwner = useRef(false);
+
+  useEffect(() => {
+    if (!immersive) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !document.fullscreenElement) setImmersive(false);
+    };
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement && fullscreenOwner.current) {
+        fullscreenOwner.current = false;
+        setImmersive(false);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      if (fullscreenOwner.current && document.fullscreenElement) {
+        fullscreenOwner.current = false;
+        void document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, [immersive]);
+
+  async function toggleFullscreen() {
+    if (immersive) {
+      if (fullscreenOwner.current && document.fullscreenElement) {
+        await document.exitFullscreen().catch(() => {});
+      }
+      setImmersive(false);
+      return;
+    }
+    setImmersive(true);
+    try {
+      // Keep portaled building/floor dialogs inside the browser's fullscreen element.
+      await document.documentElement.requestFullscreen();
+      fullscreenOwner.current = true;
+    } catch {
+      // The immersive layout remains available when browser fullscreen is restricted.
+      fullscreenOwner.current = false;
+    }
+  }
+
   const {
     data: facilities,
     isLoading: loadingFac,
@@ -107,8 +184,8 @@ export default function FloorplansPanel({
     refetchInterval: getQueryPollingMs("/facilities"),
     retry: 3,
   });
-  const [facilityId, setFacilityId] = useState<number | "">("");
-  const [floorId, setFloorId] = useState<number | "">("");
+  const [facilityId, setFacilityId] = useState<number | "">(externalScope?.facilityId ?? "");
+  const [floorId, setFloorId] = useState<number | "">(externalScope?.floorId ?? "");
 
   const floorsEndpoint =
     facilityId === "" ? null : `/facilities/${facilityId}/floors`;
@@ -146,7 +223,7 @@ export default function FloorplansPanel({
 
   const floorRoomsEndpoint =
     facilityId === "" || floorId === "" ? null : `/rooms?floor_id=${floorId}`;
-  const { data: floorRooms, isLoading: loadingFloorRooms } = useQuery({
+  const { data: floorRooms, isLoading: loadingFloorRooms, error: floorRoomsError } = useQuery({
     queryKey: ["admin", "floorplans-panel", "floor-rooms", floorRoomsEndpoint],
     queryFn: () => api.get<Room[]>(floorRoomsEndpoint!),
     enabled: Boolean(floorRoomsEndpoint),
@@ -155,7 +232,7 @@ export default function FloorplansPanel({
     retry: 3,
   });
 
-  const { data: devices } = useQuery({
+  const { data: devices, error:devicesError } = useQuery({
     queryKey: ["admin", "floorplans-panel", "devices"],
     queryFn: () => api.get<Device[]>("/devices"),
     staleTime: getQueryStaleTimeMs("/devices"),
@@ -163,7 +240,7 @@ export default function FloorplansPanel({
     retry: 3,
   });
 
-  const { data: smartDevicesRaw = [], refetch: refetchSmartDevicesBase } = useQuery({
+  const { data: smartDevicesRaw = [], error:smartDevicesError, isLoading:loadingSmartDevices, refetch: refetchSmartDevicesBase } = useQuery({
     queryKey: ["admin", "floorplans-panel", "smart-devices"],
     queryFn: async () => {
       const raw = await api.listSmartDevices();
@@ -182,7 +259,39 @@ export default function FloorplansPanel({
     [refetchSmartDevicesBase],
   );
 
-  const [rooms, setRooms] = useState<FloorplanRoomShape[]>([]);
+  const incoming = useMemo(() => {
+    const saved=normalizeFloorplanRooms(layoutRes?.layout_json);
+    const initial=saved.length ? saved : floorRooms?.length ? bootstrapRoomsFromDbFloor(floorRooms) : [];
+    const merged=mergeRoomNodesFromFloor(initial,floorRooms);
+    const hydrated=merged.map(room=>{
+      const row=(floorRooms??[]).find(item=>item.id===resolveShapeRoomId(room,floorRooms));
+      const device=(devices??[]).find(item=>room.node_device_id ? item.device_id===room.node_device_id : item.id===room.device_id);
+      return {...room,room_type:row?.room_type ?? "general",...(device ? {device_id:device.id,node_device_id:device.device_id} : {})};
+    });
+    const floor=(floors??[]).find(item=>item.id===floorId);
+    return {rooms:hydrated,background:readFloorplanBackground(floor?.map_data?.wheelsense_background)};
+  },[layoutRes,floorRooms,devices,floors,floorId]);
+  const [partialSave,setPartialSave]=useState(false);
+  const {state:draft,dispatch:dispatchDraft,change:changeDraft,setRooms,dirty:draftDirty}=useFloorplanDraft(`${facilityId}:${floorId}`,incoming,partialSave);
+  const dirty=draftDirty || partialSave;
+  const rooms=draft.value.rooms;
+  const background=draft.value.background;
+  const [editing,setEditing]=useState(false);
+  const [inspectorTab,setInspectorTab]=useState("overview");
+  const [inspectorCollapsed,setInspectorCollapsed]=useState(false);
+  const [inspectorWidth,setInspectorWidth]=useState(320);
+  const [roomSearch,setRoomSearch]=useState("");
+  const [roomTypeFilter,setRoomTypeFilter]=useState("all");
+  const [statusFilter,setStatusFilter]=useState("all");
+  const [showGrid,setShowGrid]=useState(true);
+  const [showStatus,setShowStatus]=useState(true);
+  const [showBackground,setShowBackground]=useState(true);
+  const [snapEnabled,setSnapEnabled]=useState(true);
+  const [fitRevision,setFitRevision]=useState(0);
+  const [referenceBusy,setReferenceBusy]=useState(false);
+  const importRequest=useRef<AbortController|null>(null);
+  const activeSelection=useRef<string|null>(null);
+  const panelRef=useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -241,29 +350,30 @@ export default function FloorplansPanel({
     loadingLayout ||
     (roomsFromLayout.length === 0 && loadingFloorRooms);
 
-  useEffect(() => {
-    if (facilityId === "" || floorId === "") return;
-    if (!layoutRes) {
-      setRooms([]);
-      setSelectedId(null);
-      return;
-    }
-    const fromLayout = normalizeFloorplanRooms(layoutRes.layout_json);
-    if (fromLayout.length > 0) {
-      setRooms(mergeRoomNodesFromFloor(fromLayout, floorRooms ?? undefined));
-      setSelectedId(null);
-      return;
-    }
-    if (floorRooms == null) {
-      return;
-    }
-    if (floorRooms.length > 0) {
-      setRooms(mergeRoomNodesFromFloor(bootstrapRoomsFromDbFloor(floorRooms), floorRooms));
-    } else {
-      setRooms([]);
-    }
-    setSelectedId(null);
-  }, [layoutRes, facilityId, floorId, floorRooms]);
+  useEffect(()=>{setSelectedId(null);setPartialSave(false);setEditing(false);setRoomSearch("");setRoomTypeFilter("all");setStatusFilter("all");setMessage(null)},[facilityId,floorId]);
+  useEffect(()=>{onDirtyChange?.(dirty)},[dirty,onDirtyChange]);
+  useEffect(()=>{onBusyChange?.(saving)},[saving,onBusyChange]);
+  useEffect(()=>()=>{importRequest.current?.abort()},[facilityId,floorId]);
+  useEffect(()=>{activeSelection.current=`${facilityId}:${floorId}:${selectedId}`},[facilityId,floorId,selectedId]);
+  useEffect(()=>{
+    if(!dirty)return;
+    const beforeUnload=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=""};
+    const onLink=(event:MouseEvent)=>{
+      if(event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.button!==0)return;
+      const anchor=(event.target as Element).closest?.("a[href]") as HTMLAnchorElement|null;
+      if(!anchor || anchor.target==="_blank" || anchor.download || anchor.href.split("#")[0]===location.href.split("#")[0])return;
+      if(!window.confirm(t("facilityWorkspace.discardConfirm"))){event.preventDefault();event.stopPropagation()}
+    };
+    const navigation=(window as Window & {navigation?:EventTarget}).navigation;
+    const onTraverse=(event:Event)=>{
+      const traverse=event as Event & {navigationType?:string;hashChange?:boolean;destination?:{url:string}};
+      if(traverse.navigationType!=="traverse" || !traverse.cancelable || traverse.hashChange || traverse.destination?.url.split("#")[0]===location.href.split("#")[0])return;
+      if(!window.confirm(t("facilityWorkspace.discardConfirm")))traverse.preventDefault();
+    };
+    navigation?.addEventListener("navigate",onTraverse);
+    window.addEventListener("beforeunload",beforeUnload);document.addEventListener("click",onLink,true);
+    return()=>{navigation?.removeEventListener("navigate",onTraverse);window.removeEventListener("beforeunload",beforeUnload);document.removeEventListener("click",onLink,true)};
+  },[dirty,t]);
 
   useEffect(() => {
     if (isExternalScope) return;
@@ -293,7 +403,7 @@ export default function FloorplansPanel({
     facilityId === "" || floorId === "" || selectedNumericRoomId == null
       ? null
       : `/patients?limit=1000`;
-  const { data: assignPatientsRaw } = useQuery({
+  const { data: assignPatientsRaw, isLoading: loadingAssignPatients, error: assignPatientsError } = useQuery({
     queryKey: ["admin", "floorplans-panel", "assign-patients", patientsAssignEndpoint, selectedNumericRoomId],
     queryFn: () => api.get<ListPatientsResponse>(patientsAssignEndpoint!),
     enabled: Boolean(patientsAssignEndpoint),
@@ -440,24 +550,7 @@ export default function FloorplansPanel({
     setCapturePreviewUrl(null);
   }, [selectedId, selected?.node_device_id]);
 
-  useEffect(() => {
-    if (!devicesList.length) return;
-    setRooms((prev) =>
-      prev.map((room) => {
-        if (room.node_device_id) {
-          const byNode = devicesList.find((device) => device.device_id === room.node_device_id);
-          if (byNode && room.device_id !== byNode.id) {
-            return { ...room, device_id: byNode.id };
-          }
-          return room;
-        }
-        if (room.device_id == null) return room;
-        const linked = devicesList.find((device) => device.id === room.device_id);
-        if (!linked) return room;
-        return { ...room, node_device_id: linked.device_id };
-      }),
-    );
-  }, [devicesList]);
+
 
   const updateSelected = useCallback(
     (patch: Partial<FloorplanRoomShape>) => {
@@ -466,11 +559,14 @@ export default function FloorplansPanel({
         prev.map((r) => (r.id === selectedId ? { ...r, ...patch } : r)),
       );
     },
-    [selectedId],
+    [selectedId,setRooms],
   );
 
   async function onSave() {
     if (facilityId === "" || floorId === "") return;
+    if(floorRoomsError || floorRooms==null || devicesError || devices==null){setMessage(t("redesign.unavailable"));return;}
+    if(JSON.stringify(background)!==JSON.stringify(draft.saved.background) && !floors?.some(floor=>floor.id===floorId)){setMessage(t("redesign.unavailable"));return;}
+    if(!validateFloorplanRooms(rooms) || (background && !readFloorplanBackground(background))){setMessage(t("facilityWorkspace.invalidLayout"));return;}
     setSaving(true);
     setMessage(null);
     try {
@@ -483,6 +579,7 @@ export default function FloorplansPanel({
           rooms,
           floorRoomRefs,
           Number(floorId),
+          true,
         );
         mergedRefs = provisioned.mergedRefs;
         roomsForNormalize = provisioned.workingShapes;
@@ -506,6 +603,7 @@ export default function FloorplansPanel({
       }).length;
 
       const alignedForLayout = alignFloorplanShapesToRegistryDevices(normalizedRooms, devicesList);
+      if(!validateFloorplanRooms(alignedForLayout)){setMessage(t("facilityWorkspace.invalidLayout"));return;}
 
       await api.put<FloorplanLayoutResponse>("/floorplans/layout", {
         facility_id: facilityId,
@@ -530,13 +628,32 @@ export default function FloorplansPanel({
         }))
         .filter((item): item is { roomId: number; nodeDeviceId: string | null } => item.roomId !== null);
       const nodePatchResults = await Promise.allSettled(
-        roomNodeUpdates.map((item) =>
-          api.patch(`/rooms/${item.roomId}`, {
-            node_device_id: item.nodeDeviceId,
-          }),
-        ),
+        roomNodeUpdates.map((item) => {
+          const next=alignedForLayout.find(shape=>resolveLayoutShapeToFloorRoomId(shape,mergedRefs)===item.roomId);
+          const previous=draft.saved.rooms.find(shape=>resolveLayoutShapeToFloorRoomId(shape,mergedRefs)===item.roomId);
+          return api.patch(`/rooms/${item.roomId}`, {
+            node_device_id:item.nodeDeviceId,
+            ...(next && previous?.label!==next.label ? {name:next.label} : {}),
+            ...(next && previous?.room_type!==next.room_type ? {room_type:next.room_type} : {}),
+          });
+        }),
       );
       const failedNodePatches = nodePatchResults.filter((result) => result.status === "rejected").length;
+      const currentFloor=(floors??[]).find(item=>item.id===floorId);
+      if(JSON.stringify(background)!==JSON.stringify(draft.saved.background)) {
+        try {
+          await api.patch(`/facilities/${facilityId}/floors/${floorId}`,{map_data:{...(currentFloor?.map_data??{}),wheelsense_background:background}});
+          await queryClient.invalidateQueries({queryKey:["admin","floorplans-panel","floors"]});
+          await queryClient.invalidateQueries({queryKey:["admin","facility-management","floors"]});
+        } catch {
+          setPartialSave(true);
+          setMessage(t("facilityWorkspace.backgroundSaveFailed"));
+          return;
+        }
+      }
+      const incomplete=failedNodePatches>0 || skippedNodePatches>0;
+      setPartialSave(incomplete);
+      if(!incomplete)dispatchDraft({type:"saved",value:{rooms:alignedForLayout,background}});
       if (selectedId && idRemap.has(selectedId)) {
         setSelectedId(idRemap.get(selectedId)!);
       }
@@ -558,6 +675,7 @@ export default function FloorplansPanel({
   }
 
   async function handleCaptureNodePreview() {
+    const captureSelection=`${facilityId}:${floorId}:${selectedId}`;
     const nodeId = selected?.node_device_id;
     if (!nodeId) return;
     if (selectedNodeDevice && (selectedNodeDevice.hardware_type || "").toLowerCase() !== "node") {
@@ -577,6 +695,7 @@ export default function FloorplansPanel({
         url = detail.latest_photo?.url ?? null;
         if (url) break;
       }
+      if(activeSelection.current!==captureSelection)return;
       if (url) {
         setCapturePreviewUrl(url);
       } else {
@@ -776,8 +895,53 @@ export default function FloorplansPanel({
     }
   }
 
+  const presenceEndpoint=facilityId!=="" && floorId!=="" ? `/floorplans/presence?facility_id=${facilityId}&floor_id=${floorId}` : null;
+  const presenceQuery=useQuery({queryKey:["admin","floorplans-panel","presence",presenceEndpoint],queryFn:()=>api.get<FloorplanPresenceOut>(presenceEndpoint!),enabled:Boolean(presenceEndpoint),refetchInterval:5000,refetchIntervalInBackground:true,staleTime:3000,retry:false});
+  const presenceByShape=useMemo(()=>{
+    const map=new Map<string,FloorplanPresenceOut["rooms"][number]>();
+    if(presenceQuery.isError)return map;
+    for(const shape of rooms){const id=resolveShapeRoomId(shape,floorRooms);const live=presenceQuery.data?.rooms.find(room=>room.room_id===id);if(live)map.set(shape.id,live)}
+    return map;
+  },[rooms,floorRooms,presenceQuery.data,presenceQuery.isError]);
+  const roomMeta=useMemo<Record<string,FloorplanRoomMeta>>(()=>Object.fromEntries(rooms.map(shape=>{
+    const live=presenceByShape.get(shape.id);
+    return [shape.id,{tone:live && live.alert_count>0 ? "critical" : live?.node_status==="offline" || live?.node_status==="stale" ? "warning" : live?.node_status==="online" ? "success" : "info",chips:live ? [{label:`${live.alert_count} ${t("overview.roomAlerts")}`,tone:live.alert_count>0 ? "critical" : "info"}] : [{label:t("redesign.unavailable"),tone:"info"}],detailLines:live ? [t(`overview.node.${live.node_status}`),live.occupants ? live.occupants.map(person=>person.display_name).join(", ") || t("overview.noOccupants") : t("redesign.unavailable")] : []}];
+  })),[rooms,presenceByShape,t]);
+  const roomTypes=[...new Set(rooms.map(shape=>shape.room_type??"general"))];
+  const visibleRoomIds=rooms.filter(shape=>{
+    const live=presenceByShape.get(shape.id),type=shape.room_type??"general";
+    const query=roomSearch.trim().toLocaleLowerCase();
+    return (!query || `${shape.label} ${type}`.toLocaleLowerCase().includes(query)) && (roomTypeFilter==="all" || type===roomTypeFilter) && (statusFilter==="all" || (statusFilter==="alerts" ? Boolean(live?.alert_count) : live?.node_status===statusFilter));
+  }).map(shape=>shape.id);
+  const canEdit=user?.role==="admin" || user?.role==="head_caregiver";
+  const selectRoom=(id:string|null)=>{setSelectedId(id);setInspectorCollapsed(false)};
+  const changeMode=(value:string)=>{setEditing(value==="edit");setRoomSearch("");setRoomTypeFilter("all");setStatusFilter("all")};
+  const discardDraft=()=>{if(!dirty || window.confirm(t("facilityWorkspace.discardConfirm"))){dispatchDraft({type:"discard"});setPartialSave(false);void refetch();setSelectedId(null);setEditing(false);setFitRevision(value=>value+1)}};
+  const removeSelected=()=>{if(!selectedId || !editing || saving)return;if(window.confirm(t("facilityWorkspace.removeBoundaryConfirm"))){setRooms(previous=>previous.filter(room=>room.id!==selectedId));setSelectedId(null)}};
+  const importReference=async()=>{
+    if(!editing || !window.confirm(t("facilityWorkspace.referenceConfirm")))return;
+    const controller=new AbortController();importRequest.current=controller;setReferenceBusy(true);
+    try {const reference=await fetch("/floorplans/wheelsense_floorplan_rooms.json",{signal:controller.signal}).then(response=>{if(!response.ok)throw new Error();return response.json()});
+      if(controller.signal.aborted)return;
+      const next=applyReferenceCoordinates(rooms,reference);
+      if(!validateFloorplanRooms(next))throw new Error();
+      changeDraft(value=>({...value,rooms:next,background:REFERENCE_BACKGROUND}));setShowBackground(true);setFitRevision(value=>value+1);setMessage(t("facilityWorkspace.referenceDraft"));
+    }catch{if(!controller.signal.aborted)setMessage(t("facilityWorkspace.referenceFailed"))}finally{setReferenceBusy(false)}
+  };
+  useEffect(()=>{
+    const keyboard=(event:KeyboardEvent)=>{
+      const target=event.target as HTMLElement;
+      if(!panelRef.current?.contains(target) && !target.closest("[data-floorplan-inspector]"))return;
+      if((event.metaKey||event.ctrlKey) && event.key.toLowerCase()==="s"){event.preventDefault();if(canEdit && !saving && dirty)void onSave()}
+      if(!editing || saving || target.closest("input,textarea,select,[contenteditable=true],[role=combobox]"))return;
+      if((event.metaKey||event.ctrlKey) && ["z","y"].includes(event.key.toLowerCase())){event.preventDefault();dispatchDraft({type:event.shiftKey||event.key.toLowerCase()==="y" ? "redo" : "undo"})}
+      if((event.key==="Delete" || event.key==="Backspace") && target.closest("svg")){event.preventDefault();removeSelected()}
+    };
+    document.addEventListener("keydown",keyboard);return()=>document.removeEventListener("keydown",keyboard);
+  });
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div ref={panelRef} className={cn(workspace ? styles.panel : "space-y-6", immersive && styles.immersive)} style={{"--inspector-width":inspectorCollapsed ? "3.5rem" : `${inspectorWidth}px`} as CSSProperties}>
       {!embedded && (
         <div>
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -790,7 +954,39 @@ export default function FloorplansPanel({
         </div>
       )}
 
-      <div className="rounded-2xl border border-outline-variant/25 bg-surface-container-low/60 shadow-sm overflow-hidden">
+      {workspace && <>
+        <div className={styles.editorToolbar}>
+          {scopeControls}
+          <div className={styles.editorActions}>
+            <div role="group" aria-label={t("facilityWorkspace.mode")} className="flex gap-1 rounded-lg bg-muted p-1"><Button type="button" variant={editing ? "ghost" : "secondary"} aria-pressed={!editing} onClick={()=>changeMode("view")} disabled={saving}><Eye className="size-4"/>{t("facilityWorkspace.view")}</Button><Button type="button" variant={editing ? "secondary" : "ghost"} aria-pressed={editing} disabled={!canEdit || saving} onClick={()=>changeMode("edit")}><Pencil className="size-4"/>{t("facilityWorkspace.edit")}</Button></div>
+
+            <Button type="button" variant="outline" size="icon" aria-label={t(immersive ? "workspace.exitFullscreen" : "workspace.fullscreen")} title={t(immersive ? "workspace.exitFullscreen" : "workspace.fullscreen")} aria-pressed={immersive} onClick={()=>void toggleFullscreen()}>{immersive ? <Minimize2/> : <Maximize2/>}</Button>
+          </div>
+        </div>
+        <div className={styles.viewBar}>
+          <div className={styles.filters}>
+            <div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" aria-hidden/><Input type="search" className="pl-9" aria-label={t("facilityWorkspace.search")} placeholder={t("facilityWorkspace.search")} value={roomSearch} onChange={event=>setRoomSearch(event.target.value)}/></div>
+            <select className="input-field text-sm" aria-label={t("facilityWorkspace.roomType")} value={roomTypeFilter} onChange={event=>setRoomTypeFilter(event.target.value)}><option value="all">{t("facilityWorkspace.allTypes")}</option>{roomTypes.map(type=><option key={type} value={type}>{type}</option>)}</select>
+            <select className="input-field text-sm" aria-label={t("facilityWorkspace.status")} value={statusFilter} onChange={event=>setStatusFilter(event.target.value)}>{["all","alerts","online","stale","offline","unmapped"].map(status=><option key={status} value={status}>{t(`facilityWorkspace.filter.${status}`)}</option>)}</select>
+              <select aria-label={t("floorplan.selectRoom")} className={cn("input-field text-sm",styles.roomPicker)} value={selectedId??""} onChange={event=>selectRoom(event.target.value||null)}><option value="">{t("floorplan.selectRoom")}</option>{rooms.filter(room=>visibleRoomIds.includes(room.id)).map(room=><option key={room.id} value={room.id}>{room.label}</option>)}</select>
+          </div>
+          <FloorplanLayers facilityId={Number(facilityId)} floorId={Number(floorId)} editing={editing && !saving} background={background} onBackgroundChange={next=>changeDraft(value=>({...value,background:next}))}
+            showGrid={showGrid} onShowGridChange={setShowGrid} showStatus={showStatus} onShowStatusChange={setShowStatus} showBackground={showBackground} onShowBackgroundChange={setShowBackground} snapEnabled={snapEnabled} onSnapChange={setSnapEnabled} importing={referenceBusy} onImportReference={()=>void importReference()}/>
+        </div>
+        <div className={styles.draftBar} aria-live="polite">
+          <span className="text-xs text-muted-foreground">{visibleRoomIds.length}/{rooms.length} {t("overview.rooms")} · {dirty ? t("facilityWorkspace.unsaved") : t("facilityWorkspace.savedLayout")}</span>
+          <div className="flex flex-wrap items-center gap-1">
+            {editing ? <>
+            <Button type="button" variant="outline" disabled={canvasLoading || !!layoutError || saving} onClick={()=>{const room=newRoom();setRooms(previous=>[...previous,room]);selectRoom(room.id);setInspectorTab("layout")}}><Plus />{t("floorplan.addRoom")}</Button>
+            <Button type="button" variant="ghost" size="icon" aria-label={t("facilityWorkspace.undo")} title={`${t("facilityWorkspace.undo")} · Ctrl/⌘ Z`} disabled={!editing || !draft.past.length || saving} onClick={()=>dispatchDraft({type:"undo"})}><Undo2/></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label={t("facilityWorkspace.redo")} title={`${t("facilityWorkspace.redo")} · Ctrl/⌘ Shift Z`} disabled={!editing || !draft.future.length || saving} onClick={()=>dispatchDraft({type:"redo"})}><Redo2/></Button>
+            </> : null}
+            {dirty ? <Button type="button" variant="ghost" disabled={saving} onClick={discardDraft}>{t("facilityWorkspace.discard")}</Button> : null}
+            {editing || dirty ? <Button type="button" disabled={!canEdit || saving || canvasLoading || !!layoutError || !!floorRoomsError || !!devicesError || !devices || (!dirty && roomsFromLayout.length>0)} onClick={()=>void onSave()}><Save/>{saving ? t("common.saving") : t("floorplan.save")}</Button> : null}
+          </div>
+        </div>
+      </>}
+      {!workspace && <div className="rounded-2xl border border-outline-variant/25 bg-surface-container-low/60 shadow-sm overflow-hidden">
         <div className="relative px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r from-primary/12 via-primary/5 to-transparent">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
@@ -1066,10 +1262,11 @@ export default function FloorplansPanel({
             </button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {message && (
         <p
+          role="status"
           className={`text-sm ${
             [
               t("floorplan.saved"),
@@ -1089,11 +1286,38 @@ export default function FloorplansPanel({
       )}
 
       {facilityId !== "" && floorId !== "" && (
-        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-outline uppercase tracking-wide">
+        <div className={workspace ? styles.stage : "grid gap-4 lg:grid-cols-[1fr_280px]"}>
+          <div className={workspace ? styles.canvasColumn : "space-y-2"}>
+
+            {workspace && floors && floors.length>1 ? <nav className={styles.floorRail} aria-label={t("facilityWorkspace.floorNavigation")}>{floors.map(floor=><Button key={floor.id} type="button" variant={floorId===floor.id ? "secondary" : "ghost"} aria-label={floor.name || `${t("floorplan.floor")} ${floor.floor_number}`} aria-current={floorId===floor.id ? "location" : undefined} title={floor.name} onClick={()=>{if(onFloorChange)onFloorChange(floor.id);else if(!dirty || window.confirm(t("facilityWorkspace.discardConfirm")))setFloorId(floor.id)}}>{floor.floor_number}</Button>)}</nav> : null}
+            {presenceQuery.isError || floorRoomsError ? <p role="status" className="text-xs text-muted-foreground">{t("overview.presenceUnavailable")}</p> : null}
+            {background?.reference && showBackground ? <p className="text-xs text-warning">{t("facilityWorkspace.referenceNotice")}</p> : null}
+
+            {workspace && <div className={styles.mobileDirectory}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold">{t("redesign.nav.rooms")}</p>
+                <Button type="button" variant="outline" aria-pressed={mobileMap} onClick={() => setMobileMap((value) => !value)}>
+                  {mobileMap ? t("common.close") : t("floorplan.canvas")}
+                </Button>
+              </div>
+              {canvasLoading && <p role="status" className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+              {layoutError && <div role="alert" className="flex flex-col items-start gap-2">
+                <p className="text-sm text-destructive">{t("floorplan.layoutError")}</p>
+                <Button type="button" variant="outline" onClick={() => void refetch()}>{t("redesign.retry")}</Button>
+              </div>}
+              <div className={styles.roomList}>
+                {rooms.filter(room=>visibleRoomIds.includes(room.id)).map((room) => <Button key={room.id} type="button" variant={selectedId === room.id ? "secondary" : "ghost"}
+                  aria-pressed={selectedId === room.id} onClick={() => selectRoom(room.id)}>
+                  <span className="min-w-0 truncate">{room.label}</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">{editing ? `${Math.round(canvasUnitsToPercent(room.w))} × ${Math.round(canvasUnitsToPercent(room.h))}%` : presenceByShape.get(room.id) ? t(`overview.node.${presenceByShape.get(room.id)!.node_status}`) : t("redesign.unavailable")}</span>
+                </Button>)}
+              </div>
+              {!canvasLoading && !layoutError && rooms.length === 0 && <p className="text-sm text-muted-foreground">{t("floorplan.emptyLayout")}</p>}
+            </div>}
+            <div className={workspace ? styles.mapArea : undefined} data-mobile-map={mobileMap}>
+            {!workspace && <p className="text-xs font-medium text-outline uppercase tracking-wide">
               {t("floorplan.canvas")}
-            </p>
+            </p>}
             {canvasLoading ? (
               <div className="h-80 flex items-center justify-center surface-card">
                 <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1109,142 +1333,117 @@ export default function FloorplansPanel({
                   Retry
                 </button>
               </div>
-            ) : rooms.length === 0 ? (
+            ) : rooms.length === 0 || (!editing && !dirty && roomsFromLayout.length===0) ? (
               <div className="min-h-[280px] flex items-center justify-center surface-card px-4">
                 <p className="text-sm text-foreground-variant text-center">
-                  {t("floorplan.emptyLayout")}
+                  {rooms.length ? t("redesign.noGeometry") : t("floorplan.emptyLayout")}
                 </p>
               </div>
             ) : (
+              <div className={workspace ? styles.canvas : undefined}>
               <FloorplanCanvas
                 fitContentOnMount
+                fillViewport={workspace}
                 rooms={rooms}
                 onRoomsChange={setRooms}
+                readOnly={!editing || saving}
+                workspaceTools={workspace}
+                background={showBackground ? background : null}
+                showGrid={showGrid}
+                snapToGrid={snapEnabled}
+                visibleRoomIds={visibleRoomIds}
+                roomMetaById={showStatus ? roomMeta : {}}
+                fitKey={`${facilityId}:${floorId}:${fitRevision}`}
                 selectedId={selectedId}
-                onSelect={setSelectedId}
+                onSelect={selectRoom}
               />
+              </div>
             )}
-            <p className="text-xs text-foreground-variant">{t("floorplan.hint")}</p>
+            <div className={styles.legend} aria-label={t("facilityWorkspace.legend")}>
+              <span><span className={styles.alertDot} aria-hidden/> {t("overview.roomAlerts")}</span><span><span className={styles.staleDot} aria-hidden/> {t("overview.stale")} / {t("overview.offline")}</span><span><span className={styles.onlineDot} aria-hidden/> {t("overview.node.online")}</span>
+              <span>{editing ? t("facilityWorkspace.editHint") : t("facilityWorkspace.viewHint")}</span>
+            </div>
+            </div>
           </div>
 
-          <div className="surface-card p-4 space-y-3 h-fit">
-            <p className="text-sm font-semibold text-foreground">
-              {t("floorplan.roomProps")}
-            </p>
-            {!selected ? (
-              <p className="text-sm text-foreground-variant">
-                {t("floorplan.selectRoom")}
-              </p>
-            ) : (
-              <>
-                <div>
-                  <label className="text-xs text-foreground-variant">
-                    {t("floorplan.label")}
-                  </label>
-                  <input
-                    className="input-field mt-1 text-sm"
-                    value={selected.label}
-                    onChange={(e) => updateSelected({ label: e.target.value })}
-                  />
-                </div>
-                <div className="rounded-lg border border-outline-variant/30 bg-surface-container-low/55 p-3 text-xs space-y-2.5">
-                  <p className="font-semibold text-foreground leading-tight">
-                    {t("floorplan.roomLiveSummaryTitle")}
+          <RoomInspectorFrame title={selected?.label || t("floorplan.roomProps")} selected={Boolean(selected)} collapsed={inspectorCollapsed} onCollapsedChange={setInspectorCollapsed} width={inspectorWidth} onWidthChange={setInspectorWidth} onClose={()=>setSelectedId(null)}>
+            {!selected ? <div className="space-y-3 py-6"><MapPin className="size-7 text-muted-foreground" aria-hidden/><p className="text-sm font-semibold">{t("floorplan.selectRoom")}</p><p className="text-sm text-muted-foreground">{t("facilityWorkspace.inspectorDescription")}</p></div> : <Tabs value={inspectorTab} onValueChange={setInspectorTab}>
+              <TabsList className="mb-4 grid h-auto w-full grid-cols-3" aria-label={t("floorplan.roomProps")}>{["overview","residents","devices","alerts","history","layout"].map(tab=><TabsTrigger key={tab} value={tab} className="min-h-9 px-2 text-xs">{t(`facilityWorkspace.tab.${tab}`)}</TabsTrigger>)}</TabsList>
+              <TabsContent value="overview"><FacilityRoomInsights room={dbRoomForSelected} shape={selected} presence={presenceByShape.get(selected.id)} presenceState={presenceQuery.isError ? "unavailable" : presenceQuery.isPending ? "pending" : "ready"} tab="overview" layoutUpdatedAt={layoutRes?.updated_at} residentCount={selectedNumericRoomId==null || loadingAssignPatients || assignPatientsError ? undefined : patientsInRoom.length}/></TabsContent>
+              <TabsContent value="alerts"><FacilityRoomInsights room={dbRoomForSelected} shape={selected} presence={presenceByShape.get(selected.id)} presenceState={presenceQuery.isError ? "unavailable" : presenceQuery.isPending ? "pending" : "ready"} tab="alerts" layoutUpdatedAt={layoutRes?.updated_at}/></TabsContent>
+              <TabsContent value="history"><FacilityRoomInsights room={dbRoomForSelected} shape={selected} presence={presenceByShape.get(selected.id)} presenceState={presenceQuery.isError ? "unavailable" : presenceQuery.isPending ? "pending" : "ready"} tab="history" layoutUpdatedAt={layoutRes?.updated_at}/></TabsContent>
+              <TabsContent value="residents">{assignPatientsError ? <p role="status" className="text-sm text-muted-foreground">{t("redesign.unavailable")}</p> : loadingAssignPatients ? <p className="text-sm text-muted-foreground">{t("common.loading")}</p> : <>
+                <div className="space-y-3 border-t border-outline-variant/25 pt-3">
+                  <p className="text-sm font-semibold text-foreground inline-flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    {t("floorplan.assignPatientSection")}
                   </p>
-                  <dl className="space-y-2">
-                    <div>
-                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-foreground-variant">
-                        {t("floorplan.summaryNodeCanvas")}
-                      </dt>
-                      <dd className="mt-0.5 font-medium text-foreground break-words">
-                        {canvasNodeLabel ?? t("floorplan.summaryNone")}
-                      </dd>
-                    </div>
-                    {selectedNumericRoomId != null ? (
-                      <div>
-                        <dt className="text-[10px] font-semibold uppercase tracking-wide text-foreground-variant">
-                          {t("floorplan.summaryNodeSaved")}
-                        </dt>
-                        <dd className="mt-0.5 font-medium text-foreground break-words">
-                          {dbNodeLabel ?? t("floorplan.summaryNone")}
-                        </dd>
-                        {nodeAssignOutOfSync ? (
-                          <p className="mt-1 text-[10px] text-amber-800 dark:text-amber-200/90">
-                            {t("floorplan.summaryPendingSave")}
-                          </p>
-                        ) : null}
+                  {selectedNumericRoomId == null ? (
+                    <p className="text-xs text-foreground-variant">{t("floorplan.assignPatientNeedSavedRoom")}</p>
+                  ) : (
+                    <>
+                      <div className="rounded-md border border-outline-variant/25 bg-surface-container-low/40 px-2.5 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground-variant">
+                          {t("floorplan.currentPatientsInRoom")}
+                        </p>
+                        {patientsInRoom.length === 0 ? (
+                          <p className="mt-1 text-xs text-foreground-variant">{t("floorplan.summaryNone")}</p>
+                        ) : (
+                          <ul className="mt-1.5 space-y-1.5">
+                            {patientsInRoom.map((p) => (
+                              <li key={p.id} className="flex items-center gap-2 min-w-0">
+                                <Link
+                                  href={`/admin/patients/${p.id}`}
+                                  className="min-w-0 flex-1 truncate text-xs font-medium text-primary hover:underline"
+                                >
+                                  {[p.first_name, p.last_name].filter(Boolean).join(" ").trim() ||
+                                    `#${p.id}`}
+                                </Link>
+                                <button
+                                  type="button"
+                                  className="shrink-0 text-[10px] font-semibold text-error hover:underline disabled:opacity-40 disabled:pointer-events-none"
+                                  disabled={unlinkingPatientId !== null}
+                                  onClick={() => void onRemovePatientFromRoom(p.id)}
+                                >
+                                  {unlinkingPatientId === p.id ? "…" : t("floorplan.removePatientFromRoom")}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
-                    ) : null}
-                    {selectedNumericRoomId != null ? (
-                      <>
-                        <div>
-                          <dt className="text-[10px] font-semibold uppercase tracking-wide text-foreground-variant">
-                            {t("floorplan.summarySmart")}
-                          </dt>
-                          <dd className="mt-0.5 text-foreground break-words">
-                            {smartDevicesInRoom.length === 0 ? (
-                              t("floorplan.summaryNone")
-                            ) : (
-                              <span className="font-medium">
-                                {smartDevicesInRoom
-                                  .map((sd) => sd.name?.trim() || sd.ha_entity_id)
-                                  .join(", ")}
-                              </span>
-                            )}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-[10px] font-semibold uppercase tracking-wide text-foreground-variant">
-                            {t("floorplan.summaryPatients")}
-                          </dt>
-                          <dd className="mt-0.5 text-foreground">
-                            {patientsInRoom.length === 0 ? (
-                              t("floorplan.summaryPatientsEmpty")
-                            ) : (
-                              <ul className="space-y-1.5">
-                                {patientsInRoom.map((p) => (
-                                  <li key={p.id} className="flex items-center gap-2 min-w-0">
-                                    <Link
-                                      href={`/admin/patients/${p.id}`}
-                                      className="min-w-0 flex-1 truncate font-medium text-primary hover:underline"
-                                    >
-                                      {[p.first_name, p.last_name].filter(Boolean).join(" ").trim() ||
-                                        `#${p.id}`}
-                                    </Link>
-                                    <button
-                                      type="button"
-                                      className="shrink-0 text-[10px] font-semibold text-error hover:underline disabled:opacity-40 disabled:pointer-events-none"
-                                      disabled={unlinkingPatientId !== null}
-                                      onClick={() => void onRemovePatientFromRoom(p.id)}
-                                    >
-                                      {unlinkingPatientId === p.id ? "…" : t("floorplan.removePatientFromRoom")}
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </dd>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-foreground-variant">{t("floorplan.assignPatientNeedSavedRoom")}</p>
-                    )}
-                  </dl>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-outline-variant/25 pt-2">
-                    <Link
-                      href={`${getDevicesPath(user?.role || "admin")}?tab=node`}
-                      className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                    >
-                      {t("floorplan.adminDevicesLink")}
-                    </Link>
-                    <Link
-                      href={`${getPersonnelPath(user?.role || "admin")}?tab=patients`}
-                      className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                    >
-                      {t("floorplan.adminPersonnelLink")}
-                    </Link>
-                  </div>
+                      <p className="text-xs text-foreground-variant">{t("floorplan.assignPatientPick")}</p>
+                      <SearchableListboxPicker
+                        inputId={`floorplans-panel-assign-patient-${selected.id}`}
+                        listboxId={`floorplans-panel-assign-patient-list-${selected.id}`}
+                        options={assignPatientOptions}
+                        search={patientAssignSearch}
+                        onSearchChange={setPatientAssignSearch}
+                        searchPlaceholder={t("floorplan.assignPatientSearch")}
+                        selectedOptionId={patientAssignPick}
+                        onSelectOption={(id) => setPatientAssignPick(id)}
+                        disabled={assignPatientOptions.length === 0}
+                        listboxAriaLabel={t("floorplan.assignPatientSearch")}
+                        noMatchMessage={t("patients.listNoMatches")}
+                        emptyStateMessage={assignPatients.length === 0 ? t("patients.empty") : null}
+                        emptyNoMatch={
+                          assignPatientOptions.length === 0 && patientAssignSearch.trim().length > 0
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="gradient-cta w-full px-3 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                        disabled={assignBusy || !patientAssignPick}
+                        onClick={() => void onAssignPatientToRoom()}
+                      >
+                        {assignBusy ? "…" : t("floorplan.assignPatientButton")}
+                      </button>
+                    </>
+                  )}
                 </div>
+
+              </>}<Link href={`${getPersonnelPath(user?.role || "admin")}?tab=patients`} className="inline-flex min-h-11 items-center text-sm text-primary">{t("floorplan.adminPersonnelLink")}</Link></TabsContent>
+              <TabsContent value="devices"><dl className="mb-4 space-y-2 text-xs"><div><dt className="text-muted-foreground">{t("floorplan.summaryNodeSaved")}</dt><dd>{dbNodeLabel ?? t("floorplan.summaryNone")}</dd></div><div><dt className="text-muted-foreground">{t("floorplan.summaryNodeCanvas")}</dt><dd>{canvasNodeLabel ?? t("floorplan.summaryNone")}</dd></div></dl>{nodeAssignOutOfSync ? <p className="mb-3 text-xs text-warning">{t("floorplan.summaryPendingSave")}</p> : null}
                 <div className="space-y-3">
                   <p className="text-xs text-foreground-variant">{t("floorplan.nodeDeviceLinkHint")}</p>
                   <div>
@@ -1253,7 +1452,7 @@ export default function FloorplansPanel({
                     </p>
                     <div
                       className="flex flex-wrap gap-1.5"
-                      role="tablist"
+                      role="group"
                       aria-label={t("floorplan.deviceCategoryStep")}
                     >
                       {(
@@ -1267,8 +1466,7 @@ export default function FloorplansPanel({
                           <button
                             key={tab.key}
                             type="button"
-                            role="tab"
-                            aria-selected={active}
+                            aria-pressed={active}
                             onClick={() => {
                               setRoomDeviceTab(tab.key);
                               setNodeDeviceSearch("");
@@ -1310,11 +1508,11 @@ export default function FloorplansPanel({
                             device_id: linked?.id ?? null,
                           });
                         }}
-                        disabled={nodeEmptyPool}
+                        disabled={nodeEmptyPool || !editing || saving || !!devicesError}
                         listboxAriaLabel={t("floorplan.selectNodeDevice")}
                         noMatchMessage={t("floorplan.noNodeDeviceMatches")}
                         emptyStateMessage={
-                          nodeEmptyPool ? t("floorplan.noDevicesInCategory") : null
+                          devicesError ? t("redesign.unavailable") : devices==null ? t("common.loading") : nodeEmptyPool ? t("floorplan.noDevicesInCategory") : null
                         }
                         emptyNoMatch={nodeEmptyNoMatch}
                       />
@@ -1330,6 +1528,7 @@ export default function FloorplansPanel({
                             <button
                               type="button"
                               className="ml-auto shrink-0 font-semibold text-primary hover:underline"
+                              disabled={!editing || saving}
                               onClick={() => updateSelected({ node_device_id: null, device_id: null })}
                             >
                               {t("floorplan.noNode")}
@@ -1424,11 +1623,11 @@ export default function FloorplansPanel({
                                 if (!Number.isFinite(n)) return;
                                 void onLinkSmartDeviceToRoom(n);
                               }}
-                              disabled={smartEmptyPool}
+                              disabled={smartEmptyPool || !!smartDevicesError || loadingSmartDevices}
                               listboxAriaLabel={t("floorplan.linkTabSmart")}
                               noMatchMessage={t("floorplan.noNodeDeviceMatches")}
                               emptyStateMessage={
-                                smartEmptyPool ? t("patients.empty") : null
+                                smartDevicesError ? t("redesign.unavailable") : loadingSmartDevices ? t("common.loading") : smartEmptyPool ? t("patients.empty") : null
                               }
                               emptyNoMatch={smartEmptyNoMatch}
                             />
@@ -1438,88 +1637,28 @@ export default function FloorplansPanel({
                     </div>
                   )}
                 </div>
-                <div className="space-y-3 border-t border-outline-variant/25 pt-3">
-                  <p className="text-sm font-semibold text-foreground inline-flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    {t("floorplan.assignPatientSection")}
-                  </p>
-                  {selectedNumericRoomId == null ? (
-                    <p className="text-xs text-foreground-variant">{t("floorplan.assignPatientNeedSavedRoom")}</p>
-                  ) : (
-                    <>
-                      <div className="rounded-md border border-outline-variant/25 bg-surface-container-low/40 px-2.5 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground-variant">
-                          {t("floorplan.currentPatientsInRoom")}
-                        </p>
-                        {patientsInRoom.length === 0 ? (
-                          <p className="mt-1 text-xs text-foreground-variant">{t("floorplan.summaryNone")}</p>
-                        ) : (
-                          <ul className="mt-1.5 space-y-1.5">
-                            {patientsInRoom.map((p) => (
-                              <li key={p.id} className="flex items-center gap-2 min-w-0">
-                                <Link
-                                  href={`/admin/patients/${p.id}`}
-                                  className="min-w-0 flex-1 truncate text-xs font-medium text-primary hover:underline"
-                                >
-                                  {[p.first_name, p.last_name].filter(Boolean).join(" ").trim() ||
-                                    `#${p.id}`}
-                                </Link>
-                                <button
-                                  type="button"
-                                  className="shrink-0 text-[10px] font-semibold text-error hover:underline disabled:opacity-40 disabled:pointer-events-none"
-                                  disabled={unlinkingPatientId !== null}
-                                  onClick={() => void onRemovePatientFromRoom(p.id)}
-                                >
-                                  {unlinkingPatientId === p.id ? "…" : t("floorplan.removePatientFromRoom")}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                      <p className="text-xs text-foreground-variant">{t("floorplan.assignPatientPick")}</p>
-                      <SearchableListboxPicker
-                        inputId={`floorplans-panel-assign-patient-${selected.id}`}
-                        listboxId={`floorplans-panel-assign-patient-list-${selected.id}`}
-                        options={assignPatientOptions}
-                        search={patientAssignSearch}
-                        onSearchChange={setPatientAssignSearch}
-                        searchPlaceholder={t("floorplan.assignPatientSearch")}
-                        selectedOptionId={patientAssignPick}
-                        onSelectOption={(id) => setPatientAssignPick(id)}
-                        disabled={assignPatientOptions.length === 0}
-                        listboxAriaLabel={t("floorplan.assignPatientSearch")}
-                        noMatchMessage={t("patients.listNoMatches")}
-                        emptyStateMessage={assignPatients.length === 0 ? t("patients.empty") : null}
-                        emptyNoMatch={
-                          assignPatientOptions.length === 0 && patientAssignSearch.trim().length > 0
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="gradient-cta w-full px-3 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
-                        disabled={assignBusy || !patientAssignPick}
-                        onClick={() => void onAssignPatientToRoom()}
-                      >
-                        {assignBusy ? "…" : t("floorplan.assignPatientButton")}
-                      </button>
-                    </>
-                  )}
+
+              <Link href={`${getDevicesPath(user?.role || "admin")}?tab=node`} className="inline-flex min-h-11 items-center text-sm text-primary">{t("floorplan.adminDevicesLink")}</Link></TabsContent>
+              <TabsContent value="layout"><fieldset disabled={!editing || saving} className="space-y-4 disabled:opacity-75">
+                <div>
+                  <label htmlFor="facility-room-label" className="text-xs text-foreground-variant">
+                    {t("floorplan.label")}
+                  </label>
+                  <input
+                    id="facility-room-label"
+                    className="input-field mt-1 text-sm"
+                    maxLength={128}
+                    value={selected.label}
+                    onChange={(e) => updateSelected({ label: e.target.value })}
+                  />
                 </div>
-                <button
-                  type="button"
-                  className="w-full py-2 rounded-lg text-sm font-medium text-error border border-error/30 hover:bg-error/10 inline-flex items-center justify-center gap-2"
-                  onClick={() => {
-                    setRooms((prev) => prev.filter((r) => r.id !== selectedId));
-                    setSelectedId(null);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {t("floorplan.removeRoom")}
-                </button>
-              </>
-            )}
-          </div>
+
+                <label className="block text-xs text-muted-foreground">{t("facilityWorkspace.roomType")}<Input className="mt-1" value={selected.room_type??dbRoomForSelected?.room_type??"general"} maxLength={64} onChange={event=>updateSelected({room_type:event.target.value})}/></label>
+                <div className="grid grid-cols-2 gap-3">{(["x","y","w","h"] as const).map(key=><label key={key} className="text-xs text-muted-foreground">{t(`facilityWorkspace.geometry.${key}`)} %<Input className="mt-1" type="number" min={key==="w"||key==="h" ? .1 : 0} max={100} step={.1} value={Number(canvasUnitsToPercent(selected[key]).toFixed(2))} onChange={event=>{if(event.target.value!=="")updateSelected({[key]:Number(event.target.value)*50})}}/></label>)}</div>
+                <Button type="button" variant="outline" className="w-full text-destructive" onClick={removeSelected}><Trash2/>{t("facilityWorkspace.removeBoundary")}</Button>
+              </fieldset>{!editing ? <Button type="button" className="mt-4" onClick={()=>changeMode("edit")} disabled={!canEdit}>{t("facilityWorkspace.enterEdit")}</Button> : <p className="mt-3 text-xs text-muted-foreground">{t("facilityWorkspace.editHint")}</p>}</TabsContent>
+            </Tabs>}
+          </RoomInspectorFrame>
         </div>
       )}
     </div>

@@ -1188,6 +1188,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/timeline/adl/{patient_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Adl Analysis */
+        get: operations["get_adl_analysis_api_timeline_adl__patient_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/alerts": {
         parameters: {
             query?: never;
@@ -3430,7 +3447,7 @@ export interface paths {
         put?: never;
         /**
          * Reset Routine Logs
-         * @description Head Nurse manually resets all logs to 'pending' for a given date.
+         * @description Head caregiver manually resets all logs to 'pending' for a given date.
          */
         post: operations["reset_routine_logs_api_task_management_routine_logs_reset_post"];
         delete?: never;
@@ -3530,7 +3547,7 @@ export interface paths {
         put?: never;
         /**
          * Create Task
-         * @description Create new task. Requires head_nurse or admin role.
+         * @description Create new task. Requires head_caregiver or admin role.
          */
         post: operations["create_task_api_tasks__post"];
         delete?: never;
@@ -3615,14 +3632,14 @@ export interface paths {
         post?: never;
         /**
          * Delete Task
-         * @description Soft delete task. Requires head_nurse or admin role.
+         * @description Soft delete task. Requires head_caregiver or admin role.
          */
         delete: operations["delete_task_api_tasks__task_id__delete"];
         options?: never;
         head?: never;
         /**
          * Update Task
-         * @description Update task. Requires head_nurse or admin role.
+         * @description Update task. Requires head_caregiver or admin role.
          */
         patch: operations["update_task_api_tasks__task_id__patch"];
         trace?: never;
@@ -3642,7 +3659,7 @@ export interface paths {
         put?: never;
         /**
          * Submit Report
-         * @description Submit structured task report. Must be assignee or head_nurse/admin.
+         * @description Submit structured task report. Must be assignee or head_caregiver/admin.
          */
         post: operations["submit_report_api_tasks__task_id__reports_post"];
         delete?: never;
@@ -3662,7 +3679,7 @@ export interface paths {
         put?: never;
         /**
          * Reset Routine Tasks
-         * @description Reset all routine tasks for a shift date. Requires head_nurse or admin role.
+         * @description Reset all routine tasks for a shift date. Requires head_caregiver or admin role.
          */
         post: operations["reset_routine_tasks_api_tasks_routines_reset_post"];
         delete?: never;
@@ -3932,7 +3949,7 @@ export interface components {
             username: string;
             /**
              * Role
-             * @default observer
+             * @default caregiver
              */
             role: string;
             /**
@@ -8975,7 +8992,7 @@ export interface components {
             username: string;
             /**
              * Role
-             * @default observer
+             * @default caregiver
              */
             role: string;
             /**
@@ -9004,7 +9021,7 @@ export interface components {
             username: string;
             /**
              * Role
-             * @default observer
+             * @default caregiver
              */
             role: string;
             /**
@@ -12449,6 +12466,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TimelineEventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_adl_analysis_api_timeline_adl__patient_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

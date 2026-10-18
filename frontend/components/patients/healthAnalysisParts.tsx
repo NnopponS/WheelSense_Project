@@ -57,32 +57,32 @@ export const TREND_RANGE_OPTIONS: Array<{
 ];
 
 export const TREND_METRICS = [
-  { key: "heart_rate_bpm", labelKey: "patient.health.metric.heartRate" as const, unit: "bpm", stroke: "#e11d48" },
-  { key: "spo2", labelKey: "patient.health.metric.spo2" as const, unit: "%", stroke: "#0284c7" },
-  { key: "calories_kcal", labelKey: "patient.health.metric.calories" as const, unit: "kcal", stroke: "#f97316" },
-  { key: "distance_m", labelKey: "patient.health.metric.distance" as const, unit: "m", stroke: "#059669" },
+  { key: "heart_rate_bpm", labelKey: "patient.health.metric.heartRate" as const, unit: "bpm", stroke: "var(--chart-1)" },
+  { key: "spo2", labelKey: "patient.health.metric.spo2" as const, unit: "%", stroke: "var(--chart-2)" },
+  { key: "calories_kcal", labelKey: "patient.health.metric.calories" as const, unit: "kcal", stroke: "var(--chart-3)" },
+  { key: "distance_m", labelKey: "patient.health.metric.distance" as const, unit: "m", stroke: "var(--chart-4)" },
 ] as const;
 
-type StatusDot = "normal" | "warning" | "critical" | "unknown";
+type StatusDot = "recorded" | "warning" | "critical" | "unknown";
 
 function statusDot(severity?: HealthRiskSeverity): StatusDot {
   if (severity === "critical") return "critical";
   if (severity === "warning") return "warning";
-  if (severity === "info") return "normal";
+  if (severity === "info") return "recorded";
   return "unknown";
 }
 
 function StatusDotBadge({ status, label }: { status: StatusDot; label: string }) {
   const colors: Record<StatusDot, string> = {
-    normal: "text-emerald-600",
-    warning: "text-amber-600",
-    critical: "text-red-600",
+    recorded: "text-muted-foreground",
+    warning: "text-warning",
+    critical: "text-critical",
     unknown: "text-muted-foreground",
   };
   const dots: Record<StatusDot, string> = {
-    normal: "bg-emerald-500",
-    warning: "bg-amber-500",
-    critical: "bg-red-500",
+    recorded: "bg-muted-foreground",
+    warning: "bg-warning",
+    critical: "bg-critical",
     unknown: "bg-muted-foreground/50",
   };
   return (
@@ -108,12 +108,12 @@ function metricLabel(key: string, t: (key: string) => string) {
 
 export function severityChip(severity: HealthRiskSeverity, t: (key: string) => string) {
   if (severity === "critical")
-    return <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-red-700">{t("patient.health.severity.critical")}</span>;
+    return <span className="rounded-full bg-critical-bg px-2.5 py-0.5 text-xs font-semibold uppercase text-critical-foreground">{t("patient.health.severity.critical")}</span>;
   if (severity === "warning")
-    return <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700">{t("patient.health.severity.warning")}</span>;
+    return <span className="rounded-full bg-warning-bg px-2.5 py-0.5 text-xs font-semibold uppercase text-warning-foreground">{t("patient.health.severity.warning")}</span>;
   if (severity === "watch")
-    return <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-sky-700">{t("patient.health.severity.watch")}</span>;
-  return <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">{t("patient.health.severity.info")}</span>;
+    return <span className="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-semibold uppercase text-info-foreground">{t("patient.health.severity.watch")}</span>;
+  return <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold uppercase text-muted-foreground">{t("patient.health.severity.info")}</span>;
 }
 
 function riskBannerColors(level: PatientHealthAnalysis["risk_level"]) {
@@ -162,7 +162,7 @@ export function AnomalyInsightCard({
   const concerns = data.risk_factors.slice(0, 4);
 
   return (
-    <section id="predicting-anomaly" className={cn("scroll-mt-32 overflow-hidden rounded-2xl border", colors.banner, className)}>
+    <section id="predicting-anomaly" className={cn("scroll-mt-32 overflow-hidden rounded-[var(--radius)] border", colors.banner, className)}>
       {/* Header row */}
       <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -170,7 +170,7 @@ export function AnomalyInsightCard({
             <AlertTriangle className={cn("h-4 w-4", colors.icon)} aria-hidden />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="text-xs font-semiboldr text-muted-foreground">
               {t("patient.health.predictiveAnomaly")}
             </p>
             <h3 className="mt-0.5 text-lg font-bold leading-snug text-foreground">
@@ -179,12 +179,12 @@ export function AnomalyInsightCard({
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-          <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold", colors.badge)}>
+          <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-bold", colors.badge)}>
             {riskLevelLabel(data.risk_level, t)}
           </span>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 px-3 py-1 text-[11px] font-semibold text-foreground shadow-sm transition-colors hover:bg-card disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-card disabled:opacity-60"
             onClick={onRefresh}
             disabled={isRefreshing || isFetching}
           >
@@ -262,7 +262,7 @@ export function AnomalyInsightCard({
 function ScoreCell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="bg-card/60 px-4 py-3">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-xl font-bold tabular-nums leading-none text-foreground">{children}</p>
     </div>
   );
@@ -279,20 +279,20 @@ function VitalCard({
   metric?: PatientHealthAnalysis["baseline"][string];
   t: (key: string) => string;
 }) {
-  const dot = statusDot(metric?.status);
-  const dotLabel = dot === "normal" ? t("patient.health.status.normal") : dot === "warning" ? t("patient.health.status.caution") : dot === "critical" ? t("patient.health.status.critical") : t("patient.health.status.noData");
+  const dot = metric?.value == null ? "unknown" : statusDot(metric.status ?? "info");
+  const dotLabel = dot === "recorded" ? t("redesign.recordedBaseline") : dot === "warning" ? t("patient.health.status.caution") : dot === "critical" ? t("patient.health.status.critical") : t("patient.health.status.noData");
   const Icon = metricKey === "heart_rate_bpm" ? Heart : Droplets;
   const isAbnormal = dot === "critical" || dot === "warning";
   return (
     <div className={cn(
-      "flex items-center gap-3 rounded-xl border bg-card p-4",
-      isAbnormal ? (dot === "critical" ? "border-red-200" : "border-amber-200") : "border-border/60",
+      "flex items-center gap-3 bg-card p-4",
+      isAbnormal ? (dot === "critical" ? "border-critical/30" : "border-warning/30") : "border-border/60",
     )}>
       <div className={cn(
         "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-        isAbnormal ? (dot === "critical" ? "bg-red-50" : "bg-amber-50") : "bg-primary/10",
+        isAbnormal ? (dot === "critical" ? "bg-critical-bg" : "bg-warning-bg") : "bg-primary/10",
       )}>
-        <Icon className={cn("h-5 w-5", isAbnormal ? (dot === "critical" ? "text-red-500" : "text-amber-500") : "text-primary")} aria-hidden />
+        <Icon className={cn("h-5 w-5", isAbnormal ? (dot === "critical" ? "text-critical" : "text-warning") : "text-primary")} aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-muted-foreground">{metricLabel(metricKey, t)}</p>
@@ -322,7 +322,7 @@ function ActivityCard({
   t: (key: string) => string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4">
+    <div className="flex items-center gap-3 bg-card p-4">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
         {icon}
       </div>
@@ -335,13 +335,13 @@ function ActivityCard({
               <span className="ml-1 text-xs font-normal text-muted-foreground">{unit}</span>
             </p>
             <div className="mt-1.5">
-              <StatusDotBadge status="normal" label={t("patient.health.live")} />
+              <StatusDotBadge status="unknown" label={value == null ? t("patient.health.status.noData") : t("redesign.recorded")} />
             </div>
           </>
         ) : (
           <div className="flex flex-col items-start gap-1 py-1">
-            <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">{t("patient.health.notConnected")}</span>
-            <p className="text-[11px] text-muted-foreground">{t("patient.health.sensorNotLinked")}</p>
+            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold uppercase text-muted-foreground">{t("patient.health.notConnected")}</span>
+            <p className="text-xs text-muted-foreground">{t("patient.health.sensorNotLinked")}</p>
           </div>
         )}
       </div>
@@ -362,24 +362,24 @@ export function HealthBaselineRow({
   const baseline = data.baseline ?? {};
 
   return (
-    <section id="health-profile" className={cn("scroll-mt-32 rounded-2xl border border-border/60 bg-card shadow-sm", className)}>
+    <section id="health-profile" className={cn("scroll-mt-32 rounded-[var(--radius)] border border-border/60 bg-card shadow-sm", className)}>
       <div className="flex items-center justify-between gap-3 border-b border-border/50 px-5 py-3">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
             <HeartPulse className="h-4 w-4 text-primary" aria-hidden />
           </div>
-          <h2 className="font-semibold text-foreground">{t("patient.health.baselineTitle")}</h2>
+          <h2 className="font-semibold text-foreground">{t("redesign.observations")}</h2>
         </div>
         <div className="flex items-center gap-2">
           {activity.polar_connected && (
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{t("patient.health.polarConnected")}</span>
+            <span className="rounded-full bg-success-bg px-2 py-0.5 text-xs font-semibold text-success-foreground">{t("patient.health.polarConnected")}</span>
           )}
           <p className="text-xs text-muted-foreground">
-            {t("patient.health.updated")}: {new Date(data.generated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+            {t("patient.health.updated")}: <time dateTime={data.generated_at}>{new Date(data.generated_at).toLocaleString()}</time>
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 divide-x divide-border md:grid-cols-4">
         <VitalCard metricKey="heart_rate_bpm" metric={baseline["heart_rate_bpm"]} t={t} />
         <VitalCard metricKey="spo2" metric={baseline["spo2"]} t={t} />
         <ActivityCard
@@ -404,7 +404,7 @@ export function HealthBaselineRow({
           <Footprints className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           <p className="text-xs text-muted-foreground">
             {t("patient.health.stepsToday")}: <span className="font-semibold text-foreground">{activity.steps.toLocaleString()}</span>
-            <span className="ml-2 text-[10px] uppercase tracking-wide">{t("patient.health.via")} {activity.source}</span>
+            <span className="ml-2 text-xs uppercase tracking-wide">{t("patient.health.via")} {activity.source}</span>
           </p>
         </div>
       )}
@@ -425,48 +425,48 @@ function HealthTrendChart({
 }) {
   const hasData = data.some((point) => point[metric.key] != null);
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4">
+    <div className="ws-insight-chart p-1 sm:p-2">
       <div className="mb-3">
         <p className="text-sm font-semibold text-foreground">{t(metric.labelKey)}</p>
-        <p className="text-[11px] text-muted-foreground">{metric.unit}</p>
+        <p className="text-xs text-muted-foreground">{metric.unit}</p>
       </div>
       {hasData ? (
         <div className="h-64 min-h-64 min-w-0">
           <ResponsiveContainer width="100%" height={256} minWidth={0} minHeight={256}>
             <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.55} />
+              <CartesianGrid vertical={false} stroke="var(--border)" opacity={0.55} />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
                 minTickGap={30}
                 interval="preserveStartEnd"
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 width={40}
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
               />
               <Tooltip
                 cursor={{ stroke: metric.stroke, strokeOpacity: 0.2 }}
                 contentStyle={{
                   borderRadius: 10,
-                  border: "1px solid hsl(var(--border))",
-                  background: "hsl(var(--card))",
-                  color: "hsl(var(--foreground))",
+                  border: "1px solid var(--border)",
+                  background: "var(--card)",
+                  color: "var(--foreground)",
                   fontSize: 12,
                 }}
                 formatter={(value) => [`${value} ${metric.unit}`, t(metric.labelKey)]}
               />
               <Line
-                type="monotone"
+                type="linear"
                 dataKey={metric.key}
                 stroke={metric.stroke}
                 strokeWidth={2}
                 dot={false}
-                connectNulls
+                connectNulls={false}
                 isAnimationActive={false}
               />
             </LineChart>
@@ -496,7 +496,7 @@ export function HealthTrendsWorkspace({
   const [selectedMetricKey, setSelectedMetricKey] = useState<(typeof TREND_METRICS)[number]["key"]>("heart_rate_bpm");
   const selectedMetric = TREND_METRICS.find((metric) => metric.key === selectedMetricKey) ?? TREND_METRICS[0];
   return (
-    <section id="health-trends" className={cn("scroll-mt-32 rounded-2xl border border-border/60 bg-card shadow-sm", className)}>
+    <section id="health-trends" className={cn("ws-insight scroll-mt-32 min-w-0 rounded-[var(--radius)] border", className)}>
       <div className="flex flex-col gap-3 border-b border-border/50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
@@ -504,7 +504,7 @@ export function HealthTrendsWorkspace({
           </div>
           <div>
             <h2 className="font-semibold text-foreground">{t("patient.health.trendsTitle")}</h2>
-            <p className="text-xs text-muted-foreground">{t("patient.health.trendsDesc")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("redesign.history")}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-1 rounded-lg border border-border/60 bg-muted/20 p-1">
@@ -519,6 +519,7 @@ export function HealthTrendsWorkspace({
                   : "text-muted-foreground hover:bg-background hover:text-foreground",
               )}
               onClick={() => onTrendRangeChange(option.value)}
+              aria-pressed={trendRange === option.value}
             >
               {t(option.labelKey)}
             </button>
@@ -547,6 +548,21 @@ export function HealthTrendsWorkspace({
       </div>
       <div className="min-w-0 p-4">
         <HealthTrendChart metric={selectedMetric} data={trendSeries} t={t} />
+        {trendSeries.some(point => point[selectedMetric.key] != null) ? (
+          <details className="mt-3 border-t border-border pt-2">
+            <summary className="flex min-h-11 cursor-pointer items-center rounded-md text-sm text-primary">{t("redesign.historyTable")}</summary>
+            <div className="max-h-64 overflow-auto">
+              <table className="w-full text-left text-sm">
+                <caption className="sr-only">{t(selectedMetric.labelKey)}</caption>
+                <thead><tr><th scope="col" className="py-2">{t("patient.health.updated")}</th><th scope="col" className="py-2 text-right">{t(selectedMetric.labelKey)} ({selectedMetric.unit})</th></tr></thead>
+                <tbody>{trendSeries.map(point => <tr key={point.key} className="border-t border-border">
+                  <td className="py-2"><time dateTime={new Date(point.time).toISOString()}>{new Date(point.time).toLocaleString()}</time></td>
+                  <td className="py-2 text-right tabular-nums">{point[selectedMetric.key] ?? "—"}</td>
+                </tr>)}</tbody>
+              </table>
+            </div>
+          </details>
+        ) : null}
       </div>
     </section>
   );
@@ -566,20 +582,20 @@ function RecommendationCard({
   return (
     <div className={cn(
       "flex flex-col justify-between gap-3 rounded-xl border p-4",
-      isUrgent ? "border-red-200 bg-red-50/60" : isMod ? "border-amber-200 bg-amber-50/60" : "border-border/60 bg-muted/20",
+      isUrgent ? "border-critical/30 bg-critical-bg/60" : isMod ? "border-warning/30 bg-warning-bg/60" : "border-border/60 bg-muted/20",
     )}>
       <div>
         <div className="mb-1.5 flex items-center justify-between gap-2">
           {severityChip(item.priority, t)}
         </div>
-        <p className={cn("text-sm font-semibold leading-snug", isUrgent ? "text-red-800" : isMod ? "text-amber-800" : "text-foreground")}>
+        <p className={cn("text-sm font-semibold leading-snug", isUrgent ? "text-critical-foreground" : isMod ? "text-warning-foreground" : "text-foreground")}>
           {item.title}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">{item.rationale}</p>
       </div>
-      <div className="rounded-lg bg-white/60 px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{t("patient.health.personalizedCareActions")}</p>
-        <p className="mt-0.5 text-[11px] font-medium leading-tight text-foreground/80">{item.suggested_action}</p>
+      <div className="rounded-lg bg-card/60 px-3 py-2">
+        <p className="text-xs font-semibold text-muted-foreground">{t("patient.health.personalizedCareActions")}</p>
+        <p className="mt-0.5 text-xs font-medium leading-tight text-foreground/80">{item.suggested_action}</p>
       </div>
     </div>
   );
@@ -595,18 +611,18 @@ export function OptimizeHealthPlanSection({
   const { t } = useTranslation();
   if (recommendations.length === 0) return null;
   return (
-    <section id="optimize-health-plan" className={cn("scroll-mt-32 rounded-2xl border border-border/60 bg-card shadow-sm", className)}>
+    <section id="optimize-health-plan" className={cn("scroll-mt-32 rounded-[var(--radius)] border border-border/60 bg-card shadow-sm", className)}>
       <div className="flex items-center justify-between gap-3 border-b border-border/50 px-5 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50">
-            <TrendingUp className="h-4 w-4 text-emerald-600" aria-hidden />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success-bg">
+            <TrendingUp className="h-4 w-4 text-success" aria-hidden />
           </div>
           <div>
             <h2 className="font-semibold text-foreground">{t("patient.health.recommendations")}</h2>
             <p className="text-xs text-muted-foreground">{t("patient.health.personalizedCareActions")}</p>
           </div>
         </div>
-        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+        <span className="rounded-full bg-success-bg px-2.5 py-0.5 text-xs font-bold text-success-foreground">
           {recommendations.length}
         </span>
       </div>
@@ -631,20 +647,20 @@ export function RiskFactorsTable({
   const { t } = useTranslation();
   if (riskFactors.length === 0) return null;
   return (
-    <section id="risk-factors" className={cn("scroll-mt-32 rounded-2xl border border-border/60 bg-card shadow-sm", className)}>
+    <section id="risk-factors" className={cn("scroll-mt-32 rounded-[var(--radius)] border border-border/60 bg-card shadow-sm", className)}>
       <div className="flex items-center gap-2 border-b border-border/50 px-5 py-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50">
-          <ShieldAlert className="h-4 w-4 text-red-500" aria-hidden />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-critical-bg">
+          <ShieldAlert className="h-4 w-4 text-critical" aria-hidden />
         </div>
         <h2 className="font-semibold text-foreground">{t("patient.health.riskFactors")}</h2>
-        <span className="ml-auto rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700">
+        <span className="ml-auto rounded-full bg-critical-bg px-2.5 py-0.5 text-xs font-bold text-critical-foreground">
           {riskFactors.length}
         </span>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("patient.health.riskFactors")}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border/40 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-border/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <th className="px-5 py-2 font-medium">{t("patient.health.riskFactors")}</th>
               <th className="px-3 py-2 font-medium">Severity</th>
               <th className="px-3 py-2 font-medium">Evidence</th>
@@ -658,14 +674,14 @@ export function RiskFactorsTable({
                 <td className="px-3 py-3">{severityChip(factor.severity, t)}</td>
                 <td className="px-3 py-3 text-xs text-muted-foreground">{factor.evidence}</td>
                 <td className="px-5 py-3">
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{factor.source}</span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs uppercase tracking-wide text-muted-foreground">{factor.source}</span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="px-5 py-2.5 text-[11px] text-muted-foreground">
+      <p className="px-5 py-2.5 text-xs text-muted-foreground">
         <HeartPulse className="mr-1 inline h-3 w-3" aria-hidden />
         {t("patient.health.operationalOnly")}
       </p>

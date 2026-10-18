@@ -40,6 +40,7 @@ from app.models import (
     CareGiverPatientAccess,
     DemoActorPosition,
     HandoverNote,
+    IMUTelemetry,
     PharmacyOrder,
     PhotoRecord,
     Prescription,
@@ -55,6 +56,8 @@ from app.models import (
     PatientDeviceAssignment,
     Room,
     SmartDevice,
+    Task,
+    TaskReport,
     Specialist,
     User,
     VitalReading,
@@ -789,6 +792,8 @@ async def clear_workspace_event_data(session: AsyncSession, workspace_id: int) -
         RoleMessage,
         HandoverNote,
         AuditTrailEvent,
+        TaskReport,
+        Task,
         CareTask,
         CareSchedule,
         CareDirective,
@@ -796,6 +801,7 @@ async def clear_workspace_event_data(session: AsyncSession, workspace_id: int) -
         Alert,
         ActivityTimeline,
         VitalReading,
+        IMUTelemetry,
         SmartDevice,
     ):
         await session.execute(delete(model).where(model.workspace_id == workspace_id))
@@ -1035,6 +1041,9 @@ async def seed_smart_devices(
         if room_idx >= len(rooms):
             continue
         room = rooms[room_idx]
+        device_config = {"seed": True, "room_name": room.name}
+        if device_type == "climate":
+            device_config.update({"target_temperature": 24.0, "temperature": 24.0})
         entity = f"{device_type}.ws{workspace_id}_room{room.id}_{name.lower().replace(' ', '_')}"
         q = await session.execute(
             select(SmartDevice).where(
@@ -1052,7 +1061,7 @@ async def seed_smart_devices(
                 device_type=device_type,
                 is_active=True,
                 state=state,
-                config={"seed": True, "room_name": room.name},
+                config=dict(device_config),
             )
             session.add(row)
         else:
@@ -1061,7 +1070,7 @@ async def seed_smart_devices(
             row.device_type = device_type
             row.is_active = True
             row.state = state
-            row.config = {"seed": True, "room_name": room.name}
+            row.config = dict(device_config)
         seeded += 1
 
     await session.commit()
@@ -1432,21 +1441,65 @@ async def seed_vitals(
     rng = random.Random(SEED)
     now = datetime.now(timezone.utc)
     count = 0
+    hr_bases = (82, 76, 78, 80, 74, 80)
+    spo2_bases = (97, 96, 97, 96, 98, 95)
+    hr_wave = (0, 2, -1, 3, 1, -2, 2, 0, -1)
+    spo2_wave = (0, 0, -1, 0, 1, 0, -1, 0, 0)
     for p_idx, patient in enumerate(patients):
         device_id = devices[p_idx].device_id
-        for j in range(5):
-            ts = now - timedelta(days=(j % 7), hours=(p_idx + j) % 24, minutes=15 * j)
+        for j in range(36):
+            ts = now - timedelta(hours=(j * 4), minutes=p_idx * 3)
+            hr = max(58, min(98, hr_bases[p_idx % len(hr_bases)] + hr_wave[j % len(hr_wave)] + rng.randint(-1, 1)))
+            spo2 = max(94, min(99, spo2_bases[p_idx % len(spo2_bases)] + spo2_wave[j % len(spo2_wave)]))
+            rr_interval = round((60000.0 / hr) + rng.uniform(-12.0, 12.0), 1)
+            battery = max(62, 96 - (j // 3))
             row = VitalReading(
                 workspace_id=workspace_id,
                 patient_id=patient.id,
                 device_id=device_id,
                 timestamp=ts,
-                heart_rate_bpm=rng.randint(60, 100),
-                rr_interval_ms=float(rng.randint(600, 1050)),
-                spo2=rng.randint(95, 100),
-                sensor_battery=rng.randint(55, 100),
+                heart_rate_bpm=hr,
+                rr_interval_ms=rr_interval,
+                spo2=spo2,
+                sensor_battery=battery,
                 # Same source tag as M5 Polar BLE relay so admin Vitals "Polar / Sense" filter matches demo rows.
                 source="ble",
+            )
+            session.add(row)
+            count += 1
+    await session.commit()
+    return count
+
+
+async def seed_wheelchair_activity_telemetry(
+    session: AsyncSession, workspace_id: int, patients: list[Patient], devices: list[Device]
+) -> int:
+    """Seed deterministic movement distance on each resident's existing wheelchair device."""
+    now = datetime.now(timezone.utc)
+    movement_wave = (3.2, 4.6, 2.8, 5.1, 3.7, 4.2, 2.5, 4.8)
+    count = 0
+    for p_idx, patient in enumerate(patients):
+        device_id = devices[p_idx].device_id
+        scale = (0.85, 0.95, 0.9, 1.1, 1.0, 0.8)[p_idx % 6]
+        for j in range(24):
+            distance_m = round(movement_wave[j % len(movement_wave)] * scale, 2)
+            row = IMUTelemetry(
+                workspace_id=workspace_id,
+                device_id=device_id,
+                timestamp=now - timedelta(hours=j, minutes=p_idx * 2),
+                seq=j,
+                ax=round(0.04 + (j % 4) * 0.01, 3),
+                ay=round(0.02 + (j % 3) * 0.01, 3),
+                az=9.81,
+                gx=round((j % 5) * 0.6, 2),
+                gy=round((j % 3) * 0.4, 2),
+                gz=round((j % 7) * 0.5, 2),
+                distance_m=distance_m,
+                velocity_ms=round(0.18 + (j % 5) * 0.03, 2),
+                accel_ms2=round(0.08 + (j % 4) * 0.02, 2),
+                direction=1,
+                battery_pct=max(70, 96 - (j // 4)),
+                charging=False,
             )
             session.add(row)
             count += 1
@@ -1457,23 +1510,52 @@ async def seed_vitals(
 async def seed_activity_timeline(
     session: AsyncSession, workspace_id: int, patients: list[Patient], rooms: list[Room]
 ) -> int:
-    rng = random.Random(SEED + 1)
     now = datetime.now(timezone.utc)
-    events = ("room_enter", "observation", "medication", "fall_detected")
+    room_by_name = {room.name: room for room in rooms}
+    shared_room_names = ("Dining Room", "Main Hall", "Physiotherapy Room", "Garden Lounge")
     count = 0
-    for patient in patients:
-        for j in range(8):
-            room = rooms[(patient.id + j) % len(rooms)]
-            evt = events[j % len(events)]
+    for p_idx, patient in enumerate(patients):
+        home = next((room for room in rooms if room.id == patient.room_id), rooms[0])
+        if p_idx == 0:
+            main_hall = room_by_name.get("Main Hall", home)
+            dining = room_by_name.get("Dining Room", home)
+            garden = room_by_name.get("Garden Lounge", home)
+            event_specs = [
+                (0.08, "room_enter", home, f"Returned to {home.name} after supervised activity."),
+                (0.25, "observation", home, "Routine mobility and comfort check recorded."),
+                (0.45, "room_enter", dining, "Moved to Dining Room after supervised activity."),
+                (0.70, "room_enter", main_hall, "Moved to Main Hall for supervised activity."),
+                (0.82, "fall_detected", main_hall, "Fall event detected during supervised movement; care team follow-up recorded."),
+                (0.95, "observation", main_hall, "Post-event observation recorded before returning to the resident room."),
+                (2.5, "medication", home, "Scheduled medication round completed."),
+                (6.0, "room_enter", home, f"Returned to {home.name} with caregiver assistance."),
+                (14.0, "room_enter", garden, "Moved to Garden Lounge for supervised recreation."),
+                (16.0, "room_enter", home, f"Returned to {home.name} after recreation."),
+            ]
+        else:
+            first_shared = room_by_name.get(shared_room_names[p_idx % len(shared_room_names)], home)
+            second_shared = room_by_name.get(shared_room_names[(p_idx + 1) % len(shared_room_names)], home)
+            event_specs = [
+                (0.5, "room_enter", home, f"Returned to {home.name} after scheduled activity."),
+                (2.0, "observation", home, "Routine care observation recorded."),
+                (4.0, "room_enter", first_shared, f"Moved to {first_shared.name} for scheduled activity."),
+                (6.0, "observation", first_shared, "Routine activity observation recorded."),
+                (8.0, "room_enter", home, f"Returned to {home.name}."),
+                (12.0, "room_enter", second_shared, f"Moved to {second_shared.name} for scheduled activity."),
+                (14.0, "medication", home, "Scheduled medication round completed."),
+                (18.0, "room_enter", home, f"Returned to {home.name}."),
+            ]
+
+        for index, (hours_ago, event_type, room, description) in enumerate(event_specs):
             row = ActivityTimeline(
                 workspace_id=workspace_id,
                 patient_id=patient.id,
-                timestamp=now - timedelta(hours=j * 3 + rng.randint(0, 2)),
-                event_type=evt,
+                timestamp=now - timedelta(hours=hours_ago),
+                event_type=event_type,
                 room_id=room.id,
                 room_name=room.name,
-                description=f"{evt} generated for demo walkthrough",
-                data={"seed": True, "index": j},
+                description=description,
+                data={"index": index},
                 source="system",
             )
             session.add(row)
@@ -1860,6 +1942,45 @@ async def seed_workflow(
     return schedule_count, task_count, directive_count
 
 
+async def seed_task_management_tasks(
+    session: AsyncSession,
+    workspace_id: int,
+    users_by_role: dict[str, User],
+    patients: list[Patient],
+) -> int:
+    """Seed a small pending queue for the unified /admin/tasks page."""
+    now = datetime.now(timezone.utc)
+    head_nurse = users_by_role["head_caregiver"]
+    caregiver = users_by_role.get("demo_observer") or users_by_role["caregiver"]
+    specs = [
+        (0, "Posture and transfer follow-up - Eleanor", "Review assisted transfer precautions and document posture tolerance.", "high", 8),
+        (1, "Hydration check - Robert", "Record fluid intake and review edema or breathing changes.", "normal", 10),
+        (2, "Mobility safety check - Margaret", "Confirm walker/location-tag safety and document the latest observed room.", "normal", 12),
+    ]
+    for patient_idx, title, description, priority, due_hours in specs:
+        patient = patients[patient_idx]
+        session.add(
+            Task(
+                workspace_id=workspace_id,
+                task_type="specific",
+                patient_id=patient.id,
+                title=title,
+                description=description,
+                priority=priority,
+                due_at=now + timedelta(hours=due_hours),
+                starts_at=now,
+                ends_at=now + timedelta(hours=due_hours),
+                status="pending",
+                assigned_user_id=caregiver.id,
+                assigned_user_ids=[caregiver.id],
+                assigned_role=None,
+                created_by_user_id=head_nurse.id,
+            )
+        )
+    await session.commit()
+    return len(specs)
+
+
 async def seed_messages_and_handovers(
     session: AsyncSession,
     workspace_id: int,
@@ -1941,7 +2062,7 @@ async def seed_messages_and_handovers(
             shift_date=(now - timedelta(days=idx)).date(),
             shift_label="morning" if idx % 2 == 0 else "night",
             priority="routine" if idx < 2 else "urgent",
-            note=f"Seed handover note #{idx + 1} for patient monitoring continuity.",
+            note=patients[idx].notes or "Continue current care plan and review recent observations.",
             created_at=now - timedelta(hours=idx * 3),
         )
         session.add(row)
@@ -2318,6 +2439,7 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
 
         contacts_count = await seed_patient_contacts(session, ws.id, patients)
         vitals_count = await seed_vitals(session, ws.id, patients, devices)
+        activity_telemetry_count = await seed_wheelchair_activity_telemetry(session, ws.id, patients, devices)
         timeline_count = await seed_activity_timeline(session, ws.id, patients, rooms)
         seed_demo_alerts = os.environ.get("SEED_DEMO_ALERTS", "").lower() in ("1", "true", "yes")
         alerts_count = (
@@ -2328,6 +2450,7 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         schedules, tasks, directives = await seed_workflow(
             session, ws.id, users_by_role, patients, rooms
         )
+        unified_tasks = await seed_task_management_tasks(session, ws.id, users_by_role, patients)
         actor_positions = await seed_demo_actor_positions(session, ws.id, users_by_role, patients)
         photo_snapshots = await seed_photo_snapshots(session, ws.id, rooms)
         messages, handovers = await seed_messages_and_handovers(
@@ -2343,12 +2466,13 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
     print(f"Facility: {facility.name} | Floors: {len(floors)} | Rooms: {len(rooms)}")
     print(f"Patients: {len(patients)} | Devices: {len(devices)} | Patient contacts: {contacts_count}")
     print(
-        f"Vitals: {vitals_count} | Timeline events: {timeline_count} | Alerts: {alerts_count}"
+        f"Vitals: {vitals_count} | Wheelchair activity: {activity_telemetry_count} | "
+        f"Timeline events: {timeline_count} | Alerts: {alerts_count}"
     )
     print(
         "CareSchedules: "
-        f"{schedules} | CareTasks: {tasks} | Directives: {directives} | "
-        f"Messages: {messages} | Handovers: {handovers}"
+        f"{schedules} | CareTasks: {tasks} | Task Management pending: {unified_tasks} | "
+        f"Directives: {directives} | Messages: {messages} | Handovers: {handovers}"
     )
     print(
         "Smart devices: "

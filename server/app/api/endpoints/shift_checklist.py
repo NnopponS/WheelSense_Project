@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import RequireRole, ROLE_CLINICAL_STAFF, get_current_user_workspace, get_db
 from app.models.core import Workspace
 from app.models.users import User
+from app.roles import role_is_allowed
 from app.schemas.shift_checklist import (
     ShiftChecklistItem,
     ShiftChecklistMeOut,
@@ -134,7 +135,7 @@ async def put_user_shift_checklist_template(
     _: User = Depends(RequireRole(["admin", "head_caregiver"])),
 ):
     target = await _get_same_workspace_user(db, ws.id, user_id)
-    if target.role not in ("caregiver", "head_caregiver"):
+    if not role_is_allowed(target.role, {"caregiver", "head_caregiver"}):
         raise HTTPException(
             status_code=400,
             detail="Shift checklist templates apply to caregiver or head caregiver accounts.",

@@ -27,7 +27,7 @@ def _is_head_caregiver(user: User) -> bool:
 
 
 def _is_floor_staff(user: User) -> bool:
-    return user.role in ("caregiver", "head_caregiver")
+    return role_is_allowed(user.role, {"caregiver", "head_caregiver"})
 
 
 async def _visible_patient_ids(session: AsyncSession, ws_id: int, user: User) -> set[int] | None:

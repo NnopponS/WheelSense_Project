@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
@@ -14,7 +12,7 @@ import {
   workflowTasksPath,
   type AppRole,
 } from "@/lib/notificationRoutes";
-import { AlertToastCard } from "@/components/notifications/AlertToastCard";
+import { collectNotificationArrivals, refreshNotificationQueue, type NotificationSeen } from "@/lib/notificationArrivals";
 import type { TranslationKey } from "@/lib/i18n";
 import type { Room } from "@/lib/types";
 import type {
@@ -51,13 +49,8 @@ interface UseNotificationsReturn {
   markAllAsRead: () => void;
   clearAll: () => void;
   hasNewNotifications: boolean;
-}
-
-function severityNotifyLevel(severity: string | undefined): "none" | "toast" | "toastSound" {
-  const s = (severity ?? "").toLowerCase();
-  if (s === "low" || s === "info" || s === "informational") return "none";
-  if (s === "medium" || s === "moderate") return "toast";
-  return "toastSound";
+  popupQueue: Notification[];
+  dismissPopup: (id: string) => void;
 }
 
 function formatRoomLocationLine(room: Room): string {
@@ -71,7 +64,7 @@ function formatRoomLocationLine(room: Room): string {
   return [facility, floor, name].filter(Boolean).join(" · ");
 }
 
-async function resolvePatientAlertContext(
+export async function resolvePatientAlertContext(
   patientId: number,
   t: (key: TranslationKey) => string,
 ): Promise<{ nameLine: string; roomLine: string }> {
@@ -131,10 +124,6 @@ function pendingWorkflowJobSteps(job: CareWorkflowJobOut): number {
   return (job.steps ?? []).filter((s) => s.status !== "done" && s.status !== "skipped").length;
 }
 
-function workflowJobSignature(job: CareWorkflowJobOut): string {
-  return `${job.updated_at}|${pendingWorkflowJobSteps(job)}|${job.status}`;
-}
-
 function transformWorkflowJob(
   job: CareWorkflowJobOut,
   role: AppRole,
@@ -167,7 +156,7 @@ function transformWorkflowJob(
 
 function transformMessage(message: RoleMessageOut, role: AppRole): Notification {
   const link =
-    message.patient_id != null && message.patient_id !== undefined
+    role === "patient"
       ? "/patient/messages"
       : staffMessagesPath(role);
   return {
@@ -185,171 +174,45 @@ function transformMessage(message: RoleMessageOut, role: AppRole): Notification 
 
 export function useNotifications(): UseNotificationsReturn {
   const queryClient = useQueryClient();
-  const router = useRouter();
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const identity = user ? `${user.workspace_id}:${user.id}:${user.role}` : "";
+  const [readState, setReadState] = useState<{ identity: string; ids: Set<string> }>({ identity: "", ids: new Set() });
+  const readIds = useMemo(() => readState.identity === identity ? readState.ids : new Set<string>(), [identity, readState]);
 
   const authReady = Boolean(user);
   const role = (user?.role ?? "caregiver") as AppRole;
   const canListWorkflowTasks = Boolean(user?.role && WORKFLOW_TASKS_ROLES.has(user.role));
-  const canAcknowledgeAlerts =
-    role === "admin" || role === "head_caregiver" || role === "caregiver";
-
-  const alertToastBootstrap = useRef(false);
-  const alertToastIds = useRef<Set<number>>(new Set());
-  const workflowJobNotifyBootstrap = useRef(false);
-  const workflowJobSignatures = useRef<Map<number, string>>(new Map());
+  const arrivalTracker = useRef<{ identity: string; seen: NotificationSeen }>({ identity: "", seen: new Map() });
+  const [popupState, setPopupState] = useState<{ identity: string; items: Notification[] }>({ identity: "", items: [] });
 
   const { data: alertsData } = useQuery({
-    queryKey: ["notifications", "alerts"],
+    queryKey: ["notifications", "alerts", identity],
     queryFn: () => api.listAlerts({ status: "active", limit: 50 }),
     enabled: authReady,
     refetchInterval: ALERT_POLL_MS,
   });
 
   const { data: tasksData } = useQuery({
-    queryKey: ["notifications", "tasks"],
+    queryKey: ["notifications", "tasks", identity],
     queryFn: () => api.listWorkflowTasks({ status: "pending", limit: 50 }),
     enabled: authReady && canListWorkflowTasks,
     refetchInterval: DEFAULT_POLL_MS,
   });
 
   const { data: workflowJobsData } = useQuery({
-    queryKey: ["notifications", "workflow-jobs"],
+    queryKey: ["notifications", "workflow-jobs", identity],
     queryFn: () => api.listWorkflowJobs({ limit: 50 }),
     enabled: authReady && canListWorkflowTasks,
     refetchInterval: DEFAULT_POLL_MS,
   });
 
   const { data: messagesData } = useQuery({
-    queryKey: ["notifications", "messages"],
+    queryKey: ["notifications", "messages", identity],
     queryFn: () => api.listWorkflowMessages({ inbox_only: true, limit: 50 }),
     enabled: authReady,
     refetchInterval: DEFAULT_POLL_MS,
   });
-
-  useEffect(() => {
-    if (!alertsData || !user) return;
-    const active = alertsData.filter((a) => a.status === "active");
-
-    if (!alertToastBootstrap.current) {
-      active.forEach((a) => alertToastIds.current.add(a.id));
-      alertToastBootstrap.current = true;
-      return;
-    }
-
-    for (const a of active) {
-      if (alertToastIds.current.has(a.id)) continue;
-      const level = severityNotifyLevel(a.severity);
-      if (level === "none") {
-        alertToastIds.current.add(a.id);
-        continue;
-      }
-      alertToastIds.current.add(a.id);
-
-      const title = a.title || a.alert_type || t("notifications.toastNewAlert");
-      const description = a.description?.trim() || undefined;
-
-      if (level === "toastSound") {
-        playAlertChime();
-      }
-
-      const inboxTarget = alertsInboxUrl(role, a.id);
-
-      void (async () => {
-        let patientContext: { nameLine: string; roomLine: string } | null = null;
-        if (a.patient_id != null) {
-          patientContext = await resolvePatientAlertContext(a.patient_id, t);
-        }
-
-        const visualEmphasis =
-          role === "caregiver" && level === "toastSound" ? "interrupt" : "standard";
-
-        toast.custom(
-          (toastId) => (
-            <AlertToastCard
-              toastId={toastId}
-              alertId={a.id}
-              title={title}
-              description={description}
-              alertType={a.alert_type}
-              patientContext={patientContext}
-              visualEmphasis={visualEmphasis}
-              canAcknowledge={canAcknowledgeAlerts}
-              onNavigateInbox={() => router.push(inboxTarget)}
-            />
-          ),
-          {
-            id: `ws-alert-toast-${a.id}`,
-            duration: level === "toastSound" ? 14_000 : 9000,
-            className: level === "toastSound" ? "ws-toast-urgent" : undefined,
-          },
-        );
-      })();
-    }
-
-    const activeIdSet = new Set(active.map((a) => a.id));
-    for (const id of alertToastIds.current) {
-      if (!activeIdSet.has(id)) {
-        alertToastIds.current.delete(id);
-      }
-    }
-  }, [alertsData, user, role, router, t, canAcknowledgeAlerts]);
-
-  useEffect(() => {
-    if (!workflowJobsData || !user || !canListWorkflowTasks) return;
-    const map = workflowJobSignatures.current;
-    if (!workflowJobNotifyBootstrap.current) {
-      workflowJobsData.forEach((j) => map.set(j.id, workflowJobSignature(j)));
-      workflowJobNotifyBootstrap.current = true;
-      return;
-    }
-    const activeStatuses = new Set(["draft", "active"]);
-    for (const job of workflowJobsData) {
-      const sig = workflowJobSignature(job);
-      const prev = map.get(job.id);
-      if (prev === undefined) {
-        map.set(job.id, sig);
-        if (activeStatuses.has(job.status)) {
-          const pending = pendingWorkflowJobSteps(job);
-          toast.info(t("notifications.workflowJobNewTitle"), {
-            description:
-              job.title && pending > 0
-                ? `${job.title} · ${t("notifications.workflowJobPendingSteps").replace("{n}", String(pending))}`
-                : job.title || undefined,
-            duration: 12_000,
-            action: {
-              label: t("notifications.workflowJobOpenTasks"),
-              onClick: () => router.push(workflowTasksPath(role)),
-            },
-          });
-        }
-        continue;
-      }
-      if (prev !== sig && activeStatuses.has(job.status)) {
-        map.set(job.id, sig);
-        const pending = pendingWorkflowJobSteps(job);
-        toast.info(t("notifications.workflowJobUpdatedTitle"), {
-          description:
-            job.title && pending > 0
-              ? `${job.title} · ${t("notifications.workflowJobPendingSteps").replace("{n}", String(pending))}`
-              : job.title || undefined,
-          duration: 12_000,
-          action: {
-            label: t("notifications.workflowJobOpenTasks"),
-            onClick: () => router.push(workflowTasksPath(role)),
-          },
-        });
-      } else {
-        map.set(job.id, sig);
-      }
-    }
-    const seen = new Set(workflowJobsData.map((j) => j.id));
-    for (const id of map.keys()) {
-      if (!seen.has(id)) map.delete(id);
-    }
-  }, [workflowJobsData, user, canListWorkflowTasks, t, router, role]);
 
   const notifications: Notification[] = useMemo(() => {
     const rows: Notification[] = [
@@ -377,6 +240,25 @@ export function useNotifications(): UseNotificationsReturn {
     return [...byId.values()].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [alertsData, tasksData, workflowJobsData, messagesData, role, t]);
 
+  useEffect(() => {
+    if (!identity) return;
+    if (arrivalTracker.current.identity !== identity) arrivalTracker.current = { identity, seen: new Map() };
+    const ready = { alert: alertsData !== undefined, task: tasksData !== undefined, workflow_job: workflowJobsData !== undefined, message: messagesData !== undefined };
+    const sources = (["alert", "task", "workflow_job", "message"] as const).map(type => ({ type, ready: ready[type], items: notifications.filter(item => item.type === type) }));
+    const arrivals = collectNotificationArrivals(arrivalTracker.current.seen, sources);
+    if (arrivals.length) playAlertChime();
+    setPopupState(previous => {
+      const previousItems = previous.identity === identity ? previous.items : [];
+      const items = refreshNotificationQueue(previousItems, notifications, arrivals, sources.filter(source => source.ready).map(source => source.type));
+      if (!items.length && !previousItems.length) return previous;
+      return { identity, items };
+    });
+  }, [identity, notifications, alertsData, tasksData, workflowJobsData, messagesData]);
+
+  const dismissPopup = useCallback((id: string) => {
+    setPopupState(previous => ({ ...previous, items: previous.items.filter(item => item.id !== id) }));
+  }, []);
+
   const processedNotifications = notifications.map((n) => ({
     ...n,
     read: n.read || readIds.has(n.id),
@@ -390,7 +272,7 @@ export function useNotifications(): UseNotificationsReturn {
   );
 
   const markAsRead = useCallback((id: string) => {
-    setReadIds((prev) => new Set([...prev, id]));
+    setReadState(previous => ({ identity, ids: new Set([...(previous.identity === identity ? previous.ids : []), id]) }));
 
     if (id.startsWith("message-")) {
       const messageId = Number(id.replace("message-", ""));
@@ -398,23 +280,23 @@ export function useNotifications(): UseNotificationsReturn {
         api.markWorkflowMessageRead(messageId).catch(console.error);
       }
     }
-  }, []);
+  }, [identity]);
 
   const markAllAsRead = useCallback(() => {
     const allIds = notifications.map((n) => n.id);
-    setReadIds((prev) => new Set([...prev, ...allIds]));
+    setReadState(previous => ({ identity, ids: new Set([...(previous.identity === identity ? previous.ids : []), ...allIds]) }));
 
     messagesData?.forEach((msg) => {
       if (!msg.is_read) {
         api.markWorkflowMessageRead(msg.id).catch(console.error);
       }
     });
-  }, [notifications, messagesData]);
+  }, [identity, notifications, messagesData]);
 
   const clearAll = useCallback(() => {
-    setReadIds(new Set(notifications.map((n) => n.id)));
+    setReadState({ identity, ids: new Set(notifications.map((n) => n.id)) });
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
-  }, [notifications, queryClient]);
+  }, [identity, notifications, queryClient]);
 
   return {
     unreadCount,
@@ -423,5 +305,7 @@ export function useNotifications(): UseNotificationsReturn {
     markAllAsRead,
     clearAll,
     hasNewNotifications,
+    popupQueue: popupState.identity === identity ? popupState.items : [],
+    dismissPopup,
   };
 }

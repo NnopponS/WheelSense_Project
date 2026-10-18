@@ -33,4 +33,3 @@ jobs:
           name: wheelsense-ios-unsigned-ipa
           path: mobile-app/wheelsense-gateway-flutter/build/ios/ipa/WheelSense.ipa
           if-no-files-found: error
-

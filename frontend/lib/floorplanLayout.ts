@@ -8,6 +8,8 @@ export type FloorplanRoomShape = {
   device_id: number | null;
   node_device_id?: string | null;
   power_kw: number | null;
+  /** Draft-only room metadata; saved through the existing room endpoint. */
+  room_type?: string;
 };
 
 export interface FloorplanLayoutResponse {

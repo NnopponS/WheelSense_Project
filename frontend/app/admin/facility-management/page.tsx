@@ -16,15 +16,11 @@ import {
   Plus,
   Pencil,
   Trash2,
-  ChevronRight,
   Search,
-  Home,
   DoorOpen,
-  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -37,50 +33,19 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import styles from "@/components/admin/facility-workspace.module.css";
 
 type FacilityTab = "facilities" | "floors" | "editor";
-
-type MetricTone = "blue" | "green" | "violet";
-
-const metricToneClasses: Record<MetricTone, string> = {
-  blue: "bg-primary/10 text-primary ring-primary/10",
-  green: "bg-success-bg text-success ring-success/10",
-  violet: "bg-info-bg text-info ring-info/10",
-};
-
-function FacilityMetric({
-  label,
-  value,
-  icon: Icon,
-  tone,
-  detail,
-}: {
-  label: string;
-  value: string | number;
-  icon: LucideIcon;
-  tone: MetricTone;
-  detail?: string | null;
-}) {
-  return (
-    <div className="flex min-h-24 items-center gap-3 rounded-lg border border-border/70 bg-background/70 p-3 sm:p-4">
-      <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ring-1", metricToneClasses[tone])}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
-        <p className="mt-1 truncate text-2xl font-bold leading-none text-foreground">{value}</p>
-        {detail ? <p className="mt-1 truncate text-sm text-muted-foreground">{detail}</p> : null}
-      </div>
-    </div>
-  );
-}
 
 function FacilityManagementPageContent() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<FacilityTab>("facilities");
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(null);
-  const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
+  const [layoutDirty,setLayoutDirty]=useState(false);
+  const [layoutBusy,setLayoutBusy]=useState(false);
+  const navigateWorkspace=(action:()=>void)=>{if(layoutBusy)return;if(layoutDirty && !window.confirm(t("facilityWorkspace.discardConfirm")))return;setLayoutDirty(false);action()};
+  const [activeTab, setActiveTab] = useState<FacilityTab>("editor");
+  const [facilitySelection, setSelectedFacilityId] = useState<number | null>(null);
+  const [floorSelection, setSelectedFloorId] = useState<number | null>(null);
   const [facilitySearch, setFacilitySearch] = useState("");
 
   // Dialog states
@@ -93,12 +58,17 @@ function FacilityManagementPageContent() {
   const [facilityForm, setFacilityForm] = useState({ name: "", address: "", description: "" });
   const [floorForm, setFloorForm] = useState({ floorNumber: 1, name: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   // Data fetching - using generic API methods
   const facilitiesQuery = useQuery({
     queryKey: ["admin", "facility-management", "facilities"],
     queryFn: () => api.get<Facility[]>("/facilities"),
   });
+
+  const facilities = useMemo(() => facilitiesQuery.data ?? [], [facilitiesQuery.data]);
+  const selectedFacilityId = facilities.some((facility) => facility.id === facilitySelection)
+    ? facilitySelection : facilities[0]?.id ?? null;
 
   const floorsQuery = useQuery({
     queryKey: ["admin", "facility-management", "floors", selectedFacilityId],
@@ -108,8 +78,9 @@ function FacilityManagementPageContent() {
     enabled: !!selectedFacilityId,
   });
 
-  const facilities = useMemo(() => facilitiesQuery.data ?? [], [facilitiesQuery.data]);
   const floors = useMemo(() => floorsQuery.data ?? [], [floorsQuery.data]);
+  const selectedFloorId = floors.some((floor) => floor.id === floorSelection)
+    ? floorSelection : floors[0]?.id ?? null;
   const selectedFacility = facilities.find((f: Facility) => f.id === selectedFacilityId);
   const selectedFloor = floors.find((f: Floor) => f.id === selectedFloorId);
 
@@ -129,18 +100,11 @@ function FacilityManagementPageContent() {
     );
   }, [facilities, facilitySearch]);
 
-  // Stats
-  const stats = useMemo(() => ({
-    totalFacilities: facilities.length,
-    totalFloors: floors.length,
-    selectedFacilityName: selectedFacility?.name,
-    selectedFloorName: selectedFloor?.name || (selectedFloor ? `${t("floorplan.floor")} ${selectedFloor.floor_number}` : null),
-  }), [facilities.length, floors.length, selectedFacility, selectedFloor, t]);
-
   // Facility CRUD handlers - using generic API methods
   const handleCreateFacility = async () => {
     const name = facilityForm.name.trim();
     if (!name) return;
+    setMutationError(null);
     setSubmitting(true);
     try {
       const created = await api.post<Facility>("/facilities", {
@@ -155,6 +119,7 @@ function FacilityManagementPageContent() {
       setFacilityForm({ name: "", address: "", description: "" });
       setActiveTab("floors");
     } catch (e) {
+      setMutationError(e instanceof Error ? e.message : t("common.error"));
       console.error("Failed to create facility:", e);
     } finally {
       setSubmitting(false);
@@ -165,6 +130,7 @@ function FacilityManagementPageContent() {
     if (!editingFacility) return;
     const name = facilityForm.name.trim();
     if (!name) return;
+    setMutationError(null);
     setSubmitting(true);
     try {
       await api.patch<Facility>(`/facilities/${editingFacility.id}`, {
@@ -177,6 +143,7 @@ function FacilityManagementPageContent() {
       setEditingFacility(null);
       setFacilityForm({ name: "", address: "", description: "" });
     } catch (e) {
+      setMutationError(e instanceof Error ? e.message : t("common.error"));
       console.error("Failed to update facility:", e);
     } finally {
       setSubmitting(false);
@@ -193,6 +160,7 @@ function FacilityManagementPageContent() {
         setSelectedFloorId(null);
       }
     } catch (e) {
+      setMutationError(e instanceof Error ? e.message : t("common.error"));
       console.error("Failed to delete facility:", e);
     }
   };
@@ -200,6 +168,7 @@ function FacilityManagementPageContent() {
   // Floor CRUD handlers - using generic API methods
   const handleCreateFloor = async () => {
     if (!selectedFacilityId) return;
+    setMutationError(null);
     setSubmitting(true);
     try {
       const created = await api.post<Floor>(`/facilities/${selectedFacilityId}/floors`, {
@@ -214,6 +183,7 @@ function FacilityManagementPageContent() {
       setFloorForm({ floorNumber: floorForm.floorNumber + 1, name: "" });
       setActiveTab("editor");
     } catch (e) {
+      setMutationError(e instanceof Error ? e.message : t("common.error"));
       console.error("Failed to create floor:", e);
     } finally {
       setSubmitting(false);
@@ -222,6 +192,7 @@ function FacilityManagementPageContent() {
 
   const handleUpdateFloor = async () => {
     if (!selectedFacilityId || !editingFloor) return;
+    setMutationError(null);
     setSubmitting(true);
     try {
       await api.patch<Floor>(`/facilities/${selectedFacilityId}/floors/${editingFloor.id}`, {
@@ -233,6 +204,7 @@ function FacilityManagementPageContent() {
       setEditingFloor(null);
       setFloorForm({ floorNumber: 1, name: "" });
     } catch (e) {
+      setMutationError(e instanceof Error ? e.message : t("common.error"));
       console.error("Failed to update floor:", e);
     } finally {
       setSubmitting(false);
@@ -248,18 +220,21 @@ function FacilityManagementPageContent() {
         setSelectedFloorId(null);
       }
     } catch (e) {
+      setMutationError(e instanceof Error ? e.message : t("common.error"));
       console.error("Failed to delete floor:", e);
     }
   };
 
   // Open dialogs
   const openCreateFacility = () => {
+    setMutationError(null);
     setEditingFacility(null);
     setFacilityForm({ name: "", address: "", description: "" });
     setShowFacilityDialog(true);
   };
 
   const openEditFacility = (facility: Facility) => {
+    setMutationError(null);
     setEditingFacility(facility);
     setFacilityForm({
       name: facility.name,
@@ -270,6 +245,7 @@ function FacilityManagementPageContent() {
   };
 
   const openCreateFloor = () => {
+    setMutationError(null);
     setEditingFloor(null);
     const nextNumber = floors.length > 0 ? Math.max(...floors.map((f: Floor) => f.floor_number)) + 1 : 1;
     setFloorForm({ floorNumber: nextNumber, name: "" });
@@ -277,6 +253,7 @@ function FacilityManagementPageContent() {
   };
 
   const openEditFloor = (floor: Floor) => {
+    setMutationError(null);
     setEditingFloor(floor);
     setFloorForm({ floorNumber: floor.floor_number, name: floor.name || "" });
     setShowFloorDialog(true);
@@ -284,10 +261,50 @@ function FacilityManagementPageContent() {
 
   const isLoading = facilitiesQuery.isLoading || floorsQuery.isLoading;
 
+  const scopeControls = (
+    <div className={styles.scopeControls}>
+      <label className={styles.scopePicker}>
+        <span className="sr-only">{t("floorplan.building")}</span>
+        <select className="input-field text-sm" value={selectedFacilityId ?? ""}
+          disabled={layoutBusy || facilitiesQuery.isLoading || facilities.length === 0}
+          onChange={(event) => navigateWorkspace(()=>{ setSelectedFacilityId(Number(event.target.value)); setSelectedFloorId(null); })}>
+          {facilities.length === 0 && <option value="">{t("floorplan.selectBuilding")}</option>}
+          {facilities.map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}
+        </select>
+      </label>
+      <Button variant="ghost" size="icon" aria-label={t("facilityMgmt.editFacility")} title={t("facilityMgmt.editFacility")}
+        disabled={layoutBusy || !selectedFacility} onClick={() => selectedFacility && openEditFacility(selectedFacility)}><Pencil /></Button>
+      <Button variant="outline" size="icon" aria-label={t("facilityMgmt.addFacility")} title={t("facilityMgmt.addFacility")} disabled={layoutBusy} onClick={openCreateFacility}><Building2 /></Button>
+      <label className={styles.scopePicker}>
+        <span className="sr-only">{t("floorplan.floor")}</span>
+        <select className="input-field text-sm" value={selectedFloorId ?? ""}
+          disabled={layoutBusy || floorsQuery.isLoading || floors.length === 0}
+          onChange={(event) => navigateWorkspace(()=>setSelectedFloorId(Number(event.target.value)))}>
+          {floors.length === 0 && <option value="">{t("floorplan.selectFloor")}</option>}
+          {floors.map((floor) => <option key={floor.id} value={floor.id}>{floor.name || `${t("floorplan.floor")} ${floor.floor_number}`}</option>)}
+        </select>
+      </label>
+      <Button variant="ghost" size="icon" aria-label={t("facilityMgmt.editFloor")} title={t("facilityMgmt.editFloor")}
+        disabled={layoutBusy || !selectedFloor} onClick={() => selectedFloor && openEditFloor(selectedFloor)}><Pencil /></Button>
+      <Button variant="outline" size="icon" aria-label={t("facilityMgmt.addFloor")} title={t("facilityMgmt.addFloor")}
+        disabled={layoutBusy || !selectedFacilityId} onClick={openCreateFloor}><Layers /></Button>
+    </div>
+  );
+
   return (
+    <Tabs activationMode="manual" value={activeTab} onValueChange={(value) => navigateWorkspace(()=>setActiveTab(value as FacilityTab))} className={styles.tabs}>
     <AppPage
+      workspace
+      className={styles.page}
       title={t("facilityMgmt.title")}
       description={t("facilityMgmt.subtitle")}
+      actions={
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto">
+          <TabsTrigger value="facilities" disabled={layoutBusy}>{t("facilityMgmt.tabFacilities")}</TabsTrigger>
+          <TabsTrigger value="floors" disabled={layoutBusy}>{t("facilityMgmt.tabFloors")}</TabsTrigger>
+          <TabsTrigger value="editor" disabled={layoutBusy}>{t("facilityMgmt.tabFloorPlan")}</TabsTrigger>
+        </TabsList>
+      }
       breadcrumbs={[
         {
           label: t("nav.dashboard"),
@@ -295,63 +312,17 @@ function FacilityManagementPageContent() {
         },
         { label: t("nav.facilities") },
       ]}
-      actions={
-        <div className="flex items-center gap-2">
-          {selectedFacility && (
-            <Badge variant="outline" className="text-sm">
-              <MapPin className="mr-1 h-3 w-3" />
-              {selectedFacility.name}
-              {selectedFloor && (
-                <>
-                  <ChevronRight className="mx-1 h-3 w-3" />
-                  {selectedFloor.name || `${t("floorplan.floor")} ${selectedFloor.floor_number}`}
-                </>
-              )}
-            </Badge>
-          )}
-        </div>
-      }
     >
+      {mutationError && !showFacilityDialog && !showFloorDialog && <p role="alert" className="text-sm text-destructive">{mutationError}</p>}
+      {(facilitiesQuery.isError || floorsQuery.isError) && (
+        <DataState kind="error" title={t("common.error")} actionLabel={t("redesign.retry")}
+          onAction={() => { void facilitiesQuery.refetch(); if (selectedFacilityId) void floorsQuery.refetch(); }} />
+      )}
 
-      {/* Stats */}
-      <div className="rounded-lg border border-border/70 bg-card p-3 shadow-sm sm:p-4">
-        <div className="grid gap-3 md:grid-cols-3">
-          <FacilityMetric
-            label={t("facilityMgmt.statsFacilities")}
-            value={stats.totalFacilities}
-            icon={Building2}
-            tone="blue"
-          />
-          <FacilityMetric
-            label={t("facilityMgmt.statsFloors")}
-            value={stats.totalFloors}
-            icon={Layers}
-            tone="green"
-          />
-          <FacilityMetric
-            label={t("facilityMgmt.statsSelectedScope")}
-            value={stats.selectedFacilityName ?? t("facilityMgmt.statsNoSelection")}
-            detail={stats.selectedFloorName}
-            icon={Home}
-            tone="violet"
-          />
-        </div>
-      </div>
-
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FacilityTab)} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto">
-          <TabsTrigger value="facilities">{t("facilityMgmt.tabFacilities")}</TabsTrigger>
-          <TabsTrigger value="floors" disabled={!selectedFacilityId}>
-            {t("facilityMgmt.tabFloors")}
-          </TabsTrigger>
-          <TabsTrigger value="editor" disabled={!selectedFloorId}>
-            {t("facilityMgmt.tabFloorPlan")}
-          </TabsTrigger>
-        </TabsList>
+      {activeTab !== "editor" && scopeControls}
 
         {/* Facilities Tab */}
-        <TabsContent value="facilities" className="space-y-6">
+        <TabsContent value="facilities" className={styles.directory}>
           <Card>
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -461,7 +432,7 @@ function FacilityManagementPageContent() {
         </TabsContent>
 
         {/* Floors Tab */}
-        <TabsContent value="floors" className="space-y-6">
+        <TabsContent value="floors" className={styles.directory}>
           <Card>
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -476,7 +447,7 @@ function FacilityManagementPageContent() {
                 </CardTitle>
                 <CardDescription>{t("facilityMgmt.floorsDescription")}</CardDescription>
               </div>
-              <Button onClick={openCreateFloor} disabled={!selectedFacilityId}>
+              <Button onClick={openCreateFloor} disabled={layoutBusy || !selectedFacilityId}>
                 <Plus className="mr-1 h-4 w-4" />
                 {t("facilityMgmt.addFloor")}
               </Button>
@@ -569,8 +540,11 @@ function FacilityManagementPageContent() {
         </TabsContent>
 
         {/* Floor plan — single implementation (shared FloorplansPanel) */}
-        <TabsContent value="editor" className="space-y-6">
-          {!selectedFacilityId ? (
+        <TabsContent value="editor" className={styles.editorTab}>
+          {(!selectedFacilityId || !selectedFloorId) && scopeControls}
+          {isLoading ? (
+            <DataState kind="loading" title={t("common.loading")} />
+          ) : !selectedFacilityId ? (
             <Card>
               <CardContent className="space-y-4 py-12 text-center">
                 <p className="text-muted-foreground">{t("floorplan.selectBuildingFirst")}</p>
@@ -589,11 +563,9 @@ function FacilityManagementPageContent() {
               </CardContent>
             </Card>
           ) : floorplanExternalScope ? (
-            <FloorplansPanel embedded externalScope={floorplanExternalScope} />
+            <FloorplansPanel embedded workspace scopeControls={scopeControls} externalScope={floorplanExternalScope} onDirtyChange={setLayoutDirty} onBusyChange={setLayoutBusy} onFloorChange={id=>navigateWorkspace(()=>setSelectedFloorId(id))} />
           ) : null}
         </TabsContent>
-      </Tabs>
-
       {/* Facility Dialog */}
       <Dialog open={showFacilityDialog} onOpenChange={setShowFacilityDialog}>
         <DialogContent>
@@ -632,6 +604,7 @@ function FacilityManagementPageContent() {
               />
             </div>
           </div>
+          {mutationError && <p role="alert" className="text-sm text-destructive">{mutationError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowFacilityDialog(false)}>
               {t("common.cancel")}
@@ -678,13 +651,14 @@ function FacilityManagementPageContent() {
               />
             </div>
           </div>
+          {mutationError && <p role="alert" className="text-sm text-destructive">{mutationError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowFloorDialog(false)}>
               {t("common.cancel")}
             </Button>
             <Button
               onClick={editingFloor ? handleUpdateFloor : handleCreateFloor}
-              disabled={submitting}
+              disabled={submitting || !Number.isInteger(floorForm.floorNumber) || floorForm.floorNumber < 0}
             >
               {submitting ? t("common.saving") : editingFloor ? t("common.update") : t("common.create")}
             </Button>
@@ -692,6 +666,7 @@ function FacilityManagementPageContent() {
         </DialogContent>
       </Dialog>
     </AppPage>
+    </Tabs>
   );
 }
 

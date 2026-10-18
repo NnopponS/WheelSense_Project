@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useMemo, useRef, useState, type ComponentType } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDown, ArrowUp, ChevronRight, Search, Tablet, Wifi, WifiOff } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
@@ -44,6 +44,7 @@ function DevicesPageContent() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -57,12 +58,12 @@ function DevicesPageContent() {
   const setTab = useCallback(
     (next: DeviceFleetTab) => {
       const q = fleetTabToQuery(next);
-      const nextUrl = q === "all" ? "/admin/devices" : `/admin/devices?tab=${q}`;
+      const nextUrl = q === "all" ? pathname : `${pathname}?tab=${q}`;
       router.replace(nextUrl, { scroll: false });
       setSearch("");
       setSelectedId(null);
     },
-    [router],
+    [pathname, router],
   );
 
   const registryEndpoint = useMemo(() => {
@@ -76,14 +77,14 @@ function DevicesPageContent() {
     [tab, user?.workspace_id],
   );
 
-  const { data: devices, isLoading: loadingRegistry, refetch: refetchRegistry } = useQuery({
+  const { data: devices, isLoading: loadingRegistry, isError: registryError, refetch: refetchRegistry } = useQuery({
     queryKey: ["admin", "devices", "registry", registryEndpoint, tab],
     queryFn: () => api.get<Device[]>(registryEndpoint!),
     enabled: Boolean(registryEndpoint),
     staleTime: registryEndpoint ? getQueryStaleTimeMs(registryEndpoint) : 30_000,
     refetchInterval: registryEndpoint ? getQueryPollingMs(registryEndpoint) : false,
   });
-  const { data: smartDevices, isLoading: loadingSmart, refetch: refetchSmart } = useQuery({
+  const { data: smartDevices, isLoading: loadingSmart, isError: smartError, refetch: refetchSmart } = useQuery({
     queryKey: ["admin", "devices", "smart-ha", smartEndpoint],
     queryFn: () => api.get<SmartDevice[]>(smartEndpoint!),
     enabled: Boolean(smartEndpoint),
@@ -176,19 +177,20 @@ function DevicesPageContent() {
     >
 
       {tab === "smart_ha" ? (
-        <div className="grid items-stretch gap-3 md:grid-cols-3">
+        <div className="ws-stat-strip grid grid-cols-1 sm:grid-cols-3">
           <SummaryCard label={t("devices.summarySmartDevices")} value={smartStats.total} icon={Tablet} tone="info" />
           <SummaryCard label={t("devices.summaryReachable")} value={smartStats.reachable} icon={Wifi} tone="success" />
           <SummaryCard label={t("devices.summaryInactive")} value={smartStats.inactive} icon={WifiOff} tone="warning" />
         </div>
       ) : (
-        <div className="grid items-stretch gap-3 md:grid-cols-3">
+        <div className="ws-stat-strip grid grid-cols-1 sm:grid-cols-3">
           <SummaryCard label={t("devices.summaryRegistryDevices")} value={registryStats.total} icon={Tablet} tone="info" />
           <SummaryCard label={t("devices.summaryOnlineRegistry")} value={registryStats.online} icon={Wifi} tone="success" />
           <SummaryCard label={t("devices.summaryOfflineRegistry")} value={registryStats.offline} icon={WifiOff} tone="warning" />
         </div>
       )}
 
+      {(tab === "smart_ha" ? smartError : registryError) ? <DataState kind="error" title={t("redesign.unavailable")} actionLabel={t("redesign.retry")} onAction={onMutate} /> : null}
       <Card className="overflow-hidden">
         <CardContent className="flex flex-col gap-3 p-3 sm:p-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 flex-wrap gap-2" role="tablist" aria-label={t("devices.title")}>
@@ -326,7 +328,7 @@ function DevicesPageContent() {
             {filteredRegistry.map((device) => {
               const online = isDeviceOnline(device.last_seen, nowMs);
               const title = device.display_name?.trim() || device.device_id;
-              const status = online ? t("devices.online") : t("devices.offline");
+              const status = !device.last_seen ? t("redesign.unavailable") : online ? t("devices.online") : t("devices.offline");
               const accessibleLabel = t("devices.openDetailsLabel")
                 .replace("{name}", title)
                 .replace("{id}", device.device_id)

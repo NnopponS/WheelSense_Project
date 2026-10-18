@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
+import RoleShell from "@/components/RoleShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -623,14 +624,12 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-surface px-4 py-6 text-foreground sm:px-6 lg:px-8">
+    <RoleShell appRoot={user.role === "admin" ? "/admin" : user.role === "head_caregiver" ? "/head-caregiver" : user.role === "caregiver" ? "/caregiver" : "/patient"}>
+    <div className="text-foreground">
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("account.eyebrow")}
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold">{t("account.title")}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">{t("account.title")}</h1>
           </div>
           <Button asChild variant="outline">
             <Link href={getRoleHome(user.role)}>
@@ -640,7 +639,12 @@ export default function AccountPage() {
           </Button>
         </div>
 
-        <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <nav aria-label={t("account.title")} className="flex flex-wrap gap-2 border-b border-border pb-4">
+          {([["account-profile", "account.personalProfile"], ["account-photo", "account.photoTitle"], ["account-display", "account.displayTitle"], ["account-security", "account.passwordTitle"]] as const).map(([target, key]) => (
+            <a key={target} href={`#${target}`} className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">{t(key)}</a>
+          ))}
+        </nav>
+        <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-center gap-4">
@@ -674,7 +678,7 @@ export default function AccountPage() {
                   <Camera className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">{t("account.photoTitle")}</h2>
+                  <h2 id="account-photo" className="scroll-mt-28 text-lg font-semibold">{t("account.photoTitle")}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {t("account.photoDescription")}
                   </p>
@@ -971,7 +975,7 @@ export default function AccountPage() {
             ) : null}
 
             <div className="rounded-xl border border-border bg-card p-5">
-              <h2 className="text-lg font-semibold">{t("account.personalProfile")}</h2>
+              <h2 id="account-profile" className="scroll-mt-28 text-lg font-semibold">{t("account.personalProfile")}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("account.personalProfileDescription")}
               </p>
@@ -1100,7 +1104,7 @@ export default function AccountPage() {
                   <Type className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">{t("account.displayTitle")}</h2>
+                  <h2 id="account-display" className="scroll-mt-28 text-lg font-semibold">{t("account.displayTitle")}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{t("account.displayDescription")}</p>
                 </div>
               </div>
@@ -1144,7 +1148,7 @@ export default function AccountPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-card p-5">
-              <h2 className="text-lg font-semibold">{t("account.passwordTitle")}</h2>
+              <h2 id="account-security" className="scroll-mt-28 text-lg font-semibold">{t("account.passwordTitle")}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("account.passwordDescription")}
               </p>
@@ -1203,7 +1207,8 @@ export default function AccountPage() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
+    </RoleShell>
   );
 }
 

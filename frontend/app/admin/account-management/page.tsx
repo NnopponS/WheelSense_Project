@@ -30,11 +30,10 @@ type AdminCaregiver = ListCaregiversResponse[number];
 const USER_ROLES = [
   "admin",
   "head_caregiver",
-  "head_caregiver",
   "caregiver",
   "patient",
 ] as const;
-const STAFF_ROLES = ["admin", "head_caregiver", "head_caregiver", "caregiver"] as const;
+const STAFF_ROLES = ["admin", "head_caregiver", "caregiver"] as const;
 
 const NO_SELECTION = "__none__";
 

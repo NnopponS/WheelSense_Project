@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -16,6 +17,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -36,6 +38,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import styles from "@/components/tasks/task-workspace.module.css";
 
 // ── Column layout (labels via i18n) ───────────────────────────────────────────
 
@@ -55,23 +58,23 @@ const COLUMN_META: Record<
 > = {
   pending: {
     icon: Circle,
-    headerColor: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20",
-    badgeColor: "bg-slate-500/20 text-slate-600 dark:text-slate-400",
+    headerColor: "bg-muted text-foreground border-border",
+    badgeColor: "bg-card text-foreground",
   },
   in_progress: {
     icon: Clock,
-    headerColor: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
-    badgeColor: "bg-blue-500/20 text-blue-600 dark:text-blue-400",
+    headerColor: "bg-info-bg text-info-foreground border-info/30",
+    badgeColor: "bg-info-bg text-info-foreground",
   },
   completed: {
     icon: CheckCircle2,
-    headerColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
-    badgeColor: "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+    headerColor: "bg-success-bg text-success-foreground border-success/30",
+    badgeColor: "bg-success-bg text-success-foreground",
   },
   skipped: {
     icon: SkipForward,
-    headerColor: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
-    badgeColor: "bg-amber-500/20 text-amber-600 dark:text-amber-400",
+    headerColor: "bg-warning-bg text-warning-foreground border-warning/30",
+    badgeColor: "bg-warning-bg text-warning-foreground",
   },
 };
 
@@ -79,9 +82,9 @@ const STATUS_DROPDOWN_ORDER: ColumnStatus[] = ["pending", "in_progress", "comple
 
 const PRIORITY_BADGE_COLORS: Record<string, string> = {
   low: "bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/30",
-  normal: "bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30",
-  high: "bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30",
-  critical: "bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30",
+  normal: "bg-info-bg text-info-foreground border-info/30",
+  high: "bg-warning-bg text-warning-foreground border-warning/30",
+  critical: "bg-critical-bg text-critical-foreground border-critical/30",
 };
 
 const PRIORITY_LABEL_KEYS: Record<string, TranslationKey> = {
@@ -119,29 +122,19 @@ function TaskCard({ task, onTaskClick, onStatusChange, isOverdue }: TaskCardProp
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      aria-label={t("tasks.kanban.taskCardAria").replace("{title}", task.title)}
       className={cn(
         "group relative p-3 rounded-lg border border-border/40 bg-card hover:border-border hover:bg-muted/30 transition-all cursor-pointer",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       )}
-      onClick={() => onTaskClick?.(task)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onTaskClick?.(task);
-        }
-      }}
     >
       {canShowStatusMenu && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <div className="absolute top-2 right-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 hover:bg-background"
+                className="h-11 w-11 hover:bg-background"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={t("tasks.kanban.changeStatus")}
               >
@@ -149,6 +142,7 @@ function TaskCard({ task, onTaskClick, onStatusChange, isOverdue }: TaskCardProp
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuGroup>
               {STATUS_DROPDOWN_ORDER.map((st) => {
                 const Icon = COLUMN_META[st].icon;
                 return (
@@ -165,19 +159,20 @@ function TaskCard({ task, onTaskClick, onStatusChange, isOverdue }: TaskCardProp
                   </DropdownMenuItem>
                 );
               })}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       )}
 
-      <h4 className="text-sm font-medium text-foreground pr-8 line-clamp-2 mb-2">{task.title}</h4>
+      <h4 className="mb-2 pr-10"><button type="button" className="min-h-11 text-left text-sm font-medium text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring" onClick={() => onTaskClick?.(task)}>{task.title}</button></h4>
 
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
-        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-4 border", priorityColor)}>
+        <Badge variant="outline" className={cn("text-xs px-1.5 py-0 h-4 border", priorityColor)}>
           {priorityLabel}
         </Badge>
 
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-border/50">
+        <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 border-border/50">
           {task.task_type === "routine" ? (
             <RefreshCw className="h-2.5 w-2.5 mr-1" />
           ) : (
@@ -206,7 +201,7 @@ function TaskCard({ task, onTaskClick, onStatusChange, isOverdue }: TaskCardProp
           <div
             className={cn(
               "flex items-center gap-1.5 text-xs",
-              isOverdue ? "text-red-500 dark:text-red-400 font-medium" : "text-muted-foreground",
+              isOverdue ? "text-critical-foreground font-medium" : "text-muted-foreground",
             )}
           >
             <Calendar className="h-3 w-3 shrink-0" />
@@ -378,18 +373,18 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-3">
+      <div className={styles.board}>
+        <div className={styles.filters}>
           <div className="h-11 flex-1 min-w-[200px] bg-muted rounded animate-pulse" />
           <div className="h-11 w-32 bg-muted rounded animate-pulse" />
           <div className="h-11 w-32 bg-muted rounded animate-pulse" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className={styles.columns}>
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-3">
+            <div key={i} className={styles.column}>
               <div className="h-10 bg-muted rounded animate-pulse" />
-              <ColumnSkeleton />
+              <div className={styles.cards}><ColumnSkeleton /></div>
             </div>
           ))}
         </div>
@@ -401,9 +396,9 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
   const hasFilteredTasks = filteredTasks.length > 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+    <div className={styles.board}>
+      <div className={styles.filters}>
+        <div className={styles.search}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t("tasks.kanban.searchPlaceholder")}
@@ -419,9 +414,11 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
             <SelectValue placeholder={t("tasks.kanban.typePlaceholder")} />
           </SelectTrigger>
           <SelectContent>
+            <SelectGroup>
             <SelectItem value="all">{t("tasks.kanban.allTypes")}</SelectItem>
             <SelectItem value="specific">{t("tasks.specific")}</SelectItem>
             <SelectItem value="routine">{t("tasks.routine")}</SelectItem>
+            </SelectGroup>
           </SelectContent>
         </Select>
 
@@ -430,11 +427,13 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
             <SelectValue placeholder={t("tasks.kanban.priorityPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
+            <SelectGroup>
             <SelectItem value="all">{t("tasks.kanban.allPriorities")}</SelectItem>
             <SelectItem value="low">{t("priority.low")}</SelectItem>
             <SelectItem value="normal">{t("priority.normal")}</SelectItem>
             <SelectItem value="high">{t("priority.high")}</SelectItem>
             <SelectItem value="critical">{t("priority.critical")}</SelectItem>
+            </SelectGroup>
           </SelectContent>
         </Select>
 
@@ -486,7 +485,7 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className={styles.columns}>
           {COLUMN_STATUSES.map((columnStatus) => {
             const columnTasks = groupedTasks[columnStatus] ?? [];
             const Icon = COLUMN_META[columnStatus].icon;
@@ -495,13 +494,12 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
             return (
               <div
                 key={columnStatus}
-                className="flex flex-col rounded-lg border border-border/40 bg-muted/20"
-                role="region"
-                aria-label={t("tasks.kanban.columnRegionAria").replace("{column}", columnLabel)}
+                className={styles.column}
               >
                 <div
                   className={cn(
-                    "sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-inherit",
+                    "flex items-center gap-2 px-3 py-3 border-b border-border/40",
+                    styles.columnHeader,
                     COLUMN_META[columnStatus].headerColor,
                   )}
                 >
@@ -515,7 +513,12 @@ export const UnifiedTaskKanbanBoard = function UnifiedTaskKanbanBoard({
                   </Badge>
                 </div>
 
-                <div className="flex-1 p-3 space-y-3 max-h-[calc(100vh-24rem)] overflow-y-auto">
+                <div
+                  className={styles.cards}
+                  tabIndex={0}
+                  role="region"
+                  aria-label={t("tasks.kanban.columnRegionAria").replace("{column}", columnLabel)}
+                >
                   {columnTasks.length === 0 ? (
                     <EmptyColumnState
                       columnStatus={columnStatus}

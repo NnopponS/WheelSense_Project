@@ -502,7 +502,7 @@ export default function MlCalibrationClient({ embedded = false }: { embedded?: b
                       }}
                       disabled={recordingLoc}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger aria-label={t("admin.ml.facilityLabel")}>
                         <SelectValue placeholder={t("admin.ml.selectBuilding")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -524,7 +524,7 @@ export default function MlCalibrationClient({ embedded = false }: { embedded?: b
                       }}
                       disabled={recordingLoc || selectedFacilityId === ""}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger aria-label={t("admin.ml.floorLabel")}>
                         <SelectValue placeholder={t("admin.ml.selectFloor")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -542,7 +542,7 @@ export default function MlCalibrationClient({ embedded = false }: { embedded?: b
                   <div className="space-y-2">
                     <Label>{t("admin.ml.roomLabel")}</Label>
                     <Select value={String(selectedRoomId)} onValueChange={v => setSelectedRoomId(Number(v))} disabled={recordingLoc}>
-                      <SelectTrigger>
+                      <SelectTrigger aria-label={t("admin.ml.roomLabel")}>
                         <SelectValue placeholder={t("admin.ml.selectRoom")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -557,7 +557,7 @@ export default function MlCalibrationClient({ embedded = false }: { embedded?: b
                   <div className="space-y-2">
                     <Label>{t("admin.ml.calibrationDeviceLabel")}</Label>
                     <Select value={selectedLocDevice} onValueChange={setSelectedLocDevice} disabled={recordingLoc}>
-                      <SelectTrigger>
+                      <SelectTrigger aria-label={t("admin.ml.calibrationDeviceLabel")}>
                         <SelectValue placeholder={t("admin.ml.selectDevice")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -753,7 +753,7 @@ export default function MlCalibrationClient({ embedded = false }: { embedded?: b
                     setLocStrategyDirty(next !== locConfig?.strategy);
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label={t("admin.ml.localizationStrategy")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -836,7 +836,7 @@ export default function MlCalibrationClient({ embedded = false }: { embedded?: b
                 <div className="space-y-2">
                   <Label>{t("admin.ml.targetWheelchair")}</Label>
                   <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label={t("admin.ml.targetWheelchair")}>
                       <SelectValue placeholder={t("admin.ml.selectDevice")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -851,7 +851,7 @@ export default function MlCalibrationClient({ embedded = false }: { embedded?: b
                 <div className="space-y-2">
                   <Label>{t("admin.ml.actionLabel")}</Label>
                   <Select value={motionLabel} onValueChange={setMotionLabel}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label={t("admin.ml.actionLabel")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

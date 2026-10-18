@@ -352,26 +352,26 @@ const HISTORY_METRICS: Record<
   Array<{ key: string; label: string; color: string; unit?: string }>
 > = {
   wheelchair: [
-    { key: "battery_pct", label: "Battery", color: "#2563eb", unit: "%" },
-    { key: "velocity_ms", label: "Velocity", color: "#0891b2", unit: " m/s" },
-    { key: "distance_m", label: "Distance", color: "#16a34a", unit: " m" },
-    { key: "accel_ms2", label: "Acceleration", color: "#dc2626", unit: " m/s2" },
+    { key: "battery_pct", label: "Battery", color: "var(--chart-2)", unit: "%" },
+    { key: "velocity_ms", label: "Velocity", color: "var(--chart-2)", unit: " m/s" },
+    { key: "distance_m", label: "Distance", color: "var(--chart-1)", unit: " m" },
+    { key: "accel_ms2", label: "Acceleration", color: "var(--chart-3)", unit: " m/s2" },
   ],
   mobile_phone: [
-    { key: "battery_pct", label: "Battery", color: "#2563eb", unit: "%" },
-    { key: "steps", label: "Steps", color: "#16a34a" },
+    { key: "battery_pct", label: "Battery", color: "var(--chart-2)", unit: "%" },
+    { key: "steps", label: "Steps", color: "var(--chart-1)" },
   ],
   polar_sense: [
-    { key: "heart_rate_bpm", label: "Heart rate", color: "#dc2626", unit: " bpm" },
-    { key: "spo2", label: "SpO2", color: "#2563eb", unit: "%" },
-    { key: "sensor_battery", label: "Sensor battery", color: "#16a34a", unit: "%" },
-    { key: "rr_interval_ms", label: "R-R interval", color: "#7c3aed", unit: " ms" },
+    { key: "heart_rate_bpm", label: "Heart rate", color: "var(--chart-3)", unit: " bpm" },
+    { key: "spo2", label: "SpO2", color: "var(--chart-2)", unit: "%" },
+    { key: "sensor_battery", label: "Sensor battery", color: "var(--chart-1)", unit: "%" },
+    { key: "rr_interval_ms", label: "R-R interval", color: "var(--chart-4)", unit: " ms" },
   ],
   node: [
-    { key: "battery_pct", label: "Battery", color: "#2563eb", unit: "%" },
-    { key: "heap", label: "Heap", color: "#7c3aed" },
-    { key: "frames_captured", label: "Frames", color: "#0891b2" },
-    { key: "snapshots_captured", label: "Snapshots", color: "#16a34a" },
+    { key: "battery_pct", label: "Battery", color: "var(--chart-2)", unit: "%" },
+    { key: "heap", label: "Heap", color: "var(--chart-4)" },
+    { key: "frames_captured", label: "Frames", color: "var(--chart-2)" },
+    { key: "snapshots_captured", label: "Snapshots", color: "var(--chart-1)" },
   ],
 };
 
@@ -430,7 +430,7 @@ function DeviceHistoryPanel({
   const latestRows = [...rows].slice(-8).reverse();
 
   return (
-    <Card>
+    <Card className="ws-insight">
       <CardHeader>
         <CardTitle className="text-base">{t("devicesDetail.historyTitle")}</CardTitle>
       </CardHeader>
@@ -449,10 +449,10 @@ function DeviceHistoryPanel({
           <div className="h-56 rounded-xl border border-border bg-muted/10 p-3">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.35)" />
-                <XAxis dataKey="time" tick={{ fontSize: 11 }} minTickGap={20} />
-                <YAxis tick={{ fontSize: 11 }} width={42} />
-                <Tooltip
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="time" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} minTickGap={20} />
+                <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} width={42} />
+                <Tooltip contentStyle={{ background: "var(--card)", color: "var(--foreground)", border: "1px solid var(--border)" }}
                   labelFormatter={(_, payload) => {
                     const ts = payload?.[0]?.payload?.timestamp;
                     return typeof ts === "string" ? formatDateTime(ts) : t("devicesDetail.telemetry");
@@ -477,7 +477,8 @@ function DeviceHistoryPanel({
                     stroke={metric.color}
                     strokeWidth={2}
                     dot={false}
-                    connectNulls
+                    connectNulls={false}
+                    isAnimationActive={false}
                   />
                 ))}
               </LineChart>

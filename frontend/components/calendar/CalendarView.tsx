@@ -494,7 +494,7 @@ export function CalendarView({
       </div>
 
       {/* Calendar content */}
-      <div className="max-h-[calc(100vh-16rem)] overflow-auto">
+      <div className="max-h-[calc(100vh-16rem)] overflow-auto" tabIndex={0} role="region" aria-label={t("nav.calendar")}>
         {activeViewMode === "month" && renderMonthView()}
         {activeViewMode === "week" && renderWeekView()}
         {activeViewMode === "day" && renderDayView()}

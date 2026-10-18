@@ -31,7 +31,7 @@ class SpecialistService(CRUDBase[Specialist, SpecialistCreate, SpecialistUpdate]
                     select(CareGiver)
                     .where(
                         CareGiver.workspace_id == ws_id,
-                        CareGiver.role == "head_caregiver",
+                        CareGiver.role.in_(["head_caregiver", "head_nurse", "supervisor"]),
                     )
                     .order_by(CareGiver.id)
                     .limit(limit)

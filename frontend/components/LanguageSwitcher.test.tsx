@@ -11,7 +11,7 @@ describe("LanguageSwitcher", () => {
   it("provides 44px language targets and preserves pressed state", () => {
     render(
       <I18nProvider>
-        <LanguageSwitcher compact />
+        <LanguageSwitcher />
       </I18nProvider>,
     );
 
@@ -26,5 +26,9 @@ describe("LanguageSwitcher", () => {
 
     expect(thai).toHaveAttribute("aria-pressed", "true");
     expect(document.documentElement.lang).toBe("th");
+  });
+  it("offers a named compact language menu with a 44px target", () => {
+    render(<I18nProvider><LanguageSwitcher compact /></I18nProvider>);
+    expect(screen.getByRole("combobox", { name: "Language" })).toHaveClass("h-11");
   });
 });

@@ -12,8 +12,7 @@ export function alertsInboxPath(role: AppRole): string {
     case "patient":
       return "/patient";
     case "admin":
-    case "head_caregiver":
-      return "/head-caregiver/alerts";
+      return "/admin/alerts";
     default:
       return "/head-caregiver/alerts";
   }
@@ -34,8 +33,7 @@ export function workflowTasksPath(role: AppRole): string {
     case "head_caregiver":
       return "/head-caregiver/tasks";
     case "admin":
-    case "head_caregiver":
-      return "/head-caregiver/tasks";
+      return "/admin/tasks";
     case "patient":
       return "/patient";
     default:
@@ -51,8 +49,6 @@ export function staffMessagesPath(role: AppRole): string {
       return "/head-caregiver/messages";
     case "caregiver":
       return "/caregiver/messages";
-    case "head_caregiver":
-      return "/head-caregiver/messages";
     case "patient":
       return "/patient/messages";
     default:

@@ -13,7 +13,6 @@ import { api } from "@/lib/api";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { filterNavItemsByCapability, getNavConfig, isNavItemActive } from "@/lib/sidebarConfig";
 import { hasCapability, type AppRole } from "@/lib/permissions";
 import { NavigationSearch } from "./NavigationSearch";
@@ -22,6 +21,7 @@ import RoleSwitcher from "./RoleSwitcher";
 import UserAvatar from "./shared/UserAvatar";
 import { NotificationBell } from "./NotificationBell";
 import { NotificationDrawer } from "./NotificationDrawer";
+import { IncomingNotificationDialog } from "./notifications/IncomingNotificationDialog";
 
 type SimulatorStatus = {
   env_mode: string;
@@ -53,7 +53,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alertSoundOn, setAlertSoundOn] = useState(() => getAlertSoundEnabled());
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications, popupQueue, dismissPopup } = useNotifications();
   const { data: simulatorStatus } = useQuery({
     queryKey: ["shell", "topbar", "demo-simulator-status"],
     queryFn: () => api.get<SimulatorStatus>("/demo/simulator/status"),
@@ -85,8 +85,14 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
     return undefined;
   }, [impersonation.active, t, user]);
 
+  function enableAlertSound() {
+    primeAlertAudioFromUserGesture();
+    setAlertSoundEnabled(true);
+    setAlertSoundOn(true);
+  }
+
   return (
-    <header className="sticky top-0 z-30 border-b border-border/70 bg-card/95 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/95 backdrop-blur-lg">
       {impersonation.active ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-base text-foreground sm:px-6">
           <p className="min-w-0">
@@ -108,13 +114,13 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
         </div>
       ) : null}
       <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 px-3 py-2 sm:min-h-[var(--topbar-height)] sm:px-6 sm:py-3">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-1 sm:flex-initial sm:gap-3">
         {onMenuClick ? (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="shrink-0 lg:hidden"
             onClick={onMenuClick}
             aria-label={t("shell.openNavigation")}
           >
@@ -139,21 +145,14 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
           <NavigationSearch />
         </div>
 
-        <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center justify-end gap-0 sm:gap-2">
           <div className="hidden sm:block">
             <RoleSwitcher />
           </div>
-          {/* Environment Badge - Only shown for admins in simulator mode */}
-          {simulatorStatus?.is_simulator && user?.role === "admin" ? (
-            <Badge variant="warning" className="hidden sm:inline-flex">
-              <Beaker className="h-5 w-5" aria-hidden="true" />
-              SIM
-            </Badge>
-          ) : null}
           <div className="block">
             <LanguageSwitcher compact />
           </div>
-          <div className="hidden sm:block">
+          <div className="block">
             <ThemeToggle />
           </div>
 
@@ -186,7 +185,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
           />
 
           {user ? (
-            <div className="ml-1 flex min-w-0 items-center gap-2 border-l border-border pl-2 sm:ml-2 sm:pl-3">
+            <div className="flex shrink-0 items-center gap-2 sm:ml-2 sm:border-l sm:border-border sm:pl-3">
               <Link
               href="/account"
               className="inline-flex h-11 w-11 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
@@ -210,6 +209,10 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
           ) : null}
         </div>
       </div>
+
+      {simulatorStatus?.is_simulator ? <div className="flex items-center gap-2 border-t border-warning/20 bg-warning-bg px-4 py-1 text-xs font-medium text-warning-foreground" role="status"><Beaker className="h-4 w-4" aria-hidden="true" />{t("redesign.simulation")}</div> : null}
+
+      {popupQueue[0] ? <IncomingNotificationDialog key={popupQueue[0].id} notification={popupQueue[0]} pendingCount={popupQueue.length} canTriage={user?.role === "admin" || user?.role === "head_caregiver" || user?.role === "caregiver"} isSimulator={Boolean(simulatorStatus?.is_simulator)} soundEnabled={alertSoundOn} onEnableSound={enableAlertSound} onDismiss={dismissPopup} /> : null}
 
       <NotificationDrawer
         isOpen={notificationsOpen}

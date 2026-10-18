@@ -35,6 +35,7 @@ export async function provisionRoomsForUnmappedFloorplanNodes(
   shapes: FloorplanRoomShape[],
   baseRefs: FloorRoomRef[],
   floorId: number,
+  includeUnlinkedRooms = false,
 ): Promise<{ workingShapes: FloorplanRoomShape[]; mergedRefs: FloorRoomRef[] }> {
   const extra: FloorRoomRef[] = [];
   const working = shapes.map((s) => ({ ...s }));
@@ -43,7 +44,7 @@ export async function provisionRoomsForUnmappedFloorplanNodes(
     const shape = working[i];
     const node = shape.node_device_id != null ? String(shape.node_device_id).trim() : "";
     const label = shape.label?.trim() ?? "";
-    if (!node || !label) continue;
+    if (!label || (!node && !includeUnlinkedRooms)) continue;
 
     const merged = [...baseRefs, ...extra];
     if (resolveLayoutShapeToFloorRoomId(shape, merged) != null) continue;
@@ -52,8 +53,8 @@ export async function provisionRoomsForUnmappedFloorplanNodes(
       name: label.slice(0, 64),
       description: "",
       floor_id: floorId,
-      room_type: "general",
-      node_device_id: node,
+      room_type: shape.room_type || "general",
+      node_device_id: node || null,
     });
     extra.push({ id: created.id, name: created.name });
     working[i] = { ...shape, id: `room-${created.id}`, label: created.name };

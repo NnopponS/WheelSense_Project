@@ -93,13 +93,13 @@ export function PatientCommandHeader({
   return (
     <section
       className={cn(
-        "rounded-xl border border-outline-variant/20 bg-surface sm:sticky sm:top-0 sm:z-20",
+        "relative overflow-hidden rounded-[var(--radius)] border border-border bg-card",
         className,
       )}
     >
       {/* edit toolbar */}
       {canEdit && (
-        <div className="absolute right-4 top-4 z-10">
+        <div className="flex justify-end border-b border-border px-4 py-2">
           {isEditing ? (
             <div className="flex items-center gap-2">
               <button type="button" className="min-h-11 rounded-lg border border-outline-variant/30 bg-surface px-4 py-2 text-sm font-medium text-foreground-variant hover:bg-surface-container-high" onClick={onCancelEdit} disabled={isSaving}>{t("common.cancel")}</button>
@@ -114,8 +114,8 @@ export function PatientCommandHeader({
       <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
         {/* Avatar column */}
         <div className="flex shrink-0 flex-col items-center gap-1.5">
-          <div className="relative h-16 w-16 overflow-hidden rounded-xl border-2 border-outline-variant/25 bg-primary/10 sm:h-24 sm:w-24">
-            {canEdit && (
+          <div className="relative size-16 overflow-hidden rounded-full border border-border bg-primary/10 sm:size-20">
+            {canEdit && isEditing && (
               <label htmlFor={photoInputId} className={cn("absolute inset-0 z-[5] cursor-pointer", photoBusy && "pointer-events-none")} aria-hidden="true" />
             )}
             {patientPhotoUrl ? (
@@ -125,14 +125,14 @@ export function PatientCommandHeader({
                 {patient.first_name?.[0]}{patient.last_name?.[0]}
               </div>
             )}
-            {canEdit && patientPhotoUrl && (
-              <button type="button" className="absolute right-1 top-1 z-10 min-h-11 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white hover:bg-black/75 disabled:opacity-50" disabled={photoBusy} onClick={onRemovePhoto}>{t("profile.avatar.removePhoto")}</button>
-            )}
           </div>
-          {canEdit && (
-            <label htmlFor={photoInputId} className="hidden min-h-11 cursor-pointer items-center rounded-lg px-2 text-center text-xs font-medium text-primary hover:bg-primary/10 sm:flex">{t("profile.avatar.localFileLabel")}</label>
+          {canEdit && isEditing && (
+            <>
+              <label htmlFor={photoInputId} className="flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-center text-xs font-medium text-info-foreground hover:bg-primary/10">{t("profile.avatar.localFileLabel")}</label>
+              {patientPhotoUrl && <button type="button" className="min-h-11 rounded-lg px-2 text-xs font-medium text-critical-foreground hover:bg-critical-bg disabled:opacity-50" disabled={photoBusy} onClick={onRemovePhoto}>{t("profile.avatar.removePhoto")}</button>}
+            </>
           )}
-          <input id={photoInputId} type="file" accept="image/*" disabled={photoBusy} onChange={onPickPhoto} className="sr-only" />
+          <input id={photoInputId} aria-label={t("profile.avatar.localFileLabel")} type="file" accept="image/*" disabled={photoBusy || !isEditing} onChange={onPickPhoto} className="sr-only" />
           {photoError && <p className="text-center text-xs text-destructive">{photoError}</p>}
           <span className="rounded-md bg-surface-container-high px-2 py-0.5 font-mono text-[10px] text-foreground-variant">#{patient.id}</span>
         </div>
@@ -175,7 +175,7 @@ export function PatientCommandHeader({
           ) : (
             <>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                <h2 className="text-lg font-bold leading-tight text-foreground sm:text-2xl">{patient.first_name} {patient.last_name}</h2>
+                <h2 className="text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">{patient.first_name} {patient.last_name}</h2>
                 <p className="text-sm text-foreground-variant">
                   {age != null ? `${age} ${t("patients.years")}` : "—"} · {genderLabel}
                 </p>
@@ -183,7 +183,7 @@ export function PatientCommandHeader({
 
               {/* Status chips */}
               <div className="mt-2 flex flex-wrap gap-1.5">
-                <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold care-${patient.care_level}")}>
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold", `care-${patient.care_level}`)}>
                   <span className={cn("h-1.5 w-1.5 rounded-full", patient.care_level === "critical" ? "bg-critical" : patient.care_level === "special" ? "bg-warning" : "bg-success")} />
                   {patient.care_level}
                 </span>

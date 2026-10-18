@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { I18nProvider } from "@/lib/i18n";
-import { HealthTrendsWorkspace, type TrendPoint } from "./healthAnalysisParts";
+import { HealthBaselineRow, HealthTrendsWorkspace, type TrendPoint } from "./healthAnalysisParts";
+import type { PatientHealthAnalysis } from "@/lib/patientHealthAnalysis";
 
 jest.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -40,4 +41,18 @@ describe("HealthTrendsWorkspace", () => {
     expect(screen.getAllByTestId("line-chart")).toHaveLength(1);
     expect(screen.getByRole("button", { name: "SpO2" })).toHaveAttribute("aria-pressed", "true");
   });
+});
+
+it("does not describe missing observations as normal or aggregates as live", () => {
+  const data: PatientHealthAnalysis = {
+    patient_id: 1, generated_at: "2026-10-18T10:00:00Z", window_hours: 24,
+    overall_score: 0, risk_level: "normal", data_quality: "insufficient",
+    latest_vitals: {}, baseline: { heart_rate_bpm: { value: 115.7, unit: "bpm", status: "info", trend: "unknown" } },
+    trend_summary: "No recent readings", risk_factors: [], recommendations: [],
+    activity: { steps: null, distance_m: null, calories_kcal: null, polar_connected: false, source: "imu" },
+  };
+  render(<I18nProvider><HealthBaselineRow data={data} /></I18nProvider>);
+  expect(screen.queryByText("Live")).not.toBeInTheDocument();
+  expect(screen.queryByText("Normal", { exact: true })).not.toBeInTheDocument();
+  expect(screen.getByText("Recorded baseline")).toBeInTheDocument();
 });

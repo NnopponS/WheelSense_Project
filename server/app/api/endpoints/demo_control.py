@@ -106,7 +106,8 @@ async def reset_demo_workspace(
 
     from scripts.seed_demo import run_seed
 
-    await run_seed(ws.name, True)
+    # Rebuild only demo/event state in place so patient/room identities and IDs remain stable.
+    await run_seed(ws.name, False)
     return DemoResetResponse(
         profile=payload.profile,
         status="ok",

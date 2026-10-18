@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,13 +12,12 @@ import {
 } from "@/components/tasks/TaskReportAttachmentsBar";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +39,7 @@ import { useActivePatients } from "@/hooks/usePatients";
 import { useTranslation } from "@/lib/i18n";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import styles from "./task-workspace.module.css";
 
 /** Workspace staff roles only (excludes patient). Used for /users/search and assignee pickers. */
 const STAFF_ROLE_VALUES = ["admin", "head_caregiver", "caregiver"] as const;
@@ -117,6 +117,7 @@ export function CreateTaskDialog({
   onOpenChange,
 }: CreateTaskDialogProps) {
   const { t } = useTranslation();
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [showReportTemplate, setShowReportTemplate] = useState(false);
   const [mainReportFiles, setMainReportFiles] = useState<PendingAttachmentItem[]>([]);
@@ -275,17 +276,28 @@ export function CreateTaskDialog({
   const reportTemplateMode = form.watch("report_template.mode");
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-hidden p-0 sm:max-w-3xl">
-        <DialogHeader className="px-6 py-5">
-          <DialogTitle>{t("tasks.createNew")}</DialogTitle>
-          <DialogDescription>{t("tasks.createDescription")}</DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className={styles.sheet}
+        onOpenAutoFocus={() => {
+          returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (returnFocusRef.current?.isConnected) {
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
+      >
+        <SheetHeader className={styles.sheetHeader}>
+          <SheetTitle>{t("tasks.createNew")}</SheetTitle>
+          <SheetDescription>{t("tasks.createDescription")}</SheetDescription>
+        </SheetHeader>
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="overflow-y-auto px-6 pb-6"
-          style={{ maxHeight: "calc(90vh - 180px)" }}
+          className={styles.sheetBody}
         >
           <div className="space-y-6">
             {/* Title */}
@@ -533,7 +545,7 @@ export function CreateTaskDialog({
 
             {/* Subtasks Section */}
             <div className="rounded-xl border bg-card/50 p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
                     <ListTodo className="h-4 w-4" />
@@ -750,7 +762,7 @@ export function CreateTaskDialog({
 
             {/* Report Template Section */}
             <div className="rounded-xl border bg-card/50 p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
                     <FileText className="h-4 w-4" />
@@ -818,16 +830,18 @@ export function CreateTaskDialog({
                   ) : (
                     <div className="space-y-3">
                       {reportFields.fields.map((field, index) => (
-                        <div key={field.id} className="flex gap-2">
+                        <div key={field.id} className="grid grid-cols-2 gap-2 sm:flex">
                           <Input
                             {...form.register(`report_template.fields.${index}.key`)}
                             placeholder={t("tasks.fieldKey")}
-                            className="w-28 rounded-xl"
+                            aria-label={t("tasks.fieldKey")}
+                            className="min-w-0 w-full rounded-xl sm:w-28"
                           />
                           <Input
                             {...form.register(`report_template.fields.${index}.label`)}
                             placeholder={t("tasks.fieldLabel")}
-                            className="flex-1 rounded-xl"
+                            aria-label={t("tasks.fieldLabel")}
+                            className="min-w-0 flex-1 rounded-xl"
                           />
                           <Select
                             value={form.watch(`report_template.fields.${index}.type`)}
@@ -838,7 +852,7 @@ export function CreateTaskDialog({
                               )
                             }
                           >
-                            <SelectTrigger className="w-28 rounded-xl">
+                            <SelectTrigger className="min-w-0 w-full rounded-xl sm:w-28" aria-label={t("tasks.fieldType")}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -854,7 +868,8 @@ export function CreateTaskDialog({
                             variant="ghost"
                             size="icon"
                             onClick={() => reportFields.remove(index)}
-                            className="shrink-0"
+                            className="shrink-0 justify-self-end"
+                            aria-label={t("common.delete")}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -887,7 +902,7 @@ export function CreateTaskDialog({
         </form>
 
         {/* Footer Actions */}
-        <DialogFooter className="px-6 py-4">
+        <footer className={styles.sheetFooter}>
           <Button
             type="button"
             variant="outline"
@@ -907,8 +922,8 @@ export function CreateTaskDialog({
           >
             {isPending ? t("tasks.creating") : t("tasks.create")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </footer>
+      </SheetContent>
+    </Sheet>
   );
 }

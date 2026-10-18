@@ -57,18 +57,18 @@ export function EmergencyAlertRail({
     <section
       id="emergency-alert"
       className={cn(
-        "scroll-mt-32 overflow-hidden rounded-2xl border shadow-sm",
-        severeAnomalyActive ? "border-red-300" : "border-outline-variant/20",
+        "scroll-mt-32 overflow-hidden rounded-[var(--radius)] border shadow-sm",
+        severeAnomalyActive ? "border-critical/40" : "border-outline-variant/20",
         className,
       )}
     >
       {/* Header band */}
-      <div className={cn("flex items-center justify-between gap-2 px-4 py-3", severeAnomalyActive ? "bg-red-50" : "bg-surface-container")}>
+      <div className={cn("flex items-center justify-between gap-2 px-4 py-3", severeAnomalyActive ? "bg-critical-bg" : "bg-surface-container")}>
         <div className="flex items-center gap-2">
-          <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", severeAnomalyActive ? "bg-red-100" : "bg-primary/10")}>
-            <Siren className={cn("h-4 w-4", severeAnomalyActive ? "text-red-600" : "text-primary")} aria-hidden />
+          <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", severeAnomalyActive ? "bg-critical-bg" : "bg-primary/10")}>
+            <Siren className={cn("h-4 w-4", severeAnomalyActive ? "text-critical" : "text-primary")} aria-hidden />
           </div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">{t("patients.formSectionEmergency")}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t("patients.formSectionEmergency")}</h2>
         </div>
         {canEdit && (
           isEditing ? (
@@ -84,9 +84,9 @@ export function EmergencyAlertRail({
 
       {/* Anomaly linkage banner */}
       {severeAnomalyActive && anomalySummary && (
-        <div className="border-b border-red-200 bg-red-50/60 px-4 py-2.5">
-          <p className="text-xs font-semibold text-red-700">{t("patient.feature.criticalCondition")}</p>
-          <p className="mt-0.5 text-xs text-red-600/80">{anomalySummary}</p>
+        <div className="border-b border-critical/30 bg-critical-bg/60 px-4 py-2.5">
+          <p className="text-xs font-semibold text-critical-foreground">{t("patient.feature.criticalCondition")}</p>
+          <p className="mt-0.5 text-xs text-critical-foreground">{anomalySummary}</p>
         </div>
       )}
 
@@ -107,7 +107,7 @@ export function EmergencyAlertRail({
               {contact.relationship && <p className="text-xs text-foreground-variant mt-0.5">{contact.relationship}</p>}
             </div>
             {contact.phone && (
-              <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 py-2.5 text-sm font-semibold text-primary hover:bg-primary/15 transition-smooth">
+              <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 py-2.5 text-sm font-semibold text-info-foreground hover:bg-primary/15 transition-smooth">
                 <Phone className="h-4 w-4" />{contact.phone}
               </a>
             )}
@@ -169,11 +169,11 @@ export function AssignedStaffCard({
   const { t } = useTranslation();
 
   return (
-    <section className={cn("scroll-mt-32 rounded-2xl border border-outline-variant/20 bg-card p-4 shadow-sm", className)}>
+    <section className={cn("scroll-mt-32 rounded-[var(--radius)] border border-outline-variant/20 bg-card p-4 shadow-sm", className)}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-foreground">{t("patients.sectionResponsibleStaff")}</h2>
         {staffCount > 0 && (
-          <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary">{staffCount}</span>
+          <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">{staffCount}</span>
         )}
       </div>
 

@@ -338,7 +338,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
             {t("headNurse.tasksHub.filterByPatient")}
           </p>
           <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-            <SelectTrigger>
+            <SelectTrigger aria-label={t("headNurse.tasksHub.filterByPatient")}>
               <SelectValue placeholder={t("headNurse.tasksHub.allPatients")} />
             </SelectTrigger>
             <SelectContent>
@@ -361,7 +361,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
               setSelectedStatus(value as "all" | "pending" | "in_progress" | "completed")
             }
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label={t("headNurse.tasksHub.filterByStatus")}>
               <SelectValue placeholder={t("headNurse.tasksHub.allStatuses")} />
             </SelectTrigger>
             <SelectContent>

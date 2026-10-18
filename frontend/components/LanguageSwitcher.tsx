@@ -2,6 +2,7 @@
 
 import { Globe } from "lucide-react";
 import { useTranslation, type Locale } from "@/lib/i18n";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
@@ -15,6 +16,13 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
     { value: "en", label: "EN" },
     { value: "th", label: "TH" },
   ];
+
+  if (compact) return (
+    <Select value={locale} onValueChange={(value) => select(value as Locale)}>
+      <SelectTrigger aria-label={t("shell.language")} className="h-11 w-[68px] border-0 bg-transparent px-2 shadow-none text-xs"><SelectValue /></SelectTrigger>
+      <SelectContent>{options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+    </Select>
+  );
 
   return (
     <div

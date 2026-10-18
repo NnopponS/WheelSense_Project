@@ -91,6 +91,7 @@ export function ShiftChecklistMePanel({ shiftDate }: { shiftDate: string }) {
       className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
     >
       <Checkbox
+        aria-label={task.title}
         checked={task.status === "completed"}
         disabled={updateTask.isPending}
         onCheckedChange={() => toggleUnifiedTask(task)}
@@ -158,6 +159,7 @@ export function ShiftChecklistMePanel({ shiftDate }: { shiftDate: string }) {
                   className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
                 >
                   <Checkbox
+                    aria-label={item.labelKey}
                     checked={item.checked}
                     disabled={shiftChecklistMutation.isPending}
                     onCheckedChange={() => toggleChecklistItem(item.id)}
@@ -187,6 +189,7 @@ export function ShiftChecklistMePanel({ shiftDate }: { shiftDate: string }) {
                   className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
                 >
                   <Checkbox
+                    aria-label={item.labelKey}
                     checked={item.checked}
                     disabled={shiftChecklistMutation.isPending}
                     onCheckedChange={() => toggleChecklistItem(item.id)}
@@ -216,6 +219,7 @@ export function ShiftChecklistMePanel({ shiftDate }: { shiftDate: string }) {
                   className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
                 >
                   <Checkbox
+                    aria-label={item.labelKey}
                     checked={item.checked}
                     disabled={shiftChecklistMutation.isPending}
                     onCheckedChange={() => toggleChecklistItem(item.id)}

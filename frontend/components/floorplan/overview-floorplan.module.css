@@ -1,0 +1,22 @@
+.panel { min-width: 0; padding: .75rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
+.header { display: flex; align-items: baseline; flex-wrap: wrap; justify-content: space-between; gap: .25rem 1rem; }
+.header h2 { font-size: 1rem; font-weight: 600; }
+.header a { display: inline-flex; align-items: center; min-height: 2.75rem; gap: .5rem; font-size: .8125rem; color: var(--primary); }
+.metrics { display: flex; flex-wrap: wrap; gap: .375rem 1rem; padding-block: .5rem; margin-bottom: .5rem; border-block: 1px solid var(--border); }
+.metrics > div { display: flex; gap: .375rem; align-items: baseline; }
+.metrics dt { font-size: .75rem; color: var(--muted-foreground); }
+.metrics dd { margin: 0; font-weight: 600; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.scope > div { margin-bottom: .5rem; }
+.scope label { font-size: .75rem; }
+.scope select { min-height: 2.75rem; padding-block: .375rem; }
+.canvas > div > div:last-child { height: 16rem; min-height: 0; max-height: none; }
+.canvas > div > div:first-child { flex-wrap: wrap; gap: .375rem; margin-bottom: .375rem; }
+.canvas button { min-width: 2.75rem; min-height: 2.75rem; }
+.canvas svg { border-width: 1px; }
+.mobileRooms { display: none; }
+.directory { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .375rem; }
+.roomPicker { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; font-size: .75rem; color: var(--muted-foreground); }
+.selection { display: flex; flex-wrap: wrap; gap: .25rem .5rem; font-size: .75rem; padding-top: .5rem; }
+.selection > span:nth-child(3) { flex-basis: 100%; }
+.selection a { color: var(--primary); text-decoration: underline; text-underline-offset: .15em; }
+@media(max-width:639px) { .canvas { display: none; } .mobileRooms { display: grid; gap: .375rem; grid-template-columns: repeat(2,minmax(0,1fr)); } .roomPicker { display: none; } }

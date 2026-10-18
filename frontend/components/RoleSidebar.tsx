@@ -112,15 +112,15 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
         href={item.href}
         onClick={closeMobileNav}
         className={cn(
-          "group flex min-h-12 items-center gap-3 rounded-lg border-l-4 px-3 py-2 text-base font-medium transition-colors",
+          "group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
           active
-            ? "border-primary bg-[var(--ws-selected-surface)] text-[var(--ws-selected-foreground)]"
-            : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+            ? "bg-[var(--ws-selected-surface)] text-[var(--ws-selected-foreground)]"
+            : "bg-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground",
         )}
         aria-current={active ? "page" : undefined}
       >
-        <Icon className={cn("h-6 w-6 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden="true" />
-        <span className="line-clamp-2 flex-1">{t(item.key)}</span>
+        <Icon className={cn("size-[18px] shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden="true" />
+        <span className="flex-1 truncate">{t(item.key)}</span>
       </Link>
     );
   }
@@ -130,11 +130,11 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
       <>
         {/* Header - Logo and Platform Name */}
         <div className="flex h-[var(--topbar-height)] shrink-0 items-center px-5">
-          <Logo size={56} />
+          <Logo size={32} />
         </div>
 
         {/* Navigation Groups */}
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+        <nav aria-label={t("shell.navigation")} className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
           {!user ? (
             <NavSkeleton />
           ) : (
@@ -142,7 +142,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
               {primaryConfig.map((group, groupIndex) => (
                 <div key={groupIndex}>
                   {group.categoryKey && (
-                    <p className="mb-2 px-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    <p className="mb-1.5 px-3 text-xs font-medium text-muted-foreground">
                       {t(group.categoryKey)}
                     </p>
                   )}
@@ -158,7 +158,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
                     aria-expanded={moreOpen}
                     aria-controls="role-sidebar-more-list"
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-base font-medium transition-colors",
+                      "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
@@ -200,7 +200,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
 
         {/* User Profile Section */}
         {user && (
-          <div className="border-t bg-muted/50 px-4 py-3">
+          <div className="border-t border-border px-4 py-4">
             <Link
               href="/account"
               className="flex items-center gap-3 rounded-lg p-1 transition-colors hover:bg-muted"
@@ -220,7 +220,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
   return (
     <>
       {/* Desktop Sidebar - Fixed at left */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-width)] shrink-0 flex-col border-r bg-card lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-width)] shrink-0 flex-col border-r border-border bg-card lg:flex">
         {renderContent()}
       </aside>
 

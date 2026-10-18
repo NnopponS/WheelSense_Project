@@ -15,7 +15,7 @@ export function Logo({ size = 56, className, variant = "auto" }: LogoProps) {
         alt="WheelSense"
         width={1405}
         height={385}
-        className={cn("object-contain", variant === "auto" ? "[.dark_&]:hidden" : "hidden [.dark_&]:block")}
+        className={cn("object-contain", variant === "auto" ? "[.dark_&]:hidden" : "hidden")}
         style={{ width: Math.round(size * 1405 / 385), height: size }}
       />
       <Image
@@ -23,7 +23,7 @@ export function Logo({ size = 56, className, variant = "auto" }: LogoProps) {
         alt="WheelSense"
         width={1405}
         height={385}
-        className={cn("object-contain", variant === "auto" ? "hidden [.dark_&]:block" : "[.dark_&]:hidden")}
+        className={cn("object-contain", variant === "auto" ? "hidden [.dark_&]:block" : "block")}
         style={{ width: Math.round(size * 1405 / 385), height: size }}
       />
     </span>

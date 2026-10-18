@@ -205,6 +205,30 @@ async def test_control_device(mock_call_service, client: AsyncClient, setup_ha_d
         service_data={"temperature": 24}
     )
 
+
+@pytest.mark.parametrize(("initial_state", "expected_state"), [("off", "cool"), ("cool", "off")])
+async def test_simulator_toggle_climate_uses_climate_states(
+    client: AsyncClient,
+    setup_ha_data,
+    monkeypatch,
+    initial_state: str,
+    expected_state: str,
+):
+    _, _, device = setup_ha_data
+    device.config = {"seed": True}
+    device.state = initial_state
+    monkeypatch.setattr(
+        "app.api.endpoints.homeassistant._use_seeded_simulator_state", lambda _: True
+    )
+
+    response = await client.post(
+        f"/api/ha/devices/{device.id}/control",
+        json={"action": "toggle", "parameters": {}},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["state"] == expected_state
+
 @patch("app.services.homeassistant.HomeAssistantService.get_state")
 async def test_get_device_state(mock_get_state, client: AsyncClient, setup_ha_data):
     mock_get_state.return_value = {"state": "cool", "attributes": {"temperature": 24}}

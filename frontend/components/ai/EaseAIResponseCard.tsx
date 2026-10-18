@@ -103,6 +103,13 @@ function responseCardsFromGrounding(
   }
 
   const taskResult = getTaskResult(executionResult);
+  if (taskResult) {
+    for (let index = cards.length - 1; index >= 0; index -= 1) {
+      if (asString(cards[index].type) === "task_draft" || asString(cards[index].card_type) === "task_draft") {
+        cards.splice(index, 1);
+      }
+    }
+  }
   if (taskResult && !cards.some((card) => asString(card.type) === "task_success" || asString(card.card_type) === "task_success")) {
     cards.push(taskSuccessCardFromResult(taskResult));
   }

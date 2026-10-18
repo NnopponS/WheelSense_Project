@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  Bot,
   History,
   PanelLeftClose,
   PanelLeftOpen,
@@ -21,6 +21,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { taskKeys } from "@/hooks/useTasks";
 import { API_BASE } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
 import { canonicalizeRole } from "@/lib/roles";
@@ -383,6 +384,7 @@ function InlineActionBlock({
 
 export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -770,6 +772,9 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
       const href = autoNavigationHref(data.grounding ?? null);
       const reply = data.assistant_reply || data.reply || data.summary || "";
       const renderProposal = shouldRenderProposal(data);
+      if (data.grounding?.source === "task_management") {
+        void queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      }
       if (reply || data.grounding || renderProposal) {
         setMessages((prev) => [
           ...prev,
@@ -791,7 +796,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
     } finally {
       setLoading(false);
     }
-  }, [authHeaders, autoNavigationHref, conversationId, fallbackSendStream, input, loadConversations, messages, navigateFromEaseAI, pageContext, pagePatientId, showAiTrace, speakAssistantText, t]);
+  }, [authHeaders, autoNavigationHref, conversationId, fallbackSendStream, input, loadConversations, messages, navigateFromEaseAI, pageContext, pagePatientId, queryClient, showAiTrace, speakAssistantText, t]);
 
   const rejectActions = useCallback(async (messageId: string, proposal: ActionProposal) => {
     if (!proposal.proposal_id) {
@@ -974,16 +979,6 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="ws-ai-fab fixed right-4 z-50 flex size-12 items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-elevated transition-smooth hover:bg-primary/90 sm:right-6 sm:h-14 sm:w-auto sm:px-5"
-        aria-label={t("aiChat.openChat")}
-      >
-        <Bot className="h-5 w-5" />
-        <span className="hidden sm:inline">{t("aiChat.fab.label")}</span>
-      </button>
-
       {open && (
         <div className="fixed inset-x-3 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-50 flex h-[min(78vh,36rem)] overflow-hidden rounded-2xl border border-outline-variant/20 surface-card shadow-modal sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[min(100vw-2rem,28rem)]">
           {showHistory && (

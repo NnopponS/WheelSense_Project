@@ -81,7 +81,7 @@ export function DataTableCard<TData>({
   csvExport,
   getRowDomId,
   getRowClassName,
-  mobileMode = "table",
+  mobileMode = "cards",
   renderMobileCard,
 }: Props<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -105,12 +105,12 @@ export function DataTableCard<TData>({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <CardHeader className="flex flex-row items-center justify-between gap-3 sm:items-start">
         <div className="min-w-0 space-y-1">
-          <CardTitle>{title}</CardTitle>
+          <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
         </div>
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {rightSlot}
           {csvExport ? (
             <Button
@@ -143,12 +143,12 @@ export function DataTableCard<TData>({
         ) : (
           <>
             {mobileMode === "cards" ? (
-              <div className="space-y-2 md:hidden">
+              <div className="space-y-2 lg:hidden">
                 {table.getRowModel().rows.length ? (
                   table.getRowModel().rows.map((row) => (
                     <div
                       key={row.id}
-                      id={getRowDomId?.(row.original)}
+                      id={getRowDomId?.(row.original) ? `${getRowDomId(row.original)}-mobile` : undefined}
                       className={getRowClassName?.(row.original)}
                     >
                       {renderMobileCard
@@ -197,7 +197,7 @@ export function DataTableCard<TData>({
             <div
               className={
                 mobileMode === "cards"
-                  ? "hidden overflow-x-auto rounded-lg border border-border/70 md:block"
+                  ? "hidden overflow-x-auto rounded-lg border border-border/70 lg:block"
                   : "overflow-x-auto rounded-lg border border-border/70"
               }
             >

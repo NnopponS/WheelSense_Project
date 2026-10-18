@@ -52,7 +52,7 @@ export function DataState({
   return (
     <section
       className={cn(
-        "mx-auto flex min-h-52 w-full max-w-2xl flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-surface-container-low p-6 text-center sm:p-10",
+        "mx-auto flex min-h-52 w-full max-w-2xl flex-col items-center justify-center gap-4 rounded-[var(--radius)] bg-surface-container-low p-6 text-center sm:p-10",
         isError && "border-critical/35 bg-critical-bg/45",
         className,
       )}

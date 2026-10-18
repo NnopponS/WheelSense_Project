@@ -8,13 +8,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { z } from "zod";
-import { CalendarClock, ClipboardList, Plus, UserCog, Users, Briefcase, ArrowRight } from "lucide-react";
+import { CalendarClock, Plus, Users, ArrowRight } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
-import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataState } from "@/components/layout/DataState";
+import styles from "./care-team-workspace.module.css";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -186,6 +189,10 @@ export default function AdminCaregiversPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [activeView, setActiveView] = useState("staff");
+  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
+  const [taskSheetOpen, setTaskSheetOpen] = useState(false);
+  const [scheduleSheetOpen, setScheduleSheetOpen] = useState(false);
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -246,6 +253,7 @@ export default function AdminCaregiversPage() {
     },
     onSuccess: async () => {
       setTaskError(null);
+      setTaskSheetOpen(false);
       taskForm.reset({
         title: "",
         description: "",
@@ -279,6 +287,7 @@ export default function AdminCaregiversPage() {
     },
     onSuccess: async () => {
       setScheduleError(null);
+      setScheduleSheetOpen(false);
       scheduleForm.reset({
         title: "",
         scheduleType: "round",
@@ -375,76 +384,45 @@ export default function AdminCaregiversPage() {
       }));
   }, [tasks]);
 
+  const selectedStaff = caregiverRows.find((staff) => staff.id === selectedStaffId) ?? caregiverRows[0] ?? null;
+
   const caregiversColumns = useMemo<ColumnDef<CaregiverRow>[]>(
     () => [
       {
         accessorKey: "fullName",
         header: t("adminCaregivers.caregiver"),
         cell: ({ row }) => (
-          <Link
-            href={getCaregiverDetailPath(user?.role || "admin", row.original.id)}
-            className="flex items-center gap-3 rounded-lg transition-colors hover:text-primary"
-          >
-            <UserAvatar
-              username={row.original.fullName}
-              profileImageUrl={row.original.photoUrl}
-              sizePx={38}
-              fallbackClassName="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200"
-            />
-            <div className="space-y-1">
-              <p className="font-medium text-foreground">{row.original.fullName}</p>
-              <p className="text-sm text-muted-foreground">{row.original.email}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <UserAvatar username={row.original.fullName} profileImageUrl={row.original.photoUrl} sizePx={38} />
+            <div className="min-w-0">
+              <button
+                type="button"
+                className={styles.staffSelection}
+                aria-pressed={selectedStaff?.id === row.original.id}
+                onClick={() => setSelectedStaffId(row.original.id)}
+              >
+                {row.original.fullName}
+              </button>
+              <Link className={styles.mobileProfile} href={getCaregiverDetailPath(user?.role || "admin", row.original.id)}>
+                {row.original.fullName}
+              </Link>
+              <p className="break-all text-sm text-muted-foreground">{row.original.email}</p>
             </div>
-          </Link>
+          </div>
         ),
       },
       {
         accessorKey: "role",
         header: t("common.role"),
-        cell: ({ row }) => (
-          <Badge variant={getRoleBadgeVariant(row.original.role)}>
-            {roleLabel(row.original.role, t)}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: "department",
-        header: t("caregivers.department"),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-sm">{row.original.department}</span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "phone",
-        header: t("clinical.table.phone"),
-        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.phone}</span>,
+        cell: ({ row }) => <Badge variant={getRoleBadgeVariant(row.original.role)}>{roleLabel(row.original.role, t)}</Badge>,
       },
       {
         accessorKey: "isActive",
         header: t("adminCaregivers.status"),
-        cell: ({ row }) => (
-          <Badge variant={row.original.isActive ? "default" : "outline"}>
-            {row.original.isActive ? t("patients.statusActive") : t("patients.statusInactive")}
-          </Badge>
-        ),
-      },
-      {
-        id: "actions",
-        header: t("common.open"),
-        cell: ({ row }) => (
-          <Button asChild variant="outline" size="sm">
-            <Link href={getCaregiverDetailPath(user?.role || "admin", row.original.id)}>
-              {t("personnel.rowOpen")}
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
-        ),
+        cell: ({ row }) => <Badge variant={row.original.isActive ? "default" : "outline"}>{row.original.isActive ? t("patients.statusActive") : t("patients.statusInactive")}</Badge>,
       },
     ],
-    [t, user?.role],
+    [selectedStaff?.id, t, user?.role],
   );
 
   const schedulesColumns = useMemo<ColumnDef<ScheduleRow>[]>(
@@ -567,11 +545,6 @@ export default function AdminCaregiversPage() {
     [pendingTaskId, t, updateTaskMutation],
   );
 
-  const activeStaffCount = useMemo(
-    () => caregiverRows.filter((item) => item.isActive).length,
-    [caregiverRows],
-  );
-
   const openScheduleCount = useMemo(
     () => scheduleRows.filter((item) => item.status !== "completed").length,
     [scheduleRows],
@@ -582,110 +555,196 @@ export default function AdminCaregiversPage() {
     [taskRows],
   );
 
-  const staffByRole = useMemo(() => {
-    const counts: Record<string, number> = { admin: 0, head_caregiver: 0, head_nurse: 0, supervisor: 0, caregiver: 0, observer: 0 };
-    caregiverRows.forEach((cg) => {
-      if (counts[cg.role] !== undefined) {
-        counts[cg.role]++;
-      }
-    });
-    return counts;
-  }, [caregiverRows]);
-
   const taskSaveError = taskError ?? (createTaskMutation.error ? parseRequestError(createTaskMutation.error, t("common.requestFailed")) : null);
   const scheduleSaveError =
     scheduleError ?? (createScheduleMutation.error ? parseRequestError(createScheduleMutation.error, t("common.requestFailed")) : null);
 
   return (
     <AppPage
+      workspace
       title={t("caregivers.title")}
       description={t("caregivers.directorySubtitle")}
       breadcrumbs={[
-        {
-          label: t("nav.dashboard"),
-          href: user?.role ? `/${String(user.role).replace("_", "-")}` : "/admin",
-        },
+        { label: t("nav.dashboard"), href: user?.role ? `/${String(user.role).replace("_", "-")}` : "/admin" },
         { label: t("nav.staff") },
       ]}
       actions={
-        <Button asChild>
-          <a href={getAccountManagementPath(user?.role || "admin")}>
-            <Users className="h-5 w-5" aria-hidden="true" />
+        <Button asChild variant="outline">
+          <Link href={getAccountManagementPath(user?.role || "admin")}>
+            <Users className="size-4" aria-hidden="true" />
             {t("nav.users")}
-          </a>
+          </Link>
         </Button>
       }
     >
+      <dl className={styles.summary}>
+        {[
+          [t("adminCaregivers.totalStaff"), caregiversQuery.isLoading || caregiversQuery.isError ? "—" : caregivers.length],
+          [t("adminCaregivers.activeStaff"), caregiversQuery.isLoading || caregiversQuery.isError ? "—" : caregivers.filter((staff) => staff.is_active).length],
+          [t("adminCaregivers.openSchedules"), schedulesQuery.isLoading || schedulesQuery.isError ? "—" : openScheduleCount],
+          [t("adminCaregivers.pendingTasks"), tasksQuery.isLoading || tasksQuery.isError ? "—" : pendingTaskCount],
+        ].map(([label, value]) => (
+          <div key={label} className={styles.summaryItem}>
+            <dt>{label}</dt><dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
 
-      {/* Stats Grid */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryStatCard icon={Users} label={t("adminCaregivers.totalStaff")} value={caregiverRows.length} tone="info" />
-        <SummaryStatCard icon={UserCog} label={t("adminCaregivers.activeStaff")} value={activeStaffCount} tone="success" />
-        <SummaryStatCard icon={CalendarClock} label={t("adminCaregivers.openSchedules")} value={openScheduleCount} tone="warning" />
-        <SummaryStatCard icon={ClipboardList} label={t("adminCaregivers.pendingTasks")} value={pendingTaskCount} tone="critical" />
-      </section>
-
-      {/* Role Breakdown */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("shell.roleAdmin")}</p>
-            <p className="text-xl font-semibold">{staffByRole.admin}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("shell.roleHeadCaregiver")}</p>
-            <p className="text-xl font-semibold">{(staffByRole.head_caregiver ?? 0) + (staffByRole.head_nurse ?? 0) + (staffByRole.supervisor ?? 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("shell.roleCaregiver")}</p>
-            <p className="text-xl font-semibold">{(staffByRole.caregiver ?? 0) + (staffByRole.observer ?? 0)}</p>
-          </CardContent>
-        </Card>
-      </section>
-
-      <FilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchLabel={t("common.search")}
-        searchPlaceholder={t("caregivers.searchDetailed")}
-        resetLabel={t("common.reset")}
-        hasActiveFilters={search.trim().length > 0}
-        onReset={() => setSearch("")}
-      />
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Staff List */}
-        <div className="xl:col-span-2">
-          <DataTableCard
-            title={t("adminCaregivers.rosterTitle")}
-            description={t("adminCaregivers.rosterDescription")}
-            data={caregiverRows}
-            columns={caregiversColumns}
-            isLoading={caregiversQuery.isLoading}
-            emptyKind={search.trim().length > 0 ? "filtered-empty" : "empty"}
-            emptyText={search.trim().length > 0 ? t("common.filteredEmpty") : t("caregivers.empty")}
-            mobileMode="cards"
+      <Tabs value={activeView} onValueChange={setActiveView} className={styles.tabs}>
+        <div className={styles.toolbar}>
+        <TabsList className={styles.tabList} aria-label={t("caregivers.title")}>
+          <TabsTrigger value="staff">{t("nav.staff")}</TabsTrigger>
+          <TabsTrigger value="schedules">{t("adminCaregivers.schedulesTitle")}</TabsTrigger>
+          <TabsTrigger value="tasks">{t("adminCaregivers.tasksTitle")}</TabsTrigger>
+        </TabsList>
+          <div className={styles.toolbarControls}>
+            {activeView === "staff" ? (
+          <FilterBar
+            className={styles.searchBar}
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchLabel={t("common.search")}
+            searchPlaceholder={t("caregivers.searchDetailed")}
+            resetLabel={t("common.reset")}
+            hasActiveFilters={search.trim().length > 0}
+            onReset={() => setSearch("")}
           />
-        </div>
+            ) : activeView === "schedules" ? (
+          <div className={styles.viewActions}>
+            <Sheet open={scheduleSheetOpen} onOpenChange={setScheduleSheetOpen}>
+              <SheetTrigger asChild><Button><CalendarClock className="size-4" aria-hidden="true" />{t("adminCaregivers.createSchedule")}</Button></SheetTrigger>
+              <SheetContent className="flex flex-col">
+                <SheetHeader className="shrink-0 pr-16">
+                  <SheetTitle>{t("adminCaregivers.quickScheduleTitle")}</SheetTitle>
+                  <SheetDescription>{t("adminCaregivers.quickScheduleDescription")}</SheetDescription>
+                </SheetHeader>
+                <div className="min-h-0 flex-1 overflow-y-auto p-6">
+              <form
+                onSubmit={scheduleForm.handleSubmit((values) => {
+                  setScheduleError(null);
+                  createScheduleMutation.mutate(values);
+                })}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-title">{t("adminCaregivers.titleLabel")}</Label>
+                  <Input
+                    id="schedule-title"
+                    {...scheduleForm.register("title")}
+                    placeholder={t("adminCaregivers.scheduleTitlePlaceholder")}
+                  />
+                  {scheduleForm.formState.errors.title ? (
+                    <p className="text-sm text-destructive">{t(scheduleForm.formState.errors.title.message as TranslationKey)}</p>
+                  ) : null}
+                </div>
 
-        {/* Quick Create Forms */}
-        <div className="space-y-6">
-          {/* Quick Create Task */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Plus className="h-4 w-4" />
-                {t("adminCaregivers.quickTaskTitle")}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {t("adminCaregivers.quickTaskDescription")}
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-type">{t("adminCaregivers.typeLabel")}</Label>
+                  <Controller
+                    name="scheduleType"
+                    control={scheduleForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger id="schedule-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHEDULE_TYPE_OPTIONS.map((scheduleType) => (
+                            <SelectItem key={scheduleType} value={scheduleType}>
+                              {scheduleTypeLabel(scheduleType, t)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-starts">{t("adminCaregivers.startsAt")}</Label>
+                  <Input id="schedule-starts" type="datetime-local" {...scheduleForm.register("startsAt")} />
+                  {scheduleForm.formState.errors.startsAt ? (
+                    <p className="text-sm text-destructive">{t(scheduleForm.formState.errors.startsAt.message as TranslationKey)}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-repeat">{t("adminCaregivers.repeatLabel")}</Label>
+                  <Controller
+                    name="recurrenceRule"
+                    control={scheduleForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger id="schedule-repeat">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHEDULE_RECURRENCE_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {recurrenceLabel(option, t)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <p className="text-sm text-muted-foreground">{t("adminCaregivers.recurrenceHint")}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-notes">{t("adminCaregivers.notesLabel")}</Label>
+                  <Textarea
+                    id="schedule-notes"
+                    {...scheduleForm.register("notes")}
+                    placeholder={t("adminCaregivers.notesPlaceholder")}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-caregiver">{t("adminCaregivers.assignedCaregiver")}</Label>
+                  <Controller
+                    name="assignedUserId"
+                    control={scheduleForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger id="schedule-caregiver">
+                          <SelectValue placeholder={t("headNurse.scheduleUnassigned")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>{t("headNurse.scheduleUnassigned")}</SelectItem>
+                          {caregivers.map((caregiver) => (
+                            <SelectItem key={caregiver.id} value={String(caregiver.id)}>
+                              {caregiver.first_name} {caregiver.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                {scheduleSaveError ? <p className="text-sm text-destructive">{scheduleSaveError}</p> : null}
+
+                <Button type="submit" className="w-full" disabled={createScheduleMutation.isPending}>
+                  {createScheduleMutation.isPending ? t("adminCaregivers.creating") : t("adminCaregivers.createSchedule")}
+                </Button>
+              </form>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+            ) : (
+          <div className={styles.viewActions}>
+            <Sheet open={taskSheetOpen} onOpenChange={setTaskSheetOpen}>
+              <SheetTrigger asChild><Button><Plus className="size-4" aria-hidden="true" />{t("adminCaregivers.createTask")}</Button></SheetTrigger>
+              <SheetContent className="flex flex-col">
+                <SheetHeader className="shrink-0 pr-16">
+                  <SheetTitle>{t("adminCaregivers.quickTaskTitle")}</SheetTitle>
+                  <SheetDescription>{t("adminCaregivers.quickTaskDescription")}</SheetDescription>
+                </SheetHeader>
+                <div className="min-h-0 flex-1 overflow-y-auto p-6">
               <form
                 onSubmit={taskForm.handleSubmit((values) => {
                   setTaskError(null);
@@ -799,158 +858,84 @@ export default function AdminCaregiversPage() {
                   {createTaskMutation.isPending ? t("adminCaregivers.creating") : t("adminCaregivers.createTask")}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
-
-          {/* Quick Create Schedule */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarClock className="h-4 w-4" />
-                {t("adminCaregivers.quickScheduleTitle")}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {t("adminCaregivers.quickScheduleDescription")}
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form
-                onSubmit={scheduleForm.handleSubmit((values) => {
-                  setScheduleError(null);
-                  createScheduleMutation.mutate(values);
-                })}
-                className="space-y-4"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-title">{t("adminCaregivers.titleLabel")}</Label>
-                  <Input
-                    id="schedule-title"
-                    {...scheduleForm.register("title")}
-                    placeholder={t("adminCaregivers.scheduleTitlePlaceholder")}
-                  />
-                  {scheduleForm.formState.errors.title ? (
-                    <p className="text-sm text-destructive">{t(scheduleForm.formState.errors.title.message as TranslationKey)}</p>
-                  ) : null}
                 </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-type">{t("adminCaregivers.typeLabel")}</Label>
-                  <Controller
-                    name="scheduleType"
-                    control={scheduleForm.control}
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger id="schedule-type">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SCHEDULE_TYPE_OPTIONS.map((scheduleType) => (
-                            <SelectItem key={scheduleType} value={scheduleType}>
-                              {scheduleTypeLabel(scheduleType, t)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-starts">{t("adminCaregivers.startsAt")}</Label>
-                  <Input id="schedule-starts" type="datetime-local" {...scheduleForm.register("startsAt")} />
-                  {scheduleForm.formState.errors.startsAt ? (
-                    <p className="text-sm text-destructive">{t(scheduleForm.formState.errors.startsAt.message as TranslationKey)}</p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-repeat">{t("adminCaregivers.repeatLabel")}</Label>
-                  <Controller
-                    name="recurrenceRule"
-                    control={scheduleForm.control}
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger id="schedule-repeat">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SCHEDULE_RECURRENCE_OPTIONS.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {recurrenceLabel(option, t)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  <p className="text-sm text-muted-foreground">{t("adminCaregivers.recurrenceHint")}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-notes">{t("adminCaregivers.notesLabel")}</Label>
-                  <Textarea
-                    id="schedule-notes"
-                    {...scheduleForm.register("notes")}
-                    placeholder={t("adminCaregivers.notesPlaceholder")}
-                    rows={2}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-caregiver">{t("adminCaregivers.assignedCaregiver")}</Label>
-                  <Controller
-                    name="assignedUserId"
-                    control={scheduleForm.control}
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger id="schedule-caregiver">
-                          <SelectValue placeholder={t("headNurse.scheduleUnassigned")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={EMPTY_SELECT}>{t("headNurse.scheduleUnassigned")}</SelectItem>
-                          {caregivers.map((caregiver) => (
-                            <SelectItem key={caregiver.id} value={String(caregiver.id)}>
-                              {caregiver.first_name} {caregiver.last_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-
-                {scheduleSaveError ? <p className="text-sm text-destructive">{scheduleSaveError}</p> : null}
-
-                <Button type="submit" className="w-full" disabled={createScheduleMutation.isPending}>
-                  {createScheduleMutation.isPending ? t("adminCaregivers.creating") : t("adminCaregivers.createSchedule")}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </div>
-      </div>
+        <TabsContent value="staff" className={styles.view}>
 
-      {/* Schedules Table */}
-      <DataTableCard
-        title={t("adminCaregivers.schedulesTitle")}
-        description={t("adminCaregivers.schedulesDescription")}
-        data={scheduleRows}
-        columns={schedulesColumns}
-        isLoading={schedulesQuery.isLoading}
-        emptyText={t("adminCaregivers.schedulesEmpty")}
-        mobileMode="cards"
-      />
-
-      {/* Tasks Table */}
-      <DataTableCard
-        title={t("adminCaregivers.tasksTitle")}
-        description={t("adminCaregivers.tasksDescription")}
-        data={taskRows}
-        columns={tasksColumns}
-        isLoading={tasksQuery.isLoading}
-        emptyText={t("adminCaregivers.tasksEmpty")}
-        mobileMode="cards"
-      />
+          {caregiversQuery.isError ? (
+            <DataState kind="error" title={t("common.requestFailed")} description={parseRequestError(caregiversQuery.error, t("common.requestFailed"))} actionLabel={t("redesign.retry")} onAction={() => void caregiversQuery.refetch()} />
+          ) : (
+            <div className={styles.staffGrid}>
+              <div className={styles.scrollPane}>
+                <DataTableCard
+                  title={t("adminCaregivers.rosterTitle")}
+                  description={t("adminCaregivers.rosterDescription")}
+                  data={caregiverRows}
+                  columns={caregiversColumns}
+                  isLoading={caregiversQuery.isLoading}
+                  emptyKind={search.trim().length > 0 ? "filtered-empty" : "empty"}
+                  emptyText={search.trim().length > 0 ? t("common.filteredEmpty") : t("caregivers.empty")}
+                  getRowClassName={(staff) => staff.id === selectedStaff?.id ? "bg-accent/60" : undefined}
+                  mobileMode="cards"
+                />
+              </div>
+              {selectedStaff ? (
+                <Card className={styles.staffDetail}>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <UserAvatar username={selectedStaff.fullName} profileImageUrl={selectedStaff.photoUrl} sizePx={48} />
+                      <div className="min-w-0">
+                        <CardTitle className="break-words text-lg">{selectedStaff.fullName}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{roleLabel(selectedStaff.role, t)}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-5">
+                    <Badge className="self-start" variant={selectedStaff.isActive ? "default" : "outline"}>
+                      {selectedStaff.isActive ? t("patients.statusActive") : t("patients.statusInactive")}
+                    </Badge>
+                    <dl className={styles.staffFacts}>
+                      <div><dt>{t("caregivers.department")}</dt><dd>{selectedStaff.department}</dd></div>
+                      <div><dt>{t("clinical.table.phone")}</dt><dd>{selectedStaff.phone}</dd></div>
+                      <div><dt>{t("caregivers.email")}</dt><dd>{selectedStaff.email}</dd></div>
+                    </dl>
+                    <Button asChild variant="outline" className="self-start">
+                      <Link href={getCaregiverDetailPath(user?.role || "admin", selectedStaff.id)}>
+                        {t("personnel.rowOpen")}<ArrowRight className="size-4" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : null}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="schedules" className={styles.view}>
+          <div className={styles.scrollPane}>
+            {schedulesQuery.isError ? (
+              <DataState kind="error" title={t("common.requestFailed")} description={parseRequestError(schedulesQuery.error, t("common.requestFailed"))} actionLabel={t("redesign.retry")} onAction={() => void schedulesQuery.refetch()} />
+            ) : (
+              <DataTableCard title={t("adminCaregivers.schedulesTitle")} description={t("adminCaregivers.schedulesDescription")} data={scheduleRows} columns={schedulesColumns} isLoading={schedulesQuery.isLoading} emptyText={t("adminCaregivers.schedulesEmpty")} mobileMode="cards" />
+            )}
+          </div>
+        </TabsContent>
+        <TabsContent value="tasks" className={styles.view}>
+          {updateTaskMutation.isError ? <p role="alert" className="text-sm text-destructive">{parseRequestError(updateTaskMutation.error, t("common.requestFailed"))}</p> : null}
+          <div className={styles.scrollPane}>
+            {tasksQuery.isError ? (
+              <DataState kind="error" title={t("common.requestFailed")} description={parseRequestError(tasksQuery.error, t("common.requestFailed"))} actionLabel={t("redesign.retry")} onAction={() => void tasksQuery.refetch()} />
+            ) : (
+              <DataTableCard title={t("adminCaregivers.tasksTitle")} description={t("adminCaregivers.tasksDescription")} data={taskRows} columns={tasksColumns} isLoading={tasksQuery.isLoading} emptyText={t("adminCaregivers.tasksEmpty")} mobileMode="cards" />
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </AppPage>
   );
 }

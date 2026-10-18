@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,12 +19,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Tabs,
   TabsContent,
@@ -74,6 +73,7 @@ import { getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { RichReportEditor } from "@/components/tasks/RichReportEditor";
 import { TaskReportAttachmentsBar } from "@/components/tasks/TaskReportAttachmentsBar";
 import { useTranslation } from "@/lib/i18n";
+import styles from "@/components/tasks/task-workspace.module.css";
 
 interface TaskDetailModalProps {
   task: TaskOut;
@@ -131,11 +131,11 @@ function formatDateShort(dateStr?: string): string {
 function getPriorityColor(priority: string): string {
   switch (priority) {
     case "critical":
-      return "bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30";
+      return "bg-critical-bg text-critical-foreground border-critical/30";
     case "high":
-      return "bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30";
+      return "bg-warning-bg text-warning-foreground border-warning/30";
     case "normal":
-      return "bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30";
+      return "bg-info-bg text-info-foreground border-info/30";
     case "low":
       return "bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/30";
     default:
@@ -148,7 +148,7 @@ function getStatusColor(status: string): string {
     case "completed":
       return "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30";
     case "in_progress":
-      return "bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30";
+      return "bg-info-bg text-info-foreground border-info/30";
     case "cancelled":
       return "bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/30";
     case "skipped":
@@ -210,6 +210,7 @@ export function TaskDetailModal({
   canExecute = false,
 }: TaskDetailModalProps) {
   const { t } = useTranslation();
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState("details");
   const [editedFields, setEditedFields] = useState<Partial<TaskUpdate>>({});
   const [hasChanges, setHasChanges] = useState(false);
@@ -405,12 +406,25 @@ export function TaskDetailModal({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col p-0 sm:rounded-2xl">
-          <DialogHeader className="px-6 py-5 border-b border-border">
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent
+          side="right"
+          className={styles.sheet}
+          aria-describedby={undefined}
+          onOpenAutoFocus={() => {
+            returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            if (returnFocusRef.current?.isConnected) {
+              event.preventDefault();
+              returnFocusRef.current.focus();
+            }
+          }}
+        >
+          <SheetHeader className={styles.sheetHeader}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Badge
                     variant="outline"
                     className={getPriorityColor(task.priority)}
@@ -427,19 +441,19 @@ export function TaskDetailModal({
                     {task.task_type === "specific" ? "Specific" : "Routine"}
                   </Badge>
                 </div>
-                <DialogTitle className="text-xl font-semibold leading-tight">
+                <SheetTitle className="text-xl font-semibold leading-tight">
                   {task.title}
-                </DialogTitle>
+                </SheetTitle>
               </div>
             </div>
-          </DialogHeader>
+          </SheetHeader>
 
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="flex-1 overflow-hidden flex flex-col"
+            className={styles.detailTabs}
           >
-            <div className="px-6 pt-4 border-b border-border">
+            <div className={styles.detailTabBar}>
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="details" className="gap-1.5">
                   <FileText className="h-3.5 w-3.5" />
@@ -466,7 +480,7 @@ export function TaskDetailModal({
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className={styles.detailBody}>
               <TabsContent
                 value="details"
                 className="m-0 data-[state=active]:flex data-[state=active]:flex-col"
@@ -510,7 +524,7 @@ export function TaskDetailModal({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label>{t("headNurse.taskModal.priorityLabel")}</Label>
                       {canManage ? (
@@ -570,7 +584,7 @@ export function TaskDetailModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label>{t("headNurse.taskModal.patientLabel")}</Label>
                       {task.patient_name ? (
@@ -603,7 +617,7 @@ export function TaskDetailModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="task-due">{t("headNurse.taskModal.dueDateLabel")}</Label>
                       {canManage ? (
@@ -641,7 +655,7 @@ export function TaskDetailModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-muted-foreground">
                     <div>
                       <span className="font-medium">{t("headNurse.taskModal.createdLabel")}</span>{" "}
                       {formatDate(task.created_at)}
@@ -1191,8 +1205,8 @@ export function TaskDetailModal({
             </div>
           </Tabs>
 
-          <DialogFooter className="px-6 py-4 border-t border-border">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+          <footer className={styles.sheetFooter}>
+            <div className="flex flex-wrap items-center justify-end gap-2 w-full">
               {canManage && (
                 <>
                   {task.is_active ? (
@@ -1262,9 +1276,9 @@ export function TaskDetailModal({
                 Close
               </Button>
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog
         open={showDeleteDialog}

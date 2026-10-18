@@ -299,15 +299,19 @@ export function PatientCareCoordinationPanel({
     if (!patient) return null;
     return `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`;
   }, [patient]);
+  const currentRoomName = useMemo(() => {
+    const events = (timelineQuery.data ?? []) as ListTimelineEventsResponse;
+    return [...events]
+      .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+      .find((event) => event.room_name?.trim())
+      ?.room_name?.trim() || null;
+  }, [timelineQuery.data]);
   const patientMeta = useMemo(() => {
     if (!patient) return null;
-    return [
-      patient.room_id != null ? `Room #${patient.room_id}` : null,
-      patient.care_level || null,
-    ]
+    return [currentRoomName, patient.care_level || null]
       .filter(Boolean)
       .join(" - ");
-  }, [patient]);
+  }, [currentRoomName, patient]);
   const vitals = useMemo(
     () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
     [vitalsQuery.data],
@@ -939,7 +943,7 @@ export function PatientCareCoordinationPanel({
         events={timeline}
         patientName={patientDisplayName}
         patientMeta={patientMeta}
-        roomLabel={patient?.room_id != null ? `Room #${patient.room_id}` : null}
+        roomLabel={currentRoomName}
       />
 
       {actionError ? (

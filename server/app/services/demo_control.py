@@ -13,6 +13,7 @@ from app.models.core import Room
 from app.models.care import DemoActorPosition
 from app.models.patients import Patient
 from app.models.users import User
+from app.roles import role_is_allowed
 from app.services import device_management as dm
 from app.services.workflow import (
     audit_trail_service,
@@ -101,7 +102,9 @@ class DemoControlService:
                 select(User)
                 .where(
                     User.workspace_id == ws_id,
-                    User.role.in_(sorted(STAFF_ROLES)),
+                    User.role.in_(
+                        sorted(STAFF_ROLES | {"head_nurse", "supervisor", "observer"})
+                    ),
                     User.is_active.is_(True),
                 )
                 .order_by(User.role.asc(), User.username.asc())
@@ -224,7 +227,11 @@ class DemoControlService:
             }
 
         user = await session.get(User, actor_id)
-        if user is None or user.workspace_id != ws_id or user.role not in STAFF_ROLES:
+        if (
+            user is None
+            or user.workspace_id != ws_id
+            or not role_is_allowed(user.role, STAFF_ROLES)
+        ):
             raise ValueError("Staff user not found in current workspace")
 
         position = (

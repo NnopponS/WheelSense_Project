@@ -15,8 +15,8 @@ export function useAlertRowHighlight(alertId: number | null, ready: boolean) {
     const scrollTimer = window.setTimeout(() => {
       setFlashId(alertId);
       requestAnimationFrame(() => {
-        document.getElementById(`ws-alert-${alertId}`)?.scrollIntoView({
-          behavior: "smooth",
+        Array.from(document.querySelectorAll<HTMLElement>(`[id="ws-alert-${alertId}"], [id="ws-alert-${alertId}-mobile"]`)).find((row) => row.getClientRects().length > 0)?.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
           block: "center",
         });
       });

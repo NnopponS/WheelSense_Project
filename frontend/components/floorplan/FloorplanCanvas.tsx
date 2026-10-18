@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, RotateCcw } from "lucide-react";
+import { Minus, Plus, RotateCcw, Scan } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { percentToCanvasUnits, type FloorplanRoomShape } from "@/lib/floorplanLayout";
+
+import type { FloorplanBackground } from "@/lib/floorplanEditor";
 
 export type { FloorplanRoomShape };
 export type FloorplanRoomTone = "critical" | "warning" | "success" | "info";
@@ -33,8 +35,8 @@ const ZOOM_MIN = 0.2;
 const ZOOM_MAX = 2.5;
 const ZOOM_STEP = 0.15;
 
-function clampZoom(z: number): number {
-  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+function clampZoom(z: number, minimum = ZOOM_MIN): number {
+  return Math.min(ZOOM_MAX, Math.max(minimum, z));
 }
 
 function clampRoom(r: FloorplanRoomShape): FloorplanRoomShape {
@@ -89,7 +91,7 @@ function PresenceFace({ label, avatarUrl }: { label: string; avatarUrl: string |
 }
 
 /** One-time camera: frame all rooms with padding (matches admin floorplan editor UX vs full 5000 canvas). */
-function computeFitViewToRooms(rooms: FloorplanRoomShape[]): { zoom: number; pan: { x: number; y: number } } {
+function computeFitViewToRooms(rooms: FloorplanRoomShape[], viewportAspect?: number): { zoom: number; pan: { x: number; y: number } } {
   if (rooms.length === 0) return { zoom: 1, pan: { x: 0, y: 0 } };
   let minX = Infinity;
   let minY = Infinity;
@@ -108,15 +110,17 @@ function computeFitViewToRooms(rooms: FloorplanRoomShape[]): { zoom: number; pan
   maxY = Math.min(CANVAS_BOUNDS, maxY + pad);
   const bw = Math.max(maxX - minX, MIN_ROOM_SIZE);
   const bh = Math.max(maxY - minY, MIN_ROOM_SIZE);
-  const side = Math.max(bw, bh);
+  const aspect = viewportAspect ?? 1;
+  const side = Math.max(bw, bh * aspect);
   let zoom = CANVAS_BASE_VIEW / side;
-  zoom = clampZoom(zoom);
+  zoom = clampZoom(zoom, ZOOM_MIN / Math.max(1, aspect));
   const viewBoxSize = CANVAS_BASE_VIEW / zoom;
   const maxPan = Math.max(0, CANVAS_BOUNDS - viewBoxSize);
+  const viewBoxHeight = viewBoxSize / aspect;
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
-  const panX = Math.max(0, Math.min(maxPan, cx - viewBoxSize / 2));
-  const panY = Math.max(0, Math.min(maxPan, cy - viewBoxSize / 2));
+  const panX = viewportAspect ? cx - viewBoxSize / 2 : Math.max(0, Math.min(maxPan, cx - viewBoxSize / 2));
+  const panY = viewportAspect ? cy - viewBoxHeight / 2 : Math.max(0, Math.min(maxPan, cy - viewBoxSize / 2));
   return { zoom, pan: { x: panX, y: panY } };
 }
 
@@ -190,6 +194,13 @@ export default function FloorplanCanvas({
   compact = false,
   roomMetaById = {},
   fitContentOnMount = false,
+  fillViewport = false,
+  background = null,
+  showGrid = true,
+  snapToGrid: shouldSnap = true,
+  workspaceTools = false,
+  visibleRoomIds,
+  fitKey = "",
 }: {
   rooms: FloorplanRoomShape[];
   onRoomsChange: (next: FloorplanRoomShape[]) => void;
@@ -204,8 +215,17 @@ export default function FloorplanCanvas({
   roomMetaById?: Record<string, FloorplanRoomMeta | null | undefined>;
   /** After first non-empty layout, set zoom/pan to frame all rooms (does not refit on every edit). */
   fitContentOnMount?: boolean;
+  /** Preserve screen-sized room labels and resize handles in a bounded workspace. */
+  fillViewport?: boolean;
+  background?: FloorplanBackground | null;
+  showGrid?: boolean;
+  snapToGrid?: boolean;
+  workspaceTools?: boolean;
+  visibleRoomIds?: string[];
+  fitKey?: string;
 }) {
   const { t } = useTranslation();
+  const canvasId=useId();
   const svgRef = useRef<SVGSVGElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [draftRooms, setDraftRooms] = useState(rooms);
@@ -213,34 +233,79 @@ export default function FloorplanCanvas({
   const dragRef = useRef<DragState>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [pixelsPerUnit, setPixelsPerUnit] = useState(1);
+  const [viewportAspect, setViewportAspect] = useState<number | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const didFitContentOnMount = useRef(false);
+  const fittedAspect = useRef<number | null>(null);
+  const fittedKey = useRef<string | null>(null);
+  const fitRooms = useMemo(() => {
+    const visible = visibleRoomIds ? rooms.filter(room => visibleRoomIds.includes(room.id)) : rooms;
+    return background ? [...visible, {id:"background",label:"",x:background.x,y:background.y,w:background.width,h:background.height,device_id:null,power_kw:null}] : visible;
+  },[rooms,visibleRoomIds,background]);
+  const fitIdentity = `${fitKey}:${background?.url ?? ""}`;
+  const fitView = () => {
+    const next=computeFitViewToRooms(fitRooms,fillViewport ? viewportAspect ?? 1 : undefined);
+    setZoom(next.zoom);setPan(next.pan);
+  };
   const zoomEnabled = enableZoom ?? true;
+  const minimumZoom = fillViewport ? ZOOM_MIN / Math.max(1, viewportAspect ?? 1) : ZOOM_MIN;
   const viewBoxSize = useMemo(() => CANVAS_BASE_VIEW / zoom, [zoom]);
-  const maxPan = useMemo(() => Math.max(0, CANVAS_BOUNDS - viewBoxSize), [viewBoxSize]);
+  const viewBoxHeight = viewBoxSize / (fillViewport ? viewportAspect ?? 1 : 1);
+  const panBounds = useMemo(() => fillViewport ? {
+    minX: -viewBoxSize / 2,
+    minY: -viewBoxHeight / 2,
+    maxX: CANVAS_BOUNDS - viewBoxSize / 2,
+    maxY: CANVAS_BOUNDS - viewBoxHeight / 2,
+  } : {
+    minX: 0, minY: 0,
+    maxX: Math.max(0, CANVAS_BOUNDS - viewBoxSize),
+    maxY: Math.max(0, CANVAS_BOUNDS - viewBoxSize),
+  }, [fillViewport, viewBoxSize, viewBoxHeight]);
   const effectivePan = useMemo(
     () => ({
-      x: Math.max(0, Math.min(maxPan, pan.x)),
-      y: Math.max(0, Math.min(maxPan, pan.y)),
+      x: Math.max(panBounds.minX, Math.min(panBounds.maxX, pan.x)),
+      y: Math.max(panBounds.minY, Math.min(panBounds.maxY, pan.y)),
     }),
-    [maxPan, pan.x, pan.y],
+    [panBounds, pan.x, pan.y],
   );
+
+  useLayoutEffect(() => {
+    if (!fillViewport) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const measure = () => {
+      const rect = svg.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) setViewportAspect(rect.width / rect.height);
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const scale = Math.hypot(matrix.a, matrix.b);
+      if (scale > 0) setPixelsPerUnit(scale);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(svg);
+    return () => observer.disconnect();
+  }, [fillViewport, zoom, viewportAspect]);
 
   useEffect(() => {
     draftRoomsRef.current = draftRooms;
   }, [draftRooms]);
 
   useLayoutEffect(() => {
-    if (!fitContentOnMount || didFitContentOnMount.current) return;
-    if (rooms.length === 0) return;
-    didFitContentOnMount.current = true;
-    const next = computeFitViewToRooms(rooms);
+    if (!fitContentOnMount) return;
+    if (didFitContentOnMount.current && fittedKey.current === fitIdentity && (!fillViewport || fittedAspect.current === viewportAspect)) return;
+    if (rooms.length === 0 || (fillViewport && viewportAspect == null)) return;
+    const next = computeFitViewToRooms(fitRooms, fillViewport ? viewportAspect ?? undefined : undefined);
     const frame = window.requestAnimationFrame(() => {
+      didFitContentOnMount.current = true;
+      fittedAspect.current = viewportAspect;
+      fittedKey.current = fitIdentity;
       setZoom(next.zoom);
       setPan(next.pan);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [fitContentOnMount, rooms]);
+  }, [fitContentOnMount, rooms, fitRooms, fillViewport, viewportAspect, fitIdentity]);
 
   const toSvgPoint = useCallback((clientX: number, clientY: number) => {
     const svg = svgRef.current;
@@ -304,18 +369,18 @@ export default function FloorplanCanvas({
   const commitSelection = useCallback(
     (id: string) => {
       const committed = draftRoomsRef.current.map((room) =>
-        room.id === id ? snapRoom(room) : room,
+        room.id === id ? (shouldSnap ? snapRoom(room) : clampRoom(room)) : room,
       );
       setDraftRooms(committed);
       onRoomsChange(committed);
     },
-    [onRoomsChange],
+    [onRoomsChange, shouldSnap],
   );
 
-  function onSvgPointerDown(event: React.PointerEvent<SVGSVGElement>) {
-    onSelect(null);
+  function onSvgPointerDown(event: React.PointerEvent<SVGElement>, clearSelection = true) {
+    if(clearSelection) onSelect(null);
     if (!zoomEnabled) return;
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    svgRef.current?.setPointerCapture?.(event.pointerId);
     dragRef.current = {
       kind: "pan",
       pointerId: event.pointerId,
@@ -332,7 +397,7 @@ export default function FloorplanCanvas({
     if (drag.kind === "move") {
       const dx = point.x - drag.point0.x;
       const dy = point.y - drag.point0.y;
-      const moved = snapRoom({
+      const moved = (shouldSnap ? snapRoom : clampRoom)({
         ...drag.room0,
         x: drag.room0.x + dx,
         y: drag.room0.y + dy,
@@ -344,7 +409,7 @@ export default function FloorplanCanvas({
     }
 
     if (drag.kind === "resize") {
-      const resized = snapRoom(applyResize(drag.corner, drag.orig, point.x, point.y));
+      const resized = (shouldSnap ? snapRoom : clampRoom)(applyResize(drag.corner, drag.orig, point.x, point.y));
       setDraftRooms((prev) =>
         prev.map((room) => (room.id === drag.id ? resized : room)),
       );
@@ -354,8 +419,8 @@ export default function FloorplanCanvas({
     const dx = drag.ptr0.x - point.x;
     const dy = drag.ptr0.y - point.y;
     setPan({
-      x: Math.max(0, Math.min(maxPan, drag.pan0.x + dx)),
-      y: Math.max(0, Math.min(maxPan, drag.pan0.y + dy)),
+      x: Math.max(panBounds.minX, Math.min(panBounds.maxX, drag.pan0.x + dx)),
+      y: Math.max(panBounds.minY, Math.min(panBounds.maxY, drag.pan0.y + dy)),
     });
   }
 
@@ -408,14 +473,14 @@ export default function FloorplanCanvas({
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
       event.stopPropagation();
-      setZoom((z) => clampZoom(z - event.deltaY * 0.002));
+      setZoom((z) => clampZoom(z - event.deltaY * 0.002, minimumZoom));
     };
 
     viewport.addEventListener("wheel", onWheelZoom, { passive: false });
     return () => {
       viewport.removeEventListener("wheel", onWheelZoom);
     };
-  }, [zoomEnabled]);
+  }, [zoomEnabled, minimumZoom]);
 
   return (
     <div className={`space-y-2 ${compact ? "text-sm" : ""}`}>
@@ -425,7 +490,7 @@ export default function FloorplanCanvas({
             type="button"
             className="inline-flex items-center justify-center p-2 rounded-lg border border-outline-variant/40 bg-surface-container-low hover:bg-surface-container-high"
             aria-label={t("floorplan.zoomOut")}
-            onClick={() => setZoom((z) => clampZoom(z - ZOOM_STEP))}
+            onClick={() => setZoom((z) => clampZoom(z - ZOOM_STEP, minimumZoom))}
           >
             <Minus className="w-4 h-4" />
           </button>
@@ -436,7 +501,7 @@ export default function FloorplanCanvas({
             type="button"
             className="inline-flex items-center justify-center p-2 rounded-lg border border-outline-variant/40 bg-surface-container-low hover:bg-surface-container-high"
             aria-label={t("floorplan.zoomIn")}
-            onClick={() => setZoom((z) => clampZoom(z + ZOOM_STEP))}
+            onClick={() => setZoom((z) => clampZoom(z + ZOOM_STEP, minimumZoom))}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -444,11 +509,16 @@ export default function FloorplanCanvas({
             type="button"
             className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-outline-variant/40 bg-surface-container-low hover:bg-surface-container-high text-xs"
             aria-label={t("floorplan.zoomReset")}
-            onClick={() => setZoom(1)}
+            onClick={() => {
+              const next = fillViewport && !workspaceTools ? computeFitViewToRooms(fitRooms, viewportAspect ?? 1) : { zoom: 1, pan: { x: 0, y: 0 } };
+              setZoom(next.zoom);
+              setPan(next.pan);
+            }}
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {t("floorplan.zoomReset")}
           </button>
+          {workspaceTools ? <button type="button" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2 text-xs hover:bg-muted" onClick={fitView} aria-label={t("facilityWorkspace.fit")}><Scan className="size-3.5" aria-hidden />{t("facilityWorkspace.fit")}</button> : null}
           <span className="text-xs text-foreground-variant">{t("floorplan.zoomWheelHint")}</span>
         </div>
       )}
@@ -456,17 +526,28 @@ export default function FloorplanCanvas({
       <div
         ref={viewportRef}
         className={`overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container-low/40 ${
-          compact
+          fillViewport
+            ? "h-[min(65dvh,40rem)] min-h-0 max-h-none"
+            : compact
             ? "max-h-[min(44vh,420px)] min-h-[280px]"
             : "max-h-[min(85vh,960px)] min-h-[min(78vh,720px)]"
         }`}
       >
         <svg
           ref={svgRef}
-          viewBox={`${effectivePan.x} ${effectivePan.y} ${viewBoxSize} ${viewBoxSize}`}
+          tabIndex={workspaceTools ? 0 : undefined}
+          role={workspaceTools ? "group" : undefined}
+          aria-label={workspaceTools ? t("floorplan.canvas") : undefined}
+          onKeyDown={event => {
+            if (!workspaceTools || event.target !== event.currentTarget || !event.key.startsWith("Arrow")) return;
+            event.preventDefault();
+            const step=viewBoxSize/10;
+            setPan(value=>({x:value.x+(event.key==="ArrowLeft" ? -step : event.key==="ArrowRight" ? step : 0),y:value.y+(event.key==="ArrowUp" ? -step : event.key==="ArrowDown" ? step : 0)}));
+          }}
+          viewBox={`${effectivePan.x} ${effectivePan.y} ${viewBoxSize} ${viewBoxHeight}`}
           preserveAspectRatio="xMidYMid meet"
           className={`w-full rounded-xl border-2 border-dashed border-outline-variant/40 bg-surface-container-low/80 select-none ${
-            compact ? "min-h-[280px]" : "min-h-[560px]"
+            fillViewport ? "h-full min-h-0" : compact ? "min-h-[280px]" : "min-h-[560px]"
           } ${readOnly ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
           onPointerDown={onSvgPointerDown}
           onPointerMove={onSvgPointerMove}
@@ -479,24 +560,45 @@ export default function FloorplanCanvas({
             </pattern>
           </defs>
 
-          <rect x={0} y={0} width={CANVAS_BOUNDS} height={CANVAS_BOUNDS} fill="url(#ws-grid)" />
+          {showGrid ? <rect x={0} y={0} width={CANVAS_BOUNDS} height={CANVAS_BOUNDS} fill="url(#ws-grid)" /> : null}
+          {background ? <image href={background.url} x={background.x} y={background.y} width={background.width} height={background.height} opacity={background.opacity} preserveAspectRatio="none" pointerEvents="none" aria-hidden="true" /> : null}
 
           {(isDragging ? draftRooms : rooms).map((room) => {
             const selected = selectedId === room.id;
             const meta = roomMetaById[room.id] ?? null;
             const tone = roomToneClasses(meta?.tone);
-            const chips = meta?.chips?.slice(0, compact ? 2 : 3) ?? [];
-            const detail = meta?.detailLines?.[0] ?? null;
-            const presenceDots = meta?.presenceDots?.slice(0, compact ? 2 : 3) ?? [];
+            const smallRoom=workspaceTools && fillViewport && (room.w*pixelsPerUnit<120 || room.h*pixelsPerUnit<80);
+            const chips = smallRoom ? [] : meta?.chips?.slice(0, compact ? 2 : 3) ?? [];
+            const detail = smallRoom ? null : meta?.detailLines?.[0] ?? null;
+            const presenceDots = smallRoom ? [] : meta?.presenceDots?.slice(0, compact ? 2 : 3) ?? [];
             const presenceHrefs = meta?.presenceHrefs?.slice(0, compact ? 2 : 3) ?? [];
             const presenceAvatarUrls = meta?.presenceAvatarUrls?.slice(0, compact ? 2 : 3) ?? [];
 
             return (
               <g
                 key={room.id}
+                data-room-id={room.id}
+                display={visibleRoomIds && !visibleRoomIds.includes(room.id) ? "none" : undefined}
                 onPointerDown={(event) => event.stopPropagation()}
               >
+                <desc id={`${canvasId}-${room.id}-status`}>{[...(meta?.chips??[]).map(chip=>chip.label),...(meta?.detailLines??[])].join(" · ")}</desc>
                 <rect
+                  role="button"
+                  tabIndex={0}
+                  aria-label={room.label}
+                  aria-describedby={`${canvasId}-${room.id}-status`}
+                  aria-pressed={selected}
+                  onKeyDown={event => {
+                    if(event.key==="Enter" || event.key===" "){event.preventDefault();onSelect(room.id);return;}
+                    if(readOnly || !event.key.startsWith("Arrow")) return;
+                    event.preventDefault();event.stopPropagation();onSelect(room.id);
+                    const step=(shouldSnap ? GRID_SIZE : 10)*(event.shiftKey ? 5 : 1);
+                    const dx=event.key==="ArrowLeft" ? -step : event.key==="ArrowRight" ? step : 0;
+                    const dy=event.key==="ArrowUp" ? -step : event.key==="ArrowDown" ? step : 0;
+                    const next=event.altKey ? {...room,w:room.w+dx,h:room.h+dy} : {...room,x:room.x+dx,y:room.y+dy};
+                    onRoomsChange(rooms.map(value=>value.id===room.id ? (shouldSnap ? snapRoom : clampRoom)(next) : value));
+                  }}
+                  style={{outlineOffset:4}}
                   x={room.x}
                   y={room.y}
                   width={room.w}
@@ -508,6 +610,7 @@ export default function FloorplanCanvas({
                   onPointerDown={(event) => {
                     if (readOnly) {
                       onSelect(room.id);
+                      if(workspaceTools) onSvgPointerDown(event,false);
                     } else {
                       startMove(room, event);
                     }
@@ -523,14 +626,21 @@ export default function FloorplanCanvas({
                     event.stopPropagation();
                     if (readOnly) {
                       onSelect(room.id);
+                      if(workspaceTools) onSvgPointerDown(event,false);
                     } else {
                       startMove(room, event);
                     }
                   }}
                 >
-                  <div className="flex h-full flex-col justify-between gap-1.5 overflow-hidden">
+                  <div className="flex h-full flex-col justify-between gap-1.5 overflow-hidden"
+                    style={fillViewport ? {
+                      width: Math.max(24, room.w - 20) * pixelsPerUnit,
+                      height: Math.max(24, room.h - 20) * pixelsPerUnit,
+                      transform: `scale(${1 / pixelsPerUnit})`,
+                      transformOrigin: "top left",
+                    } : undefined}>
                     <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-slate-900">{room.label}</p>
+                      <p className={`${fillViewport && !smallRoom ? "break-words leading-tight" : "truncate"} text-xs font-semibold text-slate-900`} title={room.label}>{smallRoom ? room.label.replace(/^Room\s+(?=\d)/i, "") : room.label}{smallRoom && readOnly && (meta?.tone==="critical" || meta?.tone==="warning") ? <span aria-hidden="true" className="ml-1">{meta.tone==="critical" ? "!" : "△"}</span> : null}</p>
                       {detail ? <p className="mt-0.5 truncate text-[10px] text-slate-600">{detail}</p> : null}
                     </div>
                     <div className="space-y-1">
@@ -574,7 +684,7 @@ export default function FloorplanCanvas({
                           {chip.label}
                         </span>
                       ))}
-                      {chips.length === 0 ? (
+                      {chips.length === 0 && !fillViewport ? (
                         <span className="inline-flex rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[9px] font-medium text-slate-700">
                           layout
                         </span>
@@ -596,10 +706,10 @@ export default function FloorplanCanvas({
                         key={`${room.id}-${handle.corner}`}
                         cx={handle.x}
                         cy={handle.y}
-                        r={10}
+                        r={fillViewport ? 6 / pixelsPerUnit : 10}
                         fill="rgb(37, 99, 235)"
                         stroke="white"
-                        strokeWidth={3}
+                        strokeWidth={fillViewport ? 2 / pixelsPerUnit : 3}
                         style={{ cursor: handle.cursor }}
                         onPointerDown={(event) => startResize(handle.corner, room, event)}
                       />

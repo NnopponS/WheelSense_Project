@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.future import select
 
 from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
+from app.config import settings
 from app.models.core import Room, SmartDevice, Workspace
 from app.models.patients import Patient
 from app.models.users import User
@@ -21,6 +22,10 @@ from app.schemas.homeassistant import (
 from app.services.homeassistant import ha_service
 
 router = APIRouter()
+
+def _use_seeded_simulator_state(device: SmartDevice) -> bool:
+    config = device.config if isinstance(device.config, dict) else {}
+    return settings.is_simulator_mode and config.get("seed") is True
 
 async def _patient_room_id(db: AsyncSession, ws_id: int, current_user: User) -> int:
     patient_id = getattr(current_user, "patient_id", None)
@@ -201,6 +206,56 @@ async def control_smart_device(
     if not device.is_active:
         raise HTTPException(status_code=400, detail="Smart device is marked inactive")
 
+    if _use_seeded_simulator_state(device):
+        action = control.action.strip().lower()
+        parameters = dict(control.parameters or {})
+        config = dict(device.config or {})
+        current_state = (device.state or "off").strip().lower()
+
+        if action == "turn_on":
+            device.state = "cool" if device.device_type == "climate" else "on"
+        elif action == "turn_off":
+            device.state = "off"
+        elif action == "toggle":
+            if current_state not in {"off", "unknown", "unavailable"}:
+                device.state = "off"
+            else:
+                device.state = "cool" if device.device_type == "climate" else "on"
+        elif action in {"set_temperature", "climate.set_temperature"}:
+            raw_temperature = parameters.get("temperature")
+            try:
+                temperature = float(raw_temperature)
+            except (TypeError, ValueError) as exc:
+                raise HTTPException(status_code=400, detail="temperature must be a number") from exc
+            if temperature < 16 or temperature > 30:
+                raise HTTPException(status_code=400, detail="temperature must be between 16 and 30 C")
+            config["target_temperature"] = temperature
+            config["temperature"] = temperature
+            device.config = config
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported simulator smart-device action: {control.action}")
+
+        db.add(device)
+        await db.commit()
+        await db.refresh(device)
+        await device_activity_service.log_event(
+            db,
+            ws.id,
+            "smart_controlled",
+            f"Smart device “{device.name}” controlled",
+            smart_device_id=device.id,
+            details={"action": control.action, "parameters": parameters, "simulator": True},
+        )
+        return HAResponse(
+            status="success",
+            message=f"Command '{control.action}' applied to {device.name}",
+            data={
+                "entity_id": device.ha_entity_id,
+                "state": device.state or "unknown",
+                "attributes": dict(device.config or {}),
+            },
+        )
+
     # Send command to Home Assistant
     success = await ha_service.call_service(
         action=control.action,
@@ -234,6 +289,17 @@ async def get_device_state(
     Anyone can view state.
     """
     device = await _get_smart_device_for_user(db, ws.id, device_id, current_user)
+
+    if _use_seeded_simulator_state(device):
+        return HAResponse(
+            status="success",
+            message="State fetched",
+            data={
+                "entity_id": device.ha_entity_id,
+                "state": device.state or "unknown",
+                "attributes": dict(device.config or {}),
+            },
+        )
 
     ha_state = await ha_service.get_state(device.ha_entity_id)
     if ha_state is None:

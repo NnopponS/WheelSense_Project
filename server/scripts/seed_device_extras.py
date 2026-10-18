@@ -82,12 +82,13 @@ async def _delete_legacy_sim_devices(session: AsyncSession, workspace_id: int) -
         CareGiverDeviceAssignment,
         DeviceActivityEvent,
     ):
+        device_column = getattr(model, "device_id", None) or getattr(model, "registry_device_id", None)
+        if device_column is None:
+            continue
         await session.execute(
             delete(model).where(
                 model.workspace_id == workspace_id,
-                model.device_id.in_(legacy_ids)
-                if hasattr(model, "device_id")
-                else model.registry_device_id.in_(legacy_ids),
+                device_column.in_(legacy_ids),
             )
         )
     await session.execute(

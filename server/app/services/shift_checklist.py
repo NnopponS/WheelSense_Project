@@ -218,7 +218,9 @@ class ShiftChecklistService:
             .where(
                 User.workspace_id == workspace_id,
                 User.is_active.is_(True),
-                User.role.in_(["caregiver", "head_caregiver"]),
+                User.role.in_(
+                    ["caregiver", "head_caregiver", "observer", "head_nurse", "supervisor"]
+                ),
             )
             .order_by(User.username)
         )

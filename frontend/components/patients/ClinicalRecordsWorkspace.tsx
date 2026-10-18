@@ -53,7 +53,7 @@ export function ClinicalRecordsWorkspace({
   const medCount = patient.medications?.filter((m) => (m.name || "").trim()).length ?? 0;
 
   return (
-    <section id="clinical-records" className={cn("scroll-mt-32 rounded-2xl border border-border/60 bg-card shadow-sm", className)}>
+    <section id="clinical-records" className={cn("scroll-mt-32 rounded-[var(--radius)] border border-border/60 bg-card shadow-sm", className)}>
       <div className="border-b border-border/50 px-5 py-3">
         <h2 className="font-semibold text-foreground">{t("patients.detailTabProfile")}</h2>
       </div>
@@ -94,7 +94,7 @@ export function ClinicalRecordsWorkspace({
                 return (
                   <li key={i} className={cn("flex items-start justify-between gap-2 rounded-lg border px-4 py-3 text-sm", sevClass)}>
                     <span className="font-medium">{formatCondition(c)}</span>
-                    {sev && <span className="shrink-0 rounded-full bg-current/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">{sev}</span>}
+                    {sev && <span className="shrink-0 rounded-full bg-current/10 px-2 py-0.5 text-xs font-semibold opacity-80">{sev}</span>}
                   </li>
                 );
               })}
@@ -155,11 +155,11 @@ export function ClinicalRecordsWorkspace({
             <ul className="divide-y divide-outline-variant/10">
               {patient.medications.filter((m) => (m.name || "").trim()).map((m: PatientMedication, i) => (
                 <li key={i} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">{i + 1}</span>
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-foreground text-sm">{m.name}</p>
                     {(m.dosage || m.frequency) && <p className="mt-0.5 text-xs text-foreground-variant">{[m.dosage, m.frequency].filter(Boolean).join(" · ")}</p>}
-                    {m.instructions && <p className="mt-1 text-[10px] uppercase tracking-wide text-foreground-variant">{m.instructions}</p>}
+                    {m.instructions && <p className="mt-1 text-xs uppercase tracking-wide text-foreground-variant">{m.instructions}</p>}
                   </div>
                 </li>
               ))}
@@ -241,7 +241,7 @@ function RecordHeader({
     <div className="mb-3 flex items-center justify-between gap-2">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        {badge && <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary">{badge}</span>}
+        {badge && <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">{badge}</span>}
       </div>
       {canEdit && (
         editingCard === card ? (
