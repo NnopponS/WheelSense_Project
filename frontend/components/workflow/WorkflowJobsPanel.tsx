@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { CheckCircle2, ChevronDown, Circle, FileText, Loader2, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,7 @@ import { api, ApiError } from "@/lib/api";
 import type { CareWorkflowJobOut, ListPatientsResponse, ListUsersResponse } from "@/lib/api/task-scope-types";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
+import { hasCapability } from "@/lib/permissions";
 import { workflowJobStepAttachmentDownloadUrl } from "@/lib/workflowJobs";
 import { WorkflowJobCreateDialog } from "@/components/workflow/WorkflowJobCreateDialog";
 
@@ -67,6 +68,7 @@ function actorMayEditStep(
 export function WorkflowJobsPanel({ variant }: { variant: WorkflowJobsPanelVariant }) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const canListUsers = Boolean(user && hasCapability(user.role, "users.manage"));
   const qk = JOBS_QUERY[variant];
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -85,13 +87,17 @@ export function WorkflowJobsPanel({ variant }: { variant: WorkflowJobsPanelVaria
   const usersQuery = useQuery({
     queryKey: [...qk, "users"],
     queryFn: () => api.listUsers(),
+    enabled: canListUsers,
   });
 
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,
     [patientsQuery.data],
   );
-  const users = useMemo(() => (usersQuery.data ?? []) as ListUsersResponse, [usersQuery.data]);
+  const users = useMemo(
+    () => (canListUsers ? usersQuery.data ?? [] : user ? [user] : []) as ListUsersResponse,
+    [canListUsers, usersQuery.data, user],
+  );
 
   const patientNameById = useMemo(() => {
     const m = new Map<number, string>();
@@ -172,24 +178,6 @@ export function WorkflowJobsPanel({ variant }: { variant: WorkflowJobsPanelVaria
   });
 
   const jobs = (jobsQuery.data ?? []) as CareWorkflowJobOut[];
-
-  // #region agent log
-  useEffect(() => {
-    void fetch("http://127.0.0.1:7687/ingest/3079ba95-d656-44c3-9953-dc1c569178f1", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4d0de1" },
-      body: JSON.stringify({
-        sessionId: "4d0de1",
-        runId: "run2",
-        hypothesisId: "H1-H2",
-        location: "WorkflowJobsPanel.tsx:jobs",
-        message: "workflow jobs list result",
-        data: { variant, jobsLen: jobs.length, jobsFetchStatus: jobsQuery.fetchStatus },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }, [jobs.length, jobsQuery.fetchStatus, variant]);
-  // #endregion
 
   return (
     <div className="space-y-5">

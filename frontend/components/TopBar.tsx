@@ -114,7 +114,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
             type="button"
             variant="ghost"
             size="icon"
-            className="hidden"
+            className="lg:hidden"
             onClick={onMenuClick}
             aria-label={t("shell.openNavigation")}
           >

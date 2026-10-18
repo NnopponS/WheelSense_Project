@@ -306,6 +306,26 @@ def _runtime_prompt_metadata(
         "- Do not guess, switch providers in your answer, or claim a different model."
     )
 
+CLOUD_PROVIDER_URLS = {
+    "openai": "https://api.openai.com/v1",
+    "openrouter": "https://openrouter.ai/api/v1",
+}
+
+
+async def get_cloud_provider_options(
+    db: AsyncSession, workspace_id: int, provider: str,
+) -> dict[str, str]:
+    from app.core.token_crypto import decrypt_secret
+
+    base_url = CLOUD_PROVIDER_URLS[provider]
+    row = await db.get(WorkspaceAISettings, workspace_id)
+    encrypted = getattr(row, f"{provider}_api_key_encrypted", None)
+    api_key = decrypt_secret(encrypted) if encrypted else None
+    if not api_key:
+        raise ValueError(f"{provider} API key is not configured for this workspace")
+    return {"base_url": base_url, "api_key": api_key}
+
+
 async def get_workspace_ai_defaults(
     db: AsyncSession, workspace_id: int
 ) -> tuple[str, str]:
@@ -347,7 +367,7 @@ async def resolve_effective_ai(
     ws_p, ws_m = await get_workspace_ai_defaults(db, workspace_id)
     provider = (override_provider or ws_p or settings.ai_provider).strip().lower()
     model = (override_model or ws_m or settings.ai_default_model).strip()
-    if provider not in ("ollama", "copilot"):
+    if provider not in ("ollama", "copilot", "openai", "openrouter"):
         provider = "ollama"
     if not model:
         model = settings.ai_default_model
@@ -565,10 +585,12 @@ async def stream_ollama(
     model: str,
     oai_messages: list[dict[str, str]],
     max_tokens: int | None = 300,
+    base_url: str | None = None,
+    api_key: str = "ollama",
 ) -> AsyncIterator[str]:
     client = AsyncOpenAI(
-        base_url=settings.ollama_base_url,
-        api_key="ollama",
+        base_url=base_url or settings.ollama_base_url,
+        api_key=api_key,
     )
     try:
         kwargs: dict[str, Any] = {
@@ -576,16 +598,20 @@ async def stream_ollama(
             "messages": oai_messages,
             "stream": True,
         }
-        if max_tokens is not None:
+        if max_tokens is not None and base_url is None:
             kwargs["max_tokens"] = max_tokens
         stream = await client.chat.completions.create(**kwargs)
         async for chunk in stream:
+            if not chunk.choices:
+                continue
             delta = chunk.choices[0].delta
             if delta and delta.content:
                 yield delta.content
-    except Exception:
-        logger.exception("ollama stream failed")
+    except Exception as exc:
+        logger.warning("OpenAI-compatible stream failed (%s)", type(exc).__name__)
         yield "\n[AI service temporarily unavailable. Please try again.]\n"
+    finally:
+        await client.close()
 
 
 @dataclass
@@ -636,19 +662,24 @@ async def complete_ollama_with_tool_calls(
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
     tool_choice: str = "auto",
+    base_url: str | None = None,
+    api_key: str = "ollama",
 ) -> tuple[list[ParsedToolCall], str]:
-    """Non-streaming chat completion with OpenAI-style tools (Ollama /v1)."""
+    """Non-streaming tool completion for Ollama or a cloud provider."""
     client = AsyncOpenAI(
-        base_url=settings.ollama_base_url,
-        api_key="ollama",
+        base_url=base_url or settings.ollama_base_url,
+        api_key=api_key,
     )
-    resp = await client.chat.completions.create(
-        model=model,
-        messages=messages,
-        tools=tools,
-        tool_choice=tool_choice,
-        stream=False,
-    )
+    try:
+        resp = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            stream=False,
+        )
+    finally:
+        await client.close()
     choice = resp.choices[0]
     msg = choice.message
     text = (msg.content or "").strip()
@@ -745,8 +776,12 @@ async def collect_copilot_json_tool_calls(
     oai_messages = _messages_to_openai(messages, oai_system)
     parts: list[str] = []
     provider, model = await resolve_effective_ai(db, workspace_id=workspace.id, override_provider=None, override_model=None)
-    if provider == "ollama":
-        async for chunk in stream_ollama(model=model, oai_messages=oai_messages):
+    if provider != "copilot":
+        options = (
+            await get_cloud_provider_options(db, workspace.id, provider)
+            if provider in CLOUD_PROVIDER_URLS else {}
+        )
+        async for chunk in stream_ollama(model=model, oai_messages=oai_messages, **options):
             parts.append(chunk)
     else:
         github_token = await get_workspace_copilot_token(db, workspace.id)
@@ -908,13 +943,17 @@ async def stream_chat_response(
     )
     system_text = _system_prompt_for_role(user.role)
 
-    if provider == "ollama":
+    if provider != "copilot":
+        options = (
+            await get_cloud_provider_options(db, workspace.id, provider)
+            if provider in CLOUD_PROVIDER_URLS else {}
+        )
         ollama_system_text = system_text + _runtime_prompt_metadata(
             provider=provider,
             configured_model=model,
         )
         oai_messages = _messages_to_openai(messages, ollama_system_text)
-        async for part in stream_ollama(model=model, oai_messages=oai_messages):
+        async for part in stream_ollama(model=model, oai_messages=oai_messages, **options):
             yield part
         return
 
@@ -942,7 +981,7 @@ async def collect_chat_reply_best_effort(
 ) -> str:
     """Collect a full assistant reply and fail over providers when needed."""
     primary_provider, primary_model = await get_workspace_ai_defaults(db, workspace.id)
-    if primary_provider not in {"ollama", "copilot"}:
+    if primary_provider not in {"ollama", "copilot", "openai", "openrouter"}:
         primary_provider = settings.ai_provider
     if not primary_model:
         primary_model = settings.ai_default_model

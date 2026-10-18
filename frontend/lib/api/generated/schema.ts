@@ -3732,16 +3732,26 @@ export interface components {
              * Provider
              * @enum {string}
              */
-            provider: "ollama" | "copilot";
+            provider: "ollama" | "copilot" | "openai" | "openrouter";
             /** Model */
             model: string;
             /**
              * Workspace Default Provider
              * @enum {string}
              */
-            workspace_default_provider: "ollama" | "copilot";
+            workspace_default_provider: "ollama" | "copilot" | "openai" | "openrouter";
             /** Workspace Default Model */
             workspace_default_model: string;
+            /**
+             * Openai Configured
+             * @default false
+             */
+            openai_configured: boolean;
+            /**
+             * Openrouter Configured
+             * @default false
+             */
+            openrouter_configured: boolean;
         };
         /**
          * AIWorkspaceSettingsUpdate
@@ -3752,7 +3762,7 @@ export interface components {
              * Provider
              * @enum {string}
              */
-            provider: "ollama" | "copilot";
+            provider: "ollama" | "copilot" | "openai" | "openrouter";
             /** Model */
             model: string;
             /**
@@ -3760,6 +3770,8 @@ export interface components {
              * @default false
              */
             manual_override: boolean;
+            /** Api Key */
+            api_key?: string | null;
         };
         /** ActivitySummary */
         ActivitySummary: {
@@ -5107,7 +5119,7 @@ export interface components {
             /** Conversation Id */
             conversation_id?: number | null;
             /** Provider */
-            provider?: ("ollama" | "copilot") | null;
+            provider?: ("ollama" | "copilot" | "openai" | "openrouter") | null;
             /** Model */
             model?: string | null;
         };
@@ -5872,7 +5884,7 @@ export interface components {
              * Default Provider
              * @enum {string}
              */
-            default_provider: "ollama" | "copilot";
+            default_provider: "ollama" | "copilot" | "openai" | "openrouter";
             /** Default Model */
             default_model: string;
             /**
@@ -5880,6 +5892,8 @@ export interface components {
              * @default false
              */
             manual_override: boolean;
+            /** Api Key */
+            api_key?: string | null;
         };
         /**
          * HADeviceControl

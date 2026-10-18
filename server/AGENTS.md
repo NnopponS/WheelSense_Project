@@ -113,6 +113,13 @@ The old `--profile simulator` approach is replaced by the mock entry (`docker-co
 
 ## Workspace And Auth Model
 
+### Cloud AI providers
+
+- Workspace AI defaults support `ollama`, `copilot`, `openai`, and `openrouter`.
+- Admins save a cloud provider's model ID and `api_key` through `PUT /api/settings/ai/global` (or the compatibility `PUT /api/settings/ai` route). Keys are encrypted with the existing `SECRET_KEY`-derived Fernet helper and scoped to the authenticated workspace.
+- Omitting `api_key` preserves the saved key. Settings reads return only `openai_configured` / `openrouter_configured` flags. Cloud chat streaming and native tool calls use that workspace key and the provider's fixed HTTPS endpoint.
+- Apply migration `la2b3c4d5e6f7` before starting API and agent-runtime processes with the new models.
+
 Important runtime truth:
 
 - `get_current_active_user()` validates the JWT and active account

@@ -273,6 +273,7 @@ export default function SearchableListboxPicker({
           aria-controls={listboxId}
           aria-autocomplete="list"
           aria-labelledby={ariaLabelledBy}
+          aria-label={ariaLabelledBy ? undefined : searchPlaceholder}
           aria-activedescendant={activeDescendantId}
           className={`input-field input-field--leading-icon w-full py-2.5 text-sm ${showClear ? "pr-10" : ""}`}
           placeholder={searchPlaceholder}

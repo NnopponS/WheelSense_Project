@@ -63,4 +63,6 @@ class WorkspaceAISettings(Base):
     default_provider = Column(String(32), nullable=False, default="ollama")
     default_model = Column(String(128), nullable=False, default="gemma4:e4b")
     copilot_token_encrypted = Column(Text, nullable=True)
+    openai_api_key_encrypted = Column(Text, nullable=True)
+    openrouter_api_key_encrypted = Column(Text, nullable=True)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

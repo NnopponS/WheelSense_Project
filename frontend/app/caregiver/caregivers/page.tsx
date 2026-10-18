@@ -1,2 +1,6 @@
-export { default } from "@/app/admin/caregivers/page";
+import { redirect } from "next/navigation";
+
+export default function CaregiverDirectoryPage() {
+  redirect("/caregiver");
+}
 

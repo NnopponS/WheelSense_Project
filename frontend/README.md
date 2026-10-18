@@ -53,6 +53,7 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 - **Completed migration (2026-04):** `hooks/useQuery.ts` was deleted after every import moved to `@tanstack/react-query`; grep the tree for `@/hooks/useQuery` should return nothing. Monitoring map queries live in `components/admin/monitoring/FloorMapWorkspace.tsx` and `RoomSmartDevicesPanel.tsx` with `["admin", "monitoring", ...]` keys.
 - `npm run openapi:types` exports the local FastAPI OpenAPI schema and regenerates `lib/api/generated/schema.ts`
 - AI settings model-list endpoints now soft-fail for disconnected providers:
+- Admin Settings → AI also supports OpenAI and OpenRouter with an explicit model ID and masked API-key field. Save workspace defaults to encrypt the key on the server; leave the key field empty on later saves to keep it. OpenRouter model IDs include the publisher prefix (for example `openai/gpt-4.1`). Saving a key does not verify provider billing or model access.
   - `/api/settings/ai/ollama/models` returns `reachable=false` with an explanatory message
   - `/api/settings/ai/copilot/models` returns `connected=false` with an explanatory message
 

@@ -298,7 +298,7 @@ export default function PatientPharmacyPage() {
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
-                <Label>{t("patient.pharmacy.labelPrescription")}</Label>
+                <Label htmlFor="refill-prescription">{t("patient.pharmacy.labelPrescription")}</Label>
                 <Controller
                   control={form.control}
                   name="prescriptionId"
@@ -308,7 +308,7 @@ export default function PatientPharmacyPage() {
                       onValueChange={field.onChange}
                       disabled={!hasPatientProfile || activePrescriptions.length === 0}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="refill-prescription">
                         <SelectValue placeholder={t("patient.pharmacy.selectPrescriptionPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -332,8 +332,9 @@ export default function PatientPharmacyPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("patient.pharmacy.labelPharmacyName")}</Label>
+                <Label htmlFor="refill-pharmacy">{t("patient.pharmacy.labelPharmacyName")}</Label>
                 <Input
+                  id="refill-pharmacy"
                   {...form.register("pharmacyName")}
                   disabled={!canRequest}
                   placeholder={t("patient.pharmacy.pharmacyPlaceholder")}
@@ -346,8 +347,9 @@ export default function PatientPharmacyPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("patient.pharmacy.labelQuantity")}</Label>
+                <Label htmlFor="refill-quantity">{t("patient.pharmacy.labelQuantity")}</Label>
                 <Input
+                  id="refill-quantity"
                   type="number"
                   min={1}
                   step={1}
@@ -361,8 +363,9 @@ export default function PatientPharmacyPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("patient.pharmacy.labelNotes")}</Label>
+              <Label htmlFor="refill-notes">{t("patient.pharmacy.labelNotes")}</Label>
               <Textarea
+                id="refill-notes"
                 rows={3}
                 {...form.register("notes")}
                 disabled={!canRequest}

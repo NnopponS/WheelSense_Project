@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -844,29 +844,6 @@ export function OperationsConsole({
   const patients = useMemo(() => (patientsQuery.data ?? []) as ListPatientsResponse, [patientsQuery.data]);
   const users = useMemo(() => (usersQuery.data ?? []) as UserSearchResult[], [usersQuery.data]);
   const tasks = useMemo(() => (tasksQuery.data ?? []) as ListWorkflowTasksResponse, [tasksQuery.data]);
-
-  // region agent log
-  useEffect(() => {
-    const linked = tasks.filter((t) => t.workflow_job_id != null).length;
-    void fetch("http://127.0.0.1:7687/ingest/3079ba95-d656-44c3-9953-dc1c569178f1", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4d0de1" },
-      body: JSON.stringify({
-        sessionId: "4d0de1",
-        hypothesisId: "H5",
-        location: "OperationsConsole.tsx:tasks",
-        message: "ops console tasks query",
-        data: {
-          role,
-          tasksLen: tasks.length,
-          workflowLinked: linked,
-          fetchStatus: tasksQuery.fetchStatus,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }, [tasks, role, tasksQuery.fetchStatus]);
-  // endregion
 
   const schedules = useMemo(
     () => (schedulesQuery.data ?? []) as ListWorkflowSchedulesResponse,

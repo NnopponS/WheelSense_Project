@@ -4,30 +4,36 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
+
+AIProvider = Literal["ollama", "copilot", "openai", "openrouter"]
 
 
 class AISettingsOut(BaseModel):
-    provider: Literal["ollama", "copilot"]
+    provider: AIProvider
     model: str
-    workspace_default_provider: Literal["ollama", "copilot"]
+    workspace_default_provider: AIProvider
     workspace_default_model: str
+    openai_configured: bool = False
+    openrouter_configured: bool = False
 
 
 class AIWorkspaceSettingsUpdate(BaseModel):
     """Compatibility payload for admin update on /settings/ai."""
 
-    provider: Literal["ollama", "copilot"]
+    provider: AIProvider
     model: str = Field(..., max_length=128)
     manual_override: bool = False
+    api_key: SecretStr | None = None
 
 
 class GlobalAISettingsUpdate(BaseModel):
     """Admin-only workspace defaults (/settings/ai/global)."""
 
-    default_provider: Literal["ollama", "copilot"]
+    default_provider: AIProvider
     default_model: str = Field(..., max_length=128)
     manual_override: bool = False
+    api_key: SecretStr | None = None
 
 class CopilotDeviceCodeOut(BaseModel):
     device_code: str

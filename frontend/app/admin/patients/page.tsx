@@ -38,7 +38,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api, ApiError } from "@/lib/api";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
-import { getPatientDetailPath, getPatientsPath } from "@/lib/routes";
+import { getPatientDetailPath } from "@/lib/routes";
 import { hasCapability } from "@/lib/permissions";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import {
@@ -52,6 +52,7 @@ import {
 import type { ListPatientsResponse, CareScheduleOut, CaregiverOut } from "@/lib/api/task-scope-types";
 import { StaffTab } from "@/components/admin/patients/StaffTab";
 import { AccountsTab } from "@/components/admin/patients/AccountsTab";
+import AddPatientModal from "@/components/admin/patients/AddPatientModal";
 
 type CaregiverPatientAccessOut = {
   caregiver_id: number;
@@ -137,6 +138,7 @@ export default function AdminPatientsPage() {
     parsePatientListFilter(searchParams.get("view")),
   );
   const [patientToDelete, setPatientToDelete] = useState<PatientRow | null>(null);
+  const [createPatientOpen, setCreatePatientOpen] = useState(false);
 
   const replaceListState = useCallback(
     (nextSearch: string, nextFilter: PatientListFilter) => {
@@ -508,12 +510,12 @@ export default function AdminPatientsPage() {
         { label: t("nav.patients") },
       ]}
       actions={
-        <Button asChild>
-          <Link href={`${getPatientsPath(user?.role || "admin")}/new`}>
+        canDeletePatient ? (
+          <Button onClick={() => setCreatePatientOpen(true)}>
             <Plus className="h-5 w-5" aria-hidden="true" />
             {t("patients.addNew")}
-          </Link>
-        </Button>
+          </Button>
+        ) : null
       }
     >
 
@@ -771,6 +773,15 @@ export default function AdminPatientsPage() {
         </TabsContent>
       </Tabs>
 
+      {createPatientOpen ? (
+        <AddPatientModal
+          open
+          onClose={() => setCreatePatientOpen(false)}
+          onCreated={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["admin", "patients"] });
+          }}
+        />
+      ) : null}
       <Dialog
         open={patientToDelete !== null}
         onOpenChange={(open) => {

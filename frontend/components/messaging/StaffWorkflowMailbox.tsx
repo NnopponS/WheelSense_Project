@@ -33,6 +33,7 @@ import {
   type MessagingRecipientRow,
 } from "@/components/messaging/MessagingRecipientPicker";
 import { useAuth } from "@/hooks/useAuth";
+import { getRoleHome } from "@/lib/routes";
 import {
   WorkflowComposeAttachments,
   WorkflowMessageAttachmentLinks,
@@ -53,7 +54,7 @@ import { canDeleteWorkflowMessage, WORKFLOW_MESSAGE_MAX_ATTACHMENTS } from "@/li
 const EMPTY_SELECT = "__empty__";
 
 /** Matches `GET /workflow/messaging/recipients` (staff + patient accounts in workspace). */
-const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "head_caregiver", "caregiver", "patient"] as const;
+const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "caregiver", "patient"] as const;
 type RecipientFilterRole = (typeof RECIPIENT_FILTER_ROLES)[number];
 
 const composeSchema = z.object({
@@ -385,7 +386,7 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
       breadcrumbs={[
         {
           label: t("nav.dashboard"),
-          href: `/${variant.replace("_", "-")}`,
+          href: getRoleHome(user?.role ?? "caregiver"),
         },
         { label: t("nav.messages") },
       ]}

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
 import httpx
+from pydantic import SecretStr
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
@@ -18,7 +19,7 @@ from app.api.dependencies import (
     get_db,
 )
 from app.config import settings
-from app.core.token_crypto import encrypt_secret
+from app.core.token_crypto import decrypt_secret, encrypt_secret
 from app.models.chat import WorkspaceAISettings
 from app.models.core import Workspace
 from app.models.users import User
@@ -72,6 +73,7 @@ def _copilot_model_info(model: object) -> CopilotModelInfo:
 
 
 async def _build_ai_settings_out(db: AsyncSession, workspace_id: int) -> AISettingsOut:
+    row = await db.get(WorkspaceAISettings, workspace_id)
     ws_p, ws_m = await ai_chat.get_workspace_ai_defaults(db, workspace_id)
     eff_p, eff_m = await ai_chat.resolve_effective_ai(
         db,
@@ -84,6 +86,8 @@ async def _build_ai_settings_out(db: AsyncSession, workspace_id: int) -> AISetti
         model=eff_m,
         workspace_default_provider=ws_p,  # type: ignore[arg-type]
         workspace_default_model=ws_m,
+        openai_configured=bool(row and row.openai_api_key_encrypted and decrypt_secret(row.openai_api_key_encrypted)),
+        openrouter_configured=bool(row and row.openrouter_api_key_encrypted and decrypt_secret(row.openrouter_api_key_encrypted)),
     )
 
 
@@ -123,6 +127,8 @@ async def _ensure_model_can_be_saved(
     model: str,
     manual_override: bool,
 ) -> None:
+    if not model.strip():
+        raise HTTPException(status_code=422, detail="Model must not be blank")
     if manual_override or provider != "copilot":
         return
     models, connected, message, source = await _discover_copilot_models(db, workspace_id)
@@ -141,6 +147,22 @@ async def _ensure_model_can_be_saved(
                 f"Available models: {available}. Set manual_override=true to save it anyway."
             ),
         )
+
+
+async def _save_cloud_key(db: AsyncSession, row: WorkspaceAISettings, provider: str, api_key: SecretStr | None) -> None:
+    if provider not in ai_chat.CLOUD_PROVIDER_URLS:
+        if api_key is not None:
+            raise HTTPException(status_code=422, detail="API keys apply only to OpenAI and OpenRouter")
+        return
+    if api_key is not None:
+        key = api_key.get_secret_value().strip()
+        if not key or len(key) > 4096 or any(char.isspace() for char in key):
+            raise HTTPException(status_code=422, detail="API key must be 1–4096 characters without whitespace")
+        setattr(row, f"{provider}_api_key_encrypted", encrypt_secret(key))
+    try:
+        await ai_chat.get_cloud_provider_options(db, row.workspace_id, provider)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
 
 
 @router.get("", response_model=AISettingsOut)
@@ -166,6 +188,7 @@ async def update_workspace_ai_settings(
         manual_override=body.manual_override,
     )
     row = await _get_or_create_ws_ai_row(db, workspace.id)
+    await _save_cloud_key(db, row, body.provider, body.api_key)
     row.default_provider = body.provider
     row.default_model = body.model
     db.add(row)
@@ -187,6 +210,7 @@ async def update_global_ai_settings(
         manual_override=body.manual_override,
     )
     row = await _get_or_create_ws_ai_row(db, workspace.id)
+    await _save_cloud_key(db, row, body.default_provider, body.api_key)
     row.default_provider = body.default_provider
     row.default_model = body.default_model
     db.add(row)

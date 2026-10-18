@@ -76,8 +76,8 @@ class Settings(BaseSettings):
     ha_base_url: str = "http://localhost:8123"
     ha_access_token: str = ""
 
-    # AI chat (Ollama + GitHub Copilot CLI)
-    ai_provider: str = "ollama"  # ollama | copilot
+    # Workspace API keys for cloud providers are encrypted in workspace_ai_settings.
+    ai_provider: str = "ollama"  # ollama | copilot | openai | openrouter
     ai_default_model: str = "qwen2.5:7b"
     ollama_base_url: str = "http://127.0.0.1:11434/v1"
     ollama_fallback_model: str = "qwen2.5:7b"

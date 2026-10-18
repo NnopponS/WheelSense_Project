@@ -6,6 +6,8 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
+import { getPatientDetailPath } from "@/lib/routes";
 import { api, ApiError } from "@/lib/api";
 import type { Patient } from "@/lib/types";
 import {
@@ -54,9 +56,10 @@ export default function AddPatientModal({
   onCreated,
 }: AddPatientModalProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const router = useRouter();
   const [formError, setFormError] = useState("");
-  const defaultValues = createPatientFormDefaultValues();
+  const [defaultValues] = useState(createPatientFormDefaultValues);
 
   const form = useForm<PatientCreateFormValues>({
     resolver: zodResolver(patientCreateFormSchema),
@@ -109,7 +112,7 @@ export default function AddPatientModal({
 
       await onCreated();
       closeModal();
-      router.push(`/head-caregiver/personnel/${created.id}`);
+      router.push(getPatientDetailPath(user?.role ?? "admin", created.id));
     } catch (err) {
       if (createdPatientId != null && emergencyContact) {
         try {
@@ -136,7 +139,7 @@ export default function AddPatientModal({
           <DialogHeader>
             <DialogTitle>{t("patients.createTitle")}</DialogTitle>
             <DialogDescription>
-              Standardized patient intake form using schema validation and reusable UI primitives.
+              {t("patients.createDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -294,6 +297,7 @@ export default function AddPatientModal({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label={t("patients.removeRow")}
                         onClick={() => surgeriesFieldArray.remove(index)}
                         disabled={isSubmitting || surgeriesFieldArray.fields.length === 1}
                       >
@@ -483,8 +487,10 @@ function TextField({
 }) {
   return (
     <div className={cn("space-y-2", className)}>
-      <Label>{label}</Label>
-      {children}
+      <Label className="block space-y-2">
+        <span>{label}</span>
+        {children}
+      </Label>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );

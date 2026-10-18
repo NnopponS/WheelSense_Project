@@ -20,14 +20,16 @@ import { AdlAnalysisCard } from "@/components/patients/AdlAnalysisCard";
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
 type AISettingsOut = {
-  provider?: "ollama" | "copilot";
+  provider?: "ollama" | "copilot" | "openai" | "openrouter";
   model?: string;
-  workspace_default_provider?: "ollama" | "copilot";
+  workspace_default_provider?: "ollama" | "copilot" | "openai" | "openrouter";
   workspace_default_model?: string;
+  openai_configured?: boolean;
+  openrouter_configured?: boolean;
 };
 
 type AIHealthOut = {
-  default_provider?: "ollama" | "copilot";
+  default_provider?: "ollama" | "copilot" | "openai" | "openrouter";
   ollama_configured?: boolean;
   copilot_configured?: boolean;
 };
@@ -274,7 +276,9 @@ export function PatientHealthAnalysisPanel({
       ? aiHealthQuery.data?.copilot_configured
       : aiProvider === "ollama"
         ? aiHealthQuery.data?.ollama_configured
-        : undefined;
+        : aiProvider === "openai" || aiProvider === "openrouter"
+          ? aiSettingsQuery.data?.[`${aiProvider}_configured`]
+          : undefined;
 
   async function refreshAnalysis() {
     setIsRefreshing(true);

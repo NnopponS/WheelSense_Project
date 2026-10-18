@@ -838,8 +838,9 @@ export default function AccountPage() {
                     }
                   />
                   <div>
-                    <label className="mb-1 block text-sm font-medium">{t("patients.dateOfBirth")}</label>
+                    <label htmlFor="account-patient-birth-date" className="mb-1 block text-sm font-medium">{t("patients.dateOfBirth")}</label>
                     <Input
+                      id="account-patient-birth-date"
                       type="date"
                       value={patientRecordForm.date_of_birth}
                       onChange={(event) =>
@@ -850,8 +851,9 @@ export default function AccountPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">{t("patients.gender")}</label>
+                    <label htmlFor="account-patient-gender" className="mb-1 block text-sm font-medium">{t("patients.gender")}</label>
                     <select
+                      id="account-patient-gender"
                       className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring/30"
                       value={patientRecordForm.gender}
                       onChange={(event) =>
@@ -909,8 +911,9 @@ export default function AccountPage() {
                 </div>
 
                 <div className="mt-4 space-y-2">
-                  <label className="block text-sm font-medium">{t("account.allergiesFieldLabel")}</label>
+                  <label htmlFor="account-patient-allergies" className="block text-sm font-medium">{t("account.allergiesFieldLabel")}</label>
                   <Textarea
+                    id="account-patient-allergies"
                     rows={4}
                     value={patientRecordForm.allergiesText}
                     placeholder={t("patients.allergiesPlaceholder")}
@@ -924,8 +927,9 @@ export default function AccountPage() {
                 </div>
 
                 <div className="mt-4 space-y-2">
-                  <label className="block text-sm font-medium">{t("patients.formSectionNotes")}</label>
+                  <label htmlFor="account-patient-notes" className="block text-sm font-medium">{t("patients.formSectionNotes")}</label>
                   <Textarea
+                    id="account-patient-notes"
                     rows={3}
                     value={patientRecordForm.notes}
                     onChange={(event) =>
@@ -1215,15 +1219,15 @@ function Field({
   type?: string;
 }) {
   return (
-    <div>
-      <label className="mb-1 block text-sm font-medium">{label}</label>
+    <label className="block">
+      <span className="mb-1 block text-sm font-medium">{label}</span>
       <Input
         type={type}
         value={value}
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
       />
-    </div>
+    </label>
   );
 }
 

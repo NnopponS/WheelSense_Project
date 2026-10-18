@@ -953,6 +953,7 @@ export function PatientCareCoordinationPanel({
           <CardContent className="space-y-3 pt-6">
             <h3 className="text-sm font-semibold text-foreground">{t("observer.patientDetail.addObservation")}</h3>
             <Textarea
+              aria-label={t("observer.patientDetail.addObservation")}
               value={noteText}
               onChange={(event) => setNoteText(event.target.value)}
               rows={4}
@@ -989,6 +990,7 @@ export function PatientCareCoordinationPanel({
               </Select>
             </div>
             <Textarea
+              aria-label={t("observer.patientDetail.submitHandover")}
               value={handoverText}
               onChange={(event) => setHandoverText(event.target.value)}
               rows={4}

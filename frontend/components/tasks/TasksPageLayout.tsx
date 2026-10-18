@@ -197,13 +197,13 @@ export function TasksPageLayout({
                 onClick={() => setRoutineSheetOpen(true)}
               >
                 <ListChecks className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">{t("tasks.dailyRoutineButton")}</span>
+                <span className="sr-only sm:not-sr-only">{t("tasks.dailyRoutineButton")}</span>
               </Button>
             )}
             {canCreate && (
               <Button size="sm" onClick={() => setShowCreateDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">{t("tasks.create")}</span>
+                <span className="sr-only sm:not-sr-only">{t("tasks.create")}</span>
               </Button>
             )}
             {canManage && (

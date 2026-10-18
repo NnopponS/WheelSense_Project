@@ -231,13 +231,13 @@ export default function SupervisorPrescriptionsPage() {
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
-                <Label>{t("supervisor.prescriptions.patientLabel")}</Label>
+                <Label htmlFor="prescription-patient">{t("supervisor.prescriptions.patientLabel")}</Label>
                 <Controller
                   control={form.control}
                   name="patientId"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
+                      <SelectTrigger id="prescription-patient">
                         <SelectValue placeholder={t("supervisor.prescriptions.selectPatient")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -257,13 +257,13 @@ export default function SupervisorPrescriptionsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("supervisor.prescriptions.specialistLabel")}</Label>
+                <Label htmlFor="prescription-specialist">{t("supervisor.prescriptions.specialistLabel")}</Label>
                 <Controller
                   control={form.control}
                   name="specialistId"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
+                      <SelectTrigger id="prescription-specialist">
                         <SelectValue placeholder={t("supervisor.prescriptions.selectSpecialist")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -280,24 +280,24 @@ export default function SupervisorPrescriptionsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("supervisor.prescriptions.medicationLabel")}</Label>
-                <Input {...form.register("medicationName")} placeholder={t("supervisor.prescriptions.medicationPlaceholder")} />
+                <Label htmlFor="prescription-medication">{t("supervisor.prescriptions.medicationLabel")}</Label>
+                <Input id="prescription-medication" {...form.register("medicationName")} placeholder={t("supervisor.prescriptions.medicationPlaceholder")} />
                 {form.formState.errors.medicationName ? (
                   <p className="text-sm text-destructive">{t(form.formState.errors.medicationName.message as TranslationKey)}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>{t("supervisor.prescriptions.dosageLabel")}</Label>
-                <Input {...form.register("dosage")} placeholder={t("supervisor.prescriptions.dosagePlaceholder")} />
+                <Label htmlFor="prescription-dosage">{t("supervisor.prescriptions.dosageLabel")}</Label>
+                <Input id="prescription-dosage" {...form.register("dosage")} placeholder={t("supervisor.prescriptions.dosagePlaceholder")} />
                 {form.formState.errors.dosage ? (
                   <p className="text-sm text-destructive">{t(form.formState.errors.dosage.message as TranslationKey)}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>{t("supervisor.prescriptions.frequencyLabel")}</Label>
-                <Input {...form.register("frequency")} placeholder={t("supervisor.prescriptions.frequencyPlaceholder")} />
+                <Label htmlFor="prescription-frequency">{t("supervisor.prescriptions.frequencyLabel")}</Label>
+                <Input id="prescription-frequency" {...form.register("frequency")} placeholder={t("supervisor.prescriptions.frequencyPlaceholder")} />
                 {form.formState.errors.frequency ? (
                   <p className="text-sm text-destructive">{t(form.formState.errors.frequency.message as TranslationKey)}</p>
                 ) : null}
@@ -305,8 +305,8 @@ export default function SupervisorPrescriptionsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("supervisor.prescriptions.instructionsLabel")}</Label>
-              <Textarea rows={3} {...form.register("instructions")} placeholder={t("supervisor.prescriptions.instructionsPlaceholder")} />
+              <Label htmlFor="prescription-instructions">{t("supervisor.prescriptions.instructionsLabel")}</Label>
+              <Textarea id="prescription-instructions" rows={3} {...form.register("instructions")} placeholder={t("supervisor.prescriptions.instructionsPlaceholder")} />
             </div>
 
             {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}

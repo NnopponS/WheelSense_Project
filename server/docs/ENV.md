@@ -94,7 +94,7 @@ See `RUNBOOK.md` for the dual-environment workflow.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `AI_PROVIDER` | `ollama` (`copilot` in core compose) | Default provider: `ollama` or `copilot` |
+| `AI_PROVIDER` | `ollama` (`copilot` in core compose) | Default provider: `ollama`, `copilot`, `openai`, or `openrouter`. Configure cloud keys per workspace in Admin Settings → AI. |
 | `AI_DEFAULT_MODEL` | `gemma4:e4b` (`gpt-4.1` in core compose) | Workspace default model |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434/v1` | OpenAI-compatible Ollama URL |
 | `OLLAMA_FALLBACK_MODEL` | `gemma4:e4b` | Ollama model used when a Copilot workspace falls back to Ollama. Keep this separate from Copilot model ids such as `gpt-4.1`. |

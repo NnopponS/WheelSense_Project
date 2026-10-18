@@ -1,2 +1,6 @@
-export { default } from "@/app/admin/facility-management/page";
+import { redirect } from "next/navigation";
+
+export default function CaregiverFacilityManagementPage() {
+  redirect("/caregiver/floorplans");
+}
 

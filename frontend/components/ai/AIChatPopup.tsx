@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Bot,
   History,
-  MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
@@ -978,12 +977,11 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="ws-ai-fab fixed right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-elevated transition-smooth hover:bg-primary/90 sm:right-6 sm:h-14 sm:px-5"
+        className="ws-ai-fab fixed right-4 z-50 flex size-12 items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-elevated transition-smooth hover:bg-primary/90 sm:right-6 sm:h-14 sm:w-auto sm:px-5"
         aria-label={t("aiChat.openChat")}
       >
         <Bot className="h-5 w-5" />
         <span className="hidden sm:inline">{t("aiChat.fab.label")}</span>
-        <MessageCircle className="h-5 w-5 sm:hidden" />
       </button>
 
       {open && (

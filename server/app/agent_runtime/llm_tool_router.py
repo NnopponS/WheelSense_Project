@@ -821,7 +821,15 @@ async def propose_llm_tool_turn(
         calls: list[ParsedToolCall] = []
         assistant_side_text = ""
 
-        if provider == "copilot":
+        if provider in ai_chat.CLOUD_PROVIDER_URLS:
+            try:
+                options = await ai_chat.get_cloud_provider_options(db, workspace.id, provider)
+                calls, assistant_side_text = await complete_ollama_with_tool_calls(
+                    model=plan_router_model, messages=oai_messages, tools=tools, **options,
+                )
+            except Exception as exc:
+                logger.warning("Cloud provider tool routing completion failed (%s)", type(exc).__name__)
+        elif provider == "copilot":
             try:
                 calls = await collect_copilot_json_tool_calls(
                     db=db,

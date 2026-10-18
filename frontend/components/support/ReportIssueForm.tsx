@@ -162,7 +162,7 @@ export default function ReportIssueForm({ audience = "staff" }: { audience?: "st
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>{t("support.fieldCategory")}</Label>
+                  <Label htmlFor="issue-category">{t("support.fieldCategory")}</Label>
                   <Controller
                     control={form.control}
                     name="category"
@@ -172,7 +172,7 @@ export default function ReportIssueForm({ audience = "staff" }: { audience?: "st
                         onValueChange={field.onChange}
                         disabled={form.formState.isSubmitting}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="issue-category">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -191,7 +191,7 @@ export default function ReportIssueForm({ audience = "staff" }: { audience?: "st
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("support.fieldPriority")}</Label>
+                  <Label htmlFor="issue-priority">{t("support.fieldPriority")}</Label>
                   <Controller
                     control={form.control}
                     name="priority"
@@ -201,7 +201,7 @@ export default function ReportIssueForm({ audience = "staff" }: { audience?: "st
                         onValueChange={field.onChange}
                         disabled={form.formState.isSubmitting}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="issue-priority">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

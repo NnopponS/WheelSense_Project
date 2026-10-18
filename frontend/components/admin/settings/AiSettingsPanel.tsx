@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import { Badge } from "@/components/ui/badge";
@@ -36,11 +37,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type AIProvider = "ollama" | "copilot" | "openai" | "openrouter";
+
 type AISettingsOut = {
-  provider: "ollama" | "copilot";
+  provider: AIProvider;
   model: string;
-  workspace_default_provider: "ollama" | "copilot";
+  workspace_default_provider: AIProvider;
   workspace_default_model: string;
+  openai_configured: boolean;
+  openrouter_configured: boolean;
 };
 
 type CopilotModel = {
@@ -212,11 +217,14 @@ function ProviderModelSection({
   disabled,
   saveLabel,
   onSave,
+  apiKey,
+  onApiKeyChange,
+  keyConfigured,
 }: {
   title: string;
   description: string;
-  provider: "ollama" | "copilot";
-  onProviderChange: (value: "ollama" | "copilot") => void;
+  provider: AIProvider;
+  onProviderChange: (value: AIProvider) => void;
   model: string;
   onModelChange: (value: string) => void;
   ollamaModels: OllamaModelsResponse | null;
@@ -224,8 +232,12 @@ function ProviderModelSection({
   disabled: boolean;
   saveLabel: string;
   onSave: () => Promise<void>;
+  apiKey: string;
+  onApiKeyChange: (value: string) => void;
+  keyConfigured: boolean;
 }) {
   const { t } = useTranslation();
+  const cloudProvider = provider === "openai" || provider === "openrouter";
   const ollamaNames = useMemo(
     () => (ollamaModels?.models ?? []).map((entry) => entry.name).sort((a, b) => a.localeCompare(b)),
     [ollamaModels],
@@ -245,26 +257,32 @@ function ProviderModelSection({
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>{t("settings.ai.providerField")}</Label>
-            <Select value={provider} onValueChange={(value) => onProviderChange(value as "ollama" | "copilot")}>
-              <SelectTrigger>
+            <Label htmlFor="ai-provider">{t("settings.ai.providerField")}</Label>
+            <Select value={provider} onValueChange={(value) => onProviderChange(value as AIProvider)} disabled={disabled}>
+              <SelectTrigger id="ai-provider">
                 <SelectValue placeholder={t("settings.ai.chooseProviderPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ollama">{t("settings.ai.providerOllama")}</SelectItem>
                 <SelectItem value="copilot">{t("settings.ai.providerCopilot")}</SelectItem>
+                <SelectItem value="openai">OpenAI</SelectItem>
+                <SelectItem value="openrouter">OpenRouter</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>{t("settings.ai.modelField")}</Label>
-            <Select
+            <Label htmlFor="ai-model">{t("settings.ai.modelField")}</Label>
+            {cloudProvider ? (
+              <Input id="ai-model" value={model} onChange={(event) => onModelChange(event.target.value)}
+                placeholder={provider === "openai" ? "gpt-4.1" : "openai/gpt-4.1"}
+                maxLength={128} disabled={disabled} autoComplete="off" />
+            ) : <Select
               value={currentValueInList ? model : "__empty__"}
               onValueChange={(value) => onModelChange(value === "__empty__" ? "" : value)}
-              disabled={options.length === 0}
+              disabled={disabled || options.length === 0}
             >
-              <SelectTrigger>
+              <SelectTrigger id="ai-model">
                 <SelectValue
                   placeholder={
                     provider === "ollama"
@@ -288,9 +306,23 @@ function ProviderModelSection({
                   ))
                 )}
               </SelectContent>
-            </Select>
+            </Select>}
           </div>
         </div>
+
+        {cloudProvider ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="ai-api-key">{t("settings.ai.apiKey")}</Label>
+            <Input id="ai-api-key" type="password" value={apiKey}
+              onChange={(event) => onApiKeyChange(event.target.value)}
+              placeholder={keyConfigured ? t("settings.ai.savedKeyPlaceholder") : t("settings.ai.enterApiKey")}
+              autoComplete="new-password" spellCheck={false} maxLength={4096} disabled={disabled}
+              aria-describedby="ai-key-hint" />
+            <p id="ai-key-hint" className="text-sm text-muted-foreground">
+              {keyConfigured ? t("settings.ai.keySaved") : t("settings.ai.keyRequired")}
+            </p>
+          </div>
+        ) : null}
 
         {provider === "ollama" && ollamaModels?.reachable === false && ollamaModels.message ? (
           <SectionMessage tone="warning">{ollamaModels.message}</SectionMessage>
@@ -307,7 +339,7 @@ function ProviderModelSection({
         ) : null}
 
         <div className="flex justify-end">
-          <Button type="button" onClick={() => void onSave()} disabled={disabled || !model}>
+          <Button type="button" onClick={() => void onSave()} disabled={disabled || !model.trim() || (cloudProvider && !keyConfigured && !apiKey.trim())}>
             {saveLabel}
           </Button>
         </div>
@@ -353,8 +385,9 @@ export default function AiSettingsPanel() {
   const refetchCopilotStatus = useCallback(() => refetchOrThrow(refetchCopilotStatusBase), [refetchCopilotStatusBase]);
   const refetchCopilotModels = useCallback(() => refetchOrThrow(refetchCopilotModelsBase), [refetchCopilotModelsBase]);
 
-  const [workspaceProvider, setWorkspaceProvider] = useState<"ollama" | "copilot">("ollama");
+  const [workspaceProvider, setWorkspaceProvider] = useState<AIProvider>("ollama");
   const [workspaceModel, setWorkspaceModel] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [copilotBusy, setCopilotBusy] = useState(false);
   const [copilotFlow, setCopilotFlow] = useState<CopilotDeviceFlow | null>(() => readStoredCopilotFlow());
@@ -386,8 +419,16 @@ export default function AiSettingsPanel() {
   const availableCopilotModels = sanitizedCopilotModels?.models ?? [];
   const availableOllamaModels = ollamaModels?.models ?? [];
   const activeProvider = aiSettings?.provider ?? "ollama";
-  const runtimeRowLabel = activeProvider === "copilot" ? t("settings.ai.copilotRowLabel") : "OLLAMA";
+  const runtimeRowLabel = activeProvider === "copilot" ? t("settings.ai.copilotRowLabel") : activeProvider.toUpperCase();
   const runtimeProviderState = useMemo(() => {
+    if (activeProvider === "openai" || activeProvider === "openrouter") {
+      const configured = Boolean(aiSettings?.[`${activeProvider}_configured`]);
+      return {
+        badge: configured ? "success" as const : "warning" as const,
+        text: configured ? t("settings.ai.keySaved") : t("settings.ai.runtimeUnavailable"),
+        hint: t("settings.ai.cloudProviderHint"),
+      };
+    }
     if (activeProvider === "copilot") {
       const connected = Boolean(copilotStatus?.connected);
       if (!connected) {
@@ -436,6 +477,7 @@ export default function AiSettingsPanel() {
     };
   }, [
     activeProvider,
+    aiSettings,
     availableCopilotModels.length,
     availableOllamaModels.length,
     copilotStatus?.connected,
@@ -592,9 +634,14 @@ export default function AiSettingsPanel() {
     try {
       await api.put("/settings/ai/global", {
         default_provider: workspaceProvider,
-        default_model: workspaceModel,
+        default_model: workspaceModel.trim(),
+        ...(apiKey.trim() ? { api_key: apiKey.trim() } : {}),
       });
+      setApiKey("");
       await refetchAi();
+      toast.success(t("settings.ai.saved"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("settings.ai.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -757,7 +804,9 @@ export default function AiSettingsPanel() {
                 {aiSettings
                   ? aiSettings.provider === "ollama"
                     ? t("settings.ai.providerOllama")
-                    : t("settings.ai.providerCopilot")
+                    : aiSettings.provider === "copilot"
+                      ? t("settings.ai.providerCopilot")
+                      : aiSettings.provider === "openai" ? "OpenAI" : "OpenRouter"
                   : "-"}
               </Badge>
             }
@@ -791,10 +840,13 @@ export default function AiSettingsPanel() {
         provider={workspaceProvider}
         onProviderChange={(value) => {
           setWorkspaceProvider(value);
+          setApiKey("");
           setWorkspaceModel(
             value === "ollama"
               ? availableOllamaModels[0]?.name ?? ""
-              : availableCopilotModels[0]?.id ?? "",
+              : value === "copilot"
+                ? availableCopilotModels[0]?.id ?? ""
+                : "",
           );
         }}
         model={workspaceModel}
@@ -804,6 +856,10 @@ export default function AiSettingsPanel() {
         disabled={saving}
         saveLabel={t("settings.ai.saveWorkspace")}
         onSave={saveWorkspaceAi}
+        apiKey={apiKey}
+        onApiKeyChange={setApiKey}
+        keyConfigured={Boolean(workspaceProvider === "openai" ? aiSettings?.openai_configured
+          : workspaceProvider === "openrouter" ? aiSettings?.openrouter_configured : false)}
       />
 
       <Card>

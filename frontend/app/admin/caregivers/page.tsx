@@ -719,13 +719,13 @@ export default function AdminCaregiversPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("tasks.priority")}</Label>
+                  <Label htmlFor="task-priority">{t("tasks.priority")}</Label>
                   <Controller
                     name="priority"
                     control={taskForm.control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger id="task-priority">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -748,13 +748,13 @@ export default function AdminCaregiversPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("adminCaregivers.schedule")}</Label>
+                  <Label htmlFor="task-schedule">{t("adminCaregivers.schedule")}</Label>
                   <Controller
                     name="scheduleId"
                     control={taskForm.control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger id="task-schedule">
                           <SelectValue placeholder={t("adminCaregivers.noSchedule")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -771,13 +771,13 @@ export default function AdminCaregiversPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("adminCaregivers.assignedCaregiver")}</Label>
+                  <Label htmlFor="task-caregiver">{t("adminCaregivers.assignedCaregiver")}</Label>
                   <Controller
                     name="assignedUserId"
                     control={taskForm.control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger id="task-caregiver">
                           <SelectValue placeholder={t("headNurse.scheduleUnassigned")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -834,13 +834,13 @@ export default function AdminCaregiversPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("adminCaregivers.typeLabel")}</Label>
+                  <Label htmlFor="schedule-type">{t("adminCaregivers.typeLabel")}</Label>
                   <Controller
                     name="scheduleType"
                     control={scheduleForm.control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger id="schedule-type">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -864,13 +864,13 @@ export default function AdminCaregiversPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("adminCaregivers.repeatLabel")}</Label>
+                  <Label htmlFor="schedule-repeat">{t("adminCaregivers.repeatLabel")}</Label>
                   <Controller
                     name="recurrenceRule"
                     control={scheduleForm.control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger id="schedule-repeat">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -897,13 +897,13 @@ export default function AdminCaregiversPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("adminCaregivers.assignedCaregiver")}</Label>
+                  <Label htmlFor="schedule-caregiver">{t("adminCaregivers.assignedCaregiver")}</Label>
                   <Controller
                     name="assignedUserId"
                     control={scheduleForm.control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger id="schedule-caregiver">
                           <SelectValue placeholder={t("headNurse.scheduleUnassigned")} />
                         </SelectTrigger>
                         <SelectContent>

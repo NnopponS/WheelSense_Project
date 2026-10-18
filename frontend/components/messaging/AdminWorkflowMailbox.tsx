@@ -49,8 +49,8 @@ import { canDeleteWorkflowMessage, WORKFLOW_MESSAGE_MAX_ATTACHMENTS } from "@/li
 type RecipientTarget = "role" | "user";
 type MessageTab = "all" | "inbox" | "sent";
 
-const ROLE_OPTIONS = ["admin", "head_caregiver", "head_caregiver", "caregiver", "patient"] as const;
-const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "head_caregiver", "caregiver", "patient"] as const;
+const ROLE_OPTIONS = ["admin", "head_caregiver", "caregiver", "patient"] as const;
+const RECIPIENT_FILTER_ROLES = ["admin", "head_caregiver", "caregiver", "patient"] as const;
 type RecipientFilterRole = (typeof RECIPIENT_FILTER_ROLES)[number];
 
 const TARGET_USER_NONE = "__none__";

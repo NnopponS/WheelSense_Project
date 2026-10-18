@@ -256,7 +256,7 @@ export default function AdminDemoControlPage() {
         >
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>{t("demoControl.alertType")}</Label>
+              <Label htmlFor="demo-alert-type">{t("demoControl.alertType")}</Label>
               <Select
                 value={alertType}
                 onValueChange={(v) => {
@@ -283,7 +283,7 @@ export default function AdminDemoControlPage() {
                   }
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger id="demo-alert-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -296,7 +296,7 @@ export default function AdminDemoControlPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t("demoControl.patient")}</Label>
+              <Label htmlFor="demo-alert-patient">{t("demoControl.patient")}</Label>
               <Select
                 value={alertPatientId}
                 onValueChange={(v) => {
@@ -309,7 +309,7 @@ export default function AdminDemoControlPage() {
                   }
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger id="demo-alert-patient">
                   <SelectValue placeholder={t("demoControl.selectPatient")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -323,9 +323,9 @@ export default function AdminDemoControlPage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>{t("demoControl.severity")}</Label>
+                <Label htmlFor="demo-alert-severity">{t("demoControl.severity")}</Label>
                 <Select value={alertSeverity} onValueChange={setAlertSeverity}>
-                  <SelectTrigger>
+                  <SelectTrigger id="demo-alert-severity">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,18 +337,18 @@ export default function AdminDemoControlPage() {
               </div>
               {alertType === "abnormal_hr" ? (
                 <div className="space-y-2">
-                  <Label>{t("demoControl.alertHrBpm")}</Label>
-                  <Input inputMode="numeric" value={alertHrBpm} onChange={(e) => setAlertHrBpm(e.target.value)} />
+                  <Label htmlFor="demo-alert-hr">{t("demoControl.alertHrBpm")}</Label>
+                  <Input id="demo-alert-hr" inputMode="numeric" value={alertHrBpm} onChange={(e) => setAlertHrBpm(e.target.value)} />
                 </div>
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label>{t("demoControl.alertTitle")}</Label>
-              <Input value={alertTitle} onChange={(e) => setAlertTitle(e.target.value)} />
+              <Label htmlFor="demo-alert-title">{t("demoControl.alertTitle")}</Label>
+              <Input id="demo-alert-title" value={alertTitle} onChange={(e) => setAlertTitle(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>{t("demoControl.alertDescription")}</Label>
-              <Textarea rows={3} value={alertDescription} onChange={(e) => setAlertDescription(e.target.value)} />
+              <Label htmlFor="demo-alert-description">{t("demoControl.alertDescription")}</Label>
+              <Textarea id="demo-alert-description" rows={3} value={alertDescription} onChange={(e) => setAlertDescription(e.target.value)} />
             </div>
             <Button className="w-full" disabled={!alertPatientId} onClick={handleCreateAlert}>
               <AlertTriangle className="mr-2 h-4 w-4" />
@@ -365,9 +365,9 @@ export default function AdminDemoControlPage() {
         >
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>{t("demoControl.actorType")}</Label>
+              <Label htmlFor="demo-actor-type">{t("demoControl.actorType")}</Label>
               <Select value={actorType} onValueChange={(value) => setActorType(value as ActorType)}>
-                <SelectTrigger>
+                <SelectTrigger id="demo-actor-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -377,9 +377,9 @@ export default function AdminDemoControlPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t("demoControl.actor")}</Label>
+              <Label htmlFor="demo-actor">{t("demoControl.actor")}</Label>
               <Select value={actorId} onValueChange={setActorId}>
-                <SelectTrigger>
+                <SelectTrigger id="demo-actor">
                   <SelectValue placeholder={t("demoControl.selectActor")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -398,9 +398,9 @@ export default function AdminDemoControlPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t("demoControl.room")}</Label>
+              <Label htmlFor="demo-room">{t("demoControl.room")}</Label>
               <Select value={roomId} onValueChange={setRoomId}>
-                <SelectTrigger>
+                <SelectTrigger id="demo-room">
                   <SelectValue placeholder={t("demoControl.selectRoom")} />
                 </SelectTrigger>
                 <SelectContent>

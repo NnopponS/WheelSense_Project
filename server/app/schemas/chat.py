@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from app.schemas.ai_settings import AIProvider
 
 class ChatMessagePart(BaseModel):
     role: Literal["user", "assistant"]
@@ -16,7 +17,7 @@ class ChatStreamRequest(BaseModel):
 
     messages: list[ChatMessagePart] = Field(min_length=1)
     conversation_id: int | None = None
-    provider: Literal["ollama", "copilot"] | None = None
+    provider: AIProvider | None = None
     model: str | None = None
 
 class ChatConversationOut(BaseModel):

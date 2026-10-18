@@ -1,2 +1,6 @@
-export { default } from "@/app/admin/ml-calibration/page";
+import { redirect } from "next/navigation";
+
+export default function CaregiverCalibrationPage() {
+  redirect("/caregiver/devices");
+}
 

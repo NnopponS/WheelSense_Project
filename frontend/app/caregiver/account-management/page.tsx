@@ -1,2 +1,6 @@
-export { default } from "@/app/admin/account-management/page";
+import { redirect } from "next/navigation";
+
+export default function CaregiverAccountManagementPage() {
+  redirect("/caregiver/settings");
+}
 

@@ -363,6 +363,7 @@ function FacilityManagementPageContent() {
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="search"
+                    aria-label={t("facilityMgmt.searchFacilities")}
                     placeholder={t("facilityMgmt.searchFacilities")}
                     value={facilitySearch}
                     onChange={(e) => setFacilitySearch(e.target.value)}
@@ -604,24 +605,27 @@ function FacilityManagementPageContent() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>{t("facilityMgmt.nameRequired")}</Label>
+              <Label htmlFor="facility-name">{t("facilityMgmt.nameRequired")}</Label>
               <Input
+                id="facility-name"
                 value={facilityForm.name}
                 onChange={(e) => setFacilityForm((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder={t("facilityMgmt.namePlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("facilityMgmt.addressLabel")}</Label>
+              <Label htmlFor="facility-address">{t("facilityMgmt.addressLabel")}</Label>
               <Input
+                id="facility-address"
                 value={facilityForm.address}
                 onChange={(e) => setFacilityForm((prev) => ({ ...prev, address: e.target.value }))}
                 placeholder={t("facilityMgmt.addressPlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("facilityMgmt.descriptionLabel")}</Label>
+              <Label htmlFor="facility-description">{t("facilityMgmt.descriptionLabel")}</Label>
               <Input
+                id="facility-description"
                 value={facilityForm.description}
                 onChange={(e) => setFacilityForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder={t("facilityMgmt.descriptionPlaceholder")}
@@ -653,8 +657,9 @@ function FacilityManagementPageContent() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>{t("facilityMgmt.floorNumberRequired")}</Label>
+              <Label htmlFor="floor-number">{t("facilityMgmt.floorNumberRequired")}</Label>
               <Input
+                id="floor-number"
                 type="number"
                 min={0}
                 value={floorForm.floorNumber}
@@ -664,8 +669,9 @@ function FacilityManagementPageContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("facilityMgmt.floorDisplayName")}</Label>
+              <Label htmlFor="floor-display-name">{t("facilityMgmt.floorDisplayName")}</Label>
               <Input
+                id="floor-display-name"
                 value={floorForm.name}
                 onChange={(e) => setFloorForm((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder={t("facilityMgmt.floorDisplayNamePlaceholder")}

@@ -325,7 +325,7 @@ function ZoneDialog({
                   }))
                 }
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1" aria-label={t("caregivers.activeStatus")}>
                   <SelectValue placeholder={t("caregivers.selectStatus")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,7 +439,7 @@ function ShiftDialog({
                   setDraft((prev) => ({ ...prev, shiftType: value }))
                 }
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1" aria-label={t("caregivers.shiftType")}>
                   <SelectValue placeholder={t("caregivers.selectShiftType")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -1407,8 +1407,8 @@ export default function CaregiverDetailPane({
             )}
             {contactEditing && (
               <div className="flex flex-wrap items-center gap-3 border-t border-outline-variant/15 px-6 py-4">
-                <input className="input-field flex-1 text-sm min-w-[12rem]" placeholder={t("caregivers.phone")} value={contactDraft.phone} onChange={(e) => setContactDraft((p) => ({ ...p, phone: e.target.value }))} />
-                <input className="input-field flex-1 text-sm min-w-[12rem]" placeholder={t("caregivers.email")} value={contactDraft.email} onChange={(e) => setContactDraft((p) => ({ ...p, email: e.target.value }))} />
+                <input className="input-field flex-1 text-sm min-w-[12rem]" aria-label={t("caregivers.phone")} placeholder={t("caregivers.phone")} value={contactDraft.phone} onChange={(e) => setContactDraft((p) => ({ ...p, phone: e.target.value }))} />
+                <input className="input-field flex-1 text-sm min-w-[12rem]" aria-label={t("caregivers.email")} placeholder={t("caregivers.email")} value={contactDraft.email} onChange={(e) => setContactDraft((p) => ({ ...p, email: e.target.value }))} />
                 <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={() => setContactEditing(false)} disabled={profileSaving}>{t("common.cancel")}</button>
                 <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={() => void saveContactSection()} disabled={profileSaving}>{profileSaving ? t("common.saving") : t("common.save")}</button>
               </div>
