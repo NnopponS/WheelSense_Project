@@ -127,7 +127,7 @@ export function EaseAIResponseCard({
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Sparkles className="h-4 w-4" />
         </span>
-        <p className="text-sm font-semibold text-foreground">EaseAI Assistant</p>
+        <p className="text-sm font-semibold text-foreground">WheelSense Assistant</p>
       </div>
 
       {content ? (

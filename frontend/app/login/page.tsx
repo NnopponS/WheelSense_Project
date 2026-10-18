@@ -65,7 +65,7 @@ export default function LoginPage() {
   useEffect(() => {
     document.title = t("auth.documentTitle");
     return () => {
-      document.title = "Ease AI — Smart Wheelchair Care Platform";
+      document.title = "WheelSense — Smart Wheelchair Care Platform";
     };
   }, [locale, t]);
 
@@ -112,10 +112,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-[44%] bg-primary text-primary-foreground">
         <div className="flex w-full flex-col justify-between p-12">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-foreground/20 bg-primary-foreground/10">
-              <Logo size={28} className="text-primary-foreground" />
-            </div>
-            <span className="font-bold text-lg">Ease AI</span>
+            <Logo size={64} variant="inverse" />
           </div>
 
           <div className="space-y-4">
@@ -156,10 +153,7 @@ export default function LoginPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center dark:bg-white">
-              <Logo size={28} className="text-white dark:text-black" />
-            </div>
-            <span className="font-bold text-lg text-foreground">Ease AI</span>
+            <Logo size={64} />
           </div>
 
           <h1 className="text-2xl font-bold text-foreground mb-1">

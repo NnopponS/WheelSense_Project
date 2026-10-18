@@ -297,7 +297,7 @@ function ThinkingIndicator({ label }: { label: string }) {
         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80 animate-bounce [animation-delay:300ms]" />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">EaseAI</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">WheelSense</p>
         <p className="text-xs text-foreground-variant">{label}</p>
       </div>
     </div>
@@ -806,7 +806,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
       const confirmRes = await fetch(`${API_BASE}/chat/actions/${proposalId}/confirm`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ approved: false, note: "Rejected from EaseAI chat." }),
+        body: JSON.stringify({ approved: false, note: "Rejected from WheelSense chat." }),
       });
       if (!confirmRes.ok) {
         throw new Error(`Could not reject actions (${confirmRes.status}).`);
@@ -1056,7 +1056,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
                 <PanelLeftOpen className="h-4 w-4" aria-hidden />
               </button>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground">EaseAI</p>
+                <p className="text-sm font-semibold text-foreground">WheelSense</p>
                 <p className="truncate text-[11px] text-foreground-variant">
                   {activeTitle || t("aiChat.roleAssistant")}
                 </p>

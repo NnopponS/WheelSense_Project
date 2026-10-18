@@ -129,14 +129,8 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
     return (
       <>
         {/* Header - Logo and Platform Name */}
-        <div className="flex h-[var(--topbar-height)] items-center gap-3 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5">
-            <Logo size={28} className="text-primary" />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-base font-bold leading-tight text-foreground">{t("shell.platformName")}</p>
-            <p className="text-sm text-muted-foreground">{t("shell.platformSubtitle")}</p>
-          </div>
+        <div className="flex h-[var(--topbar-height)] shrink-0 items-center px-5">
+          <Logo size={56} />
         </div>
 
         {/* Navigation Groups */}
