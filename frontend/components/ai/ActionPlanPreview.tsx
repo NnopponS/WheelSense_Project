@@ -20,6 +20,7 @@ import { api } from "@/lib/api";
 import type { components } from "@/lib/api/generated/schema";
 import { useTranslation } from "@/lib/i18n";
 import { AITraceChips, type AITraceChip, type ProviderAttemptTrace } from "./AITraceChips";
+import { EaseAIResponseCards } from "./EaseAIResponseCards";
 
 type ExecutionPlan = components["schemas"]["ExecutionPlan"];
 type EntityReference = { type: string; id: string | number; name?: string };
@@ -231,6 +232,33 @@ export function ActionPlanPreview({
         : plan.risk_level === "high"
           ? t("aiChat.actionPlan.riskHigh")
           : plan.risk_level;
+
+  const planSteps = plan.steps ?? [];
+  const taskSteps = planSteps.filter((step) => step.tool_name === "create_task_management_task");
+  if (taskSteps.length > 0 && taskSteps.length === planSteps.length) {
+    const cards = taskSteps.map((step) => {
+      const args = (step.arguments ?? {}) as Record<string, unknown>;
+      const entities = plan.affected_entities as Array<{ type?: string; id?: number; name?: string }> | undefined;
+      return { kind: "task_draft", title: String(args.title || "Task"), task: {
+        ...args,
+        patient_name: entities?.find((entity) => entity.type === "patient" && entity.id === args.patient_id)?.name || resolvedEntities.find((entity) => entity.type === "patient" && entity.id === args.patient_id)?.name,
+        assignee: args.assign_to_self ? "You" : entities?.find((entity) => entity.type === "user" && entity.id === args.assigned_user_id)?.name,
+      } };
+    });
+    return (
+      <Card>
+        <CardHeader><CardTitle>Review task</CardTitle><CardDescription>Confirm the details before creating it.</CardDescription></CardHeader>
+        <CardContent><EaseAIResponseCards cards={cards} /></CardContent>
+        <CardFooter className="flex gap-2">
+          <Button variant="outline" className="flex-1" onClick={onCancel} disabled={isConfirming}>Cancel</Button>
+          <Button className="flex-1" onClick={onConfirm} disabled={isConfirming}>
+            {isConfirming ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <CheckCircle2 data-icon="inline-start" />}
+            {isConfirming ? "Creating…" : "Create task"}
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/10">

@@ -131,10 +131,18 @@ def _recommendations(factors: list[HealthRiskFactor], data_quality: str) -> list
     ordered = sorted(factors, key=lambda f: {"critical": 0, "warning": 1, "watch": 2, "info": 3}[f.severity])
     return [
         HealthRecommendation(
-            title=f"Review {factor.label.lower()}",
+            title=(
+                "Plan supported movement"
+                if factor.label.lower() in {"low movement activity", "inactivity event"}
+                else f"Review {factor.label.lower()}"
+            ),
             priority=factor.severity,
             rationale=factor.evidence,
-            suggested_action="Check the patient, confirm the reading, and escalate through the care workflow if the concern persists.",
+            suggested_action=(
+                "If the care plan permits, offer brief, supervised movement such as seated arm and leg range-of-motion. Walk only if their mobility plan allows. Stop for pain, dizziness, chest discomfort, or unusual breathlessness, and ask the care team or physiotherapist to adapt the activity."
+                if factor.label.lower() in {"low movement activity", "inactivity event"}
+                else "Check the patient, confirm the reading, and escalate through the care workflow if the concern persists."
+            ),
         )
         for factor in ordered[:3]
     ]

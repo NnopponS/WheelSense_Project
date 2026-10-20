@@ -13,7 +13,7 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     healthcheck:
-      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "health", "-m", "ok", "-q", "0"]
+      test: ["CMD-SHELL", "mosquitto_pub -h localhost -t health -m ok -q 0"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -32,10 +32,11 @@ services:
     environment:
       APP_NAME: ${APP_NAME:-Ease AI Server}
       SECRET_KEY: ${SECRET_KEY:-wheelsense-local-dev-secret-key}
-      MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
+      MQTT_BROKER: ${MQTT_BROKER:-broker.emqx.io}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TLS: ${MQTT_TLS:-false}
       AI_PROVIDER: ${AI_PROVIDER:-copilot}
       AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gpt-4.1}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}

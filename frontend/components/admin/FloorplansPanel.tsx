@@ -667,6 +667,7 @@ export default function FloorplansPanel({
       await refetch();
       await queryClient.invalidateQueries({ queryKey: ["admin", "floorplans-panel", "floor-rooms"] });
       await queryClient.invalidateQueries({ queryKey: ["device-detail-drawer", "rooms"] });
+      await queryClient.invalidateQueries({ queryKey: ["shared", "floorplan-role-viewer"] });
     } catch (err) {
       setMessage(err instanceof ApiError ? err.message : t("floorplan.saveFailed"));
     } finally {
@@ -1276,6 +1277,7 @@ export default function FloorplansPanel({
               t("floorplan.floorCreated"),
               t("floorplan.assignPatientSuccess"),
               t("floorplan.removePatientFromRoomSuccess"),
+              t("facilityWorkspace.referenceDraft"),
             ].includes(message)
               ? "text-primary"
               : "text-error"

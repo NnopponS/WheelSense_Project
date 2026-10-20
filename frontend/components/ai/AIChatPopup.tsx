@@ -1130,14 +1130,15 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
                   {m.role === "assistant" ? (
                     assistantHasRenderablePayload(m) ? (
                       <>
-                        <EaseAIResponseCard
+                        {(!m.proposal || m.executionResult) ? <EaseAIResponseCard
                           content={m.content}
                           grounding={m.grounding}
                           executionResult={m.executionResult}
                           onQuestionChoice={handleQuestionChoice}
                           onNavigate={navigateFromEaseAI}
-                        />
-                        {m.proposal ? (
+                          showTechnicalDetails={showAiTrace}
+                        /> : null}
+                        {m.proposal && (!m.executionResult || m.actionState?.status === "failed") ? (
                           <InlineActionBlock
                             messageId={m.id}
                             proposal={m.proposal}

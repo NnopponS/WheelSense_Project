@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import tempfile
+import uuid
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
@@ -788,6 +789,7 @@ async def _publish_camera_command(device_id_str: str, payload: dict[str, Any]) -
     async with aiomqtt.Client(
         hostname=settings.mqtt_broker,
         port=settings.mqtt_port,
+        identifier=f"wheelsense-mcp-{uuid.uuid4().hex[:12]}",
         username=settings.mqtt_user or None,
         password=settings.mqtt_password or None,
     ) as client:

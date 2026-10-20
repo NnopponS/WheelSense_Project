@@ -102,10 +102,88 @@ async def test_handle_telemetry(mock_predict, active_workspace):
         assert pred.predicted_room_name == "Living"
 
     # Publishes prediction
-    mock_client.publish.assert_called_once()
-    args, _ = mock_client.publish.call_args
-    assert "WheelSense/room/WHEEL_1" in args[0]
-    assert "Living" in args[1]
+    topics = [call.args[0] for call in mock_client.publish.await_args_list]
+    assert "WheelSense/room/WHEEL_1" in topics
+    assert "WheelSense/simulator/takeover/WHEEL_1" in topics
+    assert any("Living" in call.args[1] for call in mock_client.publish.await_args_list)
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_physical_telemetry_takes_over_simulated_device(active_workspace):
+    from sqlalchemy import select
+
+    from app.models.telemetry import IMUTelemetry
+
+    device_id = "TAKEOVER_WHEEL_1"
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id=device_id,
+                workspace_id=active_workspace.id,
+                device_type="wheelchair",
+            )
+        )
+        await session.commit()
+
+    client = AsyncMock()
+    physical = {"device_id": device_id, "imu": {"ax": 0.1}}
+    simulated = {"device_id": device_id, "imu": {"ax": 9.9}}
+    await _handle_telemetry(json.dumps(physical).encode(), client)
+    await _handle_telemetry(json.dumps(simulated).encode(), client, is_simulation=True)
+
+    async with _SessionFactory() as session:
+        device = (
+            await session.execute(select(Device).where(Device.device_id == device_id))
+        ).scalar_one()
+        imu_rows = list((await session.execute(select(IMUTelemetry))).scalars().all())
+        assert device.config["physical_takeover"] is True
+        assert [row.ax for row in imu_rows if row.device_id == device_id] == [0.1]
+
+    client.publish.assert_awaited_once()
+    call = client.publish.await_args
+    assert call.args[0] == f"WheelSense/simulator/takeover/{device_id}"
+    assert call.kwargs == {"qos": 1, "retain": True}
+
+
+@pytest.mark.asyncio
+@patch("app.services.simulator_reset.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.services.mqtt_publish.mqtt_publish_json", new_callable=AsyncMock)
+@patch("scripts.seed_demo.run_sim_team_seed", new_callable=AsyncMock)
+async def test_simulator_reset_clears_physical_takeover(
+    mock_seed, mock_publish, active_workspace
+):
+    from sqlalchemy import select
+
+    from app.services.simulator_reset import reset_simulator_workspace
+
+    device_id = "RESET_TAKEOVER_1"
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id=device_id,
+                workspace_id=active_workspace.id,
+                device_type="wheelchair",
+                config={"label": "Keep me", "physical_takeover": True,
+                        "physical_takeover_published": True},
+            )
+        )
+        await session.commit()
+
+    mock_seed.return_value = active_workspace.id
+    await reset_simulator_workspace(active_workspace.name)
+
+    async with _SessionFactory() as session:
+        device = (
+            await session.execute(select(Device).where(Device.device_id == device_id))
+        ).scalar_one()
+        assert device.config == {"label": "Keep me"}
+
+    mock_publish.assert_awaited_once_with(
+        f"WheelSense/simulator/takeover/{device_id}",
+        {"device_id": device_id, "source": "simulation"},
+        retain=True,
+    )
 
 
 @pytest.mark.asyncio

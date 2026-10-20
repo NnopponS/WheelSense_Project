@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import uuid
 
 import aiomqtt
 
@@ -16,6 +17,7 @@ MQTT_BROKER = os.environ.get("MQTT_BROKER", "localhost").strip()
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 MQTT_USER = os.environ.get("MQTT_USER", "").strip() or None
 MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "").strip() or None
+MQTT_TLS = os.environ.get("MQTT_TLS", "").strip().lower() in {"1", "true", "yes", "on"}
 
 # cloudflared logs lines like: https://something-random.trycloudflare.com
 URL_RE = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com/?")
@@ -25,9 +27,17 @@ def _mqtt_connect_kwargs() -> dict:
     kwargs: dict = {
         "hostname": MQTT_BROKER,
         "port": MQTT_PORT,
+        "identifier": f"wheelsense-cf-{uuid.uuid4().hex[:12]}",
         "username": MQTT_USER,
         "password": MQTT_PASSWORD,
     }
+    if MQTT_TLS:
+        import ssl
+
+        kwargs["tls_params"] = aiomqtt.TLSParameters(
+            ca_certs=None,
+            cert_reqs=ssl.CERT_REQUIRED,
+        )
     return kwargs
 
 

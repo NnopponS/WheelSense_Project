@@ -3,7 +3,7 @@ from __future__ import annotations
 """Read-side staff timeline projection."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import and_, or_, select
@@ -43,6 +43,11 @@ class StaffTimelineEvent:
     workflow_step_id: int | None = None
     status: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        # Legacy task timestamps are stored as naive UTC alongside aware telemetry.
+        if self.timestamp.tzinfo is None:
+            self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
 
     @property
     def id(self) -> str:

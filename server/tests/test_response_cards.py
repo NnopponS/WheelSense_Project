@@ -26,6 +26,14 @@ def test_timeline_tool_result_builds_timeline_card():
     assert cards[0]["events"][0]["room_name"] == "Room 101"
 
 
+def test_task_table_keeps_due_date_visible_in_six_column_chat():
+    row = dict(id=41, title="Hydration round - Samuel", status="pending", priority="normal", task_type="specific", patient_id=6, patient_name="Samuel Ortiz", assigned_user_id=5, due_at="2026-10-18T23:51:00Z")
+    card = cards_for_tool_result("list_task_management_tasks", [row])[0]
+    assert "due_at" in card["columns"][:6]
+    assert "patient_name" in card["columns"][:6]
+    assert card["title"] == "Tasks"
+
+
 def test_patient_details_card_preserves_complete_profile_payload():
     cards = cards_for_tool_result(
         "get_patient_details",

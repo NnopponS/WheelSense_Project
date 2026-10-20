@@ -141,8 +141,11 @@ def normalize_task_create_title(text: str) -> str:
 
 
 def extract_task_due_at(text: str) -> str | None:
+    zoned = re.search(r"\b\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})\b", text or "", re.IGNORECASE)
+    if zoned:
+        return datetime.fromisoformat(zoned.group(0).replace("Z", "+00:00")).isoformat()
     explicit = re.search(
-        r"\b(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2})(?:(\d{2}))?)?\b",
+        r"\b(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2})(?::?(\d{2}))?)?\b",
         text or "",
         flags=re.IGNORECASE,
     )

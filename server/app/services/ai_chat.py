@@ -588,6 +588,7 @@ async def stream_ollama(
     max_tokens: int | None = 300,
     base_url: str | None = None,
     api_key: str = "ollama",
+    response_schema: dict[str, Any] | None = None,
 ) -> AsyncIterator[str]:
     client = AsyncOpenAI(
         base_url=base_url or settings.ollama_base_url,
@@ -601,6 +602,9 @@ async def stream_ollama(
         }
         if max_tokens is not None and base_url is None:
             kwargs["max_tokens"] = max_tokens
+        if response_schema:
+            kwargs["response_format"] = {"type": "json_schema", "json_schema": {"name": "task_intake", "schema": response_schema}}
+            kwargs["temperature"] = 0
         stream = await client.chat.completions.create(**kwargs)
         async for chunk in stream:
             if not chunk.choices:
@@ -934,6 +938,9 @@ async def stream_chat_response(
     messages: list[ChatMessagePart],
     provider_override: str | None,
     model_override: str | None,
+    system_instructions: str | None = None,
+    max_tokens: int = 300,
+    response_schema: dict[str, Any] | None = None,
 ) -> AsyncIterator[str]:
     """Yield text chunks for the assistant reply."""
     provider, model = await resolve_effective_ai(
@@ -943,6 +950,8 @@ async def stream_chat_response(
         override_model=model_override,
     )
     system_text = _system_prompt_for_role(user.role)
+    if system_instructions:
+        system_text += "\n\n" + system_instructions
 
     if provider != "copilot":
         options = (
@@ -954,7 +963,7 @@ async def stream_chat_response(
             configured_model=model,
         )
         oai_messages = _messages_to_openai(messages, ollama_system_text)
-        async for part in stream_ollama(model=model, oai_messages=oai_messages, **options):
+        async for part in stream_ollama(model=model, oai_messages=oai_messages, max_tokens=max_tokens, **({"response_schema": response_schema} if response_schema else {}), **options):
             yield part
         return
 
@@ -979,6 +988,9 @@ async def collect_chat_reply_best_effort(
     workspace: Workspace,
     messages: list[ChatMessagePart],
     provider_attempts_out: list[dict[str, object]] | None = None,
+    system_instructions: str | None = None,
+    max_tokens: int = 300,
+    response_schema: dict[str, Any] | None = None,
 ) -> str:
     """Collect a full assistant reply and fail over providers when needed."""
     primary_provider, primary_model = await get_workspace_ai_defaults(db, workspace.id)
@@ -1029,6 +1041,9 @@ async def collect_chat_reply_best_effort(
                 messages=messages,
                 provider_override=provider,
                 model_override=model,
+                **({"system_instructions": system_instructions} if system_instructions else {}),
+                **({"max_tokens": max_tokens} if max_tokens != 300 else {}),
+                **({"response_schema": response_schema} if response_schema else {}),
             ):
                 parts.append(chunk)
         except Exception as exc:

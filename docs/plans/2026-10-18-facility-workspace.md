@@ -87,3 +87,21 @@ The in-app browser remained on an internal connection-error `data:` page after t
 - Browser-back cancellation uses the standards Navigation API where available; reload/close uses beforeunload and in-app links/scope switches are guarded. Browser back without Navigation API support was not verified.
 - Physical camera hardware and manual screen-reader testing were not performed. Automated accessibility checks do not replace those checks.
 - Graft/MemPalace MCP and CLI unavailable in this session; no graph rebuild or memory diary claimed. Existing saved graph cards consulted. Browser plugin unavailable; isolated bundled Playwright/Chrome used.
+
+## Alignment correction — explicit user request, 2026-10-18
+
+Root cause: selecting the bundled asset used the background-only callback, leaving the original legacy room coordinates unchanged. The separate coordinate-import action was not invoked by asset selection.
+
+Selecting the supplied Level 4 plan now invokes the existing confirmed, atomic image-plus-room import. Both changes undo together; real room identities, types and links are preserved. Selection is disabled during import. English/Thai copy explains the combined operation. Unrelated uploaded images remain independent. The empty inspector scroll area is keyboard focusable after fixing an axe finding in this state.
+
+After a dry run with every mutation intercepted, the user's explicit “fix it” request was fulfilled by saving the aligned result to **workspace 1 / facility 1 / floor 1 (Level 4)** through existing layout PUT and floor map_data PATCH. The script restricts application to the eight matching synthetic rooms with SIM_ nodes. Redundant room PATCHes were intercepted after asserting unchanged values. No other floor or clinical assignment was changed.
+
+Evidence: `C:/Users/poon1/.codex/visualizations/2026/10/18/01a14dbd-92ee-7070-b1e2-590ffa47d4dc/facility-alignment/`.
+
+- `before-apply.json` retains the previous floor metadata, complete layout/room records and assignment IDs for recovery.
+- `before-user-mismatch.png` records the reported defect.
+- `verify-alignment.cjs`, `report-dry.json`, `report-apply.json`: all eight overlays match the supplied JSON relative to the rendered image within one screen pixel at 1440×900, 1280×720, 768×1024 and 390×844. Zero axe violations and runtime errors. Undo/redo and save/reload passed.
+- `saved-aligned-1440x900.png` shows the actual backend result reloaded in View mode. Fresh GET comparisons confirmed unchanged room records, node links, patient-room assignments and smart-device-room assignments.
+- Regression tests cover atomic supplied-plan selection, unrelated images, import-pending protection and keyboard-focusable inspector scrolling. Production build and targeted ESLint passed.
+
+The supplied drawing remains labeled a schematic; alignment does not claim physical-site survey accuracy.

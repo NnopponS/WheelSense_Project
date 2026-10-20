@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1448" height="1086" viewBox="0 0 1448 1086">
+  <title>WheelSense Shared Care Ground Level</title>
+  <desc>Editable SVG wrapper for the shared care ground-level floor-plan concept.</desc>
+  <image x="0" y="0" width="1448" height="1086" xlink:href="wheelsense_shared_care_ground_level.png" />
+  <g id="room-overlays" opacity="0.95">
+    <g id="restroom_nw" data-type="bathroom">
+      <rect x="52" y="79" width="180" height="175" rx="12" ry="12" fill="#8e9aa7" fill-opacity="0.10" stroke="#8e9aa7" stroke-width="3" />
+      <text x="64" y="105" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Accessible Restroom</text>
+      <text x="64" y="129" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Bathroom</text>
+    </g>
+    <g id="utility" data-type="utility">
+      <rect x="235" y="79" width="203" height="175" rx="12" ry="12" fill="#e5a73b" fill-opacity="0.10" stroke="#e5a73b" stroke-width="3" />
+      <text x="247" y="105" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Utility / Laundry</text>
+      <text x="247" y="129" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Utility</text>
+    </g>
+    <g id="shared_lounge" data-type="lounge">
+      <rect x="54" y="254" width="457" height="505" rx="12" ry="12" fill="#7bb39f" fill-opacity="0.10" stroke="#7bb39f" stroke-width="3" />
+      <text x="66" y="280" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Shared Care Lounge</text>
+      <text x="66" y="304" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Lounge</text>
+    </g>
+    <g id="main_hall" data-type="common_area">
+      <rect x="489" y="80" width="462" height="828" rx="12" ry="12" fill="#4aa3a1" fill-opacity="0.10" stroke="#4aa3a1" stroke-width="3" />
+      <text x="501" y="106" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Main Hall</text>
+      <text x="501" y="130" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Common Area</text>
+    </g>
+    <g id="physiotherapy" data-type="therapy">
+      <rect x="956" y="78" width="390" height="352" rx="12" ry="12" fill="#6e9ae6" fill-opacity="0.10" stroke="#6e9ae6" stroke-width="3" />
+      <text x="968" y="104" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Physiotherapy Room</text>
+      <text x="968" y="128" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Therapy</text>
+    </g>
+    <g id="nurses_station" data-type="staff">
+      <rect x="957" y="438" width="391" height="289" rx="12" ry="12" fill="#b48ae6" fill-opacity="0.10" stroke="#b48ae6" stroke-width="3" />
+      <text x="969" y="464" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Nurses' Station</text>
+      <text x="969" y="488" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Staff</text>
+    </g>
+    <g id="restroom_se" data-type="bathroom">
+      <rect x="1053" y="731" width="180" height="176" rx="12" ry="12" fill="#8e9aa7" fill-opacity="0.10" stroke="#8e9aa7" stroke-width="3" />
+      <text x="1065" y="757" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Accessible Restroom</text>
+      <text x="1065" y="781" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Bathroom</text>
+    </g>
+    <g id="treatment_room" data-type="treatment">
+      <rect x="1236" y="732" width="179" height="176" rx="12" ry="12" fill="#e58a9a" fill-opacity="0.10" stroke="#e58a9a" stroke-width="3" />
+      <text x="1248" y="758" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Treatment Room</text>
+      <text x="1248" y="782" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Treatment</text>
+    </g>
+    <g id="entry_south" data-type="entry">
+      <rect x="667" y="948" width="183" height="108" rx="12" ry="12" fill="#7a7a7a" fill-opacity="0.10" stroke="#7a7a7a" stroke-width="3" />
+      <text x="679" y="974" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Main Entrance</text>
+      <text x="679" y="998" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Entry</text>
+    </g>
+    <g id="garden_southwest" data-type="outdoor">
+      <rect x="381" y="892" width="235" height="145" rx="12" ry="12" fill="#80b36a" fill-opacity="0.10" stroke="#80b36a" stroke-width="3" />
+      <text x="393" y="918" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Southwest Garden Edge</text>
+      <text x="393" y="942" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Outdoor</text>
+    </g>
+    <g id="garden_southeast" data-type="outdoor">
+      <rect x="841" y="892" width="545" height="145" rx="12" ry="12" fill="#80b36a" fill-opacity="0.10" stroke="#80b36a" stroke-width="3" />
+      <text x="853" y="918" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">Southeast Garden Edge</text>
+      <text x="853" y="942" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Outdoor</text>
+    </g>
+  </g>
+</svg>

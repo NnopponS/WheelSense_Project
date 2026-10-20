@@ -28,6 +28,7 @@ type MovementTimelineCardProps = {
   limit?: number;
   compact?: boolean;
   embedded?: boolean;
+  showTechnicalDetails?: boolean;
   className?: string;
 };
 
@@ -173,6 +174,7 @@ export function MovementTimelineCard({
   limit = 8,
   compact = false,
   embedded = false,
+  showTechnicalDetails = true,
   className,
 }: MovementTimelineCardProps) {
   const { t } = useTranslation();
@@ -249,14 +251,14 @@ export function MovementTimelineCard({
                   <div className="min-w-0 pb-3">
                     <p className="truncate text-sm font-medium text-foreground">{eventLocation(event)}</p>
                     <p className="truncate text-xs text-muted-foreground">{prettyEventType(event.event_type)}</p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    {showTechnicalDetails ? <p className="truncate text-xs text-muted-foreground">
                       {t("timeline.provenance")}: {eventSourceLabel(event)}
-                    </p>
+                    </p> : null}
                   </div>
                 </li>
               ))}
             </ol>
-            <div className="mt-2 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-foreground">
+            {totalDistance > 0 || showTechnicalDetails ? <div className="mt-2 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-foreground">
               <Footprints className="h-4 w-4 text-primary" />
               <span>{t("timeline.totalDistance")}:</span>
               <span className="tabular-nums">
@@ -264,7 +266,7 @@ export function MovementTimelineCard({
                   ? `${Math.round(totalDistance)} ${t("timeline.meters")}`
                   : t("timeline.notReported")}
               </span>
-            </div>
+            </div> : null}
           </div>
 
           {!compact && geometryPoints.length > 0 ? (

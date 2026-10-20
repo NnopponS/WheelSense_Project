@@ -14,6 +14,7 @@ import type {
 } from "@/lib/types";
 import {
   CalendarDays,
+  ChevronDown,
   Plus,
   MapPin,
 } from "lucide-react";
@@ -60,7 +61,7 @@ import { ClinicalRecordsWorkspace, type ClinicalDrafts, type ClinicalCard } from
 import { AppPage } from "@/components/layout/AppPage";
 import { DataState } from "@/components/layout/DataState";
 import { Button } from "@/components/ui/button";
-import type { PatientHealthAnalysis, HealthRiskLevel } from "@/lib/patientHealthAnalysis";
+import type { PatientHealthAnalysis, HealthRiskLevel, PatientHealthView } from "@/lib/patientHealthAnalysis";
 
 function caregiverSearchText(c: Caregiver): string {
   return [
@@ -288,6 +289,7 @@ export default function PatientDetailPage() {
   }, [fetchData]);
 
   const mainTab = searchParams.get("tab") === "care" ? "care" : "profile";
+  const [healthView, setHealthView] = useState<PatientHealthView>("baseline");
 
   const setMainTab = useCallback(
     (next: "profile" | "care") => {
@@ -805,10 +807,12 @@ export default function PatientDetailPage() {
                 recommendationCount={healthRecommendationCount}
                 hasEmergencyContact={Boolean(primaryContact)}
                 severeAnomalyActive={severeAnomalyActive}
+                activeView={healthView}
+                onViewChange={setHealthView}
               />
 
               {/* AI Health Analysis (anomaly + baseline + trends + optimize + risk factors) */}
-              <PatientHealthAnalysisPanel patientId={Number(id)} />
+              <PatientHealthAnalysisPanel patientId={Number(id)} activeView={healthView} onViewChange={setHealthView} />
 
               {/* Clinical Records (tabbed: conditions / allergies / meds / surgeries / notes) */}
               <ClinicalRecordsWorkspace
@@ -895,12 +899,13 @@ export default function PatientDetailPage() {
             showHeader={false}
             invalidBackHref={patientListHref}
           />
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6 space-y-4">
+          <details className="group surface-card rounded-xl border border-outline-variant/20">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl p-4 font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              <span className="flex items-center gap-2"><CalendarDays className="size-5 text-primary" aria-hidden />{t("caregivers.workPanel.calendarTitle")}</span>
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+            </summary>
+            <div className="space-y-4 border-t border-border/60 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold text-foreground flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-primary" />
-                {t("caregivers.workPanel.calendarTitle")}
-              </h2>
               {canManageSchedules ? (
                 <button
                   type="button"
@@ -958,7 +963,8 @@ export default function PatientDetailPage() {
                 setScheduleFormOpen(true);
               }}
             />
-          </section>
+            </div>
+          </details>
         </TabsContent>
       </Tabs>
       <Dialog open={patientMapOpen} onOpenChange={setPatientMapOpen}>

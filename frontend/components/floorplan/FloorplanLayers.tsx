@@ -22,7 +22,7 @@ export function FloorplanLayers({facilityId,floorId,editing,background,onBackgro
  const imageAssets=(assets.data??[]).filter(asset=>["image/png","image/jpeg","image/webp","image/svg+xml"].includes(asset.mime_type));
  const choose=(url:string)=>{
    if(!url){onBackgroundChange(null);onShowBackgroundChange(false);return}
-   if(url===REFERENCE_BACKGROUND.url){onBackgroundChange(REFERENCE_BACKGROUND);onShowBackgroundChange(true);return}
+   if(url===REFERENCE_BACKGROUND.url){onImportReference();return}
    const asset=imageAssets.find(item=>item.file_url===url);if(!asset)return;
    const ratio=asset.width && asset.height ? asset.height/asset.width : .625;
    const width=Math.min(5000,5000/ratio);
@@ -52,7 +52,7 @@ export function FloorplanLayers({facilityId,floorId,editing,background,onBackgro
      ["floor-background",t("facilityWorkspace.background"),showBackground,onShowBackgroundChange,!background],
      ["floor-snap",t("facilityWorkspace.snap"),snapEnabled,onSnapChange,!editing],
    ].map(([id,label,checked,change,disabled])=><label key={String(id)} htmlFor={String(id)} className="flex min-h-10 items-center gap-2 text-sm"><Checkbox id={String(id)} checked={Boolean(checked)} disabled={Boolean(disabled)} onCheckedChange={value=>(change as (value:boolean)=>void)(value===true)}/><span>{String(label)}</span></label>)}</div>
-   <label className="block text-xs font-medium text-muted-foreground">{t("facilityWorkspace.background")}<select className="input-field mt-1 w-full text-sm" value={background?.url??""} disabled={!editing || uploading} onChange={event=>choose(event.target.value)}>
+   <label className="block text-xs font-medium text-muted-foreground">{t("facilityWorkspace.background")}<select className="input-field mt-1 w-full text-sm" value={background?.url??""} disabled={!editing || uploading || importing} onChange={event=>choose(event.target.value)}>
      <option value="">{t("facilityWorkspace.noBackground")}</option><option value={REFERENCE_BACKGROUND.url}>{t("facilityWorkspace.referenceAsset")}</option>
      {imageAssets.map(asset=><option key={asset.id} value={asset.file_url}>{asset.name}</option>)}
      {background && background.url!==REFERENCE_BACKGROUND.url && !imageAssets.some(asset=>asset.file_url===background.url) ? <option value={background.url}>{t("facilityWorkspace.savedBackground")}</option> : null}

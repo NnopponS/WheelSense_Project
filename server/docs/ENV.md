@@ -19,7 +19,7 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `PORTAL_BASE_URL` | empty | Public HTTPS base URL of the web app (e.g. a Cloudflare quick tunnel). When set, the API publishes it on MQTT `WheelSense/config/all` at startup and includes it in per-device `WheelSense/config/{device_id}` payloads after patient pairing so the mobile WebView can load the portal off-LAN. |
 | `MQTT_USER` | empty | MQTT username |
 | `MQTT_PASSWORD` | empty | MQTT password |
-| `MQTT_TLS` | `false` | Enable TLS for MQTT |
+| `MQTT_TLS` | `false` | Enable certificate-verified TLS for the backend, simulator, and Cloudflare URL publisher |
 | `MQTT_AUTO_REGISTER_DEVICES` | `true` | When `true`, first `WheelSense/data` message for an unknown `device_id` creates a registry `Device` row (wheelchair path only). Deleting a device in the admin UI removes the row; if telemetry for that id still arrives, a **new** row may be created again while this flag is on. |
 | `MQTT_AUTO_REGISTER_BLE_NODES` | `true` | When `true`, BLE beacons reported in `WheelSense/data` `rssi[]` (`node` names like `WSN_*` plus `mac`) auto-create a **node** (`hardware_type=node`) in the **same workspace** as the wheelchair. Registry `device_id` is `BLE_<12 hex MAC>` (or `BLE_<sanitized node>` if MAC is missing). Same note as above: deleted rows can reappear if the broker still publishes those beacons. |
 | `MQTT_MERGE_BLE_CAMERA_BY_MAC` | `true` | When `true`, `WheelSense/camera/.../registration` JSON with `ble_mac` matching a `BLE_*` stub **renames** that registry row to the camera’s `device_id` (e.g. `CAM_*`) so MQTT topics and the web UI use one device. |
@@ -27,9 +27,9 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `MQTT_REST_PUBLISH_ENABLED` | `true` | Enables REST-triggered fire-and-forget MQTT publishes such as retained mobile assignment config and alert fanout. Tests disable this to avoid broker-dependent background tasks. |
 | `ROOM_TIMELINE_STABILITY_SAMPLES` | `3` | MQTT localization must produce the same predicted `room_id` this many times in a row before `activity_timeline` records `room_enter` / `room_exit`. Reduces duplicate timeline rows when RSSI/KNN flickers between rooms. Set to `1` for the previous immediate-logging behavior. |
 
-## Docker Compose — Cloudflare quick tunnel (production)
+## Docker Compose — Cloudflare quick tunnel
 
-[`docker-compose.yml`](../docker-compose.yml) includes [`docker-compose.cf-tunnel.yml`](../docker-compose.cf-tunnel.yml), so **`cf-tunnel-publish`** starts with the production stack. It runs `cloudflared` against the internal web URL and publishes the detected `*.trycloudflare.com` base URL to MQTT (`WheelSense/config/all`). Copy that URL into **`PORTAL_BASE_URL`** for `wheelsense-platform-server` if you want the API’s MQTT config payloads to match (see [RUNBOOK.md](RUNBOOK.md)).
+Both [`docker-compose.yml`](../docker-compose.yml) and [`docker-compose.sim.yml`](../docker-compose.sim.yml) include [`docker-compose.cf-tunnel.yml`](../docker-compose.cf-tunnel.yml), so **`cf-tunnel-publish`** starts in either mode. It runs `cloudflared` against the internal web URL and publishes the detected `*.trycloudflare.com` base URL to MQTT (`WheelSense/config/all`). The tunnel serves web traffic only; mobile MQTT connects directly to the configured broker.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -46,7 +46,7 @@ Used by the `wheelsense-simulator` Compose service (`python sim_controller.py --
 | `SIM_ENABLE_ALERTS` | `true` | Set `false` / `0` / `no` / `off` to disable automatic alert generation from vitals |
 | `SIM_HEART_RATE_HIGH` | 110 | BPM threshold above which consecutive readings can raise `abnormal_hr` |
 
-**Runtime control (no env change):** when `ENV_MODE=simulator`, admins can call `POST /api/demo/simulator/command`, which publishes JSON to MQTT topic `WheelSense/sim/control` with `workspace_id` plus `command`: `pause`, `resume`, `set_config`, `inject_abnormal_hr`, `inject_fall`, or `move_actor`. The simulator only applies messages whose `workspace_id` matches its loaded workspace. `move_actor` also powers Demo Control movement by emitting normal `WheelSense/data` telemetry with strongest RSSI at the target room node.
+**Runtime control (no env change):** when `ENV_MODE=simulator`, admins can call `POST /api/demo/simulator/command`, which publishes JSON to MQTT topic `WheelSense/sim/control` with `workspace_id` plus `command`: `pause`, `resume`, `set_config`, `inject_abnormal_hr`, `inject_fall`, or `move_actor`. The simulator only applies messages whose `workspace_id` matches its loaded workspace. Simulated readings use `WheelSense/simulator/data`; physical readings stay on `WheelSense/data`. The backend retains `WheelSense/simulator/takeover/{device_id}` when physical telemetry arrives, so the simulator stops publishing that device ID while other simulated devices continue. Admin simulator reset clears the takeover flags and retained signals to restore baseline simulation.
 
 ## App / auth
 

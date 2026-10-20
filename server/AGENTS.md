@@ -487,6 +487,8 @@ The **WheelSense mobile app** (development build with native MQTT) subscribes to
 
 **Page-scoped chat:** `POST /api/chat/actions/propose` accepts optional `page_patient_id` (UI: EaseAI on `/admin|head-nurse|supervisor|observer/patients/{id}` sends it). Agent runtime seeds that patient into context before classification so vitals/timeline/โรคเรื้อรัง-style questions resolve without an extra disambiguation turn.
 
+**Grounded chat:** `agent_runtime/read_requests.py` resolves patient/staff profiles, timelines, and task deadlines through role-allowed MCP tools. `agent_runtime/task_dialogue.py` uses the configured LLM and provider fallback for task intake, carries the draft through natural replies, and renders one question card at a time. A task requires a title, target, assignee, and deadline or explicit no-deadline choice; model IDs are checked against visible rosters and proposals retain confirmation. Chat displays result cards without duplicate prose; technical detail is available with `?ai_trace=1`. Explicit ISO deadline offsets are preserved. `StaffTimelineEvent` treats legacy naive timestamps as UTC.
+
 **MCP Server Details:**
 
 - **Mount point**: FastAPI mounts a Starlette app at `/mcp` with SSE at `/mcp/sse` and Streamable HTTP at **`/mcp/mcp`** (FastMCP default `streamable_http_path`). FastAPI does not run mounted sub-app lifespans; `app/main.py` lifespan must enter `mcp_streamable_http_session_lifespan()` so `StreamableHTTPSessionManager.run()` initializes the anyio task group (avoids `Task group is not initialized`).
@@ -624,6 +626,7 @@ Use focused suites after changes in these areas:
 | `test_agent_runtime.py` | Intent classification, plan generation |
 | `test_agent_runtime_extended.py` | Multi-turn conversations, compound intents |
 | `test_llm_tool_router.py` | Tool catalog, role allowlist filtering, read/write routing constants |
+| `test_chat_read_requests.py` | Patient/staff profile and timeline routing, follow-ups, task deadlines, named task assignment and execution |
 
 **Coverage limits:** tests commonly use `create_all()` rather than exercising the full Alembic upgrade path end-to-end. Passing pytest does **not** imply every REST path in OpenAPI or every MCP tool invocation has been exercised on a production-sized database; use focused suites above plus smoke checks (`GET /api/health`, critical UI flows) after deploy or Docker image changes.
 

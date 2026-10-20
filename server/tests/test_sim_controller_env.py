@@ -72,6 +72,7 @@ def test_connect_mqtt_resubscribes_control_topic_on_connect() -> None:
             self.on_connect = None
             self.on_message = None
             self.subscriptions: list[tuple[str, int]] = []
+            self.publications: list[tuple[str, str, int]] = []
 
         def connect(self, *_args, **_kwargs):
             return 0
@@ -82,6 +83,9 @@ def test_connect_mqtt_resubscribes_control_topic_on_connect() -> None:
         def subscribe(self, topic, qos=0):
             self.subscriptions.append((topic, qos))
 
+        def publish(self, topic, payload, qos=0):
+            self.publications.append((topic, payload, qos))
+
     fake = FakeClient()
 
     with patch("sim_controller.mqtt.Client", return_value=fake):
@@ -90,6 +94,47 @@ def test_connect_mqtt_resubscribes_control_topic_on_connect() -> None:
     assert fake.on_connect is not None
     fake.on_connect(fake, None, None, 0, None)
     assert ("WheelSense/sim/control", 0) in fake.subscriptions
+    assert ("WheelSense/simulator/takeover/+", 1) in fake.subscriptions
+
+
+def test_simulation_telemetry_stops_after_physical_takeover():
+    from types import SimpleNamespace
+
+    engine = SimulationEngine(config=SIMULATION_CONFIG.copy())
+
+    class FakeClient:
+        def __init__(self):
+            self.publications = []
+
+        def publish(self, *args, **kwargs):
+            self.publications.append((args, kwargs))
+
+    fake = FakeClient()
+    engine.mqtt_client = fake
+    engine._publish_telemetry({"device_id": "SIM_WHEEL_01"})
+    assert fake.publications[0][0][0] == "WheelSense/simulator/data"
+
+    engine._handle_mqtt_message(
+        None,
+        None,
+        SimpleNamespace(
+            topic="WheelSense/simulator/takeover/SIM_WHEEL_01",
+            payload=b'{"source":"physical"}',
+        ),
+    )
+    engine._publish_telemetry({"device_id": "SIM_WHEEL_01"})
+    assert len(fake.publications) == 1
+
+    engine._handle_mqtt_message(
+        None,
+        None,
+        SimpleNamespace(
+            topic="WheelSense/simulator/takeover/SIM_WHEEL_01",
+            payload=b'{"source":"simulation"}',
+        ),
+    )
+    engine._publish_telemetry({"device_id": "SIM_WHEEL_01"})
+    assert len(fake.publications) == 2
 
 
 def test_merge_env_heart_rate_high():

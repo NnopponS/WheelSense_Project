@@ -1,7 +1,7 @@
 "use client";
 
 import { Activity, AlertTriangle, ClipboardCheck, HeartPulse, Phone, Siren } from "lucide-react";
-import type { HealthRiskLevel } from "@/lib/patientHealthAnalysis";
+import type { HealthRiskLevel, PatientHealthView } from "@/lib/patientHealthAnalysis";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +10,9 @@ type FeatureCardProps = {
   subtitle: string;
   icon: typeof HeartPulse;
   accent: "blue" | "red" | "green" | "emergency";
-  targetId: string;
+  onClick: () => void;
+  selected?: boolean;
+  controls: string;
   status?: string;
   statusTone?: "neutral" | "warning" | "critical" | "success";
   children?: React.ReactNode;
@@ -30,17 +32,16 @@ const STATUS_STYLES: Record<NonNullable<FeatureCardProps["statusTone"]>, string>
   success: "bg-success-bg text-success-foreground",
 };
 
-function FeatureCard({ title, subtitle, icon: Icon, accent, targetId, status, statusTone = "neutral", children }: FeatureCardProps) {
+function FeatureCard({ title, subtitle, icon: Icon, accent, onClick, selected, controls, status, statusTone = "neutral", children }: FeatureCardProps) {
   const accentStyle = ACCENT_STYLES[accent];
   return (
     <button
       type="button"
-      onClick={() => {
-        const el = document.getElementById(targetId);
-        if (el) el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-      }}
+      onClick={onClick}
+      aria-pressed={selected}
+      aria-controls={controls}
       className={cn(
-        "group flex min-h-11 w-full flex-col gap-1 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted sm:gap-2",
+        "group flex min-h-11 w-full flex-col gap-1 rounded-lg border border-transparent px-3 py-3 text-left transition-colors hover:bg-muted aria-pressed:border-primary/30 aria-pressed:bg-primary/5 sm:gap-2",
         accentStyle.ring,
       )}
     >
@@ -69,6 +70,8 @@ export function FeatureNavCards({
   recommendationCount,
   hasEmergencyContact,
   severeAnomalyActive,
+  activeView,
+  onViewChange,
   className,
 }: {
   riskLevel: HealthRiskLevel | null;
@@ -76,9 +79,19 @@ export function FeatureNavCards({
   recommendationCount: number;
   hasEmergencyContact: boolean;
   severeAnomalyActive: boolean;
+  activeView: PatientHealthView;
+  onViewChange: (view: PatientHealthView) => void;
   className?: string;
 }) {
   const { t } = useTranslation();
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  };
+  const selectView = (view: PatientHealthView) => {
+    onViewChange(view);
+    scrollTo("patient-health-dashboard");
+  };
 
   const anomalyStatus =
     riskLevel === "critical" ? t("patient.health.risk.high")
@@ -106,7 +119,9 @@ export function FeatureNavCards({
         subtitle={t("patient.feature.healthProfileSub")}
         icon={HeartPulse}
         accent="blue"
-        targetId="health-profile"
+        onClick={() => selectView("baseline")}
+        selected={activeView === "baseline"}
+        controls="patient-health-dashboard"
         status={t("patient.health.baselineTitle")}
         statusTone="neutral"
       />
@@ -117,7 +132,9 @@ export function FeatureNavCards({
         subtitle={t("patient.feature.predictingAnomalySub")}
         icon={AlertTriangle}
         accent={riskLevel === "critical" ? "red" : "blue"}
-        targetId="predicting-anomaly"
+        onClick={() => selectView("anomaly")}
+        selected={activeView === "anomaly"}
+        controls="patient-health-dashboard"
         status={anomalyStatus}
         statusTone={anomalyTone}
       >
@@ -135,7 +152,9 @@ export function FeatureNavCards({
         subtitle={t("patient.feature.optimizePlanSub")}
         icon={ClipboardCheck}
         accent="green"
-        targetId="optimize-health-plan"
+        onClick={() => selectView("plan")}
+        selected={activeView === "plan"}
+        controls="patient-health-dashboard"
         status={recommendationCount > 0 ? String(recommendationCount) : "—"}
         statusTone={recommendationCount > 0 ? "success" : "neutral"}
       />
@@ -146,7 +165,8 @@ export function FeatureNavCards({
         subtitle={t("patient.feature.emergencyAlertSub")}
         icon={Siren}
         accent={severeAnomalyActive ? "emergency" : "blue"}
-        targetId="emergency-alert"
+        onClick={() => scrollTo("emergency-alert")}
+        controls="emergency-alert"
         status={emergencyStatus}
         statusTone={emergencyTone}
       >

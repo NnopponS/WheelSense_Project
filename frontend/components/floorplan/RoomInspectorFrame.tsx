@@ -17,7 +17,7 @@ export function RoomInspectorFrame({title,selected,collapsed,onCollapsedChange,w
   if(viewport<1280) return <Sheet open={selected && !collapsed} onOpenChange={open=>{if(!open) onClose()}}>
     <SheetContent data-floorplan-inspector side={viewport<768 ? "bottom" : "right"} className={styles.sheet}>
       <SheetHeader className="pr-10"><SheetTitle>{title}</SheetTitle><SheetDescription>{t("facilityWorkspace.inspectorDescription")}</SheetDescription></SheetHeader>
-      <div className={styles.content}>{children}</div>
+      <div className={styles.content} tabIndex={0}>{children}</div>
     </SheetContent>
   </Sheet>;
   return <aside data-floorplan-inspector className={styles.frame} aria-label={t("floorplan.roomProps")} data-collapsed={collapsed}>
@@ -34,6 +34,6 @@ export function RoomInspectorFrame({title,selected,collapsed,onCollapsedChange,w
       </Button>
       {selected && !collapsed ? <Button type="button" size="icon" variant="ghost" onClick={onClose} aria-label={t("common.close")}><X /></Button> : null}
     </div>
-    {!collapsed ? <div className={styles.content}>{children}</div> : null}
+    {!collapsed ? <div className={styles.content} tabIndex={0}>{children}</div> : null}
   </aside>;
 }

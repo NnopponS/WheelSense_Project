@@ -17,6 +17,7 @@ Endpoints:
 """
 
 import json
+import uuid
 
 import aiomqtt
 from fastapi import APIRouter, Depends, HTTPException
@@ -68,6 +69,7 @@ async def start_motion_recording(
         async with aiomqtt.Client(
             hostname=settings.mqtt_broker,
             port=settings.mqtt_port,
+            identifier=f"wheelsense-motion-{uuid.uuid4().hex[:12]}",
             username=settings.mqtt_user or None,
             password=settings.mqtt_password or None,
         ) as client:
@@ -98,6 +100,7 @@ async def stop_motion_recording(
         async with aiomqtt.Client(
             hostname=settings.mqtt_broker,
             port=settings.mqtt_port,
+            identifier=f"wheelsense-motion-{uuid.uuid4().hex[:12]}",
             username=settings.mqtt_user or None,
             password=settings.mqtt_password or None,
         ) as client:

@@ -641,6 +641,12 @@ table td { vertical-align: middle; }
 .ws-stat-strip > div { border: 0; border-radius: 0; box-shadow: none; }
 .ws-stat-strip > * + * { border-inline-start: 1px solid var(--border); }
 
+.ws-chart-surface {
+  --chart-1: var(--success);
+  --chart-2: var(--primary);
+  --chart-3: var(--warning);
+  --chart-4: var(--muted-foreground);
+}
 .ws-insight {
   color-scheme: dark;
   --background: var(--insight);

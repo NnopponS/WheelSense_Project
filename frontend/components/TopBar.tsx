@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Menu, Beaker, Volume2, VolumeX } from "lucide-react";
+import { Menu, Beaker, Volume2, VolumeX, X } from "lucide-react";
 import { getAlertSoundEnabled, primeAlertAudioFromUserGesture, setAlertSoundEnabled } from "@/lib/alertSound";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
@@ -53,7 +53,25 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alertSoundOn, setAlertSoundOn] = useState(() => getAlertSoundEnabled());
+  const [hiddenSimulationServer, setHiddenSimulationServer] = useState<string | null>(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications, popupQueue, dismissPopup } = useNotifications();
+  const { data: platformHealth } = useQuery({
+    queryKey: ["platform", "health"],
+    queryFn: () => api.get<{ instance_id?: string }>("/health"),
+    enabled: !!user,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    retry: false,
+  });
+  const simulationServerId = platformHealth?.instance_id;
+  useEffect(() => {
+    if (!simulationServerId) return;
+    setHiddenSimulationServer(
+      localStorage.getItem(`wheelsense:simulation-banner:${simulationServerId}`) === "hidden"
+        ? simulationServerId
+        : null,
+    );
+  }, [simulationServerId]);
   const { data: simulatorStatus } = useQuery({
     queryKey: ["shell", "topbar", "demo-simulator-status"],
     queryFn: () => api.get<SimulatorStatus>("/demo/simulator/status"),
@@ -210,7 +228,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
         </div>
       </div>
 
-      {simulatorStatus?.is_simulator ? <div className="flex items-center gap-2 border-t border-warning/20 bg-warning-bg px-4 py-1 text-xs font-medium text-warning-foreground" role="status"><Beaker className="h-4 w-4" aria-hidden="true" />{t("redesign.simulation")}</div> : null}
+      {simulatorStatus?.is_simulator && hiddenSimulationServer !== simulationServerId ? <div className="flex items-center gap-2 border-t border-warning/20 bg-warning-bg px-4 py-1 text-xs font-medium text-warning-foreground" role="status"><Beaker className="h-4 w-4" aria-hidden="true" /><span>{t("redesign.simulation")}</span><Button type="button" variant="ghost" size="icon" className="ml-auto size-7 text-warning-foreground hover:bg-warning/10" aria-label={t("shell.hideSimulationBanner")} title={t("shell.hideSimulationBanner")} onClick={() => { if (!simulationServerId) return; localStorage.setItem(`wheelsense:simulation-banner:${simulationServerId}`, "hidden"); setHiddenSimulationServer(simulationServerId); }}><X className="size-4" aria-hidden="true" /></Button></div> : null}
 
       {popupQueue[0] ? <IncomingNotificationDialog key={popupQueue[0].id} notification={popupQueue[0]} pendingCount={popupQueue.length} canTriage={user?.role === "admin" || user?.role === "head_caregiver" || user?.role === "caregiver"} isSimulator={Boolean(simulatorStatus?.is_simulator)} soundEnabled={alertSoundOn} onEnableSound={enableAlertSound} onDismiss={dismissPopup} /> : null}
 

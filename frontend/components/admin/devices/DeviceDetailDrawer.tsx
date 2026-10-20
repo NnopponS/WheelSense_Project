@@ -430,7 +430,7 @@ function DeviceHistoryPanel({
   const latestRows = [...rows].slice(-8).reverse();
 
   return (
-    <Card className="ws-insight">
+    <Card className="ws-chart-surface">
       <CardHeader>
         <CardTitle className="text-base">{t("devicesDetail.historyTitle")}</CardTitle>
       </CardHeader>

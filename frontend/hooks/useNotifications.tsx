@@ -9,6 +9,7 @@ import { playAlertChime } from "@/lib/alertSound";
 import {
   alertsInboxUrl,
   staffMessagesPath,
+  workflowJobPath,
   workflowTasksPath,
   type AppRole,
 } from "@/lib/notificationRoutes";
@@ -148,7 +149,7 @@ function transformWorkflowJob(
     message,
     timestamp: job.updated_at || job.created_at,
     read: terminal,
-    link: workflowTasksPath(role),
+    link: workflowJobPath(role, job.id),
     priority: "medium",
     data: job,
   };

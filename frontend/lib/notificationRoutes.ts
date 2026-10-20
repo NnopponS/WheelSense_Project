@@ -41,6 +41,11 @@ export function workflowTasksPath(role: AppRole): string {
   }
 }
 
+export function workflowJobPath(role: AppRole, jobId: number): string {
+  const base = role === "admin" ? "/admin/workflow-jobs" : workflowTasksPath(role);
+  return `${base}?job=${encodeURIComponent(String(jobId))}`;
+}
+
 export function staffMessagesPath(role: AppRole): string {
   switch (role) {
     case "admin":

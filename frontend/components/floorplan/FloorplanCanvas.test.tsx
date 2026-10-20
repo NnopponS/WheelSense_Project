@@ -3,6 +3,18 @@ import FloorplanCanvas from "./FloorplanCanvas";
 
 jest.mock("@/lib/i18n", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
+it("keeps resident counts visible in small rooms at fit zoom",()=>{
+ const originalMatrix=SVGSVGElement.prototype.getScreenCTM;
+ const originalObserver=global.ResizeObserver;
+ global.ResizeObserver=jest.fn().mockImplementation(()=>({observe:jest.fn(),disconnect:jest.fn()}));
+ SVGSVGElement.prototype.getScreenCTM=jest.fn(()=>({a:0.1,b:0}) as DOMMatrix);
+ try {
+  render(<FloorplanCanvas rooms={[{id:"one",label:"Room 101",x:100,y:100,w:600,h:400,device_id:null,power_kw:null}]} onRoomsChange={jest.fn()} selectedId={null} onSelect={jest.fn()} readOnly compact fillViewport workspaceTools roomMetaById={{one:{chips:[{label:"2 residents",compactLabel:"2",kind:"residents"}]}}}/>);
+  expect(screen.getByText("2")).toBeVisible();
+  expect(screen.getByRole("button",{name:"Room 101"})).toHaveAccessibleDescription("2 residents");
+ } finally {SVGSVGElement.prototype.getScreenCTM=originalMatrix;global.ResizeObserver=originalObserver;}
+});
+
 it("keeps workspace room labels readable after viewport and zoom changes without changing geometry", () => {
   let scale = 0.25;
   let resize: (() => void) | undefined;

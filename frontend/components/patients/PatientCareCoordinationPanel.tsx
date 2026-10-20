@@ -1,11 +1,11 @@
 "use client";
 "use no memo";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type TouchEvent } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Activity, Bell, ClipboardList, HeartPulse, MessageSquare, NotebookPen } from "lucide-react";
+import { Activity, Bell, ChevronLeft, ChevronRight, ClipboardList, Footprints, HeartPulse, MessageSquare, NotebookPen } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { AppPage } from "@/components/layout/AppPage";
 import { PatientHealthAnalysisPanel } from "@/components/patients/PatientHealthAnalysisPanel";
@@ -92,6 +92,19 @@ type HandoverRow = {
 };
 
 type HandoverTargetRoleChoice = "all" | "head_caregiver" | "admin" | "caregiver";
+type CareSection = "overview" | "health" | "movement" | "actions" | "vitals" | "alerts" | "tasks" | "messages" | "handovers";
+
+const CARE_SECTIONS = [
+  { id: "overview", title: "patient.careCarousel.overview", icon: HeartPulse },
+  { id: "health", title: "patient.careCarousel.health", icon: Activity },
+  { id: "movement", title: "patient.careCarousel.movement", icon: Footprints },
+  { id: "actions", title: "patient.careCarousel.actions", icon: ClipboardList },
+  { id: "vitals", title: "observer.patientDetail.recentVitalsTitle", icon: HeartPulse },
+  { id: "alerts", title: "observer.patientDetail.alertsTitle", icon: Bell },
+  { id: "tasks", title: "observer.patientDetail.taskWorkflowTitle", icon: ClipboardList },
+  { id: "messages", title: "observer.patientDetail.messagesTitle", icon: MessageSquare },
+  { id: "handovers", title: "observer.patientDetail.handoverTitle", icon: NotebookPen },
+] as const;
 
 type AlertRow = {
   id: number;
@@ -161,6 +174,8 @@ export function PatientCareCoordinationPanel({
   const [actionError, setActionError] = useState<string | null>(null);
   const [messageDetail, setMessageDetail] = useState<MessageRow | null>(null);
   const [pendingAlertId, setPendingAlertId] = useState<number | null>(null);
+  const [activeSection, setActiveSection] = useState<CareSection>("overview");
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const patientQuery = useQuery({
     queryKey: [...QK, patientId, "patient"],
@@ -917,6 +932,20 @@ export function PatientCareCoordinationPanel({
     tasksQuery.isLoading ||
     messagesQuery.isLoading ||
     handoversQuery.isLoading;
+  const activeSectionIndex = CARE_SECTIONS.findIndex((section) => section.id === activeSection);
+  const moveSection = (direction: number) => {
+    const nextIndex = (activeSectionIndex + direction + CARE_SECTIONS.length) % CARE_SECTIONS.length;
+    setActiveSection(CARE_SECTIONS[nextIndex].id);
+  };
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current;
+    const touch = event.changedTouches[0];
+    touchStart.current = null;
+    if (!start || !touch) return;
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy)) moveSection(dx < 0 ? 1 : -1);
+  };
 
   return (
     <AppPage
@@ -929,30 +958,59 @@ export function PatientCareCoordinationPanel({
         { label: patientDisplayName ?? t("observer.patientDetail.title") },
       ]}
     >
-
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <header className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2" aria-live="polite">
+          {(() => {
+            const Icon = CARE_SECTIONS[activeSectionIndex].icon;
+            return <Icon className="size-4 shrink-0 text-primary" aria-hidden />;
+          })()}
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold text-foreground">{t(CARE_SECTIONS[activeSectionIndex].title)}</h2>
+            <p className="text-xs text-muted-foreground">{activeSectionIndex + 1} / {CARE_SECTIONS.length}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button type="button" variant="outline" size="icon" aria-label={t("calendar.previous")} onClick={() => moveSection(-1)}>
+            <ChevronLeft className="size-4" aria-hidden />
+          </Button>
+          <Button type="button" variant="outline" size="icon" aria-label={t("calendar.next")} onClick={() => moveSection(1)}>
+            <ChevronRight className="size-4" aria-hidden />
+          </Button>
+        </div>
+      </header>
+      <div
+        className="space-y-4"
+        aria-roledescription="carousel"
+        aria-label={t(CARE_SECTIONS[activeSectionIndex].title)}
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+        }}
+        onTouchEnd={handleTouchEnd}
+      >
+      {activeSection === "overview" ? <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryStatCard icon={Bell} label={t("observer.patientDetail.activeAlerts")} value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
         <SummaryStatCard icon={HeartPulse} label={t("observer.patientDetail.recentVitals")} value={vitalsRows.length} tone="info" />
         <SummaryStatCard icon={ClipboardList} label={t("observer.patientDetail.openTasks")} value={taskRows.filter((row) => row.status !== "completed").length} tone="warning" />
         <SummaryStatCard icon={MessageSquare} label={t("observer.patientDetail.unreadMessages")} value={messageRows.filter((row) => !row.isRead).length} tone="warning" />
-      </section>
+      </section> : null}
 
-      <PatientHealthAnalysisPanel patientId={patientId} />
+      {activeSection === "health" ? <PatientHealthAnalysisPanel patientId={patientId} /> : null}
 
-      <MovementTimelineCard
+      {activeSection === "movement" ? <MovementTimelineCard
         events={timeline}
         patientName={patientDisplayName}
         patientMeta={patientMeta}
         roomLabel={currentRoomName}
-      />
+      /> : null}
 
-      {actionError ? (
+      {activeSection === "actions" && actionError ? (
         <div className="rounded-xl border border-critical/30 bg-critical-bg px-4 py-3 text-sm text-critical-foreground" role="alert">
           {actionError}
         </div>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {activeSection === "actions" ? <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardContent className="space-y-3 pt-6">
             <h3 className="text-sm font-semibold text-foreground">{t("observer.patientDetail.addObservation")}</h3>
@@ -1014,9 +1072,9 @@ export function PatientCareCoordinationPanel({
             </Button>
           </CardContent>
         </Card>
-      </section>
+      </section> : null}
 
-      <DataTableCard
+      {activeSection === "vitals" ? <DataTableCard
         title={t("observer.patientDetail.recentVitalsTitle")}
         description={t("observer.patientDetail.recentVitalsDesc")}
         data={vitalsRows}
@@ -1025,9 +1083,9 @@ export function PatientCareCoordinationPanel({
         emptyText={t("observer.patientDetail.noVitals")}
         mobileMode="cards"
         csvExport={vitalsCsvExport}
-      />
+      /> : null}
 
-      <DataTableCard
+      {activeSection === "alerts" ? <DataTableCard
         title={t("observer.patientDetail.alertsTitle")}
         description={t("observer.patientDetail.alertsDesc")}
         data={alertRows}
@@ -1037,9 +1095,9 @@ export function PatientCareCoordinationPanel({
         mobileMode="cards"
         rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
         csvExport={alertsCsvExport}
-      />
+      /> : null}
 
-      <DataTableCard
+      {activeSection === "tasks" ? <DataTableCard
         title={t("observer.patientDetail.taskWorkflowTitle")}
         description={t("observer.patientDetail.taskWorkflowDesc")}
         data={taskRows}
@@ -1049,9 +1107,9 @@ export function PatientCareCoordinationPanel({
         mobileMode="cards"
         rightSlot={<Activity className="h-4 w-4 text-muted-foreground" />}
         csvExport={tasksCsvExport}
-      />
+      /> : null}
 
-      <DataTableCard
+      {activeSection === "movement" ? <DataTableCard
         title={t("observer.patientDetail.timelineTitle")}
         description={t("observer.patientDetail.timelineDesc")}
         data={timelineRows}
@@ -1060,9 +1118,9 @@ export function PatientCareCoordinationPanel({
         emptyText={t("observer.patientDetail.noTimeline")}
         mobileMode="cards"
         csvExport={timelineCsvExport}
-      />
+      /> : null}
 
-      <DataTableCard
+      {activeSection === "messages" ? <DataTableCard
         title={t("observer.patientDetail.messagesTitle")}
         description={t("observer.patientDetail.messagesDesc")}
         data={messageRows}
@@ -1070,9 +1128,9 @@ export function PatientCareCoordinationPanel({
         isLoading={isLoadingAny}
         emptyText={t("observer.patientDetail.noMessages")}
         mobileMode="cards"
-      />
+      /> : null}
 
-      <DataTableCard
+      {activeSection === "handovers" ? <DataTableCard
         title={t("observer.patientDetail.handoverTitle")}
         description={t("observer.patientDetail.handoverDesc")}
         data={handoverRows}
@@ -1082,7 +1140,8 @@ export function PatientCareCoordinationPanel({
         mobileMode="cards"
         rightSlot={<NotebookPen className="h-4 w-4 text-muted-foreground" />}
         csvExport={handoversCsvExport}
-      />
+      /> : null}
+      </div>
 
       {messageDetail ? (
         <WorkflowMessageDetailDialog

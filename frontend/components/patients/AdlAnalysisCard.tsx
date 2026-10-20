@@ -1,7 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Activity } from "lucide-react";
+import {
+  Accessibility,
+  Activity,
+  ArrowUpDown,
+  Bath,
+  Droplets,
+  Footprints,
+  Shirt,
+  Sparkles,
+  Utensils,
+  type LucideIcon,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -42,6 +53,19 @@ const ADL_ITEM_ORDER = [
   "bathing",
 ];
 
+const ADL_ITEM_ICONS: Record<string, LucideIcon> = {
+  bowels: Droplets,
+  bladder: Droplets,
+  grooming: Sparkles,
+  toilet_use: Accessibility,
+  feeding: Utensils,
+  transfers: ArrowUpDown,
+  mobility: Footprints,
+  dressing: Shirt,
+  stairs: ArrowUpDown,
+  bathing: Bath,
+};
+
 function tierBadgeColor(tier: number) {
   if (tier === 1) return "bg-success-bg text-emerald-800 border-emerald-200";
   if (tier === 2) return "bg-warning-bg text-warning-foreground border-warning/30";
@@ -80,6 +104,9 @@ export function AdlAnalysisCard({ patientId }: { patientId: number }) {
   }
 
   const analysis = query.data;
+  const totalMax = Math.max(analysis.max_total, 1);
+  const totalScore = Math.min(Math.max(analysis.total, 0), totalMax);
+  const scorePercent = (totalScore / totalMax) * 100;
 
   return (
     <Card>
@@ -99,26 +126,57 @@ export function AdlAnalysisCard({ patientId }: { patientId: number }) {
             {t("patient.adl.tier")} {analysis.tier} · {analysis.tier_label}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {analysis.name} — {t("patient.adl.score")}: {analysis.total}/{analysis.max_total}
-        </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-center gap-4 rounded-xl border border-primary/10 bg-gradient-to-r from-primary/5 to-transparent p-3">
+          <div
+            role="img"
+            aria-label={t("patient.adl.score") + ": " + analysis.total + "/" + analysis.max_total}
+            className="grid h-20 w-20 shrink-0 place-items-center rounded-full p-2"
+            style={{ background: "conic-gradient(var(--primary) " + scorePercent + "%, var(--muted) 0)" }}
+          >
+            <div className="grid h-full w-full place-content-center rounded-full bg-card text-center">
+              <span className="text-xl font-bold leading-none tabular-nums">{analysis.total}</span>
+              <span className="mt-1 text-[10px] text-muted-foreground">/ {analysis.max_total}</span>
+            </div>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">{analysis.name}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t("patient.adl.score")}</p>
+            <div className="mt-2 h-1.5 w-36 max-w-full overflow-hidden rounded-full bg-muted" aria-hidden>
+              <div className="h-full rounded-full bg-primary" style={{ width: scorePercent + "%" }} />
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
           {ADL_ITEM_ORDER.map((key) => {
             const item = analysis.items[key];
             if (!item) return null;
+            const Icon = ADL_ITEM_ICONS[key] ?? Activity;
             return (
               <div
                 key={key}
-                className="rounded-lg border border-outline-variant/20 p-2"
+                className="rounded-xl border border-outline-variant/20 bg-card p-2.5 shadow-sm"
               >
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  {key.replace(/_/g, " ")}
-                </p>
-                <p className="text-lg font-semibold">
-                  {item.score}/{item.max}
-                </p>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" aria-hidden />
+                  </span>
+                  <p className="min-w-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {key.replace(/_/g, " ")}
+                  </p>
+                </div>
+                <p className="text-lg font-semibold tabular-nums">{item.score}<span className="text-sm text-muted-foreground">/{item.max}</span></p>
+                <div
+                  role="progressbar"
+                  aria-label={`${key.replace(/_/g, " ")}: ${item.score}/${item.max}`}
+                  aria-valuemin={0}
+                  aria-valuemax={Math.max(item.max, 1)}
+                  aria-valuenow={Math.min(Math.max(item.score, 0), Math.max(item.max, 1))}
+                  className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+                >
+                  <div className="h-full rounded-full bg-primary/80" style={{ width: `${Math.min(Math.max(item.score / Math.max(item.max, 1), 0), 1) * 100}%` }} />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {item.confidence}
                 </p>
@@ -127,16 +185,16 @@ export function AdlAnalysisCard({ patientId }: { patientId: number }) {
           })}
         </div>
 
-        <div className="space-y-1">
-          {analysis.notes.map((note, i) => (
-            <p
-              key={i}
-              className="text-xs leading-relaxed text-muted-foreground"
-            >
-              • {note}
-            </p>
-          ))}
-        </div>
+        {analysis.notes.length > 0 ? (
+          <details className="rounded-lg border border-border/60 px-3">
+            <summary className="flex min-h-11 cursor-pointer items-center text-xs font-medium text-primary">{t("patient.health.analysisDetails")}</summary>
+            <div className="space-y-1 pb-3">
+              {analysis.notes.map((note, i) => (
+                <p key={i} className="text-xs leading-relaxed text-muted-foreground">{note}</p>
+              ))}
+            </div>
+          </details>
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -2,7 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import {
+  ArrowRight,
   Activity,
+  ChevronDown,
   AlertTriangle,
   Droplets,
   Flame,
@@ -29,6 +31,8 @@ import type {
   HealthRiskSeverity,
 } from "@/lib/patientHealthAnalysis";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 /* ── shared helpers ──────────────────────────────────────────────────────── */
 
@@ -123,13 +127,6 @@ function riskBannerColors(level: PatientHealthAnalysis["risk_level"]) {
   return { banner: "bg-success-bg border-success/35", badge: "bg-success-bg text-success-foreground", icon: "text-success" };
 }
 
-function riskLevelLabel(level: PatientHealthAnalysis["risk_level"], t: (key: string) => string) {
-  if (level === "critical") return t("patient.health.risk.high");
-  if (level === "warning") return t("patient.health.risk.moderate");
-  if (level === "watch") return t("patient.health.risk.watch");
-  return t("patient.health.risk.normal");
-}
-
 function qualityText(value: PatientHealthAnalysis["data_quality"], t: (key: string) => string) {
   if (value === "complete") return t("patient.health.quality.complete");
   if (value === "partial") return t("patient.health.quality.partial");
@@ -158,67 +155,48 @@ export function AnomalyInsightCard({
   className?: string;
 }) {
   const { t } = useTranslation();
-  const colors = riskBannerColors(data.risk_level);
-  const concerns = data.risk_factors.slice(0, 4);
+  const insufficient = data.data_quality === "insufficient";
+  const colors = insufficient ? {banner:"bg-card border-border",badge:"bg-muted text-muted-foreground",icon:"text-muted-foreground"} : riskBannerColors(data.risk_level);
+  const levels = ["normal", "watch", "warning", "critical"] as const;
+  const levelLabel = (level: (typeof levels)[number]) => level === "normal" ? t("patient.health.risk.normal") : t(`patient.health.severity.${level}`);
+  const severityLabel = insufficient ? t("patient.health.insufficientData") : levelLabel(data.risk_level);
+  const concernColors = {normal:"bg-success",watch:"bg-info",warning:"bg-warning",critical:"bg-critical"};
 
   return (
-    <section id="predicting-anomaly" className={cn("scroll-mt-32 overflow-hidden rounded-[var(--radius)] border", colors.banner, className)}>
-      {/* Header row */}
-      <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card/70 shadow-sm">
-            <AlertTriangle className={cn("h-4 w-4", colors.icon)} aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semiboldr text-muted-foreground">
-              {t("patient.health.predictiveAnomaly")}
-            </p>
-            <h3 className="mt-0.5 text-lg font-bold leading-snug text-foreground">
-              {data.trend_summary}
-            </h3>
-          </div>
+    <section id="predicting-anomaly" aria-labelledby="anomaly-title" className={cn("scroll-mt-32 overflow-hidden rounded-[var(--radius)] border", colors.banner, className)}>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <AlertTriangle className={cn("size-4 shrink-0", colors.icon)} aria-hidden />
+          <h3 id="anomaly-title" className="font-semibold text-foreground">{t("patient.health.predictiveAnomaly")}</h3>
+          <Badge variant="secondary" className={colors.badge}>{severityLabel}</Badge>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-          <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-bold", colors.badge)}>
-            {riskLevelLabel(data.risk_level, t)}
-          </span>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-card disabled:opacity-60"
-            onClick={onRefresh}
-            disabled={isRefreshing || isFetching}
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", (isRefreshing || isFetching) && "animate-spin")} />
-            {isRefreshing || isFetching ? t("patient.health.refreshingAi") : t("patient.health.refreshAi")}
-          </button>
+        <Button type="button" variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing || isFetching}>
+          <RefreshCw className={cn((isRefreshing || isFetching) && "animate-spin motion-reduce:animate-none")} aria-hidden />
+          {isRefreshing || isFetching ? t("patient.health.refreshingAi") : t("patient.health.refreshAi")}
+        </Button>
+      </div>
+      <div role="note" className="mx-4 mt-3 flex items-start gap-2.5 rounded-lg border border-warning/30 bg-warning-bg/60 px-3 py-2.5 text-xs leading-relaxed text-warning-foreground">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <p>{t("patient.health.aiScreeningDisclaimer")}</p>
+      </div>
+      <div className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div role="img" aria-label={`${t("patient.health.reportedSeverity")}: ${severityLabel}`} className="grid grid-cols-4 gap-1.5">
+          {levels.map(level => <div key={level} className="flex min-w-0 flex-col gap-1.5">
+            <span className={cn("h-2 rounded-sm", !insufficient && level === data.risk_level ? concernColors[level] : "bg-border")} />
+            <span className={cn("text-xs", !insufficient && level === data.risk_level ? "font-semibold text-foreground" : "text-muted-foreground")}>{levelLabel(level)}</span>
+          </div>)}
+        </div>
+        <div className="flex min-w-0 flex-col gap-1.5 text-xs">
+          {data.risk_factors.slice(0,2).map(factor => <span key={`${factor.label}-${factor.evidence}`} className="flex items-center gap-2 text-foreground"><Activity className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />{factor.label}</span>)}
+          <span className="text-muted-foreground">{qualityText(data.data_quality,t)} · <time dateTime={data.generated_at}>{new Date(data.generated_at).toLocaleString()}</time></span>
         </div>
       </div>
-
-      {/* Main concerns chips */}
-      {concerns.length > 0 && (
-        <div className="flex flex-wrap gap-2 px-5 pb-4">
-          {concerns.map((factor) => (
-            <span
-              key={`${factor.label}-${factor.evidence}`}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
-                factor.severity === "critical"
-                  ? "border-critical/35 bg-card/80 text-critical-foreground"
-                  : factor.severity === "warning"
-                    ? "border-warning/35 bg-card/80 text-warning-foreground"
-                    : "border-info/35 bg-card/80 text-info-foreground",
-              )}
-            >
-              <span className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                factor.severity === "critical" ? "bg-critical" : factor.severity === "warning" ? "bg-warning" : "bg-info",
-              )} />
-              {factor.label}
-            </span>
-          ))}
+      <details className="group border-t border-border">
+        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-4 py-2 text-sm font-medium text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring">{t("patient.health.analysisDetails")}<ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden /></summary>
+        <div className="flex flex-col gap-3 px-4 pb-4 text-sm">
+          <p className="leading-relaxed text-foreground">{data.trend_summary}</p>
+          {data.risk_factors.length > 0 ? <ul className="flex flex-col gap-2">{data.risk_factors.map(factor => <li key={`${factor.label}-${factor.evidence}`}><strong className="font-medium">{factor.label}</strong> · {severityChip(factor.severity,t)}<p className="mt-1 text-muted-foreground">{factor.evidence} · {factor.source}</p></li>)}</ul> : null}
         </div>
-      )}
-
       {/* Score / window / evidence / AI meta row */}
       <div className="grid grid-cols-2 gap-px border-t border-border bg-border/60 sm:grid-cols-3 lg:grid-cols-6">
         <ScoreCell label={t("patient.health.riskScore")}>
@@ -249,6 +227,8 @@ export function AnomalyInsightCard({
           </span>
         </ScoreCell>
       </div>
+
+      </details>
 
       {data.data_quality === "insufficient" && (
         <div className="m-5 rounded-lg border border-warning/40 bg-warning-bg px-3 py-2 text-xs text-warning-foreground">
@@ -423,7 +403,8 @@ function HealthTrendChart({
   data: TrendPoint[];
   t: (key: string) => string;
 }) {
-  const hasData = data.some((point) => point[metric.key] != null);
+  const readingCount = data.filter(point => point[metric.key] != null).length;
+  const hasData = readingCount > 0;
   return (
     <div className="ws-insight-chart p-1 sm:p-2">
       <div className="mb-3">
@@ -465,7 +446,7 @@ function HealthTrendChart({
                 dataKey={metric.key}
                 stroke={metric.stroke}
                 strokeWidth={2}
-                dot={false}
+                dot={readingCount === 1 ? {r:3,fill:metric.stroke,stroke:"var(--card)",strokeWidth:1} : false}
                 connectNulls={false}
                 isAnimationActive={false}
               />
@@ -496,7 +477,7 @@ export function HealthTrendsWorkspace({
   const [selectedMetricKey, setSelectedMetricKey] = useState<(typeof TREND_METRICS)[number]["key"]>("heart_rate_bpm");
   const selectedMetric = TREND_METRICS.find((metric) => metric.key === selectedMetricKey) ?? TREND_METRICS[0];
   return (
-    <section id="health-trends" className={cn("ws-insight scroll-mt-32 min-w-0 rounded-[var(--radius)] border", className)}>
+    <section id="health-trends" className={cn("ws-chart-surface scroll-mt-32 min-w-0 rounded-[var(--radius)] border border-border bg-card text-card-foreground", className)}>
       <div className="flex flex-col gap-3 border-b border-border/50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
@@ -579,6 +560,7 @@ function RecommendationCard({
 }) {
   const isUrgent = item.priority === "critical";
   const isMod = item.priority === "warning";
+  const priorityIconColor = isUrgent ? "text-critical" : isMod ? "text-warning" : "text-info";
   return (
     <div className={cn(
       "flex flex-col justify-between gap-3 rounded-xl border p-4",
@@ -587,15 +569,24 @@ function RecommendationCard({
       <div>
         <div className="mb-1.5 flex items-center justify-between gap-2">
           {severityChip(item.priority, t)}
+          <span className={cn("flex h-7 w-7 items-center justify-center rounded-full bg-card/70", priorityIconColor)} aria-hidden>
+            <Activity className="h-4 w-4" />
+          </span>
         </div>
         <p className={cn("text-sm font-semibold leading-snug", isUrgent ? "text-critical-foreground" : isMod ? "text-warning-foreground" : "text-foreground")}>
           {item.title}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">{item.rationale}</p>
       </div>
-      <div className="rounded-lg bg-card/60 px-3 py-2">
-        <p className="text-xs font-semibold text-muted-foreground">{t("patient.health.personalizedCareActions")}</p>
-        <p className="mt-0.5 text-xs font-medium leading-tight text-foreground/80">{item.suggested_action}</p>
+      <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <p className="rounded-lg bg-card/60 px-3 py-2 text-xs leading-relaxed text-muted-foreground">{item.rationale}</p>
+        <ArrowRight className="mx-auto h-4 w-4 rotate-90 text-muted-foreground sm:rotate-0" aria-hidden />
+        <div className="rounded-lg bg-card/80 px-3 py-2.5">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <Activity className="h-3.5 w-3.5 text-primary" aria-hidden />
+            {t("patient.health.personalizedCareActions")}
+          </p>
+          <p className="mt-0.5 text-xs font-medium leading-tight text-foreground/80">{item.suggested_action}</p>
+        </div>
       </div>
     </div>
   );
@@ -610,6 +601,15 @@ export function OptimizeHealthPlanSection({
 }) {
   const { t } = useTranslation();
   if (recommendations.length === 0) return null;
+  const priorityGroups = [
+    { severity: "critical", color: "bg-critical" },
+    { severity: "warning", color: "bg-warning" },
+    { severity: "watch", color: "bg-info" },
+    { severity: "info", color: "bg-muted-foreground/40" },
+  ].map((group) => ({
+    ...group,
+    count: recommendations.filter((item) => item.priority === group.severity).length,
+  })).filter((group) => group.count > 0);
   return (
     <section id="optimize-health-plan" className={cn("scroll-mt-32 rounded-[var(--radius)] border border-border/60 bg-card shadow-sm", className)}>
       <div className="flex items-center justify-between gap-3 border-b border-border/50 px-5 py-3">
@@ -626,7 +626,26 @@ export function OptimizeHealthPlanSection({
           {recommendations.length}
         </span>
       </div>
-      <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-3 px-4 pt-3">
+        <div
+          role="img"
+          aria-label={priorityGroups.map((group) => `${t(`patient.health.severity.${group.severity}`)}: ${group.count}`).join(", ")}
+          className="flex h-2.5 overflow-hidden rounded-full bg-muted"
+        >
+          {priorityGroups.map((group) => (
+            <div key={group.severity} className={group.color} style={{ width: `${(group.count / recommendations.length) * 100}%` }} />
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-hidden>
+          {priorityGroups.map((group) => (
+            <span key={group.severity} className="inline-flex items-center gap-1.5">
+              <span className={cn("h-2 w-2 rounded-full", group.color)} />
+              {t(`patient.health.severity.${group.severity}`)} <strong className="font-semibold text-foreground">{group.count}</strong>
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className={cn("grid gap-3 p-4", recommendations.length === 1 ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3")}>
         {recommendations.slice(0, 6).map((item) => (
           <RecommendationCard key={item.title} item={item} t={t} />
         ))}

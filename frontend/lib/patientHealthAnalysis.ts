@@ -1,6 +1,7 @@
 export type HealthRiskLevel = "normal" | "watch" | "warning" | "critical";
 export type HealthRiskSeverity = "info" | "watch" | "warning" | "critical";
 export type HealthDataQuality = "complete" | "partial" | "insufficient";
+export type PatientHealthView = "baseline" | "anomaly" | "plan";
 
 export type HealthMetricSummary = {
   value: number | null;

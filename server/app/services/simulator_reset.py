@@ -107,6 +107,7 @@ async def reset_simulator_workspace(workspace_name: str | None = None) -> dict[s
     from scripts.seed_demo import run_sim_team_seed
     
     target_workspace = workspace_name or settings.bootstrap_demo_workspace_name or "WheelSense Demo Workspace"
+    takeover_device_ids: list[str] = []
     
     async with AsyncSessionLocal() as session:
         # Find the workspace
@@ -134,7 +135,26 @@ async def reset_simulator_workspace(workspace_name: str | None = None) -> dict[s
                 PatientDeviceAssignment.workspace_id == workspace.id
             )
         )
+        devices = await session.execute(
+            select(Device).where(Device.workspace_id == workspace.id)
+        )
+        for device in devices.scalars():
+            config = dict(device.config or {})
+            if config.pop("physical_takeover", False):
+                config.pop("physical_takeover_published", None)
+                device.config = config
+                takeover_device_ids.append(device.device_id)
         await session.commit()
+
+    if takeover_device_ids:
+        from app.services.mqtt_publish import mqtt_publish_json
+
+        for device_id in takeover_device_ids:
+            await mqtt_publish_json(
+                f"WheelSense/simulator/takeover/{device_id}",
+                {"device_id": device_id, "source": "simulation"},
+                retain=True,
+            )
     
     # Re-seed baseline data
     workspace_id = await run_sim_team_seed(target_workspace, reset=False)

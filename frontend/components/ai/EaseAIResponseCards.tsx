@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -17,12 +17,15 @@ import {
   Wrench,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MovementTimelineCard } from "@/components/timeline/MovementTimelineCard";
 import { formatDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
 type JsonRecord = Record<string, unknown>;
+const TechnicalDetails = createContext(false);
 
 export type EaseAIBackendCard = JsonRecord;
 
@@ -43,6 +46,7 @@ export type EaseAIResponseCardsProps = {
   cards: EaseAIBackendCard[];
   onQuestionChoice?: (reply: string) => void;
   onNavigate?: (href: string) => void;
+  showTechnicalDetails?: boolean;
 };
 
 function asRecord(value: unknown): JsonRecord | null {
@@ -151,6 +155,8 @@ function CardShell({
 }
 
 function Provenance({ items }: { items: string[] }) {
+  const showTechnicalDetails = useContext(TechnicalDetails);
+  if (!showTechnicalDetails) return null;
   if (items.length === 0) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-1">
@@ -164,6 +170,7 @@ function Provenance({ items }: { items: string[] }) {
 }
 
 function TimelineCard({ card }: { card: EaseAIBackendCard }) {
+  const showTechnicalDetails = useContext(TechnicalDetails);
   const payload = cardPayload(card);
   const events = (
     asArray(payload.events).length > 0
@@ -180,7 +187,8 @@ function TimelineCard({ card }: { card: EaseAIBackendCard }) {
       <MovementTimelineCard
         events={events}
         roomLabel={asString(payload.room_name) || asString(payload.roomLabel) || asString(card.room_name)}
-        limit={asNumber(payload.limit) ?? 8}
+        limit={asNumber(payload.limit) ?? 5}
+        showTechnicalDetails={showTechnicalDetails}
         compact
         embedded
       />
@@ -255,25 +263,25 @@ function PatientHealthAnalysisCard({ card }: { card: EaseAIBackendCard }) {
 }
 
 function TaskDraftCard({ card }: { card: EaseAIBackendCard }) {
-  const payload = cardPayload(card);
+  const payload = nestedPayload(card, ["task", "draft"]);
+  const taskTitle = asString(payload.title) || asString(payload.task_title) || titleFor(card, "Task Draft");
   const rows = [
-    ["Task", asString(payload.title) || asString(payload.task_title) || "Untitled task"],
     ["Patient", asString(payload.patient_name) || (payload.patient_id != null ? `Patient #${String(payload.patient_id)}` : "Not linked")],
-    ["Due", asString(payload.due_at) || asString(payload.due) || "Not set"],
-    ["Assigned", asString(payload.assigned_role) || asString(payload.assignee) || "Unassigned"],
+    ["Due", payload.due_at ? formatDateTime(asString(payload.due_at)) : asString(payload.due) || "No deadline"],
+    ["Assigned", asString(payload.assignee) || (payload.assign_to_self ? "You" : asString(payload.assigned_role)) || (payload.assigned_user_id != null ? `User #${String(payload.assigned_user_id)}` : "Unassigned")],
   ];
 
   return (
-    <CardShell icon={<ClipboardCheck className="h-4 w-4" />} title={titleFor(card, "Task Draft")}>
+    <CardShell icon={<ClipboardCheck className="h-4 w-4" />} title={taskTitle}>
       <dl className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
         {rows.map(([label, value]) => (
           <div key={label} className="contents">
             <dt className="text-muted-foreground">{label}</dt>
-            <dd className="min-w-0 truncate font-medium text-foreground">{value}</dd>
+            <dd className="min-w-0 break-words font-medium text-foreground">{value}</dd>
           </div>
         ))}
       </dl>
-      {asString(payload.description) ? <p className="mt-2 text-xs text-muted-foreground">{asString(payload.description)}</p> : null}
+      {asString(payload.description) && payload.description !== taskTitle ? <p className="mt-2 text-xs text-muted-foreground">{asString(payload.description)}</p> : null}
       <Provenance items={provenanceItems(card)} />
     </CardShell>
   );
@@ -318,7 +326,6 @@ function QuestionChoicesCard({
   const choices = normalizeChoices(card);
   const payload = cardPayload(card);
   const [customReply, setCustomReply] = useState("");
-  if (choices.length === 0) return null;
 
   function buildCustomReply(value: string): string {
     const template = asString(payload.custom_reply_template);
@@ -334,10 +341,11 @@ function QuestionChoicesCard({
       ) : null}
       <div className="grid gap-2">
         {choices.map((choice) => (
-          <button
+          <Button
             key={choice.key}
             type="button"
-            className="rounded-lg border border-outline-variant/25 bg-surface px-3 py-2 text-left text-xs transition-smooth hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60"
+            variant="outline"
+            className="h-auto flex-col items-start px-3 py-2 text-left"
             onClick={() => onQuestionChoice?.(choice.reply)}
             disabled={!onQuestionChoice}
           >
@@ -350,7 +358,7 @@ function QuestionChoicesCard({
               ) : null}
             </span>
             {choice.description ? <span className="mt-0.5 block text-muted-foreground">{choice.description}</span> : null}
-          </button>
+          </Button>
         ))}
       </div>
       {payload.allow_custom !== false ? (
@@ -362,20 +370,21 @@ function QuestionChoicesCard({
             if (reply) onQuestionChoice?.(buildCustomReply(reply));
           }}
         >
-          <input
-            className="input-field min-w-0 flex-1 text-xs"
+          <Input
+            className="min-w-0 flex-1"
+            aria-label="Your answer"
             value={customReply}
             onChange={(event) => setCustomReply(event.target.value)}
             placeholder={asString(payload.custom_placeholder) || "Type your own details..."}
             disabled={!onQuestionChoice}
           />
-          <button
+          <Button
             type="submit"
-            className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+            size="sm"
             disabled={!onQuestionChoice || !customReply.trim()}
           >
             Send
-          </button>
+          </Button>
         </form>
       ) : null}
       <Provenance items={provenanceItems(card)} />
@@ -489,6 +498,7 @@ function normalizeColumns(rows: JsonRecord[], rawColumns: unknown[]): Column[] {
 
 function DataTableCard({ card }: { card: EaseAIBackendCard }) {
   const { t } = useTranslation();
+  const [visibleRows, setVisibleRows] = useState(8);
   const payload = cardPayload(card);
   const rawColumns = asArray(payload.columns);
   const rawRows = asArray(payload.rows).length > 0 ? asArray(payload.rows) : asArray(payload.data);
@@ -526,11 +536,15 @@ function DataTableCard({ card }: { card: EaseAIBackendCard }) {
               </tr>
             </thead>
             <tbody>
-              {rows.slice(0, 8).map((row, rowIndex) => (
+              {rows.slice(0, visibleRows).map((row, rowIndex) => (
                 <tr key={rowIndex} className="border-b border-outline-variant/10 last:border-b-0">
                   {columns.slice(0, 6).map((column) => (
                     <td key={column.key} className="max-w-40 truncate px-2 py-1 text-foreground">
-                      {String(row[column.key] ?? "")}
+                      {column.key === "due_at"
+                        ? row.due_at
+                          ? formatDateTime(String(row.due_at))
+                          : t("tasks.noDeadline")
+                        : String(row[column.key] ?? "")}
                     </td>
                   ))}
                 </tr>
@@ -539,6 +553,12 @@ function DataTableCard({ card }: { card: EaseAIBackendCard }) {
           </table>
         </div>
       )}
+      {rows.length > 8 || (asNumber(payload.total_count) ?? 0) > rows.length ? (
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <span>{Math.min(visibleRows, rows.length)} / {asNumber(payload.total_count) ?? rows.length}</span>
+          {visibleRows < rows.length ? <Button variant="ghost" size="sm" onClick={() => setVisibleRows((count) => count + 8)}>{t("nav.showMore")}</Button> : null}
+        </div>
+      ) : null}
       <Provenance items={provenanceItems(card)} />
     </CardShell>
   );
@@ -555,6 +575,9 @@ function PatientSummaryCard({ card }: { card: EaseAIBackendCard }) {
     ["Room", asString(payload.room_name) || (payload.room_id != null ? `Room ${String(payload.room_id)}` : "")],
     ["Risk", asString(payload.risk_level) || asString(payload.risk)],
     ["Status", asString(payload.status) || asString(payload.care_status)],
+    ["Care level", asString(payload.care_level)],
+    ["Conditions", asArray(payload.medical_conditions).map((item) => asString(asRecord(item)?.condition) || asString(item)).filter(Boolean).join(", ")],
+    ["Allergies", asArray(payload.allergies).map(asString).filter(Boolean).join(", ")],
     ["Updated", asString(payload.updated_at) ? formatDateTime(asString(payload.updated_at)) : ""],
   ].filter(([, value]) => value);
 
@@ -565,7 +588,7 @@ function PatientSummaryCard({ card }: { card: EaseAIBackendCard }) {
           {rows.map(([label, value]) => (
             <div key={label} className="contents">
               <dt className="text-muted-foreground">{label}</dt>
-              <dd className="min-w-0 truncate font-medium text-foreground">{value}</dd>
+              <dd className="min-w-0 break-words font-medium text-foreground">{value}</dd>
             </div>
           ))}
         </dl>
@@ -636,6 +659,9 @@ function StaffSummaryCard({ card }: { card: EaseAIBackendCard }) {
     ["Role", asString(payload.role)],
     ["Status", asString(payload.status) || asString(payload.is_active)],
     ["Department", asString(payload.department)],
+    ["Specialty", asString(payload.specialty)],
+    ["Phone", asString(payload.phone)],
+    ["Email", asString(payload.email)],
     ["Tasks", displayValue(payload.open_tasks ?? payload.task_count)],
     ["Schedules", displayValue(payload.upcoming_schedules ?? payload.schedule_count)],
     ["Updated", asString(payload.updated_at) ? formatDateTime(asString(payload.updated_at)) : ""],
@@ -886,17 +912,19 @@ function renderCard(
   }
 }
 
-export function EaseAIResponseCards({ cards, onQuestionChoice, onNavigate }: EaseAIResponseCardsProps) {
+export function EaseAIResponseCards({ cards, onQuestionChoice, onNavigate, showTechnicalDetails = false }: EaseAIResponseCardsProps) {
   if (cards.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <TechnicalDetails value={showTechnicalDetails}>
+    <div className="flex flex-col gap-3">
       {cards.map((card, index) => (
         <div key={`${cardType(card)}-${asString(card.id) || index}`}>
           {renderCard(card, onQuestionChoice, onNavigate)}
         </div>
       ))}
     </div>
+    </TechnicalDetails>
   );
 }
 

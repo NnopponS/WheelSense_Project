@@ -1935,6 +1935,7 @@ async def publish_mqtt(topic: str, payload: dict[str, Any]) -> None:
     connect_kwargs: dict[str, Any] = {
         "hostname": settings.mqtt_broker,
         "port": settings.mqtt_port,
+        "identifier": f"wheelsense-device-{uuid.uuid4().hex[:12]}",
         "username": settings.mqtt_user or None,
         "password": settings.mqtt_password or None,
     }

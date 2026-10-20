@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -103,7 +103,14 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
   const router = useRouter();
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const roleCheckDone = useRef(false);
+
+  useEffect(() => {
+    setSidebarCollapsed(localStorage.getItem("wheelsense:sidebar-collapsed") === "true");
+  }, []);
+
+  const shellStyle = sidebarCollapsed ? { "--sidebar-width": "4.5rem" } as CSSProperties : undefined;
 
   // Auth guard - redirect to login if not authenticated
   useEffect(() => {
@@ -152,7 +159,7 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
   if (!user) return null;
 
   return (
-    <div className={cn("ws-shell flex min-h-screen bg-background", user.role === "patient" && "ws-density-patient", elderClass)}>
+    <div className={cn("ws-shell flex min-h-screen bg-background", user.role === "patient" && "ws-density-patient", elderClass)} style={shellStyle}>
       <a
         href="#main-content"
         className="sr-only fixed left-3 top-3 z-[100] rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-lg focus:not-sr-only"
@@ -160,7 +167,15 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
         {t("nav.skipToContent")}
       </a>
       {/* Sidebar - Desktop fixed, Mobile Sheet */}
-      <RoleSidebar mobileOpen={mobileNavOpen} onMobileOpenChange={setMobileNavOpen} />
+      <RoleSidebar
+        mobileOpen={mobileNavOpen}
+        onMobileOpenChange={setMobileNavOpen}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={(collapsed) => {
+          setSidebarCollapsed(collapsed);
+          localStorage.setItem("wheelsense:sidebar-collapsed", String(collapsed));
+        }}
+      />
 
       {/* Main Content Area */}
       <div className="ws-shell-content flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[var(--sidebar-width)]">

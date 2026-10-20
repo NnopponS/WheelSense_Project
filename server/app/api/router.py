@@ -1,8 +1,16 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+import asyncio
+import uuid
 
+import httpx
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+
+from app.config import settings
 from app.api.dependencies import get_current_active_user
+from app.db.session import AsyncSessionLocal
+from app.mqtt_handler import mqtt_is_connected
 from .endpoints import (
     admin_database,
     workspaces, devices, rooms, telemetry, localization, motion,
@@ -14,6 +22,7 @@ from .endpoints import (
 from app.localization import is_model_ready
 
 api_router = APIRouter(prefix="/api")
+_api_instance_id = uuid.uuid4().hex
 
 # Public static assets (no JWT — filename is unguessable)
 api_router.include_router(
@@ -155,4 +164,34 @@ api_router.include_router(
 
 @api_router.get("/health", tags=["health"])
 async def health():
-    return {"status": "ok", "model_ready": is_model_ready()}
+    async def database_status() -> str:
+        try:
+            async with asyncio.timeout(3):
+                async with AsyncSessionLocal() as session:
+                    await session.execute(text("SELECT 1"))
+            return "online"
+        except Exception:
+            return "offline"
+
+    async def automation_status() -> str:
+        try:
+            async with httpx.AsyncClient(timeout=3) as client:
+                response = await client.get(f"{settings.agent_runtime_url.rstrip('/')}/health")
+            return "online" if response.is_success else "offline"
+        except Exception:
+            return "offline"
+
+    database, automation = await asyncio.gather(
+        database_status(), automation_status()
+    )
+    return {
+        "status": "ok",
+        "model_ready": is_model_ready(),
+        "instance_id": _api_instance_id,
+        "services": {
+            "api": "online",
+            "database": database,
+            "mqtt": "online" if mqtt_is_connected() else "offline",
+            "automation": automation,
+        },
+    }

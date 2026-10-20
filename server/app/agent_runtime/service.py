@@ -64,6 +64,8 @@ from app.agent_runtime.layers.layer5_safety_execution import execute_confirmed_p
 from app.agent_runtime.layers.observability import PipelineEventEmitter, get_default_emitter
 from app.agent_runtime.language_bridge import normalize_message_for_intent
 from app.agent_runtime.conversation_fastpath import is_general_conversation_only
+from app.agent_runtime.read_requests import answer_read_request, read_request_kind
+from app.agent_runtime.task_dialogue import TASK_QUESTION_SCHEMA, task_dialogue_turn
 from app.agent_runtime.task_request import normalize_task_create_title as normalize_task_title_from_request
 
 logger = logging.getLogger("wheelsense.agent_runtime")
@@ -486,6 +488,8 @@ def _task_ready_clarification_reply(*, title: str, active_field: str, thai: bool
 def _clarification_reply_for_ambiguous_request(
     message: str,
     context: ConversationContext | None,
+    *,
+    required_only: bool = False,
 ) -> tuple[str, list[dict[str, Any]]] | None:
     text = (message or "").strip()
     if not text:
@@ -496,6 +500,8 @@ def _clarification_reply_for_ambiguous_request(
     if _is_task_management_create_request(text):
         normalized = _normalize_task_create_title(text)
         missing = _missing_task_ready_fields(message=text, title=normalized, context=context)
+        if required_only:
+            missing = [field for field in missing if field in {"task title / work objective", "target patient, room, bed, or ward", "assignee, either yourself or a specific role/user"}]
         if missing:
             active_field = missing[0]
             reply = _task_ready_clarification_reply(
@@ -1784,6 +1790,7 @@ async def _try_v2_llm_tools_strategy(
             messages=messages,
             conversation_id=conversation_id,
             call_mcp_tool=_call_mcp_tool_read_only_during_propose,
+            page_context=_get_or_create_context(conversation_id).last_page_context,
         )
     except Exception:
         logger.exception("V2 llm_tools strategy failed; falling back to intent pipeline")
@@ -1897,6 +1904,48 @@ async def propose_turn(
     await _seed_page_patient_context(conversation_id, page_patient_id, actor_access_token)
     await _seed_patient_self_context(conversation_id, actor_access_token)
     context = _get_or_create_context(conversation_id)
+    if context.task_dialogue and re.fullmatch(r"\s*(?:cancel|stop|never mind|ยกเลิก|หยุด)[.!\s]*", message, re.IGNORECASE):
+        context.task_dialogue = None
+        return AgentRuntimeProposeResponse(mode="answer", assistant_reply="Task draft cancelled.", grounding={"reason_code": "task_draft_cancelled"})
+    explicit_read = read_request_kind(message) is not None and re.match(r"\s*(?:show|list|get|what is|what are|where|who is|when is|ขอดู|แสดง)", message, re.IGNORECASE)
+    if _is_task_management_create_request(message) or (context.task_dialogue and not explicit_read):
+        try:
+            async with AsyncSessionLocal() as db:
+                user, workspace = await _load_runtime_actor_context(db, actor_access_token)
+                allowed = ai_chat.get_role_mcp_tool_allowlist().get(str(user.role), set())
+                if "create_task_management_task" in allowed:
+                    patients = await _call_mcp_tool(actor_access_token, "list_visible_patients", {}) if "list_visible_patients" in allowed else []
+                    staff = await _call_mcp_tool(actor_access_token, "list_staff", {}) if "list_staff" in allowed else []
+                    attempts: list[dict[str, object]] = []
+                    async def complete_task_intake(instructions: str, parts: list[ChatMessagePart]) -> str:
+                        return await ai_chat.collect_chat_reply_best_effort(db=db, user=user, workspace=workspace, messages=parts, provider_attempts_out=attempts, system_instructions=instructions, max_tokens=512, response_schema=TASK_QUESTION_SCHEMA)
+                    response = await asyncio.wait_for(task_dialogue_turn(message, context, patients, staff, complete_task_intake, user_id=user.id, provider_attempts=attempts), timeout=90)
+                    if response.action_payload:
+                        response.action_payload["conversation_id"] = conversation_id
+                    return response
+        except Exception:
+            logger.exception("LLM task intake unavailable; using validated fallback")
+            if context.task_dialogue:
+                return AgentRuntimeProposeResponse(mode="answer", assistant_reply="I could not process that answer right now. Please try again.", grounding={"reason_code": "task_intake_unavailable"})
+    if read_request_kind(message) is not None:
+        async with AsyncSessionLocal() as db:
+            user, _, _ = await resolve_current_user_from_token(db, actor_access_token)
+            allowed = ai_chat.get_role_mcp_tool_allowlist().get(str(user.role), set())
+        try:
+            read_answer = await answer_read_request(
+                message, context, allowed,
+                lambda name, arguments: _call_mcp_tool(actor_access_token, name, arguments),
+                actor_user_id=user.id, actor_role=str(user.role),
+            )
+        except Exception:
+            logger.exception("Grounded read request failed")
+            return AgentRuntimeProposeResponse(
+                mode="answer",
+                assistant_reply="I could not retrieve those records right now. Please try again.",
+                grounding={"reason_code": "read_failed"},
+            )
+        if read_answer is not None:
+            return read_answer
     await _seed_visible_patient_context_for_task_request(
         conversation_id=conversation_id,
         actor_access_token=actor_access_token,
@@ -1904,8 +1953,8 @@ async def propose_turn(
         context=context,
     )
     clarification = (
-        _clarification_reply_for_ambiguous_request(message, context)
-        if settings.easeai_deterministic_answer_lock_enabled
+        _clarification_reply_for_ambiguous_request(message, context, required_only=not settings.easeai_deterministic_answer_lock_enabled)
+        if settings.easeai_deterministic_answer_lock_enabled or _is_task_management_create_request(message)
         else None
     )
     if clarification is not None:
@@ -1961,15 +2010,17 @@ async def propose_turn(
                             step.arguments = await _resolve_patient_and_staff_for_task(
                                 workspace.id, message, dict(step.arguments or {})
                             )
+                    task_args = plan.steps[0].arguments
+                    if not any(task_args.get(key) for key in ("assigned_user_id", "assigned_role", "assign_to_self")):
+                        return AgentRuntimeProposeResponse(
+                            mode="answer",
+                            assistant_reply="I could not uniquely match the assignee. Please provide a staff user ID or assign the task to yourself.",
+                            grounding={"reason_code": "clarification_required"},
+                        )
                     provider_attempts: list[dict[str, object]] = []
-                    assistant_reply = await _collect_plan_confirmation_reply_or_fallback(
-                        db=db,
-                        user=user,
-                        workspace=workspace,
-                        user_message=message,
-                        execution_plan=plan,
-                        provider_attempts_out=provider_attempts,
-                    )
+                    assistant_reply = f"Please confirm creating the task: {task_args['title']}."
+                    if task_args.get("due_at"):
+                        assistant_reply += f" Due: {task_args['due_at']}."
                 steps = [
                     {
                         "intent": step.title,

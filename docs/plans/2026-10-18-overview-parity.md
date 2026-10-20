@@ -74,3 +74,14 @@ Service availability is explicitly not reported; old hardcoded API/database/ML s
 
 No remaining implementation items for this scoped repair. MemPalace write and Graft rebuild remain unavailable tool operations, not claimed as completed.
 
+
+## Saved architectural plan in Overview — 2026-10-18
+
+The user reported that the supplied plan was absent from Overview. Reproduced against the production app: the Ward monitoring summary rendered eight saved room rectangles with no SVG image. `FloorplanRoleViewer` fetched the floor metadata but never passed `map_data.wheelsense_background` to `FloorplanCanvas`.
+
+The shared viewer now validates and uses the selected floor's saved background through the existing `readFloorplanBackground` helper, together with the same saved layout geometry. Floor switching clears/restores the image by selected floor rather than assuming a Level 4 asset. The full and compact viewer paths share this source; viewers with backgrounds fit the entire image. The mobile Overview now keeps a compact 12rem map visible alongside its existing room-list alternative. Floorplan saves invalidate shared viewer queries to refresh cached Overview data on return.
+
+Regression tests cover selected-floor image propagation, clearing on a floor without an image, and rejection of unsafe saved URLs. Existing geometry, telemetry, counters, room selection, and operational links remain intact. No backend records are modified by this repair.
+
+Unit verification: 106 tests / 29 suites passed; targeted ESLint and Impeccable layout scan passed. Production build passed. Read-only production browser verification passed at 1440×900, 1280×720, 768×1024, 390×844 and 320×740: saved SVG image visible, all eight rectangles equal saved layout coordinates, zero horizontal overflow, zero axe violations and no runtime errors. Floor switching clears/restores each floor’s own image; room selection and full-workspace link remain functional. Light/dark screenshots captured; `overview-ward.png` shows the rendered Overview section. No backend writes were performed.
+Evidence/script: `C:/Users/poon1/.codex/visualizations/2026/10/18/01a14dbd-92ee-7070-b1e2-590ffa47d4dc/facility-alignment/verify-overview.cjs` and `overview-*` artifacts.

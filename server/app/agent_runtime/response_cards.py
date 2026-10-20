@@ -19,6 +19,7 @@ RESPONSE_CARD_KINDS: frozenset[str] = frozenset(
         "patient_summary",
         "profile_summary",
         "staff_summary",
+        "staff_timeline",
         "navigation",
         "tool_result",
     }
@@ -326,6 +327,11 @@ def cards_for_tool_result(tool_name: str | None, result: Any) -> list[dict[str, 
     if profile_card is not None:
         cards.append(profile_card)
 
+    if tool_name == "get_staff_details" and isinstance(payload, dict):
+        cards.append(make_response_card("staff_summary", title="Staff profile", staff=payload))
+    elif tool_name == "get_staff_timeline" and isinstance(payload, dict):
+        cards.append(make_response_card("staff_timeline", title="Staff timeline", timeline=payload))
+
     if tool_name == "get_patient_timeline" and isinstance(payload, dict):
         cards.append(
             make_response_card(
@@ -376,6 +382,12 @@ def cards_for_tool_result(tool_name: str | None, result: Any) -> list[dict[str, 
                 analysis=payload,
             )
         )
+    elif tool_name == "list_task_management_tasks" and isinstance(payload, list):
+        cards.append(make_response_card(
+            "data_table", title="Tasks", source=tool_name,
+            columns=["id", "title", "due_at", "status", "patient_name"],
+            rows=payload, total_count=len(payload),
+        ))
     elif isinstance(payload, list) and all(isinstance(row, dict) for row in payload):
         table = _table_card(
             title=tool_name.replace("_", " ").title(),
@@ -399,7 +411,10 @@ def cards_for_tool_result(tool_name: str | None, result: Any) -> list[dict[str, 
 
 def cards_for_tool_results(tool_results: list[tuple[str, Any]]) -> list[dict[str, Any]]:
     cards: list[dict[str, Any]] = []
+    has_person_details = any(name in {"get_patient_details", "get_staff_details"} for name, _ in tool_results)
     for tool_name, result in tool_results:
+        if has_person_details and tool_name in {"list_visible_patients", "list_staff"}:
+            continue
         cards.extend(cards_for_tool_result(tool_name, result))
     return cards
 

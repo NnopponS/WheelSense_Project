@@ -242,13 +242,13 @@ function SummaryCard({
 }) {
   return (
     <Card>
-      <CardContent className="flex items-center justify-between gap-4 pt-6">
-        <div>
+      <CardContent className="flex items-center justify-between gap-3 p-4 sm:p-4">
+        <div className="flex min-w-0 flex-col gap-2">
           <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-1 text-3xl font-semibold text-foreground">{value}</p>
+          <p className="text-2xl font-semibold leading-none tabular-nums text-foreground">{value}</p>
         </div>
-        <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-          <Icon className="h-5 w-5" />
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="size-4" aria-hidden />
         </div>
       </CardContent>
     </Card>

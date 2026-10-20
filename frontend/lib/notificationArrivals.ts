@@ -9,7 +9,7 @@ export function collectNotificationArrivals(seen: NotificationSeen, sources: Sou
   for (const source of sources) {
     if (!source.ready) continue;
     const previous = seen.get(source.type);
-    const signature = (item: Notification) => `${item.timestamp}|${item.message}`;
+    const signature = (item: Notification) => item.type === "workflow_job" ? item.timestamp : `${item.timestamp}|${item.message}`;
     if (!previous) {
       seen.set(source.type, new Map(source.items.map(item => [item.id, signature(item)])));
       continue;

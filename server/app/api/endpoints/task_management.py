@@ -15,7 +15,7 @@ from app.api.dependencies import (
     get_current_user_workspace,
     get_db,
 )
-from app.models.core import Workspace
+from app.models.core import Room, Workspace
 from app.models.users import User
 from app.models.task_management import PatientFixRoutine, RoutineTask, RoutineTaskLog
 from app.models.patients import Patient
@@ -89,6 +89,7 @@ def _task_to_out(task: RoutineTask, user_map: dict[int, User]) -> RoutineTaskOut
         id=task.id,
         workspace_id=task.workspace_id,
         title=task.title,
+        description=task.description or "",
         label=task.label or "",
         category=task.category or "general",
         sort_order=task.sort_order,
@@ -111,6 +112,8 @@ def _log_to_out(log: RoutineTaskLog, task_out: RoutineTaskOut) -> RoutineTaskLog
         shift_date=log.shift_date,
         status=log.status,
         note=log.note or "",
+        report_text=log.report_text or "",
+        report_images=log.report_images or [],
         completed_at=log.completed_at,
         updated_at=log.updated_at,
         routine_task=task_out,
@@ -403,10 +406,13 @@ async def _enrich_routine(db: AsyncSession, routine: PatientFixRoutine) -> Patie
     if routine.patient_ids:
         patients = (
             await db.execute(
-                select(Patient).where(Patient.id.in_(routine.patient_ids))  # type: ignore[attr-defined]
+                select(Patient, Room.name).outerjoin(Room, Patient.room_id == Room.id).where(
+                    Patient.id.in_(routine.patient_ids),
+                    Patient.workspace_id == routine.workspace_id,
+                )
             )
-        ).scalars().all()
-        for p in patients:
+        ).all()
+        for p, room_name in patients:
             first = getattr(p, "first_name", "") or ""
             last = getattr(p, "last_name", "") or ""
             full_name = f"{first} {last}".strip() or str(p.id)
@@ -414,7 +420,7 @@ async def _enrich_routine(db: AsyncSession, routine: PatientFixRoutine) -> Patie
                 PatientSummary(
                     id=p.id,
                     name=full_name,
-                    room_number=getattr(p, "room_id", None),
+                    room_number=room_name,
                 )
             )
 

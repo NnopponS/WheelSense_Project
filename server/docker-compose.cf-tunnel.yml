@@ -4,8 +4,7 @@
 # **Production (`docker-compose.yml`):** this file is included automatically — `cf-tunnel-publish` starts on every
 # `docker compose up` (no extra flags).
 #
-# **Simulator:** not included in `docker-compose.sim.yml`. From `server/` run:
-#   docker compose -f docker-compose.sim.yml -f docker-compose.cf-tunnel.yml up -d --build
+# **Simulator:** included in `docker-compose.sim.yml`.
 #
 # ARM64: `docker compose build --build-arg TARGETARCH=arm64 cf-tunnel-publish`
 
@@ -17,10 +16,11 @@ services:
     restart: unless-stopped
     environment:
       TUNNEL_TARGET_URL: ${CF_TUNNEL_TARGET_URL:-http://wheelsense-platform-web:3000}
-      MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
+      MQTT_BROKER: ${MQTT_BROKER:-broker.emqx.io}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TLS: ${MQTT_TLS:-false}
     depends_on:
       wheelsense-platform-web:
         condition: service_started

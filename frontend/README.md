@@ -271,7 +271,8 @@ The popup calls the same **propose → confirm → execute** API as other client
 - User sends message through chat interface
 - Agent runtime routes the message (`intent` or `llm_tools`) and may call MCP reads or build an execution plan
 - Returns `mode: "answer"` for read-only or `mode: "plan"` for mutations
-- For plans: displays `ActionPlanPreview` with playbook, risk level, affected entities
+- Task intake uses the configured LLM to ask one missing detail at a time, accepts choices or natural text, and preserves the draft between replies. Task creation requires a title, target, assignee, and deadline or explicit no-deadline choice.
+- Result cards replace duplicate prose. Task plans show one review card with confirmation controls; tool names and provenance are available with `?ai_trace=1`.
 
 **Stage 2: Confirm** (`POST /api/chat/actions/{id}/confirm`)
 - User reviews the proposed action in the preview card

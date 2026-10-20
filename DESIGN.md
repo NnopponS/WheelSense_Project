@@ -229,6 +229,8 @@ Cool paper and white operational surfaces support dark graphite analytics. The f
 
 **The Scoped Insight Rule.** Graphite analytics redefine semantic foreground, surface, border and focus tokens locally so child controls inherit the insight context in both themes.
 
+Patient Health trends and device history are exceptions to the fixed graphite surface: they follow the selected light/dark theme. Their scoped `ws-chart-surface` maps the four series to contrast-aware green, blue, amber and neutral ink from existing tokens. Series labels identify measurements; these colors do not assign clinical severity. Other intentional `ws-insight` surfaces retain their original palette.
+
 ## Typography
 
 **Display and Body Font:** platform system sans with the existing Noto Sans Thai fallback. This is an explicit user choice. No separate decorative display face is introduced.
@@ -257,7 +259,7 @@ Bounded panes earn their own scroll only for distinct work: Kanban card columns,
 
 Spacing follows a four-point utility rhythm, with denser semantic spacing values for the app shell. Default page padding ranges from 0.875rem to 1.75rem; section and card padding are 1.125rem before theme and breakpoint overrides. The default stack gap is 0.875rem. Desktop density uses smaller padding and gaps; patient and large-text modes enlarge controls and spacing. Standard buttons remain at least 44px high. The touch-size token is 2.95rem below 768px and 3rem for the patient density preset before applicable cascade overrides; do not infer that every legacy control meets these targets.
 
-Admin Overview uses a compact inline KPI strip above its 1.1:1 fleet/attention workspace, with a 1rem gap on bounded desktop screens. A compact facility destination replaces the embedded map; history and administrative links remain in Activity & tools. Other overview layouts retain their existing grids. Repeated operational rows retain clear actions and stable density.
+Admin Overview uses four compact metrics above equal-width floorplan and Needs attention columns on desktop. The saved architectural image, resident counts, severity and freshness remain interactive; small room labels keep a compact count and a last-known marker. Fleet categories and service/activity/actions follow in a separate row. The canvas preserves readable room information on short screens, allowing a short main-area scroll rather than squeezing labels. Other overview layouts retain their existing grids.
 
 ## Elevation & Depth
 

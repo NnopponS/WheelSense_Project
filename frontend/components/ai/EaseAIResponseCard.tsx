@@ -20,6 +20,7 @@ type EaseAIResponseCardProps = {
   loading?: boolean;
   onQuestionChoice?: (reply: string) => void;
   onNavigate?: (href: string) => void;
+  showTechnicalDetails?: boolean;
 };
 
 function renderMarkdown(text: string): string {
@@ -124,8 +125,11 @@ export function EaseAIResponseCard({
   loading = false,
   onQuestionChoice,
   onNavigate,
+  showTechnicalDetails = false,
 }: EaseAIResponseCardProps) {
-  const responseCards = responseCardsFromGrounding(grounding, executionResult);
+  const allCards = responseCardsFromGrounding(grounding, executionResult);
+  const unresolved = ["task_not_found", "person_not_found", "person_ambiguous", "read_failed"].includes(asString(grounding?.reason_code));
+  const responseCards = allCards.filter((card) => showTechnicalDetails || (!unresolved && asString(card.kind || card.type || card.card_type) !== "tool_result"));
   const hasRichBlock = responseCards.length > 0;
 
   return (
@@ -137,7 +141,7 @@ export function EaseAIResponseCard({
         <p className="text-sm font-semibold text-foreground">WheelSense Assistant</p>
       </div>
 
-      {content ? (
+      {content && (!hasRichBlock || showTechnicalDetails) ? (
         <div
           className="prose-sm text-foreground [&_pre]:my-1 [&_code]:text-xs [&_li]:my-0"
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
@@ -151,7 +155,7 @@ export function EaseAIResponseCard({
 
       {hasRichBlock ? (
         <div className="mt-3">
-          <EaseAIResponseCards cards={responseCards} onQuestionChoice={onQuestionChoice} onNavigate={onNavigate} />
+          <EaseAIResponseCards cards={responseCards} onQuestionChoice={onQuestionChoice} onNavigate={onNavigate} showTechnicalDetails={showTechnicalDetails} />
         </div>
       ) : null}
 

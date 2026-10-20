@@ -48,6 +48,12 @@ from app.models.telemetry import (
 from app.models.vitals import VitalReading
 
 logger = logging.getLogger("wheelsense.mqtt")
+SIMULATOR_TAKEOVER_PREFIX = "WheelSense/simulator/takeover/"
+_mqtt_connected = False
+
+
+def mqtt_is_connected() -> bool:
+    return _mqtt_connected
 
 # Key: "{workspace_id}:{patient_id}" — one localization state per patient (mobile + wheelchair share it).
 _room_tracker: dict[str, dict] = {}
@@ -94,8 +100,8 @@ def _extract_device_id_from_topic(topic: str, payload: bytes) -> str | None:
     if len(parts) >= 3:
         if parts[1] == "mobile" or parts[1] == "camera":
             return parts[2]
-        # For WheelSense/data, extract from payload
-        if parts[1] == "data":
+        # For telemetry topics, extract the device ID from the payload.
+        if topic in {"WheelSense/data", "WheelSense/simulator/data"}:
             try:
                 data = json.loads(payload)
                 return data.get("device_id")
@@ -133,13 +139,16 @@ async def _lookup_patient_for_device(session, ws_id: int, device_id: str) -> int
 
 
 async def mqtt_listener():
+    global _mqtt_connected
     reconnect_interval = 5
+    client_identifier = f"wheelsense-server-{uuid.uuid4().hex[:12]}"
 
     while True:
         try:
             connect_kwargs: dict = {
                 "hostname": settings.mqtt_broker,
                 "port": settings.mqtt_port,
+                "identifier": client_identifier,
                 "username": settings.mqtt_user or None,
                 "password": settings.mqtt_password or None,
             }
@@ -148,7 +157,7 @@ async def mqtt_listener():
 
                 connect_kwargs["tls_params"] = aiomqtt.TLSParameters(
                     ca_certs=None,
-                    cert_reqs=ssl.CERT_NONE,
+                    cert_reqs=ssl.CERT_REQUIRED,
                 )
 
             async with aiomqtt.Client(**connect_kwargs) as client:
@@ -160,6 +169,7 @@ async def mqtt_listener():
                 )
 
                 await client.subscribe("WheelSense/data")
+                await client.subscribe("WheelSense/simulator/data")
                 await client.subscribe("WheelSense/mobile/+/telemetry")
                 await client.subscribe("WheelSense/mobile/+/register")
                 await client.subscribe("WheelSense/mobile/+/walkstep")
@@ -170,6 +180,7 @@ async def mqtt_listener():
                 await client.subscribe("WheelSense/audio/+/mic")
                 await client.subscribe("WheelSense/+/ack")
                 await client.subscribe("WheelSense/camera/+/ack")
+                _mqtt_connected = True
 
                 async for message in client.messages:
                     topic = str(message.topic)
@@ -185,8 +196,12 @@ async def mqtt_listener():
                             logger.warning("Rate limit exceeded for device %s", device_id)
                             continue
 
-                        if topic == "WheelSense/data":
-                            await _handle_telemetry(message.payload, client)
+                        if topic in {"WheelSense/data", "WheelSense/simulator/data"}:
+                            await _handle_telemetry(
+                                message.payload,
+                                client,
+                                is_simulation=topic == "WheelSense/simulator/data",
+                            )
                         elif topic.startswith("WheelSense/mobile/") and topic.endswith("/telemetry"):
                             await _handle_mobile_telemetry(message.payload, client)
                         elif topic.startswith("WheelSense/mobile/") and topic.endswith("/register"):
@@ -209,19 +224,23 @@ async def mqtt_listener():
                         logger.exception("Error handling MQTT message on %s", topic)
 
         except aiomqtt.MqttError as exc:
+            _mqtt_connected = False
             logger.warning(
                 "MQTT connection lost (%s), reconnecting in %ds...",
                 exc,
                 reconnect_interval,
             )
         except Exception:
+            _mqtt_connected = False
             logger.exception(
                 "MQTT unexpected error, reconnecting in %ds...", reconnect_interval
             )
         await asyncio.sleep(reconnect_interval)
 
 
-async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
+async def _handle_telemetry(
+    payload: bytes, client: aiomqtt.Client, *, is_simulation: bool = False
+):
     data = json.loads(payload)
     device_id = data.get("device_id", "unknown")
     imu = data.get("imu", {})
@@ -251,6 +270,25 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
             logger.warning("Telemetry dropped for unregistered device: %s", device_id)
             return
         ws_id = device.workspace_id
+
+        config = dict(device.config or {})
+        if is_simulation and config.get("physical_takeover"):
+            return
+        if not is_simulation:
+            config["physical_takeover"] = True
+            if not config.get("physical_takeover_published"):
+                try:
+                    await client.publish(
+                        f"{SIMULATOR_TAKEOVER_PREFIX}{device_id}",
+                        json.dumps({"device_id": device_id, "source": "physical"}),
+                        qos=1,
+                        retain=True,
+                    )
+                except Exception:
+                    logger.exception("Could not publish simulator takeover for %s", device_id)
+                else:
+                    config["physical_takeover_published"] = True
+            device.config = config  # type: ignore[assignment]
 
         device.last_seen = utcnow()  # type: ignore[assignment]
         device.firmware = data.get("firmware", device.firmware)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { CheckCircle2, ChevronDown, Circle, FileText, Loader2, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,9 +25,10 @@ import { hasCapability } from "@/lib/permissions";
 import { workflowJobStepAttachmentDownloadUrl } from "@/lib/workflowJobs";
 import { WorkflowJobCreateDialog } from "@/components/workflow/WorkflowJobCreateDialog";
 
-export type WorkflowJobsPanelVariant = "head-nurse" | "observer" | "supervisor";
+export type WorkflowJobsPanelVariant = "admin" | "head-nurse" | "observer" | "supervisor";
 
 const JOBS_QUERY: Record<WorkflowJobsPanelVariant, readonly string[]> = {
+  admin: ["admin", "workflow-jobs"],
   "head-nurse": ["head-nurse", "workflow-jobs"],
   observer: ["caregiver", "workflow-jobs"],
   supervisor: ["head_caregiver", "workflow-jobs"],
@@ -38,7 +39,7 @@ function invalidateWorkflowTaskQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   variant: WorkflowJobsPanelVariant,
 ) {
-  const role = variant === "head-nurse" ? "head_nurse" : variant;
+  const role = variant === "head-nurse" ? "head_nurse" : variant === "supervisor" ? "head_caregiver" : variant === "observer" ? "caregiver" : "admin";
   void queryClient.invalidateQueries({ queryKey: [variant, "tasks"] });
   void queryClient.invalidateQueries({ queryKey: [role, "workflow", "tasks"] });
   void queryClient.invalidateQueries({ queryKey: [variant, "dashboard", "tasks"] });
@@ -52,7 +53,7 @@ function stepProgress(job: CareWorkflowJobOut): { done: number; total: number } 
 }
 
 /** Mirrors `STAFF_WIDE_ROLES` + unassigned-step rule in `care_workflow_jobs.patch_step`. */
-const COORDINATOR_ROLES = new Set(["admin", "head_caregiver", "head_caregiver"]);
+const COORDINATOR_ROLES = new Set(["admin", "head_caregiver"]);
 
 function actorMayEditStep(
   actorUserId: number | undefined,
@@ -178,6 +179,21 @@ export function WorkflowJobsPanel({ variant }: { variant: WorkflowJobsPanelVaria
   });
 
   const jobs = (jobsQuery.data ?? []) as CareWorkflowJobOut[];
+  const openedJobParam = useRef<string | null>(null);
+
+  useEffect(() => {
+    const jobParam = new URLSearchParams(window.location.search).get("job");
+    if (!jobParam || jobParam === openedJobParam.current) return;
+    const jobId = Number(jobParam);
+    if (!Number.isSafeInteger(jobId)) {
+      openedJobParam.current = jobParam;
+      return;
+    }
+    const requestedJob = jobs.find((job) => job.id === jobId);
+    if (!requestedJob) return;
+    openedJobParam.current = jobParam;
+    setDetailJob(requestedJob);
+  }, [jobs]);
 
   return (
     <div className="space-y-5">

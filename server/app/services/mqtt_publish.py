@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import uuid
 from typing import Any
 
 import aiomqtt
@@ -24,6 +25,7 @@ def _connect_kwargs() -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "hostname": settings.mqtt_broker,
         "port": settings.mqtt_port,
+        "identifier": f"wheelsense-pub-{uuid.uuid4().hex[:12]}",
         "username": settings.mqtt_user or None,
         "password": settings.mqtt_password or None,
     }
@@ -32,7 +34,7 @@ def _connect_kwargs() -> dict[str, Any]:
 
         kwargs["tls_params"] = aiomqtt.TLSParameters(
             ca_certs=None,
-            cert_reqs=ssl.CERT_NONE,
+            cert_reqs=ssl.CERT_REQUIRED,
         )
     return kwargs
 

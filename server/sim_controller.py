@@ -45,21 +45,23 @@ from pathlib import Path
 from typing import Any
 
 SIM_CONTROL_TOPIC = "WheelSense/sim/control"
+SIM_TELEMETRY_TOPIC = "WheelSense/simulator/data"
+SIMULATOR_TAKEOVER_PREFIX = "WheelSense/simulator/takeover/"
 
 import paho.mqtt.client as mqtt
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 
 from app.config import settings
 from app.db.session import AsyncSessionLocal
 from app.models import (
-    Workspace, Room, Patient, PatientDeviceAssignment,
+    Workspace, Room, Patient, PatientDeviceAssignment, Device,
     CareGiver, CareSchedule, CareTask, HandoverNote,
-    ActivityTimeline, Alert
+    ActivityTimeline, Alert, DemoActorPosition, User
 )
 
 # =============================================================================
@@ -70,6 +72,7 @@ BROKER = os.environ.get("MQTT_BROKER", "127.0.0.1")
 PORT = int(os.environ.get("MQTT_PORT", "1883"))
 MQTT_USER = (os.environ.get("MQTT_USER") or "").strip() or None
 MQTT_PASSWORD = (os.environ.get("MQTT_PASSWORD") or "").strip() or None
+MQTT_TLS = os.environ.get("MQTT_TLS", "").strip().lower() in {"1", "true", "yes", "on"}
 
 SIMULATION_CONFIG = {
     "vital_update_interval": 30,      # seconds between vital updates
@@ -607,6 +610,7 @@ class SimulationEngine:
         self.patient_states: dict[int, PatientState] = {}  # patient_id -> state
         self.assignments: list[PatientDeviceAssignment] = []
         self.mqtt_client: mqtt.Client | None = None
+        self._physical_device_ids: set[str] = set()
         
         # Simulators
         self.vital_sim: VitalSimulator | None = None
@@ -748,6 +752,30 @@ class SimulationEngine:
         except (TypeError, ValueError):
             return
         self._apply_control_command_sync(payload)
+
+    def _handle_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
+        topic = str(msg.topic)
+        if topic.startswith(SIMULATOR_TAKEOVER_PREFIX):
+            device_id = topic.removeprefix(SIMULATOR_TAKEOVER_PREFIX).strip()
+            try:
+                source = json.loads(msg.payload.decode("utf-8")).get("source")
+            except (AttributeError, UnicodeDecodeError, json.JSONDecodeError):
+                return
+            if not device_id or "/" in device_id:
+                return
+            if source == "physical":
+                self._physical_device_ids.add(device_id)
+                self.logger.info("[SIM] Physical telemetry took over device %s", device_id)
+            elif source == "simulation":
+                self._physical_device_ids.discard(device_id)
+            return
+        self._handle_control_mqtt_message(msg)
+
+    def _publish_telemetry(self, payload: dict[str, Any]) -> None:
+        device_id = str(payload.get("device_id") or "")
+        if self.mqtt_client is None or device_id in self._physical_device_ids:
+            return
+        self.mqtt_client.publish(SIM_TELEMETRY_TOPIC, json.dumps(payload), qos=1)
 
     async def _drain_pending_inject_events(self) -> None:
         pending: list[tuple[str, int | None]] = []
@@ -903,7 +931,10 @@ class SimulationEngine:
         self.logger.info(f"Connecting to MQTT broker at {BROKER}:{PORT}...")
         
         try:
-            self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+            self.mqtt_client = mqtt.Client(
+                mqtt.CallbackAPIVersion.VERSION2,
+                client_id="wheelsense-simulator",
+            )
             if MQTT_USER:
                 self.mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD or "")
             def _on_connect(client, _userdata, _flags, reason_code, _properties):
@@ -913,10 +944,13 @@ class SimulationEngine:
                     self.logger.warning("MQTT connected with non-zero reason code: %s", reason_code)
                     return
                 client.subscribe(SIM_CONTROL_TOPIC, qos=0)
-                self.logger.info("MQTT connected; subscribed to %s", SIM_CONTROL_TOPIC)
+                client.subscribe(f"{SIMULATOR_TAKEOVER_PREFIX}+", qos=1)
+                self.logger.info("MQTT connected; subscribed to simulator control and physical takeover")
 
-            self.mqtt_client.on_message = lambda _c, _u, m: self._handle_control_mqtt_message(m)
+            self.mqtt_client.on_message = self._handle_mqtt_message
             self.mqtt_client.on_connect = _on_connect
+            if MQTT_TLS:
+                self.mqtt_client.tls_set()
             self.mqtt_client.connect(BROKER, PORT, 60)
             self.mqtt_client.loop_start()
         except Exception as e:
@@ -1006,7 +1040,7 @@ class SimulationEngine:
             is_fall
         )
         
-        self.mqtt_client.publish("WheelSense/data", json.dumps(payload))
+        self._publish_telemetry(payload)
         
         # Get patient name
         patient = next((p for p in self.patients if p.id == patient_state.patient_id), None)
@@ -1117,6 +1151,66 @@ class SimulationEngine:
     async def _simulation_cycle(self):
         """Run one simulation cycle for all patients."""
         async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Device)
+                .where(
+                    Device.workspace_id == self.workspace.id,
+                    Device.hardware_type.in_(("node", "polar_sense")),
+                    Device.config["seed"].as_boolean().is_(True),
+                )
+                .values(last_seen=datetime.now(timezone.utc))
+            )
+            await session.commit()
+            staff_users = list((await session.execute(
+                select(User)
+                .where(
+                    User.workspace_id == self.workspace.id,
+                    User.is_active.is_(True),
+                    User.role.in_(("caregiver", "head_caregiver", "admin")),
+                )
+                .order_by(User.id)
+            )).scalars().all())
+            staff_users.sort(key=lambda user: (user.role == "admin", user.id))
+            if staff_users and self.rooms:
+                staff_ids = [user.id for user in staff_users]
+                positions = list((await session.execute(
+                    select(DemoActorPosition).where(
+                        DemoActorPosition.workspace_id == self.workspace.id,
+                        DemoActorPosition.actor_type.in_(("staff", "user")),
+                        DemoActorPosition.actor_id.in_(staff_ids),
+                    )
+                )).scalars().all())
+                position_by_actor = {position.actor_id: position for position in positions}
+                simulated_position = next(
+                    (position_by_actor[user.id] for user in staff_users
+                     if user.id in position_by_actor and position_by_actor[user.id].source == "simulation"),
+                    None,
+                )
+                if simulated_position is not None:
+                    route_rooms = sorted(self.rooms, key=lambda room: room.id)
+                    current_index = next(
+                        (index for index, room in enumerate(route_rooms) if room.id == simulated_position.room_id),
+                        -1,
+                    )
+                    simulated_position.room_id = route_rooms[(current_index + 1) % len(route_rooms)].id
+                    simulated_position.updated_at = datetime.now(timezone.utc)
+                    session.add(simulated_position)
+                    await session.commit()
+                else:
+                    unlocated_staff = next(
+                        (user for user in staff_users if user.id not in position_by_actor),
+                        None,
+                    )
+                    if unlocated_staff is not None:
+                        session.add(DemoActorPosition(
+                            workspace_id=self.workspace.id,
+                            actor_type="staff",
+                            actor_id=unlocated_staff.id,
+                            room_id=min(self.rooms, key=lambda room: room.id).id,
+                            source="simulation",
+                            note="Simulated staff route",
+                        ))
+                        await session.commit()
             for patient_state in self.patient_states.values():
                 # Check for control signals
                 control_status = self._check_control_files()
@@ -1265,7 +1359,7 @@ class SimulationEngine:
                 target_state.current_room_idx,
                 is_fall=True
             )
-            self.mqtt_client.publish("WheelSense/data", json.dumps(payload))
+            self._publish_telemetry(payload)
             
             self.logger.critical(f"[FALL EVENT] Fall detected for {patient_name}!")
             
@@ -1296,7 +1390,7 @@ class SimulationEngine:
                 target_state.current_room_idx,
                 motion_state="idle"
             )
-            self.mqtt_client.publish("WheelSense/data", json.dumps(recovery_payload))
+            self._publish_telemetry(recovery_payload)
             self.logger.info("[FALL EVENT] Recovery telemetry sent")
             
         elif event_type == "abnormal_hr":
@@ -1313,7 +1407,7 @@ class SimulationEngine:
                 vitals,
                 target_state.current_room_idx
             )
-            self.mqtt_client.publish("WheelSense/data", json.dumps(payload))
+            self._publish_telemetry(payload)
             
             self.logger.critical(f"[HR EVENT] Abnormal HR: {vitals['heart_rate_bpm']} BPM for {patient_name}!")
             
@@ -1398,7 +1492,7 @@ class SimulationEngine:
             motion_state=motion_state,
         )
         if self.mqtt_client is not None:
-            self.mqtt_client.publish("WheelSense/data", json.dumps(mqtt_payload))
+            self._publish_telemetry(mqtt_payload)
         room = self.rooms[room_idx]
         self.logger.info(
             "[SIM-CONTROL] Published move telemetry patient_id=%s room=%s node=%s",

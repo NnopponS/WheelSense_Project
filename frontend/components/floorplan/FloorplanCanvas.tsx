@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, RotateCcw, Scan } from "lucide-react";
+import { Minus, Plus, RotateCcw, Scan, Users } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { percentToCanvasUnits, type FloorplanRoomShape } from "@/lib/floorplanLayout";
 
@@ -14,6 +14,8 @@ export type FloorplanRoomTone = "critical" | "warning" | "success" | "info";
 export type FloorplanRoomChip = {
   label: string;
   tone?: FloorplanRoomTone;
+  kind?: "residents";
+  compactLabel?: string;
 };
 
 export type FloorplanRoomMeta = {
@@ -568,6 +570,7 @@ export default function FloorplanCanvas({
             const meta = roomMetaById[room.id] ?? null;
             const tone = roomToneClasses(meta?.tone);
             const smallRoom=workspaceTools && fillViewport && (room.w*pixelsPerUnit<120 || room.h*pixelsPerUnit<80);
+            const residentChip = meta?.chips?.find(chip => chip.kind === "residents");
             const chips = smallRoom ? [] : meta?.chips?.slice(0, compact ? 2 : 3) ?? [];
             const detail = smallRoom ? null : meta?.detailLines?.[0] ?? null;
             const presenceDots = smallRoom ? [] : meta?.presenceDots?.slice(0, compact ? 2 : 3) ?? [];
@@ -581,6 +584,7 @@ export default function FloorplanCanvas({
                 display={visibleRoomIds && !visibleRoomIds.includes(room.id) ? "none" : undefined}
                 onPointerDown={(event) => event.stopPropagation()}
               >
+                {meta ? <title>{[...(meta.chips??[]).map(chip=>chip.label),...(meta.detailLines??[])].join(" · ")}</title> : null}
                 <desc id={`${canvasId}-${room.id}-status`}>{[...(meta?.chips??[]).map(chip=>chip.label),...(meta?.detailLines??[])].join(" · ")}</desc>
                 <rect
                   role="button"
@@ -639,8 +643,9 @@ export default function FloorplanCanvas({
                       transform: `scale(${1 / pixelsPerUnit})`,
                       transformOrigin: "top left",
                     } : undefined}>
-                    <div className="min-w-0">
-                      <p className={`${fillViewport && !smallRoom ? "break-words leading-tight" : "truncate"} text-xs font-semibold text-slate-900`} title={room.label}>{smallRoom ? room.label.replace(/^Room\s+(?=\d)/i, "") : room.label}{smallRoom && readOnly && (meta?.tone==="critical" || meta?.tone==="warning") ? <span aria-hidden="true" className="ml-1">{meta.tone==="critical" ? "!" : "△"}</span> : null}</p>
+                    <div className="relative min-w-0">
+                      <p className={`${fillViewport && !smallRoom ? "break-words leading-tight" : "truncate"} ${smallRoom && residentChip ? "leading-3" : ""} text-xs font-semibold text-slate-900`} title={room.label}>{smallRoom ? room.label.replace(/^Room\s+(?=\d)/i, "") : room.label}{smallRoom && readOnly && (meta?.tone==="critical" || meta?.tone==="warning") ? <span aria-hidden="true" className="ml-1">{meta.tone==="critical" ? "!" : "△"}</span> : null}</p>
+                      {smallRoom && residentChip ? <span className="inline-flex items-center gap-0.5 text-xs font-semibold leading-3 tabular-nums text-slate-900" title={residentChip.label} aria-label={residentChip.label}><Users className="size-2.5" aria-hidden />{residentChip.compactLabel}</span> : null}
                       {detail ? <p className="mt-0.5 truncate text-[10px] text-slate-600">{detail}</p> : null}
                     </div>
                     <div className="space-y-1">

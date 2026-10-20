@@ -46,10 +46,11 @@ services:
       PYTHONUNBUFFERED: "1"
       DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
       DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
-      MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
+      MQTT_BROKER: ${MQTT_BROKER:-broker.emqx.io}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TLS: ${MQTT_TLS:-false}
       API_BASE_URL: http://wheelsense-platform-server:8000/api
       BOOTSTRAP_DEMO_WORKSPACE_NAME: ${BOOTSTRAP_DEMO_WORKSPACE_NAME:-WheelSense Demo Workspace}
       PROFILE_IMAGE_STORAGE_DIR: /app/storage/profile_images

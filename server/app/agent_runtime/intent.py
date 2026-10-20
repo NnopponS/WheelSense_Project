@@ -102,6 +102,7 @@ class ConversationContext:
     last_focused_patient_id: int | None = None
     # Current UI route context passed by the frontend for page-aware answers.
     last_page_context: dict[str, Any] = field(default_factory=dict)
+    task_dialogue: dict[str, Any] | None = None
     last_intent: str | None = None
     last_playbook: str | None = None
 
@@ -1023,6 +1024,8 @@ class IntentClassifier:
                     if text_arg is None:
                         continue
                     min_chars = int(metadata.get("name_line_min_chars") or 0)
+                    if min_chars and re.search(r"\b(what|when|how|why|show|give|tell|due|deadline|task|timeline|information)\b|เมื่อไหร่|ขอข้อมูล|ไทม์ไลน์", text_arg, re.IGNORECASE):
+                        continue
                     if min_chars and len(text_arg.strip()) < min_chars:
                         continue
                     arguments[metadata["extract_text"]] = text_arg

@@ -9,7 +9,7 @@ WheelSense now supports two distinct runtime environments:
 | **Simulator** | Testing, demos, development | `pgdata-sim` | Yes (patients, staff, devices) |
 | **Production** | Real-world deployment | `pgdata-prod` | No (clean start) |
 
-Both environments use the **same Docker project name** (`wheelsense-platform`), the **same application images** (`wheelsense-platform-server`, `wheelsense-platform-web`), and a shared [`docker-compose.core.yml`](../docker-compose.core.yml). Entry files [`docker-compose.yml`](../docker-compose.yml) and [`docker-compose.sim.yml`](../docker-compose.sim.yml) use Compose [`include`](https://docs.docker.com/compose/how-tos/multiple-compose-files/include/) to merge the core stack with exactly one database fragment ([`docker-compose.data-prod.yml`](../docker-compose.data-prod.yml) vs [`docker-compose.data-mock.yml`](../docker-compose.data-mock.yml)). The Postgres service is always named `db` inside the stack; only the named volume differs (`pgdata-prod` vs `pgdata-sim`). **Production** also includes [`docker-compose.cf-tunnel.yml`](../docker-compose.cf-tunnel.yml) so `cf-tunnel-publish` starts automatically; **simulator** does not (add `-f docker-compose.cf-tunnel.yml` if you want it).
+Both environments use the **same Docker project name** (`wheelsense-platform`), the **same application images** (`wheelsense-platform-server`, `wheelsense-platform-web`), and a shared [`docker-compose.core.yml`](../docker-compose.core.yml). Entry files [`docker-compose.yml`](../docker-compose.yml) and [`docker-compose.sim.yml`](../docker-compose.sim.yml) use Compose [`include`](https://docs.docker.com/compose/how-tos/multiple-compose-files/include/) to merge the core stack with exactly one database fragment ([`docker-compose.data-prod.yml`](../docker-compose.data-prod.yml) vs [`docker-compose.data-mock.yml`](../docker-compose.data-mock.yml)). The Postgres service is always named `db` inside the stack; only the named volume differs (`pgdata-prod` vs `pgdata-sim`). Both entries include [`docker-compose.cf-tunnel.yml`](../docker-compose.cf-tunnel.yml), so `cf-tunnel-publish` starts automatically in either mode.
 
 Requires **Docker Compose v2.20+** (e.g. Docker Desktop 4.24+) for `include`. Fallback without `include`:
 
@@ -19,7 +19,11 @@ docker compose -f docker-compose.core.yml -f docker-compose.data-mock.yml up -d 
 docker compose -f docker-compose.core.yml -f docker-compose.data-prod.yml up -d --build   # production DB
 ```
 
-Both environments share the same MQTT broker (`mosquitto`) and topics, but use completely isolated PostgreSQL volumes. This means:
+Both environments default to the local MQTT broker (`mosquitto`) and use completely isolated PostgreSQL volumes. Set `MQTT_BROKER`, `MQTT_PORT`, `MQTT_USER`, `MQTT_PASSWORD`, and `MQTT_TLS=true` in the untracked `server/.env` to use an external EMQX broker from the backend, simulator, and Cloudflare URL publisher. Use EMQX's TLS MQTT endpoint (typically port 8883) and enter the same broker host, port, TLS setting, and credentials in the phone's server setup screen. The Cloudflare quick tunnel serves the web UI; it does not proxy MQTT. Physical telemetry on `WheelSense/data` takes over matching simulator device IDs, while other simulated devices continue publishing on `WheelSense/simulator/data`.
+
+Each simulator telemetry cycle refreshes `last_seen` for seeded `node` and `polar_sense` devices, so demo status stays online without changing non-seeded hardware records.
+
+The environments use completely isolated PostgreSQL volumes. This means:
 - Data modifications in Simulator do NOT affect Production
 - Data modifications in Production do NOT affect Simulator
 - You can switch between environments without losing data in either
@@ -73,14 +77,11 @@ Switching sim vs prod: change `COMPOSE_FILE` in `server/.env` (or unset) and run
 
 ### Cloudflare quick tunnel + mobile portal URL
 
-The **production** Compose entry ([`docker-compose.yml`](../docker-compose.yml)) **includes** [`docker-compose.cf-tunnel.yml`](../docker-compose.cf-tunnel.yml), so service **`cf-tunnel-publish`** starts on every `docker compose up --build -d` from `server/` (no extra `-f` or profile flags). It exposes the dockerized Next.js app via a **Cloudflare quick tunnel** and publishes `https://*.trycloudflare.com` to MQTT as `{ "portal_base_url": "..." }` on `WheelSense/config/all` (**retained**). The API also publishes **retained** `WheelSense/config/{device_id}` after mobile MQTT registration, on server startup (for all `mobile_phone` devices), and when mobile telemetry resumes after an offline gap, so phones receive `portal_base_url`, `linked_patient_id`, and `alerts_enabled` without racing the tunnel.
+Both Compose entries include the Cloudflare publisher, so `cf-tunnel-publish` starts with either production or simulator mode. It exposes the dockerized Next.js app through a **Cloudflare quick tunnel** and publishes `https://*.trycloudflare.com` to MQTT as `{ "portal_base_url": "..." }` on `WheelSense/config/all` (**retained**). The API also publishes **retained** `WheelSense/config/{device_id}` after mobile MQTT registration, on server startup (for all `mobile_phone` devices), and when mobile telemetry resumes after an offline gap, so phones receive `portal_base_url`, `linked_patient_id`, and `alerts_enabled` without racing the tunnel.
 
-1. Start production stack from `server/` (e.g. `docker compose up --build -d` or `scripts/start-prod.ps1`).
+1. Start the selected stack from `server/` (`docker compose -f docker-compose.sim.yml up --build -d` for simulator, or `docker compose up --build -d` for production).
 2. Watch logs for the trycloudflare URL: `docker compose logs -f cf-tunnel-publish` (or container logs in Docker Desktop).
-3. Copy that URL into `PORTAL_BASE_URL` in `server/.env` and **restart** `wheelsense-platform-server` so pairing payloads and the startup MQTT broadcast match (see `server/docs/ENV.md`). Optional env: `CF_TUNNEL_TARGET_URL` if the web container URL differs from the default.
-
-**Simulator** (`docker-compose.sim.yml`) does **not** include the tunnel by default. To add it:  
-`docker compose -f docker-compose.sim.yml -f docker-compose.cf-tunnel.yml up -d --build`
+3. The URL is published to `WheelSense/config/all`; mobile clients can load the portal URL from that retained message. Set the EMQX endpoint, TLS port, and credentials in `server/.env` and the phone's broker settings. Optional env: `CF_TUNNEL_TARGET_URL` if the web container URL differs from the default.
 
 Quick tunnels are **public**; use normal WheelSense authentication in the WebView.
 
