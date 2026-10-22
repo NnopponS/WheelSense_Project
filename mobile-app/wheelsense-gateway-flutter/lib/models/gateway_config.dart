@@ -25,8 +25,8 @@ class GatewayConfig {
       mqttUsername: '',
       mqttPassword: '',
       portalBaseUrl: 'https://portal.wheelsense.local',
-      bleServiceUuid: '0000a1b2-0000-1000-8000-00805f9b34fb',
-      bleTelemetryCharacteristicUuid: '0000a1b3-0000-1000-8000-00805f9b34fb',
+      bleServiceUuid: '8f6e0001-b5a3-f393-e0a9-e50e24dcca9e',
+      bleTelemetryCharacteristicUuid: '8f6e0003-b5a3-f393-e0a9-e50e24dcca9e',
       alertsEnabled: false,
       setupCompleted: false,
     );
@@ -48,6 +48,11 @@ class GatewayConfig {
   final String? linkedPersonType;
   final bool alertsEnabled;
   final bool setupCompleted;
+
+  bool get hasBroker {
+    final host = mqttHost.trim().toLowerCase().replaceAll(RegExp(r'\.+$'), '');
+    return mqttPort > 0 && mqttPort <= 65535 && host.isNotEmpty;
+  }
 
   GatewayConfig copyWith({
     String? deviceId,
@@ -111,6 +116,8 @@ class GatewayConfig {
 
   static GatewayConfig fromJson(Map<String, Object?> json) {
     final defaults = GatewayConfig.defaults();
+    final serviceUuid = json['bleServiceUuid'] as String?;
+    final telemetryUuid = json['bleTelemetryCharacteristicUuid'] as String?;
     return GatewayConfig(
       deviceId: json['deviceId'] as String? ?? defaults.deviceId,
       mqttHost: json['mqttHost'] as String? ?? defaults.mqttHost,
@@ -120,10 +127,13 @@ class GatewayConfig {
       mqttPassword: json['mqttPassword'] as String? ?? defaults.mqttPassword,
       portalBaseUrl: json['portalBaseUrl'] as String? ?? defaults.portalBaseUrl,
       bleServiceUuid:
-          json['bleServiceUuid'] as String? ?? defaults.bleServiceUuid,
+          serviceUuid?.toLowerCase() == '0000a1b2-0000-1000-8000-00805f9b34fb'
+          ? defaults.bleServiceUuid
+          : serviceUuid ?? defaults.bleServiceUuid,
       bleTelemetryCharacteristicUuid:
-          json['bleTelemetryCharacteristicUuid'] as String? ??
-          defaults.bleTelemetryCharacteristicUuid,
+          telemetryUuid?.toLowerCase() == '0000a1b3-0000-1000-8000-00805f9b34fb'
+          ? defaults.bleTelemetryCharacteristicUuid
+          : telemetryUuid ?? defaults.bleTelemetryCharacteristicUuid,
       linkedPatientId: _optionalInt(json['linkedPatientId']),
       linkedCaregiverId: _optionalInt(json['linkedCaregiverId']),
       linkedPersonType: _optionalString(json['linkedPersonType']),

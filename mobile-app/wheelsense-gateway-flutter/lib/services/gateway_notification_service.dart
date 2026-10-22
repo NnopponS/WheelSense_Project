@@ -5,7 +5,7 @@ class GatewayNotificationService {
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   static const String _channelId = 'wheelsense_gateway';
-  static const String _channelName = 'WheelSense Gateway';
+  static const String _channelName = 'WheelSense';
   static const String _channelDescription =
       'Gateway status, BLE, MQTT, and safety relay notifications.';
 

@@ -3,17 +3,21 @@ import 'package:flutter/material.dart';
 import '../models/sensor_telemetry.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_typography.dart';
+import '../l10n/gateway_localizations.dart';
+import 'product_ui.dart';
 
 class KinematicsCard extends StatelessWidget {
-  const KinematicsCard({
-    super.key,
-    required this.sample,
-  });
+  const KinematicsCard({super.key, required this.sample});
 
   final M5TelemetrySample? sample;
 
   @override
   Widget build(BuildContext context) {
+    if (sample == null) {
+      return ProductSurface(
+        child: Text(context.text.pick('No M5 data', 'ไม่มีข้อมูล M5')),
+      );
+    }
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -34,6 +38,34 @@ class KinematicsCard extends StatelessWidget {
         : direction < 0
         ? AppPalette.warningBright
         : AppPalette.slate400;
+    final metrics = [
+      _MetricBox(
+        label: 'SPEED',
+        value: speedKmh.toStringAsFixed(1),
+        unit: 'km/h',
+        subValue: '${speedMs.toStringAsFixed(2)} m/s',
+        accentColor: AppPalette.brand,
+        isDark: isDark,
+      ),
+      _MetricBox(
+        label: 'DISTANCE',
+        value: distM >= 1000
+            ? (distM / 1000).toStringAsFixed(2)
+            : distM.toStringAsFixed(1),
+        unit: distM >= 1000 ? 'km' : 'm',
+        subValue: 'Total odometer',
+        accentColor: AppPalette.leftBright,
+        isDark: isDark,
+      ),
+      _MetricBox(
+        label: 'ACCEL',
+        value: accelMs2.toStringAsFixed(2),
+        unit: 'm/s²',
+        subValue: 'Magnitude',
+        accentColor: AppPalette.rightBright,
+        isDark: isDark,
+      ),
+    ];
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -47,34 +79,41 @@ class KinematicsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'M5 · ${sample!.timestamp.toLocal()}',
+            style: theme.textTheme.labelSmall,
+          ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppPalette.brand.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.speed_rounded,
-                      size: 20,
-                      color: AppPalette.brand,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Motion & Kinematics',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppPalette.brand.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.speed_rounded,
+                  size: 20,
+                  color: AppPalette.brand,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Motion & Kinematics',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: directionColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -106,43 +145,21 @@ class KinematicsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _MetricBox(
-                  label: 'SPEED',
-                  value: speedKmh.toStringAsFixed(1),
-                  unit: 'km/h',
-                  subValue: '${speedMs.toStringAsFixed(2)} m/s',
-                  accentColor: AppPalette.brand,
-                  isDark: isDark,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MetricBox(
-                  label: 'DISTANCE',
-                  value: distM >= 1000
-                      ? (distM / 1000).toStringAsFixed(2)
-                      : distM.toStringAsFixed(1),
-                  unit: distM >= 1000 ? 'km' : 'm',
-                  subValue: 'Total odometer',
-                  accentColor: AppPalette.leftBright,
-                  isDark: isDark,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MetricBox(
-                  label: 'ACCEL',
-                  value: accelMs2.toStringAsFixed(2),
-                  unit: 'm/s²',
-                  subValue: 'Magnitude',
-                  accentColor: AppPalette.rightBright,
-                  isDark: isDark,
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 12.0;
+              final columns = constraints.maxWidth >= 480 ? 3 : 2;
+              final width =
+                  (constraints.maxWidth - gap * (columns - 1)) / columns;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final metric in metrics)
+                    SizedBox(width: width, child: metric),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -191,9 +208,8 @@ class _MetricBox extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          Wrap(
+            spacing: 3,
             children: [
               Text(
                 value,
@@ -203,7 +219,6 @@ class _MetricBox extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 3),
               Text(
                 unit,
                 style: TextStyle(

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../models/sensor_telemetry.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_typography.dart';
+import '../l10n/gateway_localizations.dart';
+import 'product_ui.dart';
 
 class PolarSensorsCard extends StatelessWidget {
   const PolarSensorsCard({
@@ -17,6 +19,11 @@ class PolarSensorsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (sample == null) {
+      return ProductSurface(
+        child: Text(context.text.pick('No Polar data', 'ไม่มีข้อมูล Polar')),
+      );
+    }
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -24,13 +31,11 @@ class PolarSensorsCard extends StatelessWidget {
     final rri = sample?.rrIntervalsMs.isNotEmpty == true
         ? sample!.rrIntervalsMs.first.toStringAsFixed(1)
         : '--';
-    final spo2 = sample?.spo2Percent != null
-        ? '${sample!.spo2Percent}%'
-        : '--';
+    final spo2 = sample?.spo2Percent != null ? '${sample!.spo2Percent}%' : '--';
     final battery = sample?.sensorBatteryPercent != null
         ? '${sample!.sensorBatteryPercent}%'
         : '--';
-    final contact = sample?.contactStatus ?? true;
+    final contact = sample?.contactStatus;
 
     // Build PPG waveform spots from latest sample or history
     final ppgSpots = <FlSpot>[];
@@ -61,55 +66,84 @@ class PolarSensorsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Polar · ${sample!.timestamp.toLocal()}',
+            style: theme.textTheme.labelSmall,
+          ),
+          Text(
+            context.text.pick('SpO₂ · Experimental', 'SpO₂ · ค่าทดลอง'),
+            style: theme.textTheme.bodyMedium,
+          ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppPalette.polarHeart.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.favorite_rounded,
-                      size: 20,
-                      color: AppPalette.polarHeart,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Polar Verity Sense Studio',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: contact
+                  color: AppPalette.polarHeart.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  size: 20,
+                  color: AppPalette.polarHeart,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Polar Verity Sense Studio',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: contact == true
                       ? AppPalette.success.withValues(alpha: 0.15)
-                      : AppPalette.danger.withValues(alpha: 0.15),
+                      : contact == false
+                      ? AppPalette.danger.withValues(alpha: 0.15)
+                      : AppPalette.warning.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      contact ? Icons.check_circle_rounded : Icons.warning_rounded,
+                      contact == true
+                          ? Icons.check_circle_rounded
+                          : contact == false
+                          ? Icons.warning_rounded
+                          : Icons.help_outline_rounded,
                       size: 14,
-                      color: contact ? AppPalette.successBright : AppPalette.dangerBright,
+                      color: contact == true
+                          ? AppPalette.successBright
+                          : contact == false
+                          ? AppPalette.dangerBright
+                          : AppPalette.warningBright,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      contact ? 'Skin Contact OK' : 'No Skin Contact',
+                      contact == true
+                          ? 'Skin Contact OK'
+                          : contact == false
+                          ? 'No Skin Contact'
+                          : 'Contact unknown',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: contact ? AppPalette.successBright : AppPalette.dangerBright,
+                        color: contact == true
+                            ? AppPalette.successBright
+                            : contact == false
+                            ? AppPalette.dangerBright
+                            : AppPalette.warningBright,
                       ),
                     ),
                   ],
@@ -118,11 +152,14 @@ class PolarSensorsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Metrics Row
-          Row(
-            children: [
-              Expanded(
-                child: _VitalPill(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 8.0;
+              final columns = constraints.maxWidth >= 560 ? 4 : 2;
+              final width =
+                  (constraints.maxWidth - gap * (columns - 1)) / columns;
+              final metrics = [
+                _VitalPill(
                   label: 'HEART RATE',
                   value: bpm > 0 ? '$bpm' : '--',
                   unit: 'BPM',
@@ -130,10 +167,7 @@ class PolarSensorsCard extends StatelessWidget {
                   color: AppPalette.polarHeartBright,
                   isDark: isDark,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _VitalPill(
+                _VitalPill(
                   label: 'R-R / PPI',
                   value: rri,
                   unit: 'ms',
@@ -141,10 +175,7 @@ class PolarSensorsCard extends StatelessWidget {
                   color: AppPalette.polarPpgBright,
                   isDark: isDark,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _VitalPill(
+                _VitalPill(
                   label: 'SpO2 (PPG)',
                   value: spo2,
                   unit: 'est.',
@@ -152,10 +183,7 @@ class PolarSensorsCard extends StatelessWidget {
                   color: AppPalette.infoBright,
                   isDark: isDark,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _VitalPill(
+                _VitalPill(
                   label: 'BATTERY',
                   value: battery,
                   unit: '',
@@ -163,8 +191,16 @@ class PolarSensorsCard extends StatelessWidget {
                   color: AppPalette.successBright,
                   isDark: isDark,
                 ),
-              ),
-            ],
+              ];
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final metric in metrics)
+                    SizedBox(width: width, child: metric),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
           // 3D Motion Streams from Polar Verity Sense
@@ -183,44 +219,64 @@ class PolarSensorsCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.screen_rotation_rounded, size: 16, color: AppPalette.brand),
+                      const Icon(
+                        Icons.screen_rotation_rounded,
+                        size: 16,
+                        color: AppPalette.brand,
+                      ),
                       const SizedBox(width: 6),
-                      Text(
-                        'Polar 3D Motion (ACC & GYRO & MAG)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? AppPalette.slate200 : AppPalette.slate800,
+                      Expanded(
+                        child: Text(
+                          'Polar 3D Motion (ACC & GYRO & MAG)',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppPalette.slate200
+                                : AppPalette.slate800,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _MotionStreamItem(
-                        title: 'ACC (mg)',
-                        x: sample?.accelXMg?.toDouble() ?? 0,
-                        y: sample?.accelYMg?.toDouble() ?? 0,
-                        z: sample?.accelZMg?.toDouble() ?? 0,
-                        isDark: isDark,
-                      ),
-                      _MotionStreamItem(
-                        title: 'GYRO (dps)',
-                        x: sample?.gyroXDps ?? 0,
-                        y: sample?.gyroYDps ?? 0,
-                        z: sample?.gyroZDps ?? 0,
-                        isDark: isDark,
-                      ),
-                      _MotionStreamItem(
-                        title: 'MAG (G)',
-                        x: sample?.magXGauss ?? 0,
-                        y: sample?.magYGauss ?? 0,
-                        z: sample?.magZGauss ?? 0,
-                        isDark: isDark,
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = 12.0;
+                      final width = (constraints.maxWidth - gap * 2) / 3;
+                      final streams = [
+                        _MotionStreamItem(
+                          title: 'ACC (mg)',
+                          x: sample?.accelXMg?.toDouble() ?? 0,
+                          y: sample?.accelYMg?.toDouble() ?? 0,
+                          z: sample?.accelZMg?.toDouble() ?? 0,
+                          isDark: isDark,
+                        ),
+                        _MotionStreamItem(
+                          title: 'GYRO (dps)',
+                          x: sample?.gyroXDps ?? 0,
+                          y: sample?.gyroYDps ?? 0,
+                          z: sample?.gyroZDps ?? 0,
+                          isDark: isDark,
+                        ),
+                        _MotionStreamItem(
+                          title: 'MAG (G)',
+                          x: sample?.magXGauss ?? 0,
+                          y: sample?.magYGauss ?? 0,
+                          z: sample?.magZGauss ?? 0,
+                          isDark: isDark,
+                        ),
+                      ];
+                      return Wrap(
+                        spacing: gap,
+                        children: [
+                          for (final stream in streams)
+                            SizedBox(width: width, child: stream),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -325,9 +381,8 @@ class _VitalPill extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          Wrap(
+            spacing: 2,
             children: [
               Text(
                 value,
@@ -338,7 +393,6 @@ class _VitalPill extends StatelessWidget {
                 ),
               ),
               if (unit.isNotEmpty) ...[
-                const SizedBox(width: 2),
                 Text(
                   unit,
                   style: TextStyle(
@@ -385,15 +439,27 @@ class _MotionStreamItem extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           'X: ${x.toStringAsFixed(1)}',
-          style: TextStyle(fontSize: 10, color: AppPalette.dangerBright, fontFamily: 'monospace'),
+          style: TextStyle(
+            fontSize: 10,
+            color: AppPalette.dangerBright,
+            fontFamily: 'monospace',
+          ),
         ),
         Text(
           'Y: ${y.toStringAsFixed(1)}',
-          style: TextStyle(fontSize: 10, color: AppPalette.successBright, fontFamily: 'monospace'),
+          style: TextStyle(
+            fontSize: 10,
+            color: AppPalette.successBright,
+            fontFamily: 'monospace',
+          ),
         ),
         Text(
           'Z: ${z.toStringAsFixed(1)}',
-          style: TextStyle(fontSize: 10, color: AppPalette.leftBright, fontFamily: 'monospace'),
+          style: TextStyle(
+            fontSize: 10,
+            color: AppPalette.leftBright,
+            fontFamily: 'monospace',
+          ),
         ),
       ],
     );

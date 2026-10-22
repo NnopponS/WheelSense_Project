@@ -118,10 +118,10 @@ class GatewayStrings {
 
   String modeLabel(GatewayConnectionMode mode) {
     return switch (mode) {
-      GatewayConnectionMode.idle => ready,
+      GatewayConnectionMode.idle => pick('Idle', 'ยังไม่เริ่ม'),
       GatewayConnectionMode.scanning => scanning,
-      GatewayConnectionMode.connected => pick('Relaying', 'กำลังส่งข้อมูล'),
-      GatewayConnectionMode.degraded => pick('Degraded', 'ต้องตรวจสอบ'),
+      GatewayConnectionMode.connected => pick('BLE session', 'เซสชัน BLE'),
+      GatewayConnectionMode.degraded => pick('Needs attention', 'ต้องตรวจสอบ'),
       GatewayConnectionMode.error => pick('Error', 'ผิดพลาด'),
     };
   }
@@ -183,8 +183,8 @@ class GatewayStrings {
   );
   String get nextM5Title => pick('Pair the M5 sensor', 'จับคู่เซนเซอร์ M5');
   String get nextM5Detail => pick(
-    'Open Devices, scan nearby BLE, and connect M5StickC Plus2.',
-    'เปิดหน้าอุปกรณ์ สแกน BLE ใกล้ตัว แล้วเชื่อมต่อ M5StickC Plus2',
+    'Open Devices, scan nearby BLE, and connect the wheelchair sensor.',
+    'เปิดหน้าอุปกรณ์ สแกน BLE ใกล้ตัว แล้วเชื่อมต่อเซนเซอร์รถเข็น',
   );
   String get nextFirstPacketTitle =>
       pick('Wait for first telemetry', 'รอข้อมูลชุดแรก');
@@ -276,21 +276,21 @@ class GatewayStrings {
   String bleScanFailed(Object error) =>
       pick('BLE scan failed: $error', 'สแกน BLE ไม่สำเร็จ: $error');
   String get m5NotFound => pick(
-    'M5StickC Plus2 not found. Turn it on and scan again.',
-    'ไม่พบ M5StickC Plus2 กรุณาเปิดเครื่องแล้วสแกนใหม่',
+    'Wheelchair sensor not found. Turn it on and scan again.',
+    'ไม่พบเซนเซอร์รถเข็น กรุณาเปิดเครื่องแล้วสแกนใหม่',
   );
   String get polarNotFound => pick(
     'Polar Verity Sense not found. Turn it on and scan again.',
     'ไม่พบ Polar Verity Sense กรุณาเปิดเครื่องแล้วสแกนใหม่',
   );
   String get m5Connected =>
-      pick('M5StickC Plus2 is connected', 'M5StickC Plus2 เชื่อมต่อแล้ว');
+      pick('Wheelchair sensor is connected', 'เซนเซอร์รถเข็นเชื่อมต่อแล้ว');
   String get polarConnected => pick(
     'Polar Verity Sense is connected',
     'Polar Verity Sense เชื่อมต่อแล้ว',
   );
   String get connectingM5 =>
-      pick('Connecting to M5StickC Plus2', 'กำลังเชื่อมต่อ M5StickC Plus2');
+      pick('Connecting to wheelchair sensor', 'กำลังเชื่อมต่อเซนเซอร์รถเข็น');
   String get connectingPolar => pick(
     'Connecting to Polar Verity Sense',
     'กำลังเชื่อมต่อ Polar Verity Sense',
@@ -304,8 +304,8 @@ class GatewayStrings {
     '$name ไม่ใช่ Polar Verity Sense หรือเซนเซอร์ชีพจร',
   );
   String get waitingForM5Telemetry => pick(
-    'Waiting for M5StickC Plus2 telemetry',
-    'กำลังรอข้อมูลจาก M5StickC Plus2',
+    'Waiting for wheelchair sensor data',
+    'กำลังรอข้อมูลจากเซนเซอร์รถเข็น',
   );
   String get waitingForPolarData => pick(
     'Waiting for Polar Verity Sense data',
@@ -353,7 +353,8 @@ class GatewayStrings {
     'Live heart rate, HRV, and SpO2 from the paired Polar sensor.',
     'ชีพจร ค่า HRV และ SpO2 แบบสดจากเซนเซอร์ Polar',
   );
-  String get monitorMotionTitle => pick('Wheelchair motion', 'การเคลื่อนไหวรถเข็น');
+  String get monitorMotionTitle =>
+      pick('Wheelchair motion', 'การเคลื่อนไหวรถเข็น');
   String get monitorMotionSubtitle => pick(
     'Live distance, velocity, and acceleration from the M5 sensor.',
     'ระยะทาง ความเร็ว และความเร่งแบบสดจากเซนเซอร์ M5',
@@ -371,7 +372,8 @@ class GatewayStrings {
   String get monitorSpo2Estimated =>
       pick('Estimated from PPG', 'ประมาณจากสัญญาณ PPG');
   String get monitorHrRange => pick('HR range', 'ช่วงชีพจร');
-  String get monitorSensorBattery => pick('Sensor battery', 'แบตเตอรี่เซนเซอร์');
+  String get monitorSensorBattery =>
+      pick('Sensor battery', 'แบตเตอรี่เซนเซอร์');
   String get monitorCharging => pick('Charging', 'กำลังชาร์จ');
   String get monitorContactOn => pick('Contact', 'สัมผัสผิวหนัง');
   String get monitorContactOff => pick('No contact', 'ไม่สัมผัสผิวหนัง');

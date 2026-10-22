@@ -25,7 +25,7 @@ class GatewayForegroundService : Service() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "WheelSense Gateway",
+            "WheelSense",
             NotificationManager.IMPORTANCE_LOW
         )
         channel.description = "Keeps BLE and MQTT gateway relay active."
@@ -40,8 +40,8 @@ class GatewayForegroundService : Service() {
             Notification.Builder(this)
         }
         return builder
-            .setContentTitle("WheelSense Gateway")
-            .setContentText("Relaying BLE telemetry to WheelSense server")
+            .setContentTitle("WheelSense")
+            .setContentText("Gateway active. Uploads depend on a secure server connection.")
             .setSmallIcon(applicationInfo.icon)
             .setOngoing(true)
             .build()

@@ -11,7 +11,11 @@ class GatewayForegroundService {
     if (!Platform.isAndroid) {
       return false;
     }
-    return await _channel.invokeMethod<bool>('start') ?? false;
+    try {
+      return await _channel.invokeMethod<bool>('start') ?? false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   Future<void> stop() async {

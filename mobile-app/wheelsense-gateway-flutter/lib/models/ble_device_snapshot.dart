@@ -13,8 +13,7 @@ class BleDeviceSnapshot {
   final List<String> serviceUuids;
   final String? lastPayload;
 
-  static const wheelSenseM5ServiceUuid =
-      '8f6e0001-b5a3-f393-e0a9-e50e24dcca9e';
+  static const wheelSenseM5ServiceUuid = '8f6e0001-b5a3-f393-e0a9-e50e24dcca9e';
   static const heartRateServiceUuid = '0000180d-0000-1000-8000-00805f9b34fb';
 
   bool get advertisesM5Service {
@@ -55,9 +54,11 @@ class BleDeviceSnapshot {
     return !looksLikeNodeTsimcam && (looksLikeM5 || looksLikePolar);
   }
 
+  String get displayName => looksLikeM5 ? 'Wheelchair sensor' : name;
+
   String get pairingFamily {
     if (looksLikeM5) {
-      return 'M5StickC Plus 2';
+      return 'Wheelchair sensor';
     }
     if (looksLikePolar) {
       return 'Polar Verity Sense';

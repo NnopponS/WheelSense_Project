@@ -1,0 +1,1095 @@
+{
+  "ok": true,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 1,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "duplicate_media_discovery_risk",
+        "severity": "warning",
+        "message": "Detected 4 matching img entries with the same source/start/duration.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "D:\\Project\\WheelSense_Project\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Avoid duplicated media nodes that can be discovered twice during compilation."
+      }
+    ],
+    "filesScanned": 1
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 29,
+    "findings": [
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "#signal > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 176,
+          "top": 73,
+          "right": 345.95,
+          "bottom": 119,
+          "width": 169.95,
+          "height": 46
+        },
+        "containerSelector": "#monitor",
+        "text": "WheelSense",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 176,
+          "y": 73,
+          "width": 169.95,
+          "height": 46
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.kicker",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1571.17,
+          "top": 79,
+          "right": 1816,
+          "bottom": 113,
+          "width": 244.83,
+          "height": 34
+        },
+        "containerSelector": "#monitor",
+        "text": "CONNECTED CARE",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1571.17,
+          "y": 79,
+          "width": 244.83,
+          "height": 34
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.hook-copy > h1:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 104,
+          "top": 385.81,
+          "right": 970.3,
+          "bottom": 554.81,
+          "width": 866.3,
+          "height": 169
+        },
+        "containerSelector": "#monitor",
+        "text": "Care starts with a",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 104,
+          "y": 385.81,
+          "width": 866.3,
+          "height": 169
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.hook-copy > h1:nth-of-type(1) > span:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 104,
+          "top": 509,
+          "right": 425.33,
+          "bottom": 678,
+          "width": 321.33,
+          "height": 169
+        },
+        "containerSelector": "#monitor",
+        "text": "signal.",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 104,
+          "y": 509,
+          "width": 321.33,
+          "height": 169
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "p.subtitle",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 104,
+          "top": 690.19,
+          "right": 587.05,
+          "bottom": 738.19,
+          "width": 483.05,
+          "height": 48
+        },
+        "containerSelector": "#monitor",
+        "text": "Smart Wheelchair Care Platform",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 104,
+          "y": 690.19,
+          "width": 483.05,
+          "height": 48
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.card-top",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1126.31,
+          "top": 306,
+          "right": 1386.78,
+          "bottom": 349,
+          "width": 260.47,
+          "height": 43
+        },
+        "containerSelector": "#monitor",
+        "text": "Wheelchair WS-024",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1126.31,
+          "y": 306,
+          "width": 260.47,
+          "height": 43
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.card-top > div:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1656.95,
+          "top": 311,
+          "right": 1771.98,
+          "bottom": 344,
+          "width": 115.03,
+          "height": 33
+        },
+        "containerSelector": "#monitor",
+        "text": "Connected",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1656.95,
+          "y": 311,
+          "width": 115.03,
+          "height": 33
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.mini-vitals > div:nth-of-type(1) > span:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1126.31,
+          "top": 626,
+          "right": 1231.45,
+          "bottom": 659,
+          "width": 105.14,
+          "height": 33
+        },
+        "containerSelector": "#monitor",
+        "text": "Heart rate",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1126.31,
+          "y": 626,
+          "width": 105.14,
+          "height": 33
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.mini-vitals > div:nth-of-type(1) > b:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1126.31,
+          "top": 659,
+          "right": 1202.14,
+          "bottom": 740,
+          "width": 75.83,
+          "height": 81
+        },
+        "containerSelector": "#monitor",
+        "text": "76",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1126.31,
+          "y": 659,
+          "width": 75.83,
+          "height": 81
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.mini-vitals > div:nth-of-type(1) > b:nth-of-type(1) > small:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1202.14,
+          "top": 692,
+          "right": 1251.94,
+          "bottom": 726,
+          "width": 49.8,
+          "height": 34
+        },
+        "containerSelector": "#monitor",
+        "text": "bpm",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1202.14,
+          "y": 692,
+          "width": 49.8,
+          "height": 34
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.mini-vitals > div:nth-of-type(2) > span:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1458.14,
+          "top": 626,
+          "right": 1507.53,
+          "bottom": 659,
+          "width": 49.39,
+          "height": 33
+        },
+        "containerSelector": "#monitor",
+        "text": "SpO₂",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1458.14,
+          "y": 626,
+          "width": 49.39,
+          "height": 33
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.mini-vitals > div:nth-of-type(2) > b:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1458.14,
+          "top": 659,
+          "right": 1533.97,
+          "bottom": 740,
+          "width": 75.83,
+          "height": 81
+        },
+        "containerSelector": "#monitor",
+        "text": "98",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1458.14,
+          "y": 659,
+          "width": 75.83,
+          "height": 81
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.mini-vitals > div:nth-of-type(2) > b:nth-of-type(1) > small:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1533.97,
+          "top": 692,
+          "right": 1553.09,
+          "bottom": 726,
+          "width": 19.13,
+          "height": 34
+        },
+        "containerSelector": "#monitor",
+        "text": "%",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1533.97,
+          "y": 692,
+          "width": 19.13,
+          "height": 34
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.signal-card > div:nth-of-type(4) > span:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1126.31,
+          "top": 770,
+          "right": 1225.92,
+          "bottom": 801,
+          "width": 99.61,
+          "height": 31
+        },
+        "containerSelector": "#monitor",
+        "text": "Room 204",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1126.31,
+          "y": 770,
+          "width": 99.61,
+          "height": 31
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "div.signal-card > div:nth-of-type(4) > span:nth-of-type(2)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1653.58,
+          "top": 770,
+          "right": 1771.98,
+          "bottom": 801,
+          "width": 118.41,
+          "height": 31
+        },
+        "containerSelector": "#monitor",
+        "text": "DEMO DATA",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1653.58,
+          "y": 770,
+          "width": 118.41,
+          "height": 31
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 3.667,
+        "selector": "#signal > div:nth-of-type(1) > div:nth-of-type(3) > span:nth-of-type(1)",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 104,
+          "top": 983,
+          "right": 467.25,
+          "bottom": 1016,
+          "width": 363.25,
+          "height": 33
+        },
+        "containerSelector": "#monitor",
+        "text": "Wheelchair monitoring, connected.",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 1,
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 104,
+          "y": 983,
+          "width": 363.25,
+          "height": 33
+        },
+        "firstSeen": 3.667,
+        "lastSeen": 3.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          3.667
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "#monitor > div:nth-of-type(1) > h2:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 104,
+          "top": 140,
+          "right": 502.03,
+          "bottom": 243,
+          "width": 398.03,
+          "height": 103
+        },
+        "containerSelector": "#respond > div:nth-of-type(1) > h2:nth-of-type(1)",
+        "text": "Every signal. In one view.",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 104,
+          "y": 140,
+          "width": 398.03,
+          "height": 103
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "#monitor > div:nth-of-type(1) > h2:nth-of-type(1) > span:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 502.03,
+          "top": 140,
+          "right": 867.72,
+          "bottom": 243,
+          "width": 365.69,
+          "height": 103
+        },
+        "containerSelector": "#respond > div:nth-of-type(1) > h2:nth-of-type(1)",
+        "text": "In one view.",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 502.03,
+          "y": 140,
+          "width": 365.69,
+          "height": 103
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "span.workspace-title",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 136,
+          "top": 280.23,
+          "right": 329.63,
+          "bottom": 318.23,
+          "width": 193.63,
+          "height": 38
+        },
+        "containerSelector": "div.location > div:nth-of-type(1) > b:nth-of-type(1)",
+        "text": "Live monitoring",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 136,
+          "y": 280.23,
+          "width": 193.63,
+          "height": 38
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "div.legend",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 903.44,
+          "top": 369.23,
+          "right": 1112.19,
+          "bottom": 399.23,
+          "width": 208.75,
+          "height": 30
+        },
+        "containerSelector": "div.alert-title",
+        "text": "Connected wheelchair",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 903.44,
+          "y": 369.23,
+          "width": 208.75,
+          "height": 30
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "div.room.selected > div:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 210,
+          "top": 797,
+          "right": 287.91,
+          "bottom": 830,
+          "width": 77.91,
+          "height": 33
+        },
+        "containerSelector": "div.room.alert-room > div:nth-of-type(1)",
+        "text": "WS-024",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 210,
+          "y": 797,
+          "width": 77.91,
+          "height": 33
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "div.map-panel > div:nth-of-type(2) > div:nth-of-type(3) > div:nth-of-type(2) > span:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 496.72,
+          "top": 804,
+          "right": 546.53,
+          "bottom": 831,
+          "width": 49.81,
+          "height": 27
+        },
+        "containerSelector": "div.location > div:nth-of-type(2) > div:nth-of-type(3) > div:nth-of-type(2) > span:nth-of-type(1)",
+        "text": "Room",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 496.72,
+          "y": 804,
+          "width": 49.81,
+          "height": 27
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "div.map-panel > div:nth-of-type(3) > span:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 138,
+          "top": 894,
+          "right": 331.78,
+          "bottom": 925,
+          "width": 193.78,
+          "height": 31
+        },
+        "containerSelector": "div.location > div:nth-of-type(3) > span:nth-of-type(1)",
+        "text": "Room-level location",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 138,
+          "y": 894,
+          "width": 193.78,
+          "height": 31
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "div.map-panel > div:nth-of-type(3) > span:nth-of-type(2)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 951.28,
+          "top": 894,
+          "right": 1112.19,
+          "bottom": 925,
+          "width": 160.91,
+          "height": 31
+        },
+        "containerSelector": "div.ack-note",
+        "text": "WS-024 selected",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 951.28,
+          "y": 894,
+          "width": 160.91,
+          "height": 31
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "div.telemetry-head > b:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 1180.19,
+          "top": 368.23,
+          "right": 1402.94,
+          "bottom": 404.23,
+          "width": 222.75,
+          "height": 36
+        },
+        "containerSelector": "div.alert-title",
+        "text": "Health monitoring",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1180.19,
+          "y": 368.23,
+          "width": 222.75,
+          "height": 36
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 9,
+        "selector": "div.reading.heart > b:nth-of-type(1) > small:nth-of-type(1)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 1723.88,
+          "top": 528.23,
+          "right": 1778,
+          "bottom": 566.23,
+          "width": 54.12,
+          "height": 38
+        },
+        "containerSelector": "div.detail-row > b:nth-of-type(1)",
+        "text": "bpm",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1723.88,
+          "y": 528.23,
+          "width": 54.12,
+          "height": 38
+        },
+        "firstSeen": 9,
+        "lastSeen": 9,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 17.75,
+        "selector": "div.location > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2)",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 535.48,
+          "top": 393.23,
+          "right": 578.39,
+          "bottom": 431.23,
+          "width": 42.91,
+          "height": 38
+        },
+        "containerSelector": "div.wordmark",
+        "text": "202 Room",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 535.48,
+          "y": 393.23,
+          "width": 42.91,
+          "height": 38
+        },
+        "firstSeen": 17.75,
+        "lastSeen": 17.75,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.75
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 17.75,
+        "selector": "div.alert-title",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 984.98,
+          "top": 350.23,
+          "right": 1340.41,
+          "bottom": 441.23,
+          "width": 355.43,
+          "height": 91
+        },
+        "containerSelector": "div.wordmark",
+        "text": "Fall detected",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 984.98,
+          "y": 350.23,
+          "width": 355.43,
+          "height": 91
+        },
+        "firstSeen": 17.75,
+        "lastSeen": 17.75,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.75
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 17.75,
+        "selector": "div.alert-meta",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 984.98,
+          "top": 456.23,
+          "right": 1229.28,
+          "bottom": 497.23,
+          "width": 244.3,
+          "height": 41
+        },
+        "containerSelector": "div.wordmark",
+        "text": "WS-024 · Room 204",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 984.98,
+          "y": 456.23,
+          "width": 244.3,
+          "height": 41
+        },
+        "firstSeen": 17.75,
+        "lastSeen": 17.75,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.75
+        ]
+      }
+    ],
+    "duration": 22,
+    "samples": [
+      1.222,
+      3.667,
+      6.111,
+      8.556,
+      11,
+      13.444,
+      15.889,
+      18.333,
+      20.778
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 29,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "specPath": "D:\\Project\\WheelSense_Project\\brag-output\\composition\\index.motion.json",
+    "samples": 300
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      1.222,
+      6.111,
+      11,
+      15.889,
+      20.778
+    ],
+    "checked": 109,
+    "passed": 109
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": true,
+    "files": [
+      ".hyperframes\\artifacts\\snapshots\\df032d4a-0fc9-4f58-8965-1a9da7ef9c54\\frame-00-at-1.2s.png",
+      ".hyperframes\\artifacts\\snapshots\\df032d4a-0fc9-4f58-8965-1a9da7ef9c54\\frame-01-at-6.1s.png",
+      ".hyperframes\\artifacts\\snapshots\\df032d4a-0fc9-4f58-8965-1a9da7ef9c54\\frame-02-at-11.0s.png",
+      ".hyperframes\\artifacts\\snapshots\\df032d4a-0fc9-4f58-8965-1a9da7ef9c54\\frame-03-at-15.9s.png",
+      ".hyperframes\\artifacts\\snapshots\\df032d4a-0fc9-4f58-8965-1a9da7ef9c54\\frame-04-at-20.8s.png"
+    ],
+    "times": [
+      1.222,
+      6.111,
+      11,
+      15.889,
+      20.778
+    ],
+    "findingFiles": []
+  },
+  "saved": {
+    "id": "f611fc13-fe40-40b4-a108-e4a7d6c69352",
+    "revision": "90c4fd3c-be4a-43b2-ba05-38ea1c2773be",
+    "report": "D:\\Project\\WheelSense_Project\\brag-output\\composition\\.hyperframes\\artifacts\\checks\\f611fc13-fe40-40b4-a108-e4a7d6c69352.json",
+    "attribution": "recorded-revision"
+  },
+  "_meta": {
+    "version": "0.8.181",
+    "latestVersion": "0.8.181",
+    "updateAvailable": false
+  }
+}

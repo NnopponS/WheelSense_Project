@@ -51,6 +51,10 @@ Gate A was approved by the user on 2026-08-18. Hardware-independent Codex-owned 
 | `context.md` | Assumptions, repository evidence, and stop conditions |
 | `progress.md` | Immutable RED/GREEN/build/audit evidence ledger |
 | `prompts/` | Ready-to-run bounded implementation prompts |
+| `goals/mobile-app-experience-health.md` | Independent MOB-01 Flutter/mobile workstream charter; no backend/web edits |
+| `plans/mobile-app-experience-health.md` | Phased MOB-01 implementation, tests, provider gates, and future teammate database handoff |
+| `mobile-ui-screenrove-references.md` | Screenrove UI research, WheelSense original Flutter assets and reference provenance |
+| `mobile-ui-implementation-progress.md` | MOB-01 Flutter source changes, static verification and pending build/device evidence |
 
 ## TDD contract
 

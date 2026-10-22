@@ -28,6 +28,7 @@ class M5TelemetrySample {
     required this.batteryVoltageV,
     required this.batteryCharging,
     required this.rawPayload,
+    this.hasDistance = false,
     this.rawAx,
     this.rawAy,
     this.rawAz,
@@ -47,6 +48,7 @@ class M5TelemetrySample {
   final double accelZ;
   final bool imuValid;
   final double distanceM;
+  final bool hasDistance;
   final double velocityMs;
   final double accelMs2;
   final int? direction;
@@ -183,9 +185,7 @@ class M5TelemetrySample {
     final totalAccelG = math.sqrt(ax * ax + ay * ay + az * az);
 
     return M5TelemetrySample(
-      timestamp: DateTime.fromMillisecondsSinceEpoch(
-        timestampMs > 0 ? timestampMs : DateTime.now().millisecondsSinceEpoch,
-      ),
+      timestamp: DateTime.now(),
       deviceId: deviceId,
       gyroX: gx,
       gyroY: gy,
@@ -195,6 +195,7 @@ class M5TelemetrySample {
       accelZ: az,
       imuValid: imuValid,
       distanceM: distM,
+      hasDistance: true,
       velocityMs: velMs,
       accelMs2: totalAccelG * 9.80665,
       direction: velMs > 0.01 ? 1 : (velMs < -0.01 ? -1 : 0),
@@ -281,6 +282,7 @@ class M5TelemetrySample {
       accelZ: _number(_first(imu['az'], map['az'], map['accel_z'])),
       imuValid: _bool(_first(imu['valid'], map['imu_valid']), fallback: true),
       distanceM: _number(_first(motion['distance_m'], map['distance_m'])),
+      hasDistance: motion['distance_m'] != null || map['distance_m'] != null,
       velocityMs: _number(_first(motion['velocity_ms'], map['velocity_ms'])),
       accelMs2: _number(_first(motion['accel_ms2'], map['accel_ms2'])),
       direction: _direction(_first(motion['direction'], map['direction'])),
@@ -291,12 +293,10 @@ class M5TelemetrySample {
       roomId: _string(map['room_id']),
       roomName: _string(map['room_name']),
       isRecording: _bool(map['is_recording']),
-      batteryPercent:
-          _first(battery['percentage'], map['battery_pct']) == null
+      batteryPercent: _first(battery['percentage'], map['battery_pct']) == null
           ? null
           : _int(_first(battery['percentage'], map['battery_pct'])),
-      batteryVoltageV:
-          _first(battery['voltage_v'], map['battery_v']) == null
+      batteryVoltageV: _first(battery['voltage_v'], map['battery_v']) == null
           ? null
           : _number(_first(battery['voltage_v'], map['battery_v'])),
       batteryCharging: _bool(_first(battery['charging'], map['charging'])),
@@ -422,10 +422,14 @@ class M5TelemetrySample {
     if (normalized == 'forward' || normalized == 'fwd') {
       return 1;
     }
-    if (normalized == 'reverse' || normalized == 'backward' || normalized == 'back') {
+    if (normalized == 'reverse' ||
+        normalized == 'backward' ||
+        normalized == 'back') {
       return -1;
     }
-    if (normalized == 'stopped' || normalized == 'stop' || normalized == 'idle') {
+    if (normalized == 'stopped' ||
+        normalized == 'stop' ||
+        normalized == 'idle') {
       return 0;
     }
     return int.tryParse(normalized);
@@ -505,8 +509,8 @@ class PolarTelemetrySample {
       'heart_rate_bpm': heartRateBpm,
       'rr_interval_ms': rrIntervalsMs.isEmpty ? null : rrIntervalsMs.first,
       'rr_intervals_ms': rrIntervalsMs,
-      if (spo2Percent != null) 'spo2': spo2Percent,
-      if (spo2Percent != null) 'spo2_percent': spo2Percent,
+      if (spo2Percent != null && !spo2Estimated) 'spo2': spo2Percent,
+      if (spo2Percent != null && !spo2Estimated) 'spo2_percent': spo2Percent,
       'spo2_estimated': spo2Estimated,
       if (sensorBatteryPercent != null) 'sensor_battery': sensorBatteryPercent,
       if (contactStatus != null) 'contact_status': contactStatus,

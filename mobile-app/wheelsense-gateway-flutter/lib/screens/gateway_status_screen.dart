@@ -40,7 +40,7 @@ class GatewayStatusScreen extends StatelessWidget {
                   metric: MetricSnapshot(
                     label: 'BLE',
                     value: status.bleReady ? 'Ready' : 'Permission needed',
-                    detail: 'M5StickC Plus 2 peripheral relay',
+                    detail: 'Wheelchair sensor peripheral relay',
                     icon: Icons.bluetooth_connected,
                     severity: status.bleReady
                         ? ClinicalSeverity.normal

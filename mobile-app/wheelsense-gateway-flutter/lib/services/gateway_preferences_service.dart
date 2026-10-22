@@ -1,17 +1,23 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/ble_device_snapshot.dart';
 import '../models/gateway_config.dart';
 
 class GatewayPreferencesService {
-  GatewayPreferencesService({SharedPreferences? preferences})
-    : _preferences = preferences;
+  GatewayPreferencesService({
+    SharedPreferences? preferences,
+    FlutterSecureStorage storage = const FlutterSecureStorage(),
+  }) : _preferences = preferences,
+       _storage = storage;
 
   static const String _configKey = 'wheelsense.gateway.config.v1';
   static const String _pairedM5Key = 'wheelsense.gateway.paired_m5.v1';
   static const String _pairedPolarKey = 'wheelsense.gateway.paired_polar.v1';
+  static const String _passwordKey = 'wheelsense.gateway.mqtt_password.v1';
+  final FlutterSecureStorage _storage;
 
   SharedPreferences? _preferences;
 
@@ -34,10 +40,15 @@ class GatewayPreferencesService {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map<String, Object?>) {
-        return GatewayConfig.fromJson(decoded);
-      }
-      if (decoded is Map) {
-        return GatewayConfig.fromJson(Map<String, Object?>.from(decoded));
+        final config = GatewayConfig.fromJson(decoded);
+        if (config.mqttPassword.isNotEmpty) {
+          // Remove the legacy secret only after the secure write succeeds.
+          await saveConfig(config);
+          return config;
+        }
+        return config.copyWith(
+          mqttPassword: await _storage.read(key: _passwordKey) ?? '',
+        );
       }
     } on FormatException {
       return GatewayConfig.defaults();
@@ -47,42 +58,41 @@ class GatewayPreferencesService {
 
   Future<void> saveConfig(GatewayConfig config) async {
     final prefs = await _prefs;
-    await prefs.setString(_configKey, jsonEncode(config.toJson()));
+    await _storage.write(key: _passwordKey, value: config.mqttPassword);
+    final json = config.toJson()..remove('mqttPassword');
+    if (!await prefs.setString(_configKey, jsonEncode(json))) {
+      throw StateError('Unable to save gateway settings');
+    }
   }
 
   Future<void> resetConfig() async {
     final prefs = await _prefs;
     await prefs.remove(_configKey);
+    await _storage.delete(key: _passwordKey);
   }
 
   Future<BleDeviceSnapshot?> loadPairedM5Device() {
-    return _loadPairedDevice(
-      _pairedM5Key,
-      const <String>[BleDeviceSnapshot.wheelSenseM5ServiceUuid],
-    );
+    return _loadPairedDevice(_pairedM5Key, const <String>[
+      BleDeviceSnapshot.wheelSenseM5ServiceUuid,
+    ]);
   }
 
   Future<BleDeviceSnapshot?> loadPairedPolarDevice() {
-    return _loadPairedDevice(
-      _pairedPolarKey,
-      const <String>[BleDeviceSnapshot.heartRateServiceUuid],
-    );
+    return _loadPairedDevice(_pairedPolarKey, const <String>[
+      BleDeviceSnapshot.heartRateServiceUuid,
+    ]);
   }
 
   Future<void> savePairedM5Device(BleDeviceSnapshot device) {
-    return _savePairedDevice(
-      _pairedM5Key,
-      device,
-      const <String>[BleDeviceSnapshot.wheelSenseM5ServiceUuid],
-    );
+    return _savePairedDevice(_pairedM5Key, device, const <String>[
+      BleDeviceSnapshot.wheelSenseM5ServiceUuid,
+    ]);
   }
 
   Future<void> savePairedPolarDevice(BleDeviceSnapshot device) {
-    return _savePairedDevice(
-      _pairedPolarKey,
-      device,
-      const <String>[BleDeviceSnapshot.heartRateServiceUuid],
-    );
+    return _savePairedDevice(_pairedPolarKey, device, const <String>[
+      BleDeviceSnapshot.heartRateServiceUuid,
+    ]);
   }
 
   Future<void> clearPairedM5Device() async {

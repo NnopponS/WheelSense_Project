@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wheelsense_gateway_flutter/models/preview_metrics.dart';
 import 'package:wheelsense_gateway_flutter/models/sensor_telemetry.dart';
+import 'package:wheelsense_gateway_flutter/screens/tool_preview_readings.dart';
 
 void main() {
   test('M5TelemetrySample parses gyro and battery payload', () {
@@ -111,7 +113,7 @@ void main() {
   test('M5TelemetrySample parses 30-byte binary frame correctly', () {
     final buffer = ByteData(30);
     buffer.setUint32(0, 105, Endian.little); // seq
-    buffer.setUint32(4, 1724310000000 % 4294967296, Endian.little); // timestamp
+    buffer.setUint32(4, 12345, Endian.little); // device uptime in ms
     buffer.setInt16(8, 120, Endian.little); // ax: 0.120g
     buffer.setInt16(10, -350, Endian.little); // ay: -0.350g
     buffer.setInt16(12, 980, Endian.little); // az: 0.980g
@@ -146,13 +148,30 @@ void main() {
     expect(sample.batteryCharging, isFalse);
     expect(sample.deviceId, 'M5-TEST');
     expect(sample.deviceName, 'Wheelchair Right');
+    expect(sample.tDeviceUs, 12345000);
+    expect(
+      DateTime.now().difference(sample.timestamp).inSeconds.abs(),
+      lessThan(2),
+    );
+    expect(
+      ToolPreviewReadings.resolveWheelchair(
+        actual: sample,
+        preview: PreviewMetrics.at(DateTime.now()),
+        now: DateTime.now(),
+      ),
+      same(sample),
+    );
   });
 
   test('M5TelemetrySample parses 20-byte raw IMU frame correctly', () {
     final buffer = ByteData(20);
     buffer.setUint32(0, 501, Endian.little); // seq
     buffer.setUint32(4, 1200000, Endian.little); // tDeviceUs
-    buffer.setInt16(8, 2048, Endian.little); // rawAx: 2048 LSB (1.0g with ±16g scale)
+    buffer.setInt16(
+      8,
+      2048,
+      Endian.little,
+    ); // rawAx: 2048 LSB (1.0g with ±16g scale)
     buffer.setInt16(10, 0, Endian.little); // rawAy
     buffer.setInt16(12, -2048, Endian.little); // rawAz: -1.0g
     buffer.setInt16(14, 164, Endian.little); // rawGx: 10.0 dps
@@ -198,7 +217,9 @@ void main() {
     final json = sample.toServerPolarJson();
     expect(json['heart_rate_bpm'], 75);
     expect(json['rr_interval_ms'], 800.0);
-    expect(json['spo2_percent'], 99);
+    expect(json.containsKey('spo2_percent'), isFalse);
+    expect(json.containsKey('spo2'), isFalse);
+    expect(json['spo2_estimated'], isTrue);
     expect(json['contact_status'], isTrue);
     expect(json['accel'], isA<Map>());
     expect(json['gyro'], isA<Map>());

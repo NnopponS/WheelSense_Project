@@ -1,15 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Standard typography for WheelSense applications.
 ///
-/// Uses Inter for high readability across metrics, status indicators,
-/// and clinical data tables under challenging field lighting.
+/// Uses the native system family with Thai glyphs as a fallback.
 abstract final class AppTypography {
   const AppTypography._();
 
   static TextTheme textTheme(Color ink, Color muted) {
-    final base = GoogleFonts.interTextTheme();
+    final base = Typography.material2021(
+      platform: defaultTargetPlatform,
+    ).black.apply(fontFamilyFallback: const ['NotoSansThai']);
     return base.copyWith(
       displayLarge: base.displayLarge?.copyWith(
         color: ink,
@@ -75,7 +76,8 @@ abstract final class AppTypography {
     double fontSize = 22,
     FontWeight fontWeight = FontWeight.w700,
   }) {
-    return GoogleFonts.jetBrainsMono(
+    return TextStyle(
+      fontFamily: 'monospace',
       color: color,
       fontSize: fontSize,
       fontWeight: fontWeight,

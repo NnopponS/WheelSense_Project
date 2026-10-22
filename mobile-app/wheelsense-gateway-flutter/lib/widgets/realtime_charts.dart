@@ -153,8 +153,7 @@ class _RealtimeLineChartState extends State<RealtimeLineChart> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (time.isNotEmpty)
-            Text(time, style: theme.textTheme.labelSmall),
+          if (time.isNotEmpty) Text(time, style: theme.textTheme.labelSmall),
           for (final s in widget.series)
             if (s.values[index] case final value?)
               Row(
@@ -257,18 +256,19 @@ class _RealtimeChartPainter extends CustomPainter {
     }
   }
 
-  static void _drawTicks(Canvas canvas, Rect plot, (double, double) range,
-      ChartSeries series) {
+  static void _drawTicks(
+    Canvas canvas,
+    Rect plot,
+    (double, double) range,
+    ChartSeries series,
+  ) {
     final (min, max) = range;
     for (var i = 0; i <= 4; i += 1) {
       final value = max - (max - min) * i / 4;
       final tp = TextPainter(
         text: TextSpan(
           text: series.valueFormat(value),
-          style: const TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 10,
-          ),
+          style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
         ),
         textDirection: ui.TextDirection.ltr,
       )..layout(maxWidth: _tickInset - 6);
@@ -281,9 +281,9 @@ class _RealtimeChartPainter extends CustomPainter {
     Canvas canvas,
     Rect plot,
     ChartSeries series,
-    (double, double) range,
-    {required bool fill}
-  ) {
+    (double, double) range, {
+    required bool fill,
+  }) {
     final (min, max) = range;
     final values = series.values;
     if (values.whereType<double>().length < 2) {
@@ -432,23 +432,17 @@ class AccelLineChart extends StatelessWidget {
         ChartSeries(
           label: 'Accel X',
           color: const Color(0xFF2563EB),
-          values: [
-            for (final s in samples) s.accelX,
-          ],
+          values: [for (final s in samples) s.accelX],
         ),
         ChartSeries(
           label: 'Accel Y',
           color: const Color(0xFF16A34A),
-          values: [
-            for (final s in samples) s.accelY,
-          ],
+          values: [for (final s in samples) s.accelY],
         ),
         ChartSeries(
           label: 'Accel Z',
           color: const Color(0xFFDC2626),
-          values: [
-            for (final s in samples) s.accelZ,
-          ],
+          values: [for (final s in samples) s.accelZ],
         ),
       ],
     );
@@ -469,14 +463,12 @@ class PolarSignalChart extends StatelessWidget {
         ChartSeries(
           label: 'HR',
           color: const Color(0xFFBE123C),
-          values: [
-            for (final s in samples) s.heartRateBpm.toDouble(),
-          ],
+          values: [for (final s in samples) s.heartRateBpm.toDouble()],
           fallbackRange: (40, 180),
           valueFormat: (v) => v.round().toString(),
         ),
         ChartSeries(
-          label: 'SpO2',
+          label: 'PPG estimate (experimental, not clinical)',
           color: const Color(0xFF7C3AED),
           values: [for (final s in samples) s.spo2Percent?.toDouble()],
           fallbackRange: (90, 100),

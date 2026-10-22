@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "app.wheelsense.wheelsense_gateway_flutter"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.1.12297006"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true

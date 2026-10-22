@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -16,8 +15,8 @@ enum BleScanProfile { all, gatewayPairing, cameraNodes }
 
 class BleGatewayService {
   BleGatewayService({FlutterReactiveBle? ble, Polar? polar})
-      : _ble = ble ?? FlutterReactiveBle(),
-        _polar = polar ?? Polar(bluetoothScanNeverForLocation: false);
+    : _ble = ble ?? FlutterReactiveBle(),
+      _polar = polar ?? Polar(bluetoothScanNeverForLocation: false);
 
   final FlutterReactiveBle _ble;
   final Polar _polar;
@@ -67,7 +66,9 @@ class BleGatewayService {
         if (profile == BleScanProfile.all) {
           if (!controller.isClosed) controller.add(device);
         } else if (profile == BleScanProfile.cameraNodes) {
-          if (name.startsWith('WSN_') || name.startsWith('WS-Camera-') || name.startsWith('CAM_')) {
+          if (name.startsWith('WSN_') ||
+              name.startsWith('WS-Camera-') ||
+              name.startsWith('CAM_')) {
             if (!controller.isClosed) controller.add(device);
           }
         } else if (device.isGatewayPairingTarget) {
@@ -79,13 +80,15 @@ class BleGatewayService {
     unawaited(() async {
       try {
         try {
-          final systemList = await fbp.FlutterBluePlus.systemDevices(
-            [fbp.Guid(config.bleServiceUuid)],
-          );
+          final systemList = await fbp.FlutterBluePlus.systemDevices([
+            fbp.Guid(config.bleServiceUuid),
+          ]);
           for (final device in systemList) {
             handleDiscovered(
               device.remoteId.str,
-              device.platformName.isNotEmpty ? device.platformName : 'M5StickCPlus2',
+              device.platformName.isNotEmpty
+                  ? device.platformName
+                  : 'M5StickCPlus2',
               -45,
               [config.bleServiceUuid],
             );
@@ -114,10 +117,7 @@ class BleGatewayService {
         await fbp.FlutterBluePlus.isScanning
             .where((scanning) => !scanning)
             .first
-            .timeout(
-              const Duration(seconds: 14),
-              onTimeout: () => false,
-            );
+            .timeout(const Duration(seconds: 14), onTimeout: () => false);
         await sub.cancel();
       } on Object catch (e) {
         debugPrint('[BleGatewayService] Scan error: $e');
@@ -141,130 +141,130 @@ class BleGatewayService {
     final telemetryGuid = fbp.Guid(config.bleTelemetryCharacteristicUuid);
     StreamSubscription<List<int>>? telemetrySubscription;
 
-    unawaited(
-      () async {
-        var backoff = const Duration(seconds: 2);
-        while (!controller.isClosed) {
+    unawaited(() async {
+      var backoff = const Duration(seconds: 2);
+      while (!controller.isClosed) {
+        try {
+          final device = fbp.BluetoothDevice.fromId(deviceId);
+          if (!device.isConnected) {
+            await device.connect(
+              license: fbp.License.nonprofit,
+              mtu: 512,
+              timeout: const Duration(seconds: 10),
+            );
+          }
           try {
-            final device = fbp.BluetoothDevice.fromId(deviceId);
-            if (!device.isConnected) {
-              await device.connect(
-                license: fbp.License.nonprofit,
-                mtu: 512,
-                timeout: const Duration(seconds: 10),
-              );
-            }
-            try {
-              await device.requestConnectionPriority(
-                connectionPriorityRequest: fbp.ConnectionPriority.high,
-              );
-            } on Object {
-              // Best-effort
-            }
-
-            final services = await device.discoverServices();
-            final service = services.firstWhereOrNull(
-              (s) =>
-                  s.serviceUuid == serviceGuid ||
-                  s.serviceUuid.str128.toLowerCase() ==
-                      config.bleServiceUuid.toLowerCase() ||
-                  s.serviceUuid.str128.toLowerCase() ==
-                      '0000a1b2-0000-1000-8000-00805f9b34fb',
+            await device.requestConnectionPriority(
+              connectionPriorityRequest: fbp.ConnectionPriority.high,
             );
-            if (service == null) {
-              throw StateError(
-                'Service ${config.bleServiceUuid} not found on $deviceId',
-              );
-            }
+          } on Object {
+            // Best-effort
+          }
 
-            final telemetryChar = service.characteristics.firstWhereOrNull(
-              (c) =>
-                  c.characteristicUuid == telemetryGuid ||
-                  c.characteristicUuid.str128.toLowerCase() ==
-                      config.bleTelemetryCharacteristicUuid.toLowerCase() ||
-                  c.characteristicUuid.str128.toLowerCase() ==
-                      '0000a1b3-0000-1000-8000-00805f9b34fb',
+          final services = await device.discoverServices();
+          final service = services.firstWhereOrNull(
+            (s) =>
+                s.serviceUuid == serviceGuid ||
+                s.serviceUuid.str128.toLowerCase() ==
+                    config.bleServiceUuid.toLowerCase() ||
+                s.serviceUuid.str128.toLowerCase() ==
+                    '0000a1b2-0000-1000-8000-00805f9b34fb',
+          );
+          if (service == null) {
+            throw StateError(
+              'Service ${config.bleServiceUuid} not found on $deviceId',
             );
-            if (telemetryChar == null) {
-              throw StateError(
-                'Telemetry characteristic not found on $deviceId',
-              );
+          }
+
+          final telemetryChar = service.characteristics.firstWhereOrNull(
+            (c) =>
+                c.characteristicUuid == telemetryGuid ||
+                c.characteristicUuid.str128.toLowerCase() ==
+                    config.bleTelemetryCharacteristicUuid.toLowerCase() ||
+                c.characteristicUuid.str128.toLowerCase() ==
+                    '0000a1b3-0000-1000-8000-00805f9b34fb',
+          );
+          if (telemetryChar == null) {
+            throw StateError('Telemetry characteristic not found on $deviceId');
+          }
+
+          await telemetrySubscription?.cancel();
+          telemetrySubscription = telemetryChar.onValueReceived.listen((bytes) {
+            if (controller.isClosed || bytes.isEmpty) {
+              return;
             }
 
-            await telemetrySubscription?.cancel();
-            telemetrySubscription = telemetryChar.onValueReceived.listen((
-              bytes,
-            ) {
-              if (controller.isClosed || bytes.isEmpty) {
+            // Fast path 1: 20-byte raw IMU sample frame (§2.1)
+            if (bytes.length == 20 && bytes[0] != 0x7B) {
+              try {
+                final uint8List = bytes is Uint8List
+                    ? bytes
+                    : Uint8List.fromList(bytes);
+                final sample = M5TelemetrySample.fromRawBytes(
+                  uint8List,
+                  deviceId: deviceId,
+                  deviceName: 'M5StickC Plus2',
+                );
+                controller.add(sample.toJsonString());
                 return;
+              } on Object catch (e) {
+                debugPrint('[BleGatewayService] Raw IMU decode error: $e');
               }
-
-              // Fast path 1: 20-byte raw IMU sample frame (§2.1)
-              if (bytes.length == 20 && bytes[0] != 0x7B) {
-                try {
-                  final uint8List = bytes is Uint8List
-                      ? bytes
-                      : Uint8List.fromList(bytes);
-                  final sample = M5TelemetrySample.fromRawBytes(
-                    uint8List,
-                    deviceId: deviceId,
-                    deviceName: 'M5StickC Plus2',
-                  );
-                  controller.add(sample.toJsonString());
-                  return;
-                } on Object catch (e) {
-                  debugPrint('[BleGatewayService] Raw IMU decode error: $e');
-                }
-              }
-
-              // Fast path 2: compact 30-byte binary frame
-              if (bytes.length >= 30 && bytes[0] != 0x7B) {
-                try {
-                  final uint8List = bytes is Uint8List
-                      ? bytes
-                      : Uint8List.fromList(bytes);
-                  final sample = M5TelemetrySample.fromBytes(
-                    uint8List,
-                    deviceId: deviceId,
-                    deviceName: 'M5StickC Plus2',
-                  );
-                  controller.add(sample.toJsonString());
-                  return;
-                } on Object catch (e) {
-                  debugPrint('[BleGatewayService] Binary frame decode error: $e');
-                }
-              }
-
-              // Fallback path: JSON text frame chunk
-              final decodedText = utf8.decode(bytes, allowMalformed: true);
-              for (final packet in reassembler.addChunk(decodedText)) {
-                controller.add(packet);
-              }
-            });
-
-            if (!telemetryChar.isNotifying) {
-              await telemetryChar.setNotifyValue(true);
             }
-            reassembler.reset();
-            backoff = const Duration(seconds: 2);
 
-            await device.connectionState
-                .skipWhile((state) => state == fbp.BluetoothConnectionState.connected)
-                .where((state) => state == fbp.BluetoothConnectionState.disconnected)
-                .first;
-          } on Object catch (error, stack) {
-            debugPrint('[BleGatewayService] M5 connect/subscribe error: $error\n$stack');
+            // Fast path 2: compact 30-byte binary frame
+            if (bytes.length >= 30 && bytes[0] != 0x7B) {
+              try {
+                final uint8List = bytes is Uint8List
+                    ? bytes
+                    : Uint8List.fromList(bytes);
+                final sample = M5TelemetrySample.fromBytes(
+                  uint8List,
+                  deviceId: deviceId,
+                  deviceName: 'M5StickC Plus2',
+                );
+                controller.add(sample.toJsonString());
+                return;
+              } on Object catch (e) {
+                debugPrint('[BleGatewayService] Binary frame decode error: $e');
+              }
+            }
+
+            // Fallback path: JSON text frame chunk
+            final decodedText = utf8.decode(bytes, allowMalformed: true);
+            for (final packet in reassembler.addChunk(decodedText)) {
+              controller.add(packet);
+            }
+          });
+
+          if (!telemetryChar.isNotifying) {
+            await telemetryChar.setNotifyValue(true);
           }
-          if (controller.isClosed) {
-            break;
-          }
-          await Future<void>.delayed(backoff);
-          backoff = backoff * 2 > const Duration(seconds: 15)
-              ? const Duration(seconds: 15)
-              : backoff * 2;
+          reassembler.reset();
+          backoff = const Duration(seconds: 2);
+
+          await device.connectionState
+              .skipWhile(
+                (state) => state == fbp.BluetoothConnectionState.connected,
+              )
+              .where(
+                (state) => state == fbp.BluetoothConnectionState.disconnected,
+              )
+              .first;
+        } on Object catch (error, stack) {
+          debugPrint(
+            '[BleGatewayService] M5 connect/subscribe error: $error\n$stack',
+          );
         }
-      }(),
-    );
+        if (controller.isClosed) {
+          break;
+        }
+        await Future<void>.delayed(backoff);
+        backoff = backoff * 2 > const Duration(seconds: 15)
+            ? const Duration(seconds: 15)
+            : backoff * 2;
+      }
+    }());
 
     controller.onCancel = () async {
       await telemetrySubscription?.cancel();
@@ -360,73 +360,71 @@ class BleGatewayService {
 
       // 1. Optical PPG Stream (Photoplethysmography)
       if (availableTypes.contains(PolarDataType.ppg)) {
-        _polarSdkPpgSubscription = _polar.startPpgStreaming(deviceId).listen(
-          _updateSpo2EstimateFromPpg,
-          onError: (_) {
-            _latestSpo2Estimate = null;
-            _latestPpgRatio = null;
-          },
-        );
+        _polarSdkPpgSubscription = _polar
+            .startPpgStreaming(deviceId)
+            .listen(
+              _updateSpo2EstimateFromPpg,
+              onError: (_) {
+                _latestSpo2Estimate = null;
+                _latestPpgRatio = null;
+              },
+            );
       }
 
       // 2. 3-Axis Accelerometer (ACC)
       if (availableTypes.contains(PolarDataType.acc)) {
-        _polarSdkAccSubscription = _polar.startAccStreaming(deviceId).listen(
-          (event) {
-            if (event.samples.isNotEmpty) {
-              final s = event.samples.last;
-              _latestAccXMg = s.x;
-              _latestAccYMg = s.y;
-              _latestAccZMg = s.z;
-            }
-          },
-          onError: (_) {},
-        );
+        _polarSdkAccSubscription = _polar.startAccStreaming(deviceId).listen((
+          event,
+        ) {
+          if (event.samples.isNotEmpty) {
+            final s = event.samples.last;
+            _latestAccXMg = s.x;
+            _latestAccYMg = s.y;
+            _latestAccZMg = s.z;
+          }
+        }, onError: (_) {});
       }
 
       // 3. 3-Axis Gyroscope (GYRO)
       if (availableTypes.contains(PolarDataType.gyro)) {
-        _polarSdkGyroSubscription = _polar.startGyroStreaming(deviceId).listen(
-          (event) {
-            if (event.samples.isNotEmpty) {
-              final s = event.samples.last;
-              _latestGyroXDps = s.x;
-              _latestGyroYDps = s.y;
-              _latestGyroZDps = s.z;
-            }
-          },
-          onError: (_) {},
-        );
+        _polarSdkGyroSubscription = _polar.startGyroStreaming(deviceId).listen((
+          event,
+        ) {
+          if (event.samples.isNotEmpty) {
+            final s = event.samples.last;
+            _latestGyroXDps = s.x;
+            _latestGyroYDps = s.y;
+            _latestGyroZDps = s.z;
+          }
+        }, onError: (_) {});
       }
 
       // 4. 3-Axis Magnetometer (MAG)
       if (availableTypes.contains(PolarDataType.magnetometer)) {
-        _polarSdkMagSubscription = _polar.startMagnetometerStreaming(deviceId).listen(
-          (event) {
-            if (event.samples.isNotEmpty) {
-              final s = event.samples.last;
-              _latestMagXGauss = s.x;
-              _latestMagYGauss = s.y;
-              _latestMagZGauss = s.z;
-            }
-          },
-          onError: (_) {},
-        );
+        _polarSdkMagSubscription = _polar
+            .startMagnetometerStreaming(deviceId)
+            .listen((event) {
+              if (event.samples.isNotEmpty) {
+                final s = event.samples.last;
+                _latestMagXGauss = s.x;
+                _latestMagYGauss = s.y;
+                _latestMagZGauss = s.z;
+              }
+            }, onError: (_) {});
       }
 
       // 5. Peak-to-Peak PPI (R-R Interval stream)
       if (availableTypes.contains(PolarDataType.ppi)) {
-        _polarSdkPpiSubscription = _polar.startPpiStreaming(deviceId).listen(
-          (event) {
-            for (final sample in event.samples) {
-              if (sample.ppi > 0) {
-                _latestRriList.add(sample.ppi.toDouble());
-                if (_latestRriList.length > 30) _latestRriList.removeAt(0);
-              }
+        _polarSdkPpiSubscription = _polar.startPpiStreaming(deviceId).listen((
+          event,
+        ) {
+          for (final sample in event.samples) {
+            if (sample.ppi > 0) {
+              _latestRriList.add(sample.ppi.toDouble());
+              if (_latestRriList.length > 30) _latestRriList.removeAt(0);
             }
-          },
-          onError: (_) {},
-        );
+          }
+        }, onError: (_) {});
       }
 
       // 6. Heart Rate (HR)
@@ -435,47 +433,46 @@ class BleGatewayService {
         return;
       }
 
-      _polarSdkHrSubscription = _polar.startHrStreaming(deviceId).listen(
-        (event) {
-          for (final sample in event.samples) {
-            if (controller.isClosed) return;
+      _polarSdkHrSubscription = _polar.startHrStreaming(deviceId).listen((
+        event,
+      ) {
+        for (final sample in event.samples) {
+          if (controller.isClosed) return;
 
-            final rrs = sample.rrsMs.isNotEmpty
-                ? sample.rrsMs.map((v) => v.toDouble()).toList()
-                : List<double>.from(_latestRriList);
+          final rrs = sample.rrsMs.isNotEmpty
+              ? sample.rrsMs.map((v) => v.toDouble()).toList()
+              : List<double>.from(_latestRriList);
 
-            controller.add(
-              PolarTelemetrySample(
-                timestamp: DateTime.now(),
-                heartRateBpm: sample.correctedHr > 0
-                    ? sample.correctedHr
-                    : sample.hr,
-                rrIntervalsMs: rrs,
-                rssi: null,
-                spo2Percent: _latestSpo2Estimate,
-                spo2Estimated: _latestSpo2Estimate != null,
-                sensorBatteryPercent: _latestPolarBatteryPercent,
-                ppgQuality: sample.ppgQuality,
-                ppgRatio: _latestPpgRatio,
-                contactStatus: sample.contactStatusSupported
-                    ? sample.contactStatus
-                    : null,
-                accelXMg: _latestAccXMg,
-                accelYMg: _latestAccYMg,
-                accelZMg: _latestAccZMg,
-                gyroXDps: _latestGyroXDps,
-                gyroYDps: _latestGyroYDps,
-                gyroZDps: _latestGyroZDps,
-                magXGauss: _latestMagXGauss,
-                magYGauss: _latestMagYGauss,
-                magZGauss: _latestMagZGauss,
-                ppgSamples: List<List<int>>.from(_polarPpgWindow),
-              ),
-            );
-          }
-        },
-        onError: controller.addError,
-      );
+          controller.add(
+            PolarTelemetrySample(
+              timestamp: DateTime.now(),
+              heartRateBpm: sample.correctedHr > 0
+                  ? sample.correctedHr
+                  : sample.hr,
+              rrIntervalsMs: rrs,
+              rssi: null,
+              spo2Percent: _latestSpo2Estimate,
+              spo2Estimated: _latestSpo2Estimate != null,
+              sensorBatteryPercent: _latestPolarBatteryPercent,
+              ppgQuality: sample.ppgQuality,
+              ppgRatio: _latestPpgRatio,
+              contactStatus: sample.contactStatusSupported
+                  ? sample.contactStatus
+                  : null,
+              accelXMg: _latestAccXMg,
+              accelYMg: _latestAccYMg,
+              accelZMg: _latestAccZMg,
+              gyroXDps: _latestGyroXDps,
+              gyroYDps: _latestGyroYDps,
+              gyroZDps: _latestGyroZDps,
+              magXGauss: _latestMagXGauss,
+              magYGauss: _latestMagYGauss,
+              magZGauss: _latestMagZGauss,
+              ppgSamples: List<List<int>>.from(_polarPpgWindow),
+            ),
+          );
+        }
+      }, onError: controller.addError);
     } on Object {
       await _connectPolarGattHeartRate(deviceId, controller);
     }
@@ -503,9 +500,11 @@ class BleGatewayService {
 
     final redDc = _average(redLike);
     final irDc = _average(irLike);
-    final redAc = redLike.reduce((a, b) => a > b ? a : b) -
+    final redAc =
+        redLike.reduce((a, b) => a > b ? a : b) -
         redLike.reduce((a, b) => a < b ? a : b);
-    final irAc = irLike.reduce((a, b) => a > b ? a : b) -
+    final irAc =
+        irLike.reduce((a, b) => a > b ? a : b) -
         irLike.reduce((a, b) => a < b ? a : b);
     if (redDc <= 0 || irDc <= 0 || redAc <= 0 || irAc <= 0) return;
 
@@ -630,7 +629,9 @@ class BleGatewayService {
               characteristicUuid.toLowerCase(),
     );
     if (characteristic == null) {
-      throw StateError('Characteristic $characteristicUuid not found on $deviceId');
+      throw StateError(
+        'Characteristic $characteristicUuid not found on $deviceId',
+      );
     }
     await characteristic.write(
       utf8.encode(jsonEncode(payload)),

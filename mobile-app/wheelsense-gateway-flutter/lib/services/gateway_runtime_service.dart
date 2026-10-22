@@ -45,13 +45,16 @@ class GatewayRuntimeService {
   StreamSubscription<PolarTelemetrySample>? _polarTelemetrySubscription;
   StreamSubscription<MqttGatewayMessage>? _mqttStatusSubscription;
   Timer? _polarReconnectTimer;
+  Timer? _freshnessTimer;
+  Future<GatewayStatus>? _resumeOperation;
   GatewayStatus _status = GatewayStatus.initial();
   GatewayRuntimeSnapshot _snapshot = GatewayRuntimeSnapshot.initial();
 
   static const int _historyLimit = 300;
   final List<M5TelemetrySample> _m5History = <M5TelemetrySample>[];
   final List<PolarTelemetrySample> _polarHistory = <PolarTelemetrySample>[];
-  final Map<String, NodeTsimcamSnapshot> _detectedNodes = <String, NodeTsimcamSnapshot>{};
+  final Map<String, NodeTsimcamSnapshot> _detectedNodes =
+      <String, NodeTsimcamSnapshot>{};
 
   Stream<GatewayStatus> get statuses => _statusController.stream;
   Stream<GatewayConfig> get configUpdates => _configController.stream;
@@ -63,6 +66,18 @@ class GatewayRuntimeService {
 
   Future<GatewayConfig> loadConfig() async {
     final config = await _preferences.loadConfig();
+    _freshnessTimer ??= Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_status.mqttReady && _mqtt?.isConnected != true) {
+        _emit(
+          _status.copyWith(
+            mqttReady: false,
+            message: 'MQTT disconnected; BLE remains local',
+          ),
+        );
+      } else {
+        _emitSnapshot(_snapshot);
+      }
+    });
     _emitSnapshot(_snapshot.copyWith(config: config));
     return config;
   }
@@ -75,19 +90,25 @@ class GatewayRuntimeService {
     }
   }
 
-  Future<GatewayStatus> bootstrap({GatewayConfig? config}) async {
+  Future<GatewayStatus> bootstrap({
+    GatewayConfig? config,
+    bool requestPermissions = true,
+  }) async {
     final effectiveConfig = config ?? await loadConfig();
     await _loadPairedDevicesIntoSnapshot(effectiveConfig);
-    final permissionResult = await _permissions.requestRuntimePermissions();
+    final permissionResult = requestPermissions
+        ? await _permissions.requestRuntimePermissions()
+        : await _permissions.checkRuntimePermissions();
     final notificationsReady = await _notifications.initialize();
-    final notificationAllowed = await _notifications.requestPermission();
+    final notificationAllowed = permissionResult.notificationGranted;
     final mqttReady = await _mqttService.connect(effectiveConfig);
-    final foregroundReady = await _foreground.start();
+    final foregroundReady =
+        permissionResult.bleGranted && await _foreground.start();
     if (mqttReady) {
       _startMqttSubscriptions(effectiveConfig);
     }
 
-    final mode = permissionResult.bleGranted
+    final mode = permissionResult.bleGranted || mqttReady
         ? GatewayConnectionMode.idle
         : GatewayConnectionMode.degraded;
 
@@ -98,16 +119,47 @@ class GatewayRuntimeService {
         mqttReady: mqttReady,
         notificationsReady: notificationsReady && notificationAllowed,
         backgroundReady: permissionResult.backgroundGranted || foregroundReady,
-        message: mode == GatewayConnectionMode.degraded
-            ? 'BLE permission is required for production gateway mode'
-            : 'Production gateway ready',
+        message: !effectiveConfig.hasBroker
+            ? 'Enter a valid MQTT broker address'
+            : mqttReady
+            ? 'Gateway connected to broker; storage unverified'
+            : permissionResult.bleGranted
+            ? 'Broker unavailable; BLE stays on this phone'
+            : 'Broker unavailable; Bluetooth permission is needed for live sensors',
       ),
     );
   }
 
-  Future<GatewayStatus> resumeGateway({bool autoStartBle = true}) async {
+  Future<GatewayStatus> resumeGateway({
+    bool autoStartBle = true,
+    bool requestPermissions = false,
+  }) {
+    return _resumeOperation ??=
+        _resumeGateway(
+              autoStartBle: autoStartBle,
+              requestPermissions: requestPermissions,
+            )
+            .catchError(
+              (Object _) => _emit(
+                _status.copyWith(
+                  mode: GatewayConnectionMode.error,
+                  message:
+                      'Gateway could not start. Check permissions and saved settings.',
+                ),
+              ),
+            )
+            .whenComplete(() => _resumeOperation = null);
+  }
+
+  Future<GatewayStatus> _resumeGateway({
+    required bool autoStartBle,
+    required bool requestPermissions,
+  }) async {
     final config = await loadConfig();
-    final status = await bootstrap(config: config);
+    final status = await bootstrap(
+      config: config,
+      requestPermissions: requestPermissions,
+    );
     if (!shouldAutoStartBleRelay(
       config: config,
       status: status,
@@ -125,10 +177,10 @@ class GatewayRuntimeService {
     final pairedM5 = await _preferences.loadPairedM5Device();
     final pairedPolar = await _preferences.loadPairedPolarDevice();
     if (pairedM5 != null && _m5TelemetrySubscription == null) {
-      unawaited(startM5TelemetryRelay(config, pairedM5));
+      await startM5TelemetryRelay(config, pairedM5);
     }
     if (pairedPolar != null && _polarTelemetrySubscription == null) {
-      unawaited(startPolarTelemetryRelay(config, pairedPolar));
+      await startPolarTelemetryRelay(config, pairedPolar);
     }
     return status;
   }
@@ -136,7 +188,7 @@ class GatewayRuntimeService {
   Future<GatewayStatus> requestPermissionsForAppOpen() async {
     final permissionResult = await _permissions.requestRuntimePermissions();
     final notificationsReady = await _notifications.initialize();
-    final notificationAllowed = await _notifications.requestPermission();
+    final notificationAllowed = permissionResult.notificationGranted;
     if (!permissionResult.ready &&
         _permissions.hasBlockedRuntimePermission(permissionResult)) {
       await _permissions.openPermissionSettings();
@@ -154,7 +206,7 @@ class GatewayRuntimeService {
         notificationsReady: notificationsReady && notificationAllowed,
         backgroundReady: permissionResult.backgroundGranted,
         message: bleReady
-            ? 'Permissions ready. Pair or reconnect M5StickC Plus 2 and Polar.'
+            ? 'Permissions ready. Pair or reconnect wheelchair sensor and Polar.'
             : 'Allow Bluetooth, location, and notifications for live sensors.',
       ),
     );
@@ -174,6 +226,8 @@ class GatewayRuntimeService {
         mqttReady: connected,
         message: connected
             ? 'MQTT connected. Waiting for retained portal link.'
+            : !effectiveConfig.hasBroker
+            ? 'Enter a valid MQTT broker address.'
             : 'MQTT broker is offline; enter broker settings or try again.',
       ),
     );
@@ -196,7 +250,9 @@ class GatewayRuntimeService {
   }
 
   Stream<BleDeviceSnapshot> scanCameraNodes(GatewayConfig config) {
-    return _bleService.scan(config, profile: BleScanProfile.cameraNodes).map((device) {
+    return _bleService.scan(config, profile: BleScanProfile.cameraNodes).map((
+      device,
+    ) {
       _handleDiscoveredBleNode(device);
       return device;
     });
@@ -206,10 +262,7 @@ class GatewayRuntimeService {
     final devId = device.id;
     final current = _detectedNodes[devId];
     final updated = current != null
-        ? current.copyWith(
-            rssi: device.rssi,
-            lastSeen: DateTime.now(),
-          )
+        ? current.copyWith(rssi: device.rssi, lastSeen: DateTime.now())
         : NodeTsimcamSnapshot(
             deviceId: device.name.startsWith('WS-Camera-')
                 ? device.name.replaceFirst('WS-Camera-', 'CAM_')
@@ -223,7 +276,9 @@ class GatewayRuntimeService {
     _detectedNodes[devId] = updated;
     _emitSnapshot(
       _snapshot.copyWith(
-        detectedNodes: List<NodeTsimcamSnapshot>.unmodifiable(_detectedNodes.values),
+        detectedNodes: List<NodeTsimcamSnapshot>.unmodifiable(
+          _detectedNodes.values,
+        ),
       ),
     );
   }
@@ -253,12 +308,12 @@ class GatewayRuntimeService {
         .asBroadcastStream();
     _m5TelemetrySubscription = stream.listen(
       (payload) async {
+        _recordM5Payload(payload);
         final result = await _mqttService.publishTelemetry(
           config: _snapshot.config,
           payload: payload,
         );
         _recordPublishResult(result);
-        _recordM5Payload(payload);
       },
       onError: (Object error) {
         _emit(
@@ -426,7 +481,7 @@ class GatewayRuntimeService {
     _emit(
       _status.copyWith(
         mode: GatewayConnectionMode.idle,
-        message: 'M5StickC Plus 2 disconnected',
+        message: 'Wheelchair sensor disconnected',
       ),
     );
   }
@@ -472,6 +527,7 @@ class GatewayRuntimeService {
   }
 
   Future<void> dispose() async {
+    _freshnessTimer?.cancel();
     await _m5TelemetrySubscription?.cancel();
     await _polarTelemetrySubscription?.cancel();
     await _mqttStatusSubscription?.cancel();
@@ -504,10 +560,6 @@ class GatewayRuntimeService {
   }
 
   Future<void> _ensureMqtt(GatewayConfig config) async {
-    if (_mqttService.isConnected) {
-      _startMqttSubscriptions(config);
-      return;
-    }
     final connected = await _mqttService.connect(config);
     if (connected) {
       _startMqttSubscriptions(config);
@@ -582,27 +634,32 @@ class GatewayRuntimeService {
     final statusStr = payload['status']?.toString() ?? 'online';
 
     final current = _detectedNodes[devId];
-    final updated = (current ?? NodeTsimcamSnapshot(
-      deviceId: devId,
-      nodeId: nodeId,
-      bleMac: bmac,
-      rssi: -60,
-      lastSeen: DateTime.now(),
-    )).copyWith(
-      ipAddress: ip,
-      firmware: fw,
-      batteryPercent: battPct,
-      batteryVoltageV: battV,
-      streamEnabled: streamOn,
-      framesCaptured: frames,
-      status: statusStr,
-      lastSeen: DateTime.now(),
-    );
+    final updated =
+        (current ??
+                NodeTsimcamSnapshot(
+                  deviceId: devId,
+                  nodeId: nodeId,
+                  bleMac: bmac,
+                  rssi: -60,
+                  lastSeen: DateTime.now(),
+                ))
+            .copyWith(
+              ipAddress: ip,
+              firmware: fw,
+              batteryPercent: battPct,
+              batteryVoltageV: battV,
+              streamEnabled: streamOn,
+              framesCaptured: frames,
+              status: statusStr,
+              lastSeen: DateTime.now(),
+            );
 
     _detectedNodes[devId] = updated;
     _emitSnapshot(
       _snapshot.copyWith(
-        detectedNodes: List<NodeTsimcamSnapshot>.unmodifiable(_detectedNodes.values),
+        detectedNodes: List<NodeTsimcamSnapshot>.unmodifiable(
+          _detectedNodes.values,
+        ),
       ),
     );
   }

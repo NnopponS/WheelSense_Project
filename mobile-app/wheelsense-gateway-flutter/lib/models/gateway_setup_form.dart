@@ -1,5 +1,6 @@
 import 'gateway_config.dart';
 import 'mqtt_broker_config.dart';
+import '../services/gateway_webview_service.dart';
 
 class GatewaySetupFormResult {
   const GatewaySetupFormResult._({this.config, this.error});
@@ -27,12 +28,9 @@ GatewaySetupFormResult buildGatewayConfigFromSetupForm({
   final portal = portalInput.trim().isEmpty
       ? defaults.portalBaseUrl
       : portalInput.trim();
-  final portalUri = Uri.tryParse(portal);
-  if (portalUri == null ||
-      portalUri.host.isEmpty ||
-      (portalUri.scheme != 'http' && portalUri.scheme != 'https')) {
+  if (GatewayWebViewService.portalUri(portal) == null) {
     return const GatewaySetupFormResult.invalid(
-      'Portal URL must be an http or https URL with a host.',
+      'Portal URL must use HTTPS (HTTP is allowed only for local development).',
     );
   }
 

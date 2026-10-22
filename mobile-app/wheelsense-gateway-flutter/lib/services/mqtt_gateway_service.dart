@@ -23,6 +23,10 @@ class MqttGatewayService {
       _client?.connectionStatus?.state == MqttConnectionState.connected;
 
   Future<bool> connect(GatewayConfig config) async {
+    if (!config.hasBroker) {
+      await disconnect();
+      return false;
+    }
     final nextConnectionKey = _buildConnectionKey(config);
     if (isConnected && _connectionKey == nextConnectionKey) {
       return true;
@@ -64,7 +68,7 @@ class MqttGatewayService {
   }
 
   Stream<MqttGatewayMessage> subscribeStatus(GatewayConfig config) {
-    if (!isConnected) {
+    if (!_canPublish(config)) {
       return const Stream<MqttGatewayMessage>.empty();
     }
 
@@ -125,7 +129,7 @@ class MqttGatewayService {
     required String payload,
   }) async {
     final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
-    if (!isConnected) {
+    if (!_canPublish(config)) {
       return TelemetryPublishResult.failed(
         topic: topic,
         reason: TelemetryPublishFailureReason.disconnected,
@@ -151,7 +155,7 @@ class MqttGatewayService {
     required PolarTelemetrySample sample,
   }) async {
     final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
-    if (!isConnected) {
+    if (!_canPublish(config)) {
       return TelemetryPublishResult.failed(
         topic: topic,
         reason: TelemetryPublishFailureReason.disconnected,
@@ -179,7 +183,7 @@ class MqttGatewayService {
     List<Map<String, Object?>> rssiList = const <Map<String, Object?>>[],
   }) async {
     final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
-    if (!isConnected) {
+    if (!_canPublish(config)) {
       return TelemetryPublishResult.failed(
         topic: topic,
         reason: TelemetryPublishFailureReason.disconnected,
@@ -203,7 +207,8 @@ class MqttGatewayService {
       payloadMap['hr'] = <String, Object?>{
         'bpm': polarSample.heartRateBpm,
         'rr_intervals_ms': polarSample.rrIntervalsMs,
-        if (polarSample.spo2Percent != null) 'spo2': polarSample.spo2Percent,
+        if (polarSample.spo2Percent != null && !polarSample.spo2Estimated)
+          'spo2': polarSample.spo2Percent,
         'sensor_battery': polarSample.sensorBatteryPercent,
       };
     }
@@ -215,7 +220,11 @@ class MqttGatewayService {
       ..addUTF8String(jsonEncode(payloadMap));
     try {
       _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-      _client?.publishMessage('WheelSense/data', MqttQos.atLeastOnce, builder.payload!);
+      _client?.publishMessage(
+        'WheelSense/data',
+        MqttQos.atLeastOnce,
+        builder.payload!,
+      );
       return TelemetryPublishResult.sent(topic);
     } on Object catch (error) {
       return TelemetryPublishResult.failed(
@@ -231,7 +240,7 @@ class MqttGatewayService {
     Map<String, Object?>? companionM5,
     Map<String, Object?>? companionPolar,
   }) async {
-    if (!isConnected) {
+    if (!_canPublish(config)) {
       return false;
     }
 
@@ -274,6 +283,11 @@ class MqttGatewayService {
     _connectionKey = null;
     _subscribedTopics = const <String>{};
   }
+
+  bool _canPublish(GatewayConfig config) =>
+      isConnected &&
+      config.hasBroker &&
+      _connectionKey == _buildConnectionKey(config);
 
   String _buildConnectionKey(GatewayConfig config) {
     return [
@@ -360,15 +374,17 @@ class MqttGatewayService {
         'bpm': sample.heartRateBpm,
         'rr_intervals_ms': sample.rrIntervalsMs,
         'rr_intervals': sample.rrIntervalsMs,
-        if (sample.spo2Percent != null) 'spo2': sample.spo2Percent,
+        if (sample.spo2Percent != null && !sample.spo2Estimated)
+          'spo2': sample.spo2Percent,
         if (sample.spo2Percent != null) 'spo2_estimated': sample.spo2Estimated,
         if (sample.sensorBatteryPercent != null)
           'sensor_battery': sample.sensorBatteryPercent,
       },
       'polar_hr': <String, Object?>{
         'heart_rate_bpm': sample.heartRateBpm,
-        if (rrIntervalMs != null) 'rr_interval_ms': rrIntervalMs,
-        if (sample.spo2Percent != null) 'spo2': sample.spo2Percent,
+        'rr_interval_ms': ?rrIntervalMs,
+        if (sample.spo2Percent != null && !sample.spo2Estimated)
+          'spo2': sample.spo2Percent,
         if (sample.spo2Percent != null) 'spo2_estimated': sample.spo2Estimated,
         if (sample.sensorBatteryPercent != null)
           'sensor_battery': sample.sensorBatteryPercent,

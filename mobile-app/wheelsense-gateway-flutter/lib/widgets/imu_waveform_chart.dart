@@ -68,8 +68,8 @@ class _ImuWaveformChartState extends State<ImuWaveformChart> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
@@ -79,26 +79,26 @@ class _ImuWaveformChartState extends State<ImuWaveformChart> {
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    _mode == ImuChartMode.accel
-                        ? 'Accelerometer Stream ($unit)'
-                        : 'Gyroscope Stream ($unit)',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Text(
+                      _mode == ImuChartMode.accel
+                          ? 'Accelerometer Stream ($unit)'
+                          : 'Gyroscope Stream ($unit)',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
               SegmentedButton<ImuChartMode>(
                 segments: const [
                   ButtonSegment(
                     value: ImuChartMode.accel,
                     label: Text('Accel'),
                   ),
-                  ButtonSegment(
-                    value: ImuChartMode.gyro,
-                    label: Text('Gyro'),
-                  ),
+                  ButtonSegment(value: ImuChartMode.gyro, label: Text('Gyro')),
                 ],
                 selected: {_mode},
                 onSelectionChanged: (set) {
@@ -113,14 +113,14 @@ class _ImuWaveformChartState extends State<ImuWaveformChart> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 14,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _AxisLegend(label: 'X Axis', color: AppPalette.dangerBright),
-              const SizedBox(width: 14),
               _AxisLegend(label: 'Y Axis', color: AppPalette.successBright),
-              const SizedBox(width: 14),
               _AxisLegend(label: 'Z Axis', color: AppPalette.leftBright),
-              const Spacer(),
               if (dataList.isNotEmpty)
                 Text(
                   'Seq: ${dataList.last.seq}',
@@ -154,9 +154,15 @@ class _ImuWaveformChartState extends State<ImuWaveformChart> {
                         ),
                       ),
                       titlesData: const FlTitlesData(
-                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
@@ -217,7 +223,11 @@ class _AxisLegend extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
         ),
       ],
     );

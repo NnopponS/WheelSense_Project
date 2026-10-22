@@ -5,11 +5,7 @@ import '../theme/app_palette.dart';
 import '../theme/app_typography.dart';
 
 class NodeScannerCard extends StatelessWidget {
-  const NodeScannerCard({
-    super.key,
-    required this.nodes,
-    this.onRefresh,
-  });
+  const NodeScannerCard({super.key, required this.nodes, this.onRefresh});
 
   final List<NodeTsimcamSnapshot> nodes;
   final VoidCallback? onRefresh;
@@ -34,28 +30,32 @@ class NodeScannerCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppPalette.info.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppPalette.info.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.radar_rounded,
+                        size: 20,
+                        color: AppPalette.infoBright,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.radar_rounded,
-                      size: 20,
-                      color: AppPalette.infoBright,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Node_Tsimcam Camera Radar',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Node_Tsimcam Camera Radar',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (onRefresh != null)
                 IconButton(
@@ -79,7 +79,7 @@ class NodeScannerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'No T-SIMCam / WSN_* nodes detected in range',
+                    'No nearby nodes found',
                     style: theme.textTheme.bodyMedium,
                   ),
                 ],
@@ -90,7 +90,7 @@ class NodeScannerCard extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: nodes.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final node = nodes[index];
                 return _NodeItemTile(node: node, isDark: isDark);
@@ -103,10 +103,7 @@ class NodeScannerCard extends StatelessWidget {
 }
 
 class _NodeItemTile extends StatelessWidget {
-  const _NodeItemTile({
-    required this.node,
-    required this.isDark,
-  });
+  const _NodeItemTile({required this.node, required this.isDark});
 
   final NodeTsimcamSnapshot node;
   final bool isDark;
@@ -154,13 +151,18 @@ class _NodeItemTile extends StatelessWidget {
                   children: [
                     Text(
                       node.nodeId,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
                     ),
                     Text(
                       '${node.deviceId} • MAC: ${node.bleMac}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? AppPalette.slate400 : AppPalette.slate500,
+                        color: isDark
+                            ? AppPalette.slate400
+                            : AppPalette.slate500,
                       ),
                     ),
                   ],
@@ -172,7 +174,11 @@ class _NodeItemTile extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.wifi_tethering_rounded, size: 14, color: signalColor),
+                      Icon(
+                        Icons.wifi_tethering_rounded,
+                        size: 14,
+                        color: signalColor,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${node.rssi} dBm',
@@ -192,7 +198,9 @@ class _NodeItemTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2),
                       child: LinearProgressIndicator(
                         value: signalPct,
-                        backgroundColor: isDark ? AppPalette.slate700 : AppPalette.slate200,
+                        backgroundColor: isDark
+                            ? AppPalette.slate700
+                            : AppPalette.slate200,
                         valueColor: AlwaysStoppedAnimation<Color>(signalColor),
                       ),
                     ),
@@ -223,20 +231,27 @@ class _NodeItemTile extends StatelessWidget {
                       Icon(
                         Icons.battery_std_rounded,
                         size: 13,
-                        color: isDark ? AppPalette.slate400 : AppPalette.slate600,
+                        color: isDark
+                            ? AppPalette.slate400
+                            : AppPalette.slate600,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         '${node.batteryPercent}% (${node.batteryVoltageV?.toStringAsFixed(2) ?? ''}V)',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? AppPalette.slate400 : AppPalette.slate600,
+                          color: isDark
+                              ? AppPalette.slate400
+                              : AppPalette.slate600,
                         ),
                       ),
                     ],
                   ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: node.streamEnabled
                         ? AppPalette.success.withValues(alpha: 0.15)
@@ -248,7 +263,9 @@ class _NodeItemTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
-                      color: node.streamEnabled ? AppPalette.successBright : AppPalette.slate400,
+                      color: node.streamEnabled
+                          ? AppPalette.successBright
+                          : AppPalette.slate400,
                     ),
                   ),
                 ),

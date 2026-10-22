@@ -250,8 +250,8 @@ class GatewayRuntimeSnapshot {
     GatewayStatus? status,
     Object? pairedM5Device = _snapshotUnset,
     Object? pairedPolarDevice = _snapshotUnset,
-    M5TelemetrySample? latestM5Sample,
-    PolarTelemetrySample? latestPolarSample,
+    Object? latestM5Sample = _snapshotUnset,
+    Object? latestPolarSample = _snapshotUnset,
     RoomPredictionEvent? latestRoomPrediction,
     List<GatewayAlertEvent>? alerts,
     List<M5TelemetrySample>? m5History,
@@ -270,8 +270,12 @@ class GatewayRuntimeSnapshot {
       pairedPolarDevice: identical(pairedPolarDevice, _snapshotUnset)
           ? this.pairedPolarDevice
           : pairedPolarDevice as BleDeviceSnapshot?,
-      latestM5Sample: latestM5Sample ?? this.latestM5Sample,
-      latestPolarSample: latestPolarSample ?? this.latestPolarSample,
+      latestM5Sample: identical(latestM5Sample, _snapshotUnset)
+          ? this.latestM5Sample
+          : latestM5Sample as M5TelemetrySample?,
+      latestPolarSample: identical(latestPolarSample, _snapshotUnset)
+          ? this.latestPolarSample
+          : latestPolarSample as PolarTelemetrySample?,
       latestRoomPrediction: latestRoomPrediction ?? this.latestRoomPrediction,
       alerts: alerts ?? this.alerts,
       m5History: m5History ?? this.m5History,

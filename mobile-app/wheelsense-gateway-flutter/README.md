@@ -1,6 +1,6 @@
-# WheelSense Gateway Flutter
+# WheelSense
 
-Flutter mobile gateway for WheelSense v2.
+Flutter mobile app for live wheelchair sensing, health insights, devices and the existing WheelSense Care Portal.
 
 ## What It Does
 

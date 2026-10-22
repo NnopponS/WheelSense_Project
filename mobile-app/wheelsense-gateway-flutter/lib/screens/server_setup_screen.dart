@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../models/gateway_ui_models.dart' show ClinicalSeverity;
 
-import '../models/gateway_ui_models.dart';
 import '../services/gateway_services.dart';
 import '../widgets/clinical_components.dart';
 
@@ -22,7 +22,6 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   StreamSubscription<GatewayConfig>? _configSubscription;
 
   GatewayConfig _config = GatewayConfig.defaults();
-  GatewayStatus _status = GatewayStatus.initial();
   bool _loaded = false;
   bool _saving = false;
   String? _formError;
@@ -56,7 +55,6 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
       children: [
         SectionPanel(
           title: strings.settingsLanguageTitle,
-          subtitle: strings.settingsLanguageSubtitle,
           child: SegmentedButton<GatewayLanguage>(
             segments: [
               for (final language in GatewayLanguage.values)
@@ -75,44 +73,8 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        ResponsiveGrid(
-          children: [
-            MetricTile(
-              metric: MetricSnapshot(
-                label: strings.settingsPortalEndpoint,
-                value: _hostLabel(_config.portalBaseUrl),
-                detail: _config.portalBaseUrl,
-                icon: Icons.cloud_done_outlined,
-              ),
-            ),
-            MetricTile(
-              metric: MetricSnapshot(
-                label: strings.settingsMqttBroker,
-                value: _status.mqttReady
-                    ? strings.connected
-                    : strings.notConnected,
-                detail: '${_config.mqttHost}:${_config.mqttPort}',
-                icon: Icons.hub_outlined,
-                severity: _status.mqttReady
-                    ? ClinicalSeverity.normal
-                    : ClinicalSeverity.warning,
-              ),
-            ),
-            MetricTile(
-              metric: MetricSnapshot(
-                label: strings.settingsGatewayMode,
-                value: strings.production,
-                detail: strings.settingsGatewayModeDetail,
-                icon: Icons.security_outlined,
-                severity: ClinicalSeverity.info,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
         SectionPanel(
           title: strings.settingsServerTitle,
-          subtitle: strings.settingsServerSubtitle,
           child: Column(
             children: [
               TextField(
@@ -226,65 +188,68 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   Future<void> _load() async {
     final runtime = GatewayServicesScope.of(context);
     _configSubscription ??= runtime.configUpdates.listen(_applyRuntimeConfig);
-    final config = await runtime.loadConfig();
-    if (!mounted) {
-      return;
+    try {
+      final config = await runtime.loadConfig();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _config = config;
+        _portalController.text = config.portalBaseUrl;
+        _mqttController.text =
+            '${config.mqttUseTls ? 'mqtts' : 'mqtt'}://${config.mqttHost}:${config.mqttPort}';
+        _gatewayController.text = config.deviceId;
+        _userController.text = config.mqttUsername;
+        _passwordController.text = config.mqttPassword;
+      });
+    } on Object {
+      if (mounted) {
+        setState(
+          () => _formError = context.text.pick(
+            'Unable to read saved credentials. Unlock your device and retry.',
+            'อ่านข้อมูลเข้าสู่ระบบไม่ได้ ปลดล็อกอุปกรณ์แล้วลองอีกครั้ง',
+          ),
+        );
+      }
     }
-    setState(() {
-      _config = config;
-      _status = runtime.status;
-      _portalController.text = config.portalBaseUrl;
-      _mqttController.text =
-          '${config.mqttUseTls ? 'mqtts' : 'mqtt'}://${config.mqttHost}:${config.mqttPort}';
-      _gatewayController.text = config.deviceId;
-      _userController.text = config.mqttUsername;
-      _passwordController.text = config.mqttPassword;
-    });
   }
 
-  Future<void> _save() async {
+  Future<void> _save({bool testConnection = false}) async {
     final next = _validatedConfigFromInputs();
     if (next == null) {
       return;
     }
     setState(() => _saving = true);
     final runtime = GatewayServicesScope.of(context);
-    await runtime.saveConfig(next);
-    final status = await runtime.connectMqttConfigStream(config: next);
-    final saved = await runtime.loadConfig();
-    if (!mounted) {
-      return;
+    try {
+      await runtime.saveConfig(next);
+      final status = testConnection
+          ? await runtime.bootstrap(config: next)
+          : await runtime.connectMqttConfigStream(config: next);
+      final saved = await runtime.loadConfig();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _config = saved;
+        _saving = false;
+        _formError = null;
+      });
+      _show(status.message);
+    } on Object {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _formError = context.text.pick(
+            'Unable to save or connect. Check device storage and server settings.',
+            'บันทึกหรือเชื่อมต่อไม่ได้ ตรวจสอบพื้นที่จัดเก็บและการตั้งค่าเซิร์ฟเวอร์',
+          );
+        });
+      }
     }
-    setState(() {
-      _config = saved;
-      _status = status;
-      _saving = false;
-      _formError = null;
-    });
-    _show(status.message);
   }
 
-  Future<void> _testConnection() async {
-    final next = _validatedConfigFromInputs();
-    if (next == null) {
-      return;
-    }
-    setState(() => _saving = true);
-    final runtime = GatewayServicesScope.of(context);
-    await runtime.saveConfig(next);
-    final status = await runtime.bootstrap(config: next);
-    final saved = await runtime.loadConfig();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _config = saved;
-      _status = status;
-      _saving = false;
-      _formError = null;
-    });
-    _show(status.message);
-  }
+  Future<void> _testConnection() => _save(testConnection: true);
 
   GatewayConfig? _validatedConfigFromInputs() {
     final result = buildGatewayConfigFromSetupForm(
@@ -327,7 +292,9 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   }
 
   Future<void> _reset() async {
-    final defaults = GatewayConfig.defaults();
+    final defaults = GatewayConfig.defaults().copyWith(
+      deviceId: _config.deviceId,
+    );
     final runtime = GatewayServicesScope.of(context);
     await runtime.saveConfig(defaults);
     if (!mounted) {
@@ -343,11 +310,6 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
       _passwordController.text = defaults.mqttPassword;
       _formError = null;
     });
-  }
-
-  String _hostLabel(String url) {
-    final uri = Uri.tryParse(url);
-    return uri?.host.isNotEmpty == true ? uri!.host : url;
   }
 
   void _applyRuntimeConfig(GatewayConfig config) {
