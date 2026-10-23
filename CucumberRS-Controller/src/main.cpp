@@ -159,7 +159,8 @@ bool mqttDisplayConnected = false;
 // Forward declarations
 void sendStatus();
 void sendRoomStatus(int roomIndex);
-void resolveServerIPs();
+bool checkMQTTServer(IPAddress ip, int port = MQTT_PORT, int timeoutMs = 150);
+bool resolveServerIPs();
 void reconnectMQTT();
 void requestInitialState();  // Request current state from backend (Dashboard is master)
  void setAppliance(int roomIndex, const char* appliance, bool state);
@@ -671,57 +672,151 @@ void requestInitialState();  // Request current state from backend (Dashboard is
     }
  }
   
- // ===== Resolve Server IPs (Auto-Discovery) =====
- void resolveServerIPs() {
-     if (USE_STATIC_IP) {
-        //  mqttServerIP = String(STATIC_MQTT_SERVER);
-         Serial.printf("[Network] Configured for static IP, but using Auto-Discovery override\n");
-     } 
-     
-     // UDP Auto-Discovery
-     Serial.println("[Discovery] Broadcasting to find server...");
-     pushDisplayLog("Finding Server...");
-     
-     // Send broadcast
-     udp.beginPacket(IPAddress(255, 255, 255, 255), UDP_DISCOVERY_PORT);
-     udp.print("WHEELSENSE_DISCOVER");
-     udp.endPacket();
-     
-     // Wait for response (up to 3 seconds)
-     unsigned long startWait = millis();
-     while (millis() - startWait < 3000) {
-         int packetSize = udp.parsePacket();
-         if (packetSize > 0) {
-             char buffer[256];
-             int len = udp.read(buffer, 255);
-             if (len > 0) {
-                 buffer[len] = 0;
-                 
-                 StaticJsonDocument<256> doc;
-                 DeserializationError error = deserializeJson(doc, buffer);
-                 if (!error && doc["type"] == "WHEELSENSE_SERVER") {
-                     String serverIP = doc["ip"].as<String>();
-                     mqttServerIP = serverIP;
-                     Serial.printf("[Discovery] Found server at: %s\n", mqttServerIP.c_str());
-                     pushDisplayLog("Found: " + mqttServerIP);
-                     return;
-                 }
-             }
-         }
-         delay(100);
-     }
-     
-     Serial.println("[Discovery] No server found via UDP");
-     pushDisplayLog("Server not found");
-     
-     // Fallback to configured static or gateway if auto-discovery fails
-     if (mqttServerIP.length() == 0) {
-          IPAddress gateway = WiFi.gatewayIP();
-          mqttServerIP = gateway.toString();
-          Serial.printf("[Network] Fallback to Gateway IP - MQTT: %s\n", mqttServerIP.c_str());
-          pushDisplayLog("Use Gateway IP");
-     }
- }
+// ===== Check MQTT Server Port Helper =====
+bool checkMQTTServer(IPAddress ip, int port, int timeoutMs) {
+    if (ip == IPAddress(0, 0, 0, 0) || ip == IPAddress(255, 255, 255, 255)) return false;
+    WiFiClient testClient;
+    testClient.setTimeout(timeoutMs);
+    bool connected = testClient.connect(ip, port, timeoutMs);
+    if (connected) {
+        testClient.stop();
+        return true;
+    }
+    return false;
+}
+
+// ===== Smart Server Discovery =====
+bool resolveServerIPs() {
+    Serial.println("\n[Discovery] Starting automatic MQTT server discovery...");
+    pushDisplayLog("Finding Server...");
+
+    // 1. Check Default Gateway (e.g. Windows Mobile Hotspot 192.168.137.1)
+    IPAddress gw = WiFi.gatewayIP();
+    if (gw != IPAddress(0, 0, 0, 0) && gw != IPAddress(255, 255, 255, 255)) {
+        Serial.printf("[Discovery] Probing gateway: %s:%d\n", gw.toString().c_str(), MQTT_PORT);
+        if (checkMQTTServer(gw, MQTT_PORT, 200)) {
+            mqttServerIP = gw.toString();
+            Serial.printf("[Discovery] Found MQTT broker on gateway: %s\n", mqttServerIP.c_str());
+            pushDisplayLog("Found: " + mqttServerIP);
+            markDisplayDirty();
+            return true;
+        }
+    }
+
+    // 2. UDP Auto-Discovery (Global Broadcast + Directed Subnet Broadcast)
+    IPAddress localIP = WiFi.localIP();
+    IPAddress netmask = WiFi.subnetMask();
+    IPAddress subnetBroadcast = IPAddress((uint32_t)localIP | ~(uint32_t)netmask);
+
+    Serial.printf("[Discovery] Sending UDP broadcast to 255.255.255.255 and %s...\n", subnetBroadcast.toString().c_str());
+
+    udp.beginPacket(IPAddress(255, 255, 255, 255), UDP_DISCOVERY_PORT);
+    udp.print("WHEELSENSE_DISCOVER");
+    udp.endPacket();
+
+    udp.beginPacket(subnetBroadcast, UDP_DISCOVERY_PORT);
+    udp.print("WHEELSENSE_DISCOVER");
+    udp.endPacket();
+
+    unsigned long startWait = millis();
+    while (millis() - startWait < 1500) {
+        int packetSize = udp.parsePacket();
+        if (packetSize > 0) {
+            char buffer[256];
+            int len = udp.read(buffer, 255);
+            if (len > 0) {
+                buffer[len] = 0;
+                StaticJsonDocument<256> doc;
+                if (deserializeJson(doc, buffer) == DeserializationError::Ok) {
+                    if (doc["type"] == "WHEELSENSE_SERVER") {
+                        String sIp = doc["ip"].as<String>();
+                        IPAddress testIP;
+                        if (!sIp.isEmpty() && !sIp.startsWith("192.168.65.") && !sIp.startsWith("172.28.") && !sIp.startsWith("127.") && testIP.fromString(sIp)) {
+                            if (checkMQTTServer(testIP, MQTT_PORT, 250)) {
+                                mqttServerIP = sIp;
+                                Serial.printf("[Discovery] Found verified MQTT server via UDP: %s\n", mqttServerIP.c_str());
+                                pushDisplayLog("Found: " + mqttServerIP);
+                                markDisplayDirty();
+                                return true;
+                            }
+                        }
+                        // Probe UDP sender IP directly
+                        IPAddress senderIP = udp.remoteIP();
+                        if (checkMQTTServer(senderIP, MQTT_PORT, 200)) {
+                            mqttServerIP = senderIP.toString();
+                            Serial.printf("[Discovery] Found MQTT server via UDP sender: %s\n", mqttServerIP.c_str());
+                            pushDisplayLog("Found: " + mqttServerIP);
+                            markDisplayDirty();
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        delay(40);
+    }
+
+    // 3. Fast Subnet Scan for Port 1883 (Essential for iPhone/Android hotspots)
+    Serial.println("[Discovery] Fast scanning subnet for MQTT port 1883...");
+    uint8_t ip0 = localIP[0];
+    uint8_t ip1 = localIP[1];
+    uint8_t ip2 = localIP[2];
+    uint8_t myHost = localIP[3];
+
+    // A. Scan close neighbors (+- 8 from Cucumber IP)
+    for (int delta = 1; delta <= 8; delta++) {
+        if (myHost - delta > 1) {
+            IPAddress target(ip0, ip1, ip2, myHost - delta);
+            if (checkMQTTServer(target, MQTT_PORT, 40)) {
+                mqttServerIP = target.toString();
+                Serial.printf("[Discovery] Subnet scan found MQTT broker: %s\n", mqttServerIP.c_str());
+                pushDisplayLog("Found: " + mqttServerIP);
+                markDisplayDirty();
+                return true;
+            }
+        }
+        if (myHost + delta < 255) {
+            IPAddress target(ip0, ip1, ip2, myHost + delta);
+            if (checkMQTTServer(target, MQTT_PORT, 40)) {
+                mqttServerIP = target.toString();
+                Serial.printf("[Discovery] Subnet scan found MQTT broker: %s\n", mqttServerIP.c_str());
+                pushDisplayLog("Found: " + mqttServerIP);
+                markDisplayDirty();
+                return true;
+            }
+        }
+    }
+
+    // B. Scan common DHCP ranges (.2 to .25, .100 to .115)
+    for (uint8_t h = 2; h <= 25; h++) {
+        if (h == myHost || h == gw[3]) continue;
+        IPAddress target(ip0, ip1, ip2, h);
+        if (checkMQTTServer(target, MQTT_PORT, 35)) {
+            mqttServerIP = target.toString();
+            Serial.printf("[Discovery] Subnet scan found MQTT broker: %s\n", mqttServerIP.c_str());
+            pushDisplayLog("Found: " + mqttServerIP);
+            markDisplayDirty();
+            return true;
+        }
+    }
+
+    for (uint8_t h = 100; h <= 115; h++) {
+        if (h == myHost || h == gw[3]) continue;
+        IPAddress target(ip0, ip1, ip2, h);
+        if (checkMQTTServer(target, MQTT_PORT, 35)) {
+            mqttServerIP = target.toString();
+            Serial.printf("[Discovery] Subnet scan found MQTT broker: %s\n", mqttServerIP.c_str());
+            pushDisplayLog("Found: " + mqttServerIP);
+            markDisplayDirty();
+            return true;
+        }
+    }
+
+    Serial.println("[Discovery] ❌ Server discovery failed");
+    pushDisplayLog("Server not found");
+    markDisplayDirty();
+    return false;
+}
   
  // ===== MQTT IP Registration =====
  void registerIPViaMQTT() {
@@ -775,50 +870,66 @@ void requestInitialState() {
     }
 }
   
- // ===== Reconnect MQTT =====
- void reconnectMQTT() {
-     if (mqtt.connected()) {
-         if (!mqttRegistered) {
-             registerIPViaMQTT();
-         }
-         return;
-     }
-    
-     if (mqttServerIP.length() == 0) {
-         resolveServerIPs();
-     }
-    
-     char id[32];
-     snprintf(id, sizeof(id), "%s_%04lX", DEVICE_ID, (unsigned long)random(0x10000));
-    
-     if (mqtt.connect(id)) {
-         Serial.printf("[MQTT] Connected to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);
-         if (!mqttDisplayConnected) {
-             pushDisplayLog("MQTT online");
-             mqttDisplayConnected = true;
-         }
+// ===== Reconnect MQTT =====
+void reconnectMQTT() {
+    if (mqtt.connected()) {
+        if (!mqttRegistered) {
+            registerIPViaMQTT();
+        }
+        return;
+    }
+
+    static unsigned long lastDiscoveryAttempt = 0;
+    static int failedAttempts = 0;
+
+    if (mqttServerIP.length() == 0 || failedAttempts >= 3) {
+        if (millis() - lastDiscoveryAttempt > 8000 || mqttServerIP.length() == 0) {
+            lastDiscoveryAttempt = millis();
+            failedAttempts = 0;
+            mqttServerIP = "";
+            resolveServerIPs();
+        }
+    }
+
+    if (mqttServerIP.length() == 0) {
+        return;
+    }
+
+    mqtt.setServer(mqttServerIP.c_str(), MQTT_PORT);
+
+    char id[32];
+    snprintf(id, sizeof(id), "%s_%04lX", DEVICE_ID, (unsigned long)random(0x10000));
+
+    if (mqtt.connect(id)) {
+        failedAttempts = 0;
+        Serial.printf("[MQTT] Connected to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);
+        if (!mqttDisplayConnected) {
+            pushDisplayLog("MQTT online");
+            mqttDisplayConnected = true;
+        }
         
-         // Subscribe to wildcard control topic for ALL rooms
-         mqtt.subscribe(MQTT_TOPIC_CONTROL_WILDCARD);
-         Serial.printf("[MQTT] Subscribed to: %s (all rooms)\n", MQTT_TOPIC_CONTROL_WILDCARD);
-         
-         // Subscribe to state sync topic to receive current state from backend
-         mqtt.subscribe(MQTT_TOPIC_STATE_SYNC_WILDCARD);
-         Serial.printf("[MQTT] Subscribed to: %s (state sync from backend)\n", MQTT_TOPIC_STATE_SYNC_WILDCARD);
+        // Subscribe to wildcard control topic for ALL rooms
+        mqtt.subscribe(MQTT_TOPIC_CONTROL_WILDCARD);
+        Serial.printf("[MQTT] Subscribed to: %s (all rooms)\n", MQTT_TOPIC_CONTROL_WILDCARD);
         
-         // Register IP
-         registerIPViaMQTT();
-         
-         // Request current state from backend (Dashboard is master source of truth)
-         requestInitialState();
-     } else {
-         Serial.printf("[MQTT] Failed to connect to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);
-         if (mqttDisplayConnected) {
-             pushDisplayLog("MQTT offline");
-             mqttDisplayConnected = false;
-         }
-     }
- }
+        // Subscribe to state sync topic to receive current state from backend
+        mqtt.subscribe(MQTT_TOPIC_STATE_SYNC_WILDCARD);
+        Serial.printf("[MQTT] Subscribed to: %s (state sync from backend)\n", MQTT_TOPIC_STATE_SYNC_WILDCARD);
+        
+        // Register IP
+        registerIPViaMQTT();
+        
+        // Request current state from backend (Dashboard is master source of truth)
+        requestInitialState();
+    } else {
+        failedAttempts++;
+        Serial.printf("[MQTT] Failed to connect to %s:%d (attempt %d/3)\n", mqttServerIP.c_str(), MQTT_PORT, failedAttempts);
+        if (mqttDisplayConnected) {
+            pushDisplayLog("MQTT offline");
+            mqttDisplayConnected = false;
+        }
+    }
+}
   
  // ===== Send Status for a single room =====
  void sendRoomStatus(int roomIndex) {
@@ -903,7 +1014,32 @@ void requestInitialState() {
     }
 }
   
- // ===== Setup =====
+ // ===== WiFi Manager Config Mode Callback =====
+void configModeCallback(WiFiManager *myWiFiManager) {
+    Serial.println("\n========================================");
+    Serial.println("  WiFi Configuration Portal Active");
+    Serial.println("========================================");
+    Serial.printf("  SSID: %s\n", myWiFiManager->getConfigPortalSSID().c_str());
+    Serial.printf("  Pass: %s\n", WIFI_AP_PASSWORD);
+    Serial.printf("  IP:   %s\n", WiFi.softAPIP().toString().c_str());
+    Serial.println("========================================\n");
+
+    if (statusDisplayReady) {
+        statusDisplay.clearDisplay();
+        statusDisplay.setTextColor(SSD1306_WHITE);
+        statusDisplay.setTextSize(1);
+        statusDisplay.setCursor(0, 0);
+        statusDisplay.println("WiFi Setup Mode");
+        statusDisplay.println("---------------------");
+        statusDisplay.printf("AP: %s\n", myWiFiManager->getConfigPortalSSID().c_str());
+        statusDisplay.printf("PW: %s\n", WIFI_AP_PASSWORD);
+        statusDisplay.printf("IP: %s\n", WiFi.softAPIP().toString().c_str());
+        statusDisplay.println("Connect to config WiFi");
+        statusDisplay.display();
+    }
+}
+
+// ===== Setup =====
  void setup() {
      // Initialize serial communication
      Serial.begin(115200);
@@ -930,6 +1066,7 @@ void requestInitialState() {
      pushDisplayLog("WiFi Setup...");
      
      // Set WiFi Manager callbacks
+     wifiManager.setAPCallback(configModeCallback);
      wifiManager.setConfigPortalBlocking(true);
      wifiManager.setConfigPortalTimeout(180);  // 3 minutes timeout
      

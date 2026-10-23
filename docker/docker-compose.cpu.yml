@@ -8,3 +8,10 @@ services:
     deploy: {}  # Remove GPU reservation
     environment:
       - OLLAMA_NUM_GPU=0
+
+  # Override Camera Service to remove GPU requirements
+  camera-service:
+    deploy: {}  # Remove GPU reservation
+    environment:
+      - CUDA_VISIBLE_DEVICES=
+      - NVIDIA_VISIBLE_DEVICES=

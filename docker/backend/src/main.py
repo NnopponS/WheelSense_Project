@@ -357,10 +357,9 @@ async def lifespan(app: FastAPI):
             logger.info(f"Using HOST_IP from environment: {env_ip}")
             return env_ip
         
-        # Priority 2: Try to resolve host gateway (Docker host IP)
+        # Priority 2: Try to resolve host gateway (skip Docker internal 172.x / 127.x)
         try:
             import subprocess
-            # Get default gateway IP (which is the host machine in Docker bridge network)
             result = subprocess.run(
                 ["ip", "route", "show", "default"],
                 capture_output=True,
@@ -368,14 +367,28 @@ async def lifespan(app: FastAPI):
                 timeout=2
             )
             if result.returncode == 0:
-                # Parse "default via 172.28.0.1 dev eth0"
                 parts = result.stdout.split()
                 if len(parts) >= 3 and parts[0] == "default" and parts[1] == "via":
                     gateway_ip = parts[2]
-                    logger.info(f"Detected Docker host gateway: {gateway_ip}")
-                    return gateway_ip
+                    if not gateway_ip.startswith("172.") and not gateway_ip.startswith("127."):
+                        logger.info(f"Detected host gateway: {gateway_ip}")
+                        return gateway_ip
+                    else:
+                        logger.debug(f"Docker bridge gateway ignored: {gateway_ip}")
         except Exception as e:
-            logger.debug(f"Failed to get Docker gateway: {e}")
+            logger.debug(f"Failed to get gateway: {e}")
+        
+        # Priority 2b: Try resolving host.docker.internal if mapped to external IP (ignore Docker VM 192.168.65.x)
+        try:
+            resolved_host = socket.gethostbyname("host.docker.internal")
+            if (resolved_host 
+                and not resolved_host.startswith("127.") 
+                and not resolved_host.startswith("172.") 
+                and not resolved_host.startswith("192.168.65.")):
+                logger.info(f"Resolved host.docker.internal: {resolved_host}")
+                return resolved_host
+        except Exception:
+            pass
         
         # Priority 3: Auto-detection (may return Docker bridge IP)
         try:

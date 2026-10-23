@@ -211,8 +211,7 @@ void loadConfig();
 void saveConfig();
 void startConfigPortal();
 void stopConfigPortal();
-void startConfigPortal();
-void stopConfigPortal();
+bool checkWebSocketServer(IPAddress ip, int port = WEBSOCKET_PORT, int timeoutMs = 150);
 bool discoverServer();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 void handlePreviewFrame();
@@ -394,8 +393,12 @@ String getConfigPageHTML() {
         <label>Video Orientation</label>
         <select name="orientation">)rawliteral" + orientationOptions + R"rawliteral(</select>
         
-        <label>🖥️ Server IP (leave empty for auto-discovery)</label>
-        <input type="text" name="serverIP" value=")rawliteral" + serverIP + R"rawliteral(" placeholder="Auto-discover on LAN">
+        <label>🖥️ Host PC / Server IP (Optional)</label>
+        <input type="text" name="serverIP" value=")rawliteral" + serverIP + R"rawliteral(" placeholder="Leave empty for auto-discovery">
+        <div style="font-size:12px;color:#666;margin-top:4px;line-height:1.4;">
+          ✨ <b>ปล่อยว่างไว้ได้เลย! ระบบจะค้นหาคอมพิวเตอร์อัตโนมัติ</b><br>
+          (Leave empty to automatically discover your PC on the WiFi hotspot)
+        </div>
       </div>
       
       <button type="submit" class="btn btn-primary">💾 Save & Connect</button>
@@ -414,8 +417,11 @@ String getConfigPageHTML() {
       <p style="margin-top:8px;font-size:12px;color:#666;text-align:center;">Current: <span id="rotLabel">)rawliteral" + String(ORIENTATION_LABELS[orientationMode]) + R"rawliteral(</span></p>
     </div>
 
-    <div class="info">
-      <b>Tip:</b> Leave Server IP empty to auto-discover the WheelSense server on your network.
+    <div class="info" style="line-height:1.5;">
+      <b>📌 TSIM Network Information:</b><br>
+      • Setup Portal IP: <b>192.168.4.1</b><br>
+      • Once connected, TSIM will auto-connect to WheelSense.<br>
+      • View camera status at: <b>http://wheelsense-camera.local</b>
     </div>
   </div>
   <script>
@@ -664,54 +670,158 @@ void stopConfigPortal() {
   Serial.println("[Config] Portal stopped");
 }
 
-/* ===== UDP Server Discovery ===== */
-bool discoverServer() {
-  if (!serverIP.isEmpty()) {
-    discoveredServerIP = serverIP;
-    serverDiscovered = true;
-    Serial.printf("[Discovery] Using configured server: %s\n", serverIP.c_str());
+/* ===== TCP Probe Helper ===== */
+bool checkWebSocketServer(IPAddress ip, int port, int timeoutMs) {
+  if (ip == IPAddress(0, 0, 0, 0) || ip == IPAddress(255, 255, 255, 255)) return false;
+  WiFiClient client;
+  client.setTimeout(timeoutMs);
+  bool connected = client.connect(ip, port, timeoutMs);
+  if (connected) {
+    client.stop();
     return true;
   }
-  
-  Serial.println("[Discovery] Broadcasting to find server...");
-  
-  // Send broadcast
+  return false;
+}
+
+/* ===== Smart Server Discovery ===== */
+bool discoverServer() {
+  Serial.println("\n[Discovery] Starting automatic server discovery...");
+
+  // 1. If configured server IP is provided, test it first
+  if (!serverIP.isEmpty()) {
+    IPAddress testIP;
+    if (testIP.fromString(serverIP)) {
+      Serial.printf("[Discovery] Checking configured server: %s\n", serverIP.c_str());
+      if (checkWebSocketServer(testIP, WEBSOCKET_PORT, 250)) {
+        discoveredServerIP = serverIP;
+        serverDiscovered = true;
+        Serial.printf("[Discovery] Configured server is active: %s\n", serverIP.c_str());
+        return true;
+      } else {
+        Serial.printf("[Discovery] Configured server %s not reachable, auto-discovering...\n", serverIP.c_str());
+      }
+    }
+  }
+
+  // 2. Check Default Gateway (e.g. Windows Mobile Hotspot 192.168.137.1)
+  IPAddress gw = WiFi.gatewayIP();
+  if (gw != IPAddress(0, 0, 0, 0) && gw != IPAddress(255, 255, 255, 255)) {
+    Serial.printf("[Discovery] Probing gateway: %s:%d\n", gw.toString().c_str(), WEBSOCKET_PORT);
+    if (checkWebSocketServer(gw, WEBSOCKET_PORT, 200)) {
+      discoveredServerIP = gw.toString();
+      serverDiscovered = true;
+      Serial.printf("[Discovery] Found server on gateway: %s\n", discoveredServerIP.c_str());
+      return true;
+    }
+  }
+
+  // 3. UDP Broadcast (Directed Subnet Broadcast + Global Broadcast)
+  IPAddress localIP = WiFi.localIP();
+  IPAddress netmask = WiFi.subnetMask();
+  IPAddress subnetBroadcast = IPAddress((uint32_t)localIP | ~(uint32_t)netmask);
+
+  Serial.printf("[Discovery] Sending UDP broadcast to 255.255.255.255 and %s...\n", subnetBroadcast.toString().c_str());
+
   udp.beginPacket(IPAddress(255, 255, 255, 255), UDP_DISCOVERY_PORT);
   udp.print("WHEELSENSE_DISCOVER");
   udp.endPacket();
-  
-  // Wait for response
+
+  udp.beginPacket(subnetBroadcast, UDP_DISCOVERY_PORT);
+  udp.print("WHEELSENSE_DISCOVER");
+  udp.endPacket();
+
   unsigned long startWait = millis();
-  while (millis() - startWait < 3000) {
+  while (millis() - startWait < 1200) {
     int packetSize = udp.parsePacket();
     if (packetSize > 0) {
       char buffer[256];
       int len = udp.read(buffer, 255);
       buffer[len] = 0;
-      
+
       StaticJsonDocument<256> doc;
       if (deserializeJson(doc, buffer) == DeserializationError::Ok) {
         if (doc["type"] == "WHEELSENSE_SERVER") {
-          discoveredServerIP = doc["ip"].as<String>();
-          serverDiscovered = true;
-          Serial.printf("[Discovery] Found server at: %s\n", discoveredServerIP.c_str());
-          return true;
+          String sIp = doc["ip"].as<String>();
+          // Test if reported IP actually has WebSocket server running on port 8765
+          IPAddress testIP;
+          if (!sIp.isEmpty() && !sIp.startsWith("192.168.65.") && !sIp.startsWith("172.28.") && !sIp.startsWith("127.") && testIP.fromString(sIp)) {
+            if (checkWebSocketServer(testIP, WEBSOCKET_PORT, 250)) {
+              discoveredServerIP = sIp;
+              serverDiscovered = true;
+              Serial.printf("[Discovery] Found verified server via UDP: %s\n", discoveredServerIP.c_str());
+              return true;
+            }
+          }
+          // Server reported internal or unreachable IP, probe the UDP packet sender IP directly
+          IPAddress senderIP = udp.remoteIP();
+          if (checkWebSocketServer(senderIP, WEBSOCKET_PORT, 200)) {
+            discoveredServerIP = senderIP.toString();
+            serverDiscovered = true;
+            Serial.printf("[Discovery] Found server via UDP sender: %s\n", discoveredServerIP.c_str());
+            return true;
+          }
         }
       }
     }
-    delay(100);
+    delay(50);
   }
-  
-  Serial.println("[Discovery] No server found via UDP");
-  
-  // FALLBACK 1: Try Hardcoded Host IP (User's PC)
-  // No fallback IP - rely on discovery or config
+
+  // 4. Fast Subnet Scan for Port 8765
+  // Perfect for phone hotspots (where UDP broadcast between clients is blocked)
+  Serial.println("[Discovery] Fast scanning subnet for port 8765...");
+  uint8_t ip0 = localIP[0];
+  uint8_t ip1 = localIP[1];
+  uint8_t ip2 = localIP[2];
+  uint8_t myHost = localIP[3];
+
+  // A. Scan close neighbors (+- 8 from TSIM IP)
+  for (int delta = 1; delta <= 8; delta++) {
+    if (myHost - delta > 1) {
+      IPAddress target(ip0, ip1, ip2, myHost - delta);
+      if (checkWebSocketServer(target, WEBSOCKET_PORT, 40)) {
+        discoveredServerIP = target.toString();
+        serverDiscovered = true;
+        Serial.printf("[Discovery] Subnet scan found server: %s\n", discoveredServerIP.c_str());
+        return true;
+      }
+    }
+    if (myHost + delta < 255) {
+      IPAddress target(ip0, ip1, ip2, myHost + delta);
+      if (checkWebSocketServer(target, WEBSOCKET_PORT, 40)) {
+        discoveredServerIP = target.toString();
+        serverDiscovered = true;
+        Serial.printf("[Discovery] Subnet scan found server: %s\n", discoveredServerIP.c_str());
+        return true;
+      }
+    }
+  }
+
+  // B. Scan common DHCP ranges (.2 to .25, .100 to .115)
+  for (uint8_t h = 2; h <= 25; h++) {
+    if (h == myHost || h == gw[3]) continue;
+    IPAddress target(ip0, ip1, ip2, h);
+    if (checkWebSocketServer(target, WEBSOCKET_PORT, 35)) {
+      discoveredServerIP = target.toString();
+      serverDiscovered = true;
+      Serial.printf("[Discovery] Subnet scan found server: %s\n", discoveredServerIP.c_str());
+      return true;
+    }
+  }
+
+  for (uint8_t h = 100; h <= 115; h++) {
+    if (h == myHost || h == gw[3]) continue;
+    IPAddress target(ip0, ip1, ip2, h);
+    if (checkWebSocketServer(target, WEBSOCKET_PORT, 35)) {
+      discoveredServerIP = target.toString();
+      serverDiscovered = true;
+      Serial.printf("[Discovery] Subnet scan found server: %s\n", discoveredServerIP.c_str());
+      return true;
+    }
+  }
+
+  Serial.println("[Discovery] No server found on network");
   serverDiscovered = false;
   return false;
-
-  // FALLBACK 2: Gateway (Commented out for now as it's wrong in this setup)
-  // discoveredServerIP = WiFi.gatewayIP().toString();
-  // return false;
 }
 
 /* ===== Connect to WiFi ===== */
@@ -1044,6 +1154,15 @@ void reconnectWebSocket() {
   if (now - lastReconnectAttempt < 5000) return;
   lastReconnectAttempt = now;
   
+  static int failedWsAttempts = 0;
+  failedWsAttempts++;
+  if (failedWsAttempts >= 4) {
+    Serial.println("[WebSocket] Retrying server discovery after repeated failed connections...");
+    serverDiscovered = false;
+    discoveredServerIP = "";
+    failedWsAttempts = 0;
+  }
+
   // Try discovery if not found
   if (!serverDiscovered || discoveredServerIP.isEmpty()) {
     discoverServer();

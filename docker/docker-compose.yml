@@ -37,14 +37,14 @@ services:
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.12
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
-    # For machines without GPU, use docker-compose.cpu.yml
+    # GPU reservation (uncomment if NVIDIA GPU is available)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [ gpu ]
     healthcheck:
       test: [ "CMD", "ollama", "list" ]
       interval: 30s
@@ -134,13 +134,14 @@ services:
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.22
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+    # GPU reservation (uncomment if NVIDIA GPU is available)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [ gpu ]
 
   # ==================== Dashboard (Frontend) ====================
   dashboard:
