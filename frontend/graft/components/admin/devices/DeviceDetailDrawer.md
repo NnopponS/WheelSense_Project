@@ -1,0 +1,29 @@
+# components/admin/devices/DeviceDetailDrawer.tsx
+
+- HardwareType · type · L72-L72 — type HardwareType = z.infer<typeof hardwareTypeSchema>;
+- TFn · type · L74-L74 — type TFn = (key: TranslationKey) => string;
+- RoomOption · type · L89-L89 — type RoomOption = z.infer<typeof roomOptionSchema>;
+- PatientAssignmentValues · type · L236-L236 — type PatientAssignmentValues = z.infer<typeof patientAssignmentSchema>;
+- CaregiverAssignmentValues · type · L244-L244 — type CaregiverAssignmentValues = z.infer<typeof caregiverAssignmentSchema>;
+- RoomAssignmentValues · type · L252-L252 — type RoomAssignmentValues = z.infer<typeof roomAssignmentSchema>;
+- DeviceDetailDrawerProps · interface · L254-L259 — interface DeviceDetailDrawerProps
+- resolveHardwareType · function · L261-L265 — function resolveHardwareType(raw: string | null | undefined): HardwareType
+- defaultDeviceRole · function · L267-L271 — function defaultDeviceRole(hardwareType: HardwareType): string
+- defaultCaregiverDeviceRole · function · L274-L277 — function defaultCaregiverDeviceRole(hardwareType: HardwareType): string
+- mapApiError · function · L279-L283 — function mapApiError(error: unknown): string
+- nodeBeaconShortLabel · function · L286-L299 — function nodeBeaconShortLabel(detail: { device_id: string; display_name?: string | null; config?: unknown; }): string
+- roomLabel · function · L301-L303 — function roomLabel(room: RoomOption): string
+- facilityKey · function · L305-L307 — function facilityKey(room: RoomOption): string
+- floorKey · function · L309-L311 — function floorKey(room: RoomOption): string
+- roomMatchesBuilding · function · L313-L316 — function roomMatchesBuilding(room: RoomOption, buildingSel: string): boolean
+- roomMatchesFloor · function · L318-L321 — function roomMatchesFloor(room: RoomOption, buildingSel: string, floorSel: string): boolean
+- EventItem · function · L323-L336 — function EventItem({ event }: { event: DeviceActivityEventOut })
+- Metric · function · L338-L345 — function Metric({ label, value }: { label: string; value: string })
+- DeviceHistory · type · L347-L347 — type DeviceHistory = z.infer<typeof deviceHistorySchema>;
+- DeviceHistoryPoint · type · L348-L348 — type DeviceHistoryPoint = z.infer<typeof deviceHistoryPointSchema>;
+- historyRowsForHardware · function · L378-L384 — function historyRowsForHardware(history: DeviceHistory | null | undefined, hardwareType: HardwareType)
+- numericHistoryValue · function · L386-L389 — function numericHistoryValue(value: unknown): number | null
+- formatHistoryValue · function · L391-L401 — function formatHistoryValue(value: unknown): string
+- DeviceHistoryPanel · function · L403-L511 — function DeviceHistoryPanel({ hardwareType, history, loading, }: { hardwareType: HardwareType; history: DeviceHistory | null | undefined; loading: boolean; })
+- DeviceDetailDrawer · function · L513-L1750 — function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: DeviceDetailDrawerProps)
+- refreshAfterMutation · function · L798-L806 — refreshAfterMutation = async ()

@@ -1,0 +1,123 @@
+"use client";
+
+import { useState } from "react";
+import { toast as sonnerToast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+
+export type AlertToastVisualEmphasis = "standard" | "interrupt";
+
+export interface AlertToastCardProps {
+  toastId: string | number;
+  alertId: number;
+  title: string;
+  description?: string;
+  alertType: string;
+  /** Resolved from `GET /patients/{id}` (+ room when `room_id` is set); null when alert has no patient. */
+  patientContext: { nameLine: string; roomLine: string } | null;
+  /** Observer + sound-tier: stronger shadow / border for floor-staff “interrupt” pattern (iter-6 §3.B). */
+  visualEmphasis?: AlertToastVisualEmphasis;
+  /** True when UI may call POST /alerts/{id}/acknowledge; mirrors clinical staff allowed by backend ROLE_ALERT_ACK. */
+  canAcknowledge: boolean;
+  onNavigateInbox: () => void;
+}
+
+export function AlertToastCard({
+  toastId,
+  alertId,
+  title,
+  description,
+  alertType,
+  patientContext,
+  visualEmphasis = "standard",
+  canAcknowledge,
+  onNavigateInbox,
+}: AlertToastCardProps) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  async function acknowledge() {
+    setBusy(true);
+    try {
+      await api.acknowledgeAlert(alertId, { caregiver_id: null });
+      sonnerToast.dismiss(toastId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        queryClient.invalidateQueries({ queryKey: ["head-nurse", "alerts"] }),
+        queryClient.invalidateQueries({ queryKey: ["caregiver", "alerts"] }),
+        queryClient.invalidateQueries({ queryKey: ["head_caregiver", "emergency"] }),
+        queryClient.invalidateQueries({ queryKey: ["caregiver", "dashboard", "alerts"] }),
+        queryClient.invalidateQueries({ queryKey: ["head-nurse", "dashboard", "alerts"] }),
+        queryClient.invalidateQueries({ queryKey: ["head_caregiver", "dashboard", "alerts"] }),
+      ]);
+    } catch {
+      sonnerToast.error(t("notifications.toastAckFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      className={cn(
+        "pointer-events-auto w-[min(100vw-1.5rem,24rem)] rounded-xl border border-border bg-card p-4 text-left shadow-lg",
+        "border-l-[3px] border-l-muted-foreground/35",
+        visualEmphasis === "interrupt" && "ws-alert-toast-interrupt p-3.5",
+      )}
+      role={visualEmphasis === "interrupt" ? "alert" : "status"}
+      aria-live={visualEmphasis === "interrupt" ? "assertive" : "polite"}
+    >
+      <p className="text-sm font-medium text-muted-foreground">
+        {alertType}
+      </p>
+      <p
+        className={cn(
+          "mt-1 font-semibold leading-snug text-foreground",
+          visualEmphasis === "interrupt" ? "text-lg" : "text-base",
+        )}
+      >
+        {title}
+      </p>
+      {description ? (
+        <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
+      ) : null}
+      {patientContext ? (
+        <div className="mt-2 space-y-0.5 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground/90">{patientContext.nameLine}</p>
+          <p>{patientContext.roomLine}</p>
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          className="h-11 text-sm"
+          onClick={() => {
+            sonnerToast.dismiss(toastId);
+            onNavigateInbox();
+          }}
+        >
+          {t("notifications.toastOpenQueue")}
+        </Button>
+        {canAcknowledge ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="h-11 text-sm"
+            disabled={busy}
+            onClick={() => void acknowledge()}
+          >
+            {t("notifications.toastAcknowledge")}
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}

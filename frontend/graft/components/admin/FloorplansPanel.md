@@ -1,0 +1,21 @@
+# components/admin/FloorplansPanel.tsx
+
+- resolveShapeRoomId · function · L46-L48 — function resolveShapeRoomId(shape: FloorplanRoomShape, floorRooms: Room[] | null | undefined): number | null
+- mergeRoomNodesFromFloor · function · L50-L63 — function mergeRoomNodesFromFloor( shapes: FloorplanRoomShape[], floorRooms: Room[] | null | undefined, ): FloorplanRoomShape[]
+- newRoom · function · L65-L81 — function newRoom(): FloorplanRoomShape
+- FloorplansPanelExternalScope · type · L83-L86 — type FloorplansPanelExternalScope = { facilityId: number; floorId: number; };
+- FloorplansPanel · function · L88-L1527 — function FloorplansPanel({ embedded = false, externalScope = null, }: { embedded?: boolean; /** Parent-selected facility/floor (e.g. Facility management tabs). Hides duplicate building/floor pickers. */ externalScope?: FloorplansPanelExternalScope | null; })
+- onSave · function · L472-L558 — async function onSave()
+- handleCaptureNodePreview · function · L560-L590 — async function handleCaptureNodePreview()
+- sleep · function · L572-L572 — sleep = (ms: number)
+- onAssignPatientToRoom · function · L592-L606 — async function onAssignPatientToRoom()
+- onRemovePatientFromRoom · function · L608-L621 — async function onRemovePatientFromRoom(patientId: number)
+- onLinkSmartDeviceToRoom · function · L623-L633 — async function onLinkSmartDeviceToRoom(smartDeviceId: number)
+- onUnlinkSmartDeviceFromRoom · function · L635-L643 — async function onUnlinkSmartDeviceFromRoom(smartDeviceId: number)
+- handleCreateFacility · function · L645-L670 — async function handleCreateFacility()
+- openNewFloorPanel · function · L672-L676 — function openNewFloorPanel()
+- handleCreateFloor · function · L678-L705 — async function handleCreateFloor()
+- handleRenameFacility · function · L707-L724 — async function handleRenameFacility()
+- handleDeleteFacility · function · L726-L741 — async function handleDeleteFacility()
+- handleRenameFloor · function · L743-L761 — async function handleRenameFloor()
+- handleDeleteFloor · function · L763-L777 — async function handleDeleteFloor()

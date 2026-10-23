@@ -1,0 +1,27 @@
+# components/admin/settings/AiSettingsPanel.tsx
+
+- AISettingsOut · type · L39-L44 — type AISettingsOut = { provider: "ollama" | "copilot"; model: string; workspace_default_provider: "ollama" | "copilot"; workspace_default_model: string; };
+- CopilotModel · type · L46-L51 — type CopilotModel = { id: string; name: string; supports_reasoning_effort?: boolean; supports_vision?: boolean; };
+- OllamaTag · type · L53-L53 — type OllamaTag = { name: string; size?: number; digest?: string };
+- OllamaModelsResponse · type · L55-L60 — type OllamaModelsResponse = { models: OllamaTag[]; reachable: boolean; origin?: string | null; message?: string | null; };
+- CopilotModelsResponse · type · L62-L67 — type CopilotModelsResponse = { models: CopilotModel[]; connected: boolean; message?: string | null; source?: "sdk" | "fallback"; };
+- CopilotDeviceFlow · type · L69-L75 — type CopilotDeviceFlow = { device_code: string; user_code: string; verification_uri: string; expires_at: number; interval: number; };
+- CopilotFlowStatus · type · L77-L85 — type CopilotFlowStatus = | "idle" | "pending" | "slow_down" | "expired" | "denied" | "backend_error" | "success" | "connected_unavailable";
+- parseOllamaPullNdjson · function · L93-L111 — function parseOllamaPullNdjson(raw: string): { error: string | null }
+- formatBytes · function · L113-L119 — function formatBytes(bytes?: number)
+- readStoredCopilotFlow · function · L121-L140 — function readStoredCopilotFlow(): CopilotDeviceFlow | null
+- writeStoredCopilotFlow · function · L142-L149 — function writeStoredCopilotFlow(flow: CopilotDeviceFlow | null): void
+- classifyCopilotError · function · L151-L162 — function classifyCopilotError(error: unknown): CopilotFlowStatus
+- StatusRow · function · L164-L182 — function StatusRow({ label, value, hint, }: { label: string; value: ReactNode; hint?: ReactNode; })
+- SectionMessage · function · L184-L201 — function SectionMessage({ tone, children, }: { tone: "warning" | "error" | "success"; children: ReactNode; })
+- ProviderModelSection · function · L203-L317 — function ProviderModelSection({ title, description, provider, onProviderChange, model, onModelChange, ollamaModels, copilotModels, disabled, saveLabel, onSave, }: { title: string; description: string; provider: "ollama" | "copilot"; onProviderChange: (value: "ollama" | "copilot") => void; model: string; onModelChange: (value: string) => void; ollamaModels: OllamaModelsResponse | null; copilotModels: CopilotModelsResponse | null; disabled: boolean; saveLabel: string; onSave: () => Promise<void>; })
+- AiSettingsPanel · function · L319-L1111 — function AiSettingsPanel()
+- finish · function · L481-L494 — finish = (status: CopilotFlowStatus, message?: string | null)
+- scheduleNext · function · L496-L501 — scheduleNext = (delay: number)
+- poll · function · L503-L546 — poll = async ()
+- handleCopilotOpenChange · function · L573-L588 — function handleCopilotOpenChange(open: boolean)
+- saveWorkspaceAi · function · L590-L601 — async function saveWorkspaceAi()
+- startCopilotDeviceFlow · function · L603-L647 — async function startCopilotDeviceFlow()
+- runOllamaPull · function · L649-L725 — async function runOllamaPull()
+- deleteOllamaModel · function · L727-L735 — async function deleteOllamaModel(name: string)
+- copyToClipboard · function · L737-L741 — function copyToClipboard(text: string)

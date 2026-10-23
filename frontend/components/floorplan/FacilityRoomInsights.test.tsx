@@ -1,0 +1,17 @@
+import { render,screen } from "@testing-library/react";
+import { FacilityRoomInsights } from "./FacilityRoomInsights";
+import type { Room } from "@/lib/types";
+import type { FloorplanPresenceOut } from "@/lib/api/task-scope-types";
+jest.mock("@/lib/i18n",()=>({useTranslation:()=>({t:(key:string)=>key})}));
+jest.mock("@/hooks/useAuth",()=>({useAuth:()=>({user:{role:"admin"}})}));
+jest.mock("@tanstack/react-query",()=>({useQuery:({queryKey}:{queryKey:string[]})=>({data:queryKey[1]==="alerts" ? [
+ {id:1,data:{room_id:10},device_id:null,title:"Matching alert",severity:"critical",status:"active",timestamp:"2026-10-18T05:00:00Z"},
+ {id:2,data:{room_id:11},device_id:"other-node",title:"Other room",severity:"warning",status:"active",timestamp:"2026-10-18T05:00:00Z"},
+ ] : [{id:1,details:{room_id:10},registry_device_id:null,event_type:"connected",summary:"Actual room event",occurred_at:"2026-10-18T05:00:00Z"},{id:2,details:{room_id:11},summary:"Other room event",occurred_at:"2026-10-18T05:00:00Z"}],isLoading:false,isPending:false,isError:false})}));
+const room:Room={id:10,floor_id:1,name:"Room 10",description:"Care room",node_device_id:"node-10",room_type:"resident",adjacent_rooms:[],config:{availability:"Reserved",maintenance:"Inspection booked"},created_at:"2026-01-01T00:00:00Z"};
+const shape={id:"room-10",label:"Room 10",x:100,y:100,w:300,h:300,device_id:null,power_kw:null};
+const presence:FloorplanPresenceOut["rooms"][number]={room_id:10,room_name:"Room 10",node_status:"offline",computed_at:"2026-10-18T05:00:00Z",confidence:0,alert_count:2,occupants:[{actor_type:"patient",actor_id:5,display_name:"Reported resident",source:"node",subtitle:""}],sources:[]};
+it("shows actual availability, maintenance, presence and separate assignment count",()=>{render(<FacilityRoomInsights room={room} shape={shape} presence={presence} presenceState="ready" residentCount={3} tab="overview" layoutUpdatedAt={null}/>);expect(screen.getByText("Reserved")).toBeInTheDocument();expect(screen.getByText("Inspection booked")).toBeInTheDocument();expect(screen.getByText("Reported resident")).toBeInTheDocument();expect(screen.getByText("overview.node.offline")).toBeInTheDocument();expect(screen.getByText("3")).toBeInTheDocument()});
+it("does not show cached occupants as current after a presence failure",()=>{render(<FacilityRoomInsights room={room} shape={shape} presence={presence} presenceState="unavailable" tab="overview" layoutUpdatedAt={null}/>);expect(screen.queryByText("Reported resident")).not.toBeInTheDocument();expect(screen.getAllByText("redesign.unavailable").length).toBeGreaterThan(0);expect(screen.queryByText("0")).not.toBeInTheDocument()});
+it("shows only alerts whose evidence matches the room or its actual node",()=>{render(<FacilityRoomInsights room={room} shape={shape} presence={presence} presenceState="ready" tab="alerts" layoutUpdatedAt={null}/>);expect(screen.getByRole("link",{name:"Matching alert"})).toHaveAttribute("href","/admin/alerts?alert=1");expect(screen.queryByText("Other room")).not.toBeInTheDocument()});
+it("shows real room activity and timestamps without pulling in unrelated events",()=>{render(<FacilityRoomInsights room={room} shape={shape} presence={presence} presenceState="ready" tab="history" layoutUpdatedAt="2026-10-17T05:00:00Z"/>);expect(screen.getByText("Actual room event")).toBeInTheDocument();expect(screen.queryByText("Other room event")).not.toBeInTheDocument();expect(screen.getByRole("link",{name:"admin.system.viewAuditLog"})).toHaveAttribute("href","/admin/audit")});

@@ -1,0 +1,31 @@
+# components/admin/caregivers/CaregiverDetailPane.tsx
+
+- Props · type · L55-L60 — type Props = { caregiver: Caregiver; linkedUsers: User[]; onUserUpdated?: () => void; onCaregiverUpdated?: (next: Caregiver) => void; };
+- ShiftOut · type · L64-L72 — type ShiftOut = { id: number; caregiver_id: number; shift_date: string; start_time: string; end_time: string; shift_type: string; notes: string; };
+- ZoneOut · type · L74-L80 — type ZoneOut = { id: number; caregiver_id: number; room_id: number | null; zone_name: string; is_active: boolean; };
+- ZoneDraft · type · L82-L87 — type ZoneDraft = { zoneId: number | null; zoneName: string; roomId: number | null; isActive: boolean; };
+- CaregiverPatientAccessResponse · type · L89-L91 — type CaregiverPatientAccessResponse = | Array<{ patient_id?: number; id?: number }> | { patient_ids?: number[]; patients?: Array<{ patient_id?: number; id?: number }> };
+- ShiftDraft · type · L93-L100 — type ShiftDraft = { shiftId: number | null; shiftDate: string; startTime: string; endTime: string; shiftType: string; notes: string; };
+- formatDate · function · L111-L123 — function formatDate(iso: string): string
+- formatTime · function · L125-L128 — function formatTime(t: string): string
+- formatRoomLabel · function · L130-L133 — function formatRoomLabel(room: Room | null | undefined): string
+- formatRoomContext · function · L135-L146 — function formatRoomContext(room: Room | null | undefined): string
+- formatPatientLabel · function · L148-L151 — function formatPatientLabel(patient: Patient): string
+- patientSearchText · function · L153-L163 — function patientSearchText(patient: Patient): string
+- extractPatientAccessIds · function · L165-L174 — function extractPatientAccessIds(response: CaregiverPatientAccessResponse | null | undefined): number[]
+- roomSearchText · function · L176-L188 — function roomSearchText(room: Room): string
+- formatShiftType · function · L190-L194 — function formatShiftType(value: string): string
+- ZoneDialog · function · L202-L373 — function ZoneDialog({ open, mode, draft, setDraft, roomSearch, setRoomSearch, roomOptions, roomLoading, roomEmptyNoMatch, roomEmptyPool, submitting, error, onClose, onSubmit, }: { open: boolean; mode: "create" | "edit"; draft: ZoneDraft; setDraft: (updater: (prev: ZoneDraft) => ZoneDraft) => void; roomSearch: string; setRoomSearch: (value: string) => void; roomOptions: SearchableListboxOption[]; roomLoading: boolean; roomEmptyNoMatch: boolean; roomEmptyPool: boolean; submitting: boolean; error: string | null; onClose: () => void; onSubmit: () => void; })
+- ShiftDialog · function · L375-L534 — function ShiftDialog({ open, mode, draft, setDraft, submitting, error, onClose, onSubmit, }: { open: boolean; mode: "create" | "edit"; draft: ShiftDraft; setDraft: (updater: (prev: ShiftDraft) => ShiftDraft) => void; submitting: boolean; error: string | null; onClose: () => void; onSubmit: () => void; })
+- UserAccountItem · function · L538-L741 — function UserAccountItem({ user, onUpdate, canManage, }: { user: User; onUpdate?: () => void; canManage: boolean; })
+- UserManagePayload · type · L548-L555 — type UserManagePayload = { username: string; role: string; is_active: boolean; caregiver_id: number | null; patient_id: number | null; password?: string; };
+- handleSave · function · L566-L589 — async function handleSave()
+- handleCancel · function · L591-L600 — function handleCancel()
+- CaregiverDetailPane · function · L745-L1686 — function CaregiverDetailPane({ caregiver, linkedUsers, onUserUpdated, onCaregiverUpdated, }: Props)
+- handleSavePatientAccess · function · L1034-L1048 — async function handleSavePatientAccess()
+- handleSubmitZone · function · L1076-L1104 — async function handleSubmitZone()
+- handleDeleteZone · function · L1106-L1116 — async function handleDeleteZone(zoneId: number)
+- handleSubmitShift · function · L1146-L1170 — async function handleSubmitShift()
+- handleDeleteShift · function · L1172-L1182 — async function handleDeleteShift(shiftId: number)
+- saveProfileSection · function · L1184-L1211 — async function saveProfileSection()
+- saveContactSection · function · L1213-L1228 — async function saveContactSection()

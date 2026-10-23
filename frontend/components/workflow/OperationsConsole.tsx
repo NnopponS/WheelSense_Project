@@ -1,0 +1,2891 @@
+"use client";
+"use no memo";
+
+import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import {
+  AlertTriangle,
+  ArrowRightLeft,
+  Bell,
+  CalendarClock,
+  ClipboardList,
+  Download,
+  FileText,
+  History,
+  MessageSquare,
+  Plus,
+  Printer,
+  Send,
+  ShieldCheck,
+  Stethoscope,
+  UserCheck,
+  Users,
+} from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import ReportPreviewTable from "@/components/reports/ReportPreviewTable";
+import {
+  buildReportCsv,
+  buildReportFilename,
+  downloadTextFile,
+  type ReportColumn,
+  type ReportRow,
+} from "@/components/reports/report-utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ApiError, api, type UserSearchResult } from "@/lib/api";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type { Alert, VitalReading } from "@/lib/types";
+import type {
+  AuditTrailEventOut,
+  CareDirectiveOut,
+  CareScheduleOut,
+  CareTaskOut,
+  CreateWorkflowDirectiveRequest,
+  CreateWorkflowHandoverRequest,
+  CreateWorkflowScheduleRequest,
+  CreateWorkflowTaskRequest,
+  GetAlertSummaryResponse,
+  GetVitalsAveragesResponse,
+  GetWardSummaryResponse,
+  HandoverNoteOut,
+  ListPatientsResponse,
+  ListWorkflowDirectivesResponse,
+  ListWorkflowHandoversResponse,
+  ListWorkflowMessagesResponse,
+  ListWorkflowSchedulesResponse,
+  ListWorkflowTasksResponse,
+  SendWorkflowMessageRequest,
+} from "@/lib/api/task-scope-types";
+
+const EMPTY_SELECT = "__empty__";
+const STAFF_ROLE_OPTIONS = ["admin", "head_caregiver", "caregiver"] as const;
+type ConsoleRole = "admin" | "head_caregiver" | "caregiver";
+type ConsoleTab = "queue" | "transfer" | "coordination" | "audit" | "reports";
+type WorkflowItemType = "task" | "schedule" | "directive";
+type AssignmentMode = "role" | "person";
+type RecurrencePreset = "once" | "every_shift" | "daily" | "weekdays" | "weekly" | "advanced";
+type ReportTemplateId =
+  | "ward-overview"
+  | "alert-summary"
+  | "vitals-window"
+  | "handover-notes"
+  | "workflow-audit";
+type SummaryTone = "info" | "warning" | "critical" | "success";
+
+type WorkflowListRow = {
+  id: number;
+  itemType: WorkflowItemType;
+  title: string;
+  patientName: string;
+  patientId: number | null;
+  ownerLabel: string;
+  status: string;
+  timestamp: string;
+  secondaryLabel: string;
+  notePreview: string;
+  routingRole: string | null;
+  routingUserId: number | null;
+};
+
+type TaskFormState = {
+  patientId: string;
+  title: string;
+  description: string;
+  priority: string;
+  dueAt: string;
+  assignmentMode: AssignmentMode;
+  assignedRole: string;
+  assignedUserId: string;
+};
+
+type ScheduleFormState = {
+  patientId: string;
+  title: string;
+  scheduleType: string;
+  startsAt: string;
+  recurrencePreset: RecurrencePreset;
+  recurrenceRule: string;
+  notes: string;
+  assignmentMode: AssignmentMode;
+  assignedRole: string;
+  assignedUserId: string;
+};
+
+type DirectiveFormState = {
+  patientId: string;
+  title: string;
+  directiveText: string;
+  assignmentMode: AssignmentMode;
+  targetRole: string;
+  targetUserId: string;
+  effectiveFrom: string;
+};
+
+type MessageFormState = {
+  targetMode: AssignmentMode;
+  recipientRole: string;
+  recipientUserId: string;
+  patientId: string;
+  subject: string;
+  body: string;
+};
+
+type HandoverFormState = {
+  patientId: string;
+  targetRole: string;
+  shiftDate: string;
+  shiftLabel: string;
+  priority: string;
+  note: string;
+};
+
+type TransferDialogState = {
+  mode: "claim" | "handoff";
+  row: WorkflowListRow;
+} | null;
+
+type SummaryMetric = {
+  label: string;
+  value: number;
+  tone: SummaryTone;
+  icon: typeof Bell;
+};
+
+type ReportView = {
+  title: string;
+  subtitle: string;
+  columns: ReportColumn[];
+  rows: ReportRow[];
+  metrics: SummaryMetric[];
+  note: string;
+};
+
+type PatientLike = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  care_level?: string | null;
+};
+
+const defaultTaskForm: TaskFormState = {
+  patientId: EMPTY_SELECT,
+  title: "",
+  description: "",
+  priority: "normal",
+  dueAt: "",
+  assignmentMode: "role",
+  assignedRole: "caregiver",
+  assignedUserId: EMPTY_SELECT,
+};
+
+const defaultScheduleForm: ScheduleFormState = {
+  patientId: EMPTY_SELECT,
+  title: "",
+  scheduleType: "round",
+  startsAt: "",
+  recurrencePreset: "daily",
+  recurrenceRule: "",
+  notes: "",
+  assignmentMode: "role",
+  assignedRole: "caregiver",
+  assignedUserId: EMPTY_SELECT,
+};
+
+const defaultDirectiveForm: DirectiveFormState = {
+  patientId: EMPTY_SELECT,
+  title: "",
+  directiveText: "",
+  assignmentMode: "role",
+  targetRole: "caregiver",
+  targetUserId: EMPTY_SELECT,
+  effectiveFrom: "",
+};
+
+const defaultMessageForm: MessageFormState = {
+  targetMode: "role",
+  recipientRole: "head_caregiver",
+  recipientUserId: EMPTY_SELECT,
+  patientId: EMPTY_SELECT,
+  subject: "",
+  body: "",
+};
+
+function defaultHandoverForm(shiftLabel: string): HandoverFormState {
+  return {
+  patientId: EMPTY_SELECT,
+  targetRole: "head_caregiver",
+  shiftDate: "",
+  shiftLabel,
+  priority: "routine",
+  note: "",
+  };
+}
+
+function formatConsoleError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
+function tabFromSearch(value: string | null): ConsoleTab {
+  if (value === "transfer" || value === "coordination" || value === "audit" || value === "reports") {
+    return value;
+  }
+  return "queue";
+}
+
+/** Hub pages (`/head-caregiver/tasks`, `/caregiver/tasks`) use `?tab=` for the top tab bar; inner console panels must use a different key. */
+const WORKFLOW_CONSOLE_TAB_QP = "wtab";
+
+const LEGACY_CONSOLE_TAB_IN_TAB_QP = new Set(["transfer", "coordination", "audit", "reports"]);
+
+function consoleTabFromSearchParams(searchParams: URLSearchParams): ConsoleTab {
+  const wtab = searchParams.get(WORKFLOW_CONSOLE_TAB_QP);
+  if (wtab !== null) return tabFromSearch(wtab);
+  const hubTab = searchParams.get("tab");
+  if (hubTab !== null && LEGACY_CONSOLE_TAB_IN_TAB_QP.has(hubTab)) {
+    return hubTab as ConsoleTab;
+  }
+  return "queue";
+}
+
+function stripLegacyConsoleTabFromTabQP(next: URLSearchParams) {
+  const t = next.get("tab");
+  if (t !== null && LEGACY_CONSOLE_TAB_IN_TAB_QP.has(t)) next.delete("tab");
+}
+
+function labelPatient(patient: PatientLike | undefined, unitWideLabel: string): string {
+  if (!patient) return unitWideLabel;
+  return `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`;
+}
+
+function labelUser(user: UserSearchResult): string {
+  const linked = user.caregiver_id
+    ? `Staff #${user.caregiver_id}`
+    : user.patient_id
+      ? `Patient #${user.patient_id}`
+      : null;
+  const display = user.display_name || user.username;
+  return linked ? `${display} (${linked})` : display;
+}
+
+function optionalNumber(value: string): number | null {
+  return value === EMPTY_SELECT ? null : Number(value);
+}
+
+function optionalRole(value: string): string | null {
+  return value === EMPTY_SELECT ? null : value;
+}
+
+function toIsoOrNull(value: string): string | null {
+  return value ? new Date(value).toISOString() : null;
+}
+
+function toRequiredIso(value: string): string {
+  return new Date(value).toISOString();
+}
+
+function recurrenceRuleForPreset(preset: RecurrencePreset): string {
+  switch (preset) {
+    case "once":
+      return "";
+    case "every_shift":
+      return "RRULE:FREQ=DAILY";
+    case "daily":
+      return "RRULE:FREQ=DAILY";
+    case "weekdays":
+      return "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR";
+    case "weekly":
+      return "RRULE:FREQ=WEEKLY";
+    case "advanced":
+      return "RRULE:FREQ=DAILY";
+    default:
+      return "";
+  }
+}
+
+function statusVariant(status: string) {
+  if (status === "completed" || status === "acknowledged") return "success" as const;
+  if (status === "cancelled") return "outline" as const;
+  if (status === "in_progress" || status === "active") return "warning" as const;
+  if (status === "pending" || status === "scheduled") return "secondary" as const;
+  return "outline" as const;
+}
+
+function priorityVariant(value: string) {
+  if (value === "critical") return "destructive" as const;
+  if (value === "high" || value === "warning") return "warning" as const;
+  if (value === "normal" || value === "routine") return "secondary" as const;
+  return "outline" as const;
+}
+
+function isOpenWorkflowStatus(status: string): boolean {
+  return !["completed", "cancelled", "acknowledged"].includes(status);
+}
+
+function reportToneForCount(count: number): SummaryTone {
+  if (count <= 0) return "success";
+  if (count >= 10) return "critical";
+  if (count >= 4) return "warning";
+  return "info";
+}
+
+function toMs(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function withinWindow(value: string | null | undefined, hours: number, nowMs: number): boolean {
+  const parsed = toMs(value);
+  if (parsed === null) return false;
+  return parsed >= nowMs - hours * 60 * 60 * 1000;
+}
+
+function buildReportView(params: {
+  templateId: ReportTemplateId;
+  windowHours: number;
+  auditDomain: string;
+  patients: ListPatientsResponse;
+  alerts: Alert[];
+  vitals: VitalReading[];
+  handovers: HandoverNoteOut[];
+  auditEvents: AuditTrailEventOut[];
+  wardSummary: GetWardSummaryResponse | null;
+  alertSummary: GetAlertSummaryResponse | null;
+  vitalsAverage: GetVitalsAveragesResponse | null;
+  tasks: ListWorkflowTasksResponse;
+  directives: ListWorkflowDirectivesResponse;
+  unitWide: string;
+  t: (key: TranslationKey) => string;
+}): ReportView {
+  const {
+    templateId,
+    windowHours,
+    auditDomain,
+    patients,
+    alerts,
+    vitals,
+    handovers,
+    auditEvents,
+    wardSummary,
+    alertSummary,
+    vitalsAverage,
+    tasks,
+    directives,
+    unitWide,
+    t,
+  } = params;
+
+  const nowMs = Date.now();
+  const patientMap = new Map(patients.map((patient) => [patient.id, patient]));
+  const activeAlerts = alerts.filter((alert) => alert.status === "active");
+  const recentActiveAlerts = activeAlerts.filter((alert) => withinWindow(alert.timestamp, windowHours, nowMs));
+  const recentVitals = vitals.filter((reading) => withinWindow(reading.timestamp, windowHours, nowMs));
+  const recentHandovers = handovers.filter((item) => withinWindow(item.created_at, windowHours, nowMs));
+  const recentAudit = auditEvents.filter((event) => withinWindow(event.created_at, windowHours, nowMs));
+  const filteredAudit = auditDomain === "all" ? recentAudit : recentAudit.filter((event) => event.domain === auditDomain);
+  const openTasks = tasks.filter((task) => task.status === "pending" || task.status === "in_progress");
+  const activeDirectives = directives.filter((directive) => directive.status === "active");
+
+  const latestVitalsByPatient = new Map<number, VitalReading>();
+  for (const reading of recentVitals) {
+    const current = latestVitalsByPatient.get(reading.patient_id);
+    if (!current || reading.timestamp > current.timestamp) {
+      latestVitalsByPatient.set(reading.patient_id, reading);
+    }
+  }
+
+  if (templateId === "alert-summary") {
+    return {
+      title: t("workflow.console.report.alertSummary.title"),
+      subtitle: t("workflow.console.report.alertSummary.subtitle"),
+      columns: [
+        { key: "alert", label: t("workflow.console.report.alertSummary.col.alert") },
+        { key: "patient", label: t("workflow.console.report.alertSummary.col.patient") },
+        { key: "severity", label: t("workflow.console.report.alertSummary.col.severity") },
+        { key: "time", label: t("workflow.console.report.alertSummary.col.time"), className: "whitespace-normal" },
+      ],
+      rows: recentActiveAlerts
+        .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+        .slice(0, 16)
+        .map((alert) => ({
+          id: alert.id,
+          alert: alert.title,
+          patient: alert.patient_id ? labelPatient(patientMap.get(alert.patient_id), unitWide) : unitWide,
+          severity: alert.severity,
+          time: `${formatDateTime(alert.timestamp)} | ${formatRelativeTime(alert.timestamp)}`,
+        })),
+      metrics: [
+        {
+          label: t("workflow.console.report.alertSummary.metric.activeAlerts"),
+          value: alertSummary?.total_active ?? activeAlerts.length,
+          tone: reportToneForCount(activeAlerts.length),
+          icon: Bell,
+        },
+        {
+          label: t("workflow.console.report.alertSummary.metric.criticalAlerts"),
+          value: activeAlerts.filter((alert) => alert.severity === "critical").length,
+          tone: "critical",
+          icon: AlertTriangle,
+        },
+        {
+          label: t("workflow.console.report.alertSummary.metric.recentAlerts"),
+          value: recentActiveAlerts.length,
+          tone: "warning",
+          icon: Bell,
+        },
+        {
+          label: t("workflow.console.report.alertSummary.metric.resolvedAlerts"),
+          value: alertSummary?.total_resolved ?? 0,
+          tone: "success",
+          icon: ShieldCheck,
+        },
+      ],
+      note: t("workflow.console.report.alertSummary.note"),
+    };
+  }
+
+  if (templateId === "vitals-window") {
+    return {
+      title: t("workflow.console.report.vitalsWindow.title"),
+      subtitle: t("workflow.console.report.vitalsWindow.subtitle"),
+      columns: [
+        { key: "patient", label: t("workflow.console.report.vitalsWindow.col.patient") },
+        { key: "heartRate", label: t("workflow.console.report.vitalsWindow.col.hr") },
+        { key: "spo2", label: t("workflow.console.report.vitalsWindow.col.spo2") },
+        { key: "captured", label: t("workflow.console.report.vitalsWindow.col.captured"), className: "whitespace-normal" },
+      ],
+      rows: Array.from(latestVitalsByPatient.values())
+        .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+        .slice(0, 16)
+        .map((reading) => ({
+          id: reading.id,
+          patient: labelPatient(patientMap.get(reading.patient_id), unitWide),
+          heartRate: reading.heart_rate_bpm != null ? `${reading.heart_rate_bpm} bpm` : "-",
+          spo2: reading.spo2 != null ? `${reading.spo2}%` : "-",
+          captured: `${formatDateTime(reading.timestamp)} | ${formatRelativeTime(reading.timestamp)}`,
+        })),
+      metrics: [
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.vitalsCaptured"),
+          value: recentVitals.length,
+          tone: recentVitals.length ? "info" : "success",
+          icon: Stethoscope,
+        },
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.patientsWithVitals"),
+          value: latestVitalsByPatient.size,
+          tone: latestVitalsByPatient.size ? "warning" : "success",
+          icon: Users,
+        },
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.avgSpo2"),
+          value: Math.round(vitalsAverage?.spo2_avg ?? 0),
+          tone: "info",
+          icon: ShieldCheck,
+        },
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.avgHr"),
+          value: Math.round(vitalsAverage?.heart_rate_bpm_avg ?? 0),
+          tone: "info",
+          icon: CalendarClock,
+        },
+      ],
+      note: t("workflow.console.report.vitalsWindow.note"),
+    };
+  }
+
+  if (templateId === "handover-notes") {
+    return {
+      title: t("workflow.console.report.handoverNotes.title"),
+      subtitle: t("workflow.console.report.handoverNotes.subtitle"),
+      columns: [
+        { key: "patient", label: t("workflow.console.report.handoverNotes.col.patient") },
+        { key: "target", label: t("workflow.console.report.handoverNotes.col.target") },
+        { key: "priority", label: t("workflow.console.report.handoverNotes.col.priority") },
+        { key: "note", label: t("workflow.console.report.handoverNotes.col.note"), className: "whitespace-normal" },
+        { key: "created", label: t("workflow.console.report.handoverNotes.col.created"), className: "whitespace-normal" },
+      ],
+      rows: recentHandovers
+        .sort((left, right) => right.created_at.localeCompare(left.created_at))
+        .slice(0, 16)
+        .map((item) => ({
+          id: item.id,
+          patient: item.patient_id ? labelPatient(patientMap.get(item.patient_id), unitWide) : unitWide,
+          target: item.target_role || t("workflow.console.openHandoff"),
+          priority: item.priority,
+          note: item.note,
+          created: `${formatDateTime(item.created_at)} | ${formatRelativeTime(item.created_at)}`,
+        })),
+      metrics: [
+        {
+          label: t("workflow.console.report.handoverNotes.metric.handovers"),
+          value: recentHandovers.length,
+          tone: recentHandovers.length ? "warning" : "success",
+          icon: ArrowRightLeft,
+        },
+        {
+          label: t("workflow.console.report.handoverNotes.metric.criticalNotes"),
+          value: recentHandovers.filter((item) => item.priority === "critical").length,
+          tone: "critical",
+          icon: AlertTriangle,
+        },
+        {
+          label: t("workflow.console.report.handoverNotes.metric.openTargets"),
+          value: recentHandovers.filter((item) => !item.target_role).length,
+          tone: "info",
+          icon: Users,
+        },
+        {
+          label: t("workflow.console.report.handoverNotes.metric.shiftTagged"),
+          value: recentHandovers.filter((item) => Boolean(item.shift_label)).length,
+          tone: "info",
+          icon: CalendarClock,
+        },
+      ],
+      note: t("workflow.console.report.handoverNotes.note"),
+    };
+  }
+
+  if (templateId === "workflow-audit") {
+    return {
+      title: t("workflow.console.report.workflowAudit.title"),
+      subtitle: t("workflow.console.report.workflowAudit.subtitle"),
+      columns: [
+        { key: "domain", label: t("workflow.console.report.workflowAudit.col.domain") },
+        { key: "action", label: t("workflow.console.report.workflowAudit.col.action") },
+        { key: "entity", label: t("workflow.console.report.workflowAudit.col.entity") },
+        { key: "patient", label: t("workflow.console.report.workflowAudit.col.patient") },
+        { key: "created", label: t("workflow.console.report.workflowAudit.col.created"), className: "whitespace-normal" },
+      ],
+      rows: filteredAudit
+        .sort((left, right) => right.created_at.localeCompare(left.created_at))
+        .slice(0, 20)
+        .map((event) => ({
+          id: event.id,
+          domain: event.domain,
+          action: event.action,
+          entity: `${event.entity_type}${event.entity_id != null ? ` #${event.entity_id}` : ""}`,
+          patient: event.patient_id ? labelPatient(patientMap.get(event.patient_id), unitWide) : unitWide,
+          created: `${formatDateTime(event.created_at)} | ${formatRelativeTime(event.created_at)}`,
+        })),
+      metrics: [
+        {
+          label: t("workflow.console.report.workflowAudit.metric.auditEvents"),
+          value: filteredAudit.length,
+          tone: filteredAudit.length ? "warning" : "success",
+          icon: History,
+        },
+        {
+          label: t("workflow.console.report.workflowAudit.metric.taskChanges"),
+          value: recentAudit.filter((event) => event.domain === "task").length,
+          tone: "info",
+          icon: ClipboardList,
+        },
+        {
+          label: t("workflow.console.report.workflowAudit.metric.directiveChanges"),
+          value: recentAudit.filter((event) => event.domain === "directive").length,
+          tone: "warning",
+          icon: FileText,
+        },
+        {
+          label: t("workflow.console.report.workflowAudit.metric.messagingEvents"),
+          value: recentAudit.filter((event) => event.domain === "messaging").length,
+          tone: "info",
+          icon: MessageSquare,
+        },
+      ],
+      note: t("workflow.console.report.workflowAudit.note"),
+    };
+  }
+
+  return {
+    title: t("workflow.console.report.wardOverview.title"),
+    subtitle: t("workflow.console.report.wardOverview.subtitle"),
+    columns: [
+      { key: "patient", label: t("workflow.console.report.wardOverview.col.patient") },
+      { key: "careLevel", label: t("workflow.console.report.wardOverview.col.careLevel") },
+      { key: "alerts", label: t("workflow.console.report.wardOverview.col.alerts") },
+      { key: "taskLoad", label: t("workflow.console.report.wardOverview.col.openTasks") },
+      { key: "directiveLoad", label: t("workflow.console.report.wardOverview.col.directives") },
+      { key: "lastVitals", label: t("workflow.console.report.wardOverview.col.lastVitals"), className: "whitespace-normal" },
+    ],
+    rows: patients
+      .slice()
+      .sort((left, right) => left.id - right.id)
+      .map((patient) => {
+        const latestVitals = latestVitalsByPatient.get(patient.id);
+        return {
+          id: patient.id,
+          patient: labelPatient(patient, unitWide),
+          careLevel: patient.care_level,
+          alerts: activeAlerts.filter((alert) => alert.patient_id === patient.id).length,
+          taskLoad: openTasks.filter((task) => task.patient_id === patient.id).length,
+          directiveLoad: activeDirectives.filter((directive) => directive.patient_id === patient.id).length,
+          lastVitals: latestVitals
+            ? `HR ${latestVitals.heart_rate_bpm ?? "-"} | SpO2 ${latestVitals.spo2 ?? "-"} | ${formatRelativeTime(latestVitals.timestamp)}`
+            : "-",
+        };
+      }),
+    metrics: [
+      {
+        label: t("workflow.console.report.wardOverview.metric.patients"),
+        value: wardSummary?.total_patients ?? patients.length,
+        tone: "info",
+        icon: Users,
+      },
+      {
+        label: t("workflow.console.report.wardOverview.metric.openTasks"),
+        value: openTasks.length,
+        tone: reportToneForCount(openTasks.length),
+        icon: ClipboardList,
+      },
+      {
+        label: t("workflow.console.report.wardOverview.metric.activeDirectives"),
+        value: activeDirectives.length,
+        tone: reportToneForCount(activeDirectives.length),
+        icon: FileText,
+      },
+      {
+        label: t("workflow.console.report.wardOverview.metric.activeAlerts"),
+        value: wardSummary?.active_alerts ?? activeAlerts.length,
+        tone: reportToneForCount(activeAlerts.length),
+        icon: Bell,
+      },
+    ],
+    note: t("workflow.console.report.wardOverview.note"),
+  };
+}
+
+export function OperationsConsole({
+  role,
+  title,
+  subtitle,
+}: {
+  role: ConsoleRole;
+  title: string;
+  subtitle: string;
+}) {
+  const { t } = useTranslation();
+  const unitWide = t("workflow.console.unitWide");
+  const unassignedLabel = t("workflow.console.unassigned");
+  const requestFailedMsg = t("workflow.console.requestFailed");
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  /** Tasks hub embeds the console under `/{role}/tasks` — hide inner queue/transfer/… tabs; use standalone `/{role}/workflow` for full panels. */
+  const isWorkflowEmbeddedInTasksHub = /\/(head-caregiver|caregiver)\/tasks$/.test(pathname ?? "");
+  const activeTab: ConsoleTab = isWorkflowEmbeddedInTasksHub
+    ? "queue"
+    : consoleTabFromSearchParams(searchParams);
+
+  const baseKey = [role, "workflow"] as const;
+  /** Matches `GET /api/analytics/wards/summary` — observer is not authorized for workspace-wide ward totals. */
+  const canLoadWardSummary =
+    role === "admin" || role === "head_caregiver";
+  const [queueSearch, setQueueSearch] = useState("");
+  const [queueTypeFilter, setQueueTypeFilter] = useState<"all" | WorkflowItemType>("all");
+  const [queueStatusFilter, setQueueStatusFilter] = useState("all");
+  const [selectedRow, setSelectedRow] = useState<WorkflowListRow | null>(null);
+  const [replyBody, setReplyBody] = useState("");
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [formKind, setFormKind] = useState<WorkflowItemType>("task");
+  const [taskForm, setTaskForm] = useState<TaskFormState>(defaultTaskForm);
+  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(defaultScheduleForm);
+  const [directiveForm, setDirectiveForm] = useState<DirectiveFormState>(defaultDirectiveForm);
+  const [messageForm, setMessageForm] = useState<MessageFormState>(defaultMessageForm);
+  const [handoverForm, setHandoverForm] = useState<HandoverFormState>(() =>
+    defaultHandoverForm(t("workflow.console.currentShift")),
+  );
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
+  const [transferTargetMode, setTransferTargetMode] = useState<AssignmentMode>("role");
+  const [transferTargetRole, setTransferTargetRole] = useState("caregiver");
+  const [transferTargetUserId, setTransferTargetUserId] = useState(EMPTY_SELECT);
+  const [transferNote, setTransferNote] = useState("");
+  const [coordinationError, setCoordinationError] = useState<string | null>(null);
+  const [reportTemplateId, setReportTemplateId] = useState<ReportTemplateId>("ward-overview");
+  const [reportWindowHours, setReportWindowHours] = useState("24");
+  const [auditDomain, setAuditDomain] = useState("all");
+
+  const reportTemplates = useMemo(
+    () =>
+      [
+        {
+          id: "ward-overview" as const,
+          title: t("workflow.console.reportTemplate.wardOverview.title"),
+          description: t("workflow.console.reportTemplate.wardOverview.description"),
+        },
+        {
+          id: "alert-summary" as const,
+          title: t("workflow.console.reportTemplate.alertSummary.title"),
+          description: t("workflow.console.reportTemplate.alertSummary.description"),
+        },
+        {
+          id: "vitals-window" as const,
+          title: t("workflow.console.reportTemplate.vitalsWindow.title"),
+          description: t("workflow.console.reportTemplate.vitalsWindow.description"),
+        },
+        {
+          id: "handover-notes" as const,
+          title: t("workflow.console.reportTemplate.handoverNotes.title"),
+          description: t("workflow.console.reportTemplate.handoverNotes.description"),
+        },
+        {
+          id: "workflow-audit" as const,
+          title: t("workflow.console.reportTemplate.workflowAudit.title"),
+          description: t("workflow.console.reportTemplate.workflowAudit.description"),
+        },
+      ] satisfies Array<{ id: ReportTemplateId; title: string; description: string }>,
+    [t],
+  );
+
+  const patientsQuery = useQuery({
+    queryKey: [...baseKey, "patients"],
+    queryFn: () => api.listPatients({ limit: 400 }),
+  });
+
+  const usersQuery = useQuery({
+    queryKey: [...baseKey, "users"],
+    queryFn: () =>
+      api.searchUsers({
+        roles: STAFF_ROLE_OPTIONS.join(","),
+        limit: 100,
+      }),
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: [...baseKey, "tasks"],
+    queryFn: () => api.listWorkflowTasks({ limit: 200 }),
+  });
+
+  const schedulesQuery = useQuery({
+    queryKey: [...baseKey, "schedules"],
+    queryFn: () => api.listWorkflowSchedules({ limit: 200 }),
+  });
+
+  const directivesQuery = useQuery({
+    queryKey: [...baseKey, "directives"],
+    queryFn: () => api.listWorkflowDirectives({ limit: 200 }),
+  });
+
+  const messagesQuery = useQuery({
+    queryKey: [...baseKey, "messages"],
+    queryFn: () => api.listWorkflowMessages({ inbox_only: false, limit: 200 }),
+    refetchInterval: 20_000,
+  });
+
+  const handoversQuery = useQuery({
+    queryKey: [...baseKey, "handovers"],
+    queryFn: () => api.listWorkflowHandovers({ limit: 120 }),
+  });
+
+  const auditQuery = useQuery({
+    queryKey: [...baseKey, "audit"],
+    queryFn: () => api.listWorkflowAudit({ limit: 120 }),
+  });
+
+  const alertsQuery = useQuery({
+    queryKey: [...baseKey, "alerts"],
+    queryFn: () => api.listAlerts({ status: "active", limit: 200 }),
+  });
+
+  const vitalsQuery = useQuery({
+    queryKey: [...baseKey, "vitals"],
+    queryFn: () => api.listVitalReadings({ limit: 240 }),
+  });
+
+  const wardSummaryQuery = useQuery({
+    queryKey: [...baseKey, "ward-summary"],
+    queryFn: () => api.getWardSummary(),
+    enabled: canLoadWardSummary,
+  });
+
+  const alertSummaryQuery = useQuery({
+    queryKey: [...baseKey, "alert-summary"],
+    queryFn: () => api.getAlertSummary(),
+  });
+
+  const vitalsAverageQuery = useQuery({
+    queryKey: [...baseKey, "vitals-average", reportWindowHours],
+    queryFn: () => api.getVitalsAverages(Number(reportWindowHours)),
+  });
+
+  const detailQuery = useQuery({
+    queryKey: [...baseKey, "detail", selectedRow?.itemType ?? "task", selectedRow?.id ?? 0],
+    queryFn: () => api.getWorkflowItemDetail(selectedRow!.itemType, selectedRow!.id),
+    enabled: selectedRow !== null,
+  });
+
+  const patients = useMemo(() => (patientsQuery.data ?? []) as ListPatientsResponse, [patientsQuery.data]);
+  const users = useMemo(() => (usersQuery.data ?? []) as UserSearchResult[], [usersQuery.data]);
+  const tasks = useMemo(() => (tasksQuery.data ?? []) as ListWorkflowTasksResponse, [tasksQuery.data]);
+
+  const schedules = useMemo(
+    () => (schedulesQuery.data ?? []) as ListWorkflowSchedulesResponse,
+    [schedulesQuery.data],
+  );
+  const directives = useMemo(
+    () => (directivesQuery.data ?? []) as ListWorkflowDirectivesResponse,
+    [directivesQuery.data],
+  );
+  const messages = useMemo(
+    () => (messagesQuery.data ?? []) as ListWorkflowMessagesResponse,
+    [messagesQuery.data],
+  );
+  const handovers = useMemo(
+    () => (handoversQuery.data ?? []) as ListWorkflowHandoversResponse,
+    [handoversQuery.data],
+  );
+  const auditEvents = useMemo(
+    () => (auditQuery.data ?? []) as AuditTrailEventOut[],
+    [auditQuery.data],
+  );
+  const alerts = useMemo(() => (alertsQuery.data ?? []) as Alert[], [alertsQuery.data]);
+  const vitals = useMemo(() => (vitalsQuery.data ?? []) as VitalReading[], [vitalsQuery.data]);
+  const wardSummary = useMemo(
+    () => (wardSummaryQuery.data ?? null) as GetWardSummaryResponse | null,
+    [wardSummaryQuery.data],
+  );
+  const alertSummary = useMemo(
+    () => (alertSummaryQuery.data ?? null) as GetAlertSummaryResponse | null,
+    [alertSummaryQuery.data],
+  );
+  const vitalsAverage = useMemo(
+    () => (vitalsAverageQuery.data ?? null) as GetVitalsAveragesResponse | null,
+    [vitalsAverageQuery.data],
+  );
+
+  const patientMap = useMemo(
+    () => new Map(patients.map((patient) => [patient.id, patient])),
+    [patients],
+  );
+
+  const userOptions = useMemo(
+    () =>
+      users.map((user) => ({
+        value: String(user.id),
+        label: labelUser(user),
+      })),
+    [users],
+  );
+
+  const queueRows = useMemo<WorkflowListRow[]>(() => {
+    const taskRows = tasks.map((task: CareTaskOut) => ({
+      id: task.id,
+      itemType: "task" as const,
+      title: task.title,
+      patientName: task.patient_id ? labelPatient(patientMap.get(task.patient_id), unitWide) : unitWide,
+      patientId: task.patient_id,
+      ownerLabel: task.assigned_person?.display_name || task.assigned_role || unassignedLabel,
+      status: task.status,
+      timestamp: task.due_at || task.updated_at || task.created_at,
+      secondaryLabel: task.priority,
+      notePreview: task.description,
+      routingRole: task.assigned_role,
+      routingUserId: task.assigned_user_id,
+    }));
+
+    const scheduleRows = schedules.map((schedule: CareScheduleOut) => ({
+      id: schedule.id,
+      itemType: "schedule" as const,
+      title: schedule.title,
+      patientName: schedule.patient_id ? labelPatient(patientMap.get(schedule.patient_id), unitWide) : unitWide,
+      patientId: schedule.patient_id,
+      ownerLabel: schedule.assigned_person?.display_name || schedule.assigned_role || unassignedLabel,
+      status: schedule.status,
+      timestamp: schedule.starts_at || schedule.updated_at || schedule.created_at,
+      secondaryLabel: schedule.schedule_type,
+      notePreview: schedule.notes ?? "",
+      routingRole: schedule.assigned_role,
+      routingUserId: schedule.assigned_user_id,
+    }));
+
+    const directiveRows = directives.map((directive: CareDirectiveOut) => ({
+      id: directive.id,
+      itemType: "directive" as const,
+      title: directive.title,
+      patientName: directive.patient_id ? labelPatient(patientMap.get(directive.patient_id), unitWide) : unitWide,
+      patientId: directive.patient_id,
+      ownerLabel: directive.target_person?.display_name || directive.target_role || unassignedLabel,
+      status: directive.status,
+      timestamp: directive.effective_from || directive.updated_at || directive.created_at,
+      secondaryLabel: directive.target_role || "person",
+      notePreview: directive.directive_text,
+      routingRole: directive.target_role,
+      routingUserId: directive.target_user_id,
+    }));
+
+    return [...taskRows, ...scheduleRows, ...directiveRows].sort(
+      (left, right) => right.timestamp.localeCompare(left.timestamp),
+    );
+  }, [directives, patientMap, schedules, tasks, unitWide, unassignedLabel]);
+
+  const openQueueRows = useMemo(
+    () => queueRows.filter((row) => isOpenWorkflowStatus(row.status)),
+    [queueRows],
+  );
+
+  const filteredQueueRows = useMemo(() => {
+    return queueRows.filter((row) => {
+      if (queueTypeFilter !== "all" && row.itemType !== queueTypeFilter) return false;
+      if (queueStatusFilter !== "all" && row.status !== queueStatusFilter) return false;
+      if (!queueSearch.trim()) return true;
+      const needle = queueSearch.trim().toLowerCase();
+      return [
+        row.title,
+        row.patientName,
+        row.ownerLabel,
+        row.status,
+        row.notePreview,
+        row.secondaryLabel,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle);
+    });
+  }, [queueSearch, queueRows, queueStatusFilter, queueTypeFilter]);
+
+  const recentMessages = useMemo(
+    () => [...messages].sort((left, right) => right.created_at.localeCompare(left.created_at)),
+    [messages],
+  );
+
+  const reportView = useMemo(
+    () =>
+      buildReportView({
+        templateId: reportTemplateId,
+        windowHours: Number(reportWindowHours),
+        auditDomain,
+        patients,
+        alerts,
+        vitals,
+        handovers,
+        auditEvents,
+        wardSummary,
+        alertSummary,
+        vitalsAverage,
+        tasks,
+        directives,
+        unitWide,
+        t,
+      }),
+    [
+      alertSummary,
+      alerts,
+      auditDomain,
+      auditEvents,
+      directives,
+      handovers,
+      patients,
+      reportTemplateId,
+      reportWindowHours,
+      t,
+      tasks,
+      unitWide,
+      vitals,
+      vitalsAverage,
+      wardSummary,
+    ],
+  );
+
+  async function invalidateConsoleData() {
+    await queryClient.invalidateQueries({ queryKey: [...baseKey] });
+  }
+
+  const createTaskMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        patient_id: optionalNumber(taskForm.patientId),
+        title: taskForm.title.trim(),
+        description: taskForm.description.trim(),
+        priority: taskForm.priority,
+        due_at: toIsoOrNull(taskForm.dueAt),
+        assigned_role: taskForm.assignmentMode === "role" ? optionalRole(taskForm.assignedRole) : null,
+        assigned_user_id:
+          taskForm.assignmentMode === "person" ? optionalNumber(taskForm.assignedUserId) : null,
+      } satisfies CreateWorkflowTaskRequest;
+
+      await api.createWorkflowTask(payload);
+    },
+    onSuccess: async () => {
+      setTaskForm(defaultTaskForm);
+      setCreateError(null);
+      await invalidateConsoleData();
+    },
+    onError: (error) => setCreateError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const createScheduleMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        patient_id: optionalNumber(scheduleForm.patientId),
+        title: scheduleForm.title.trim(),
+        schedule_type: scheduleForm.scheduleType.trim(),
+        starts_at: toRequiredIso(scheduleForm.startsAt),
+        recurrence_rule:
+          scheduleForm.recurrencePreset === "advanced"
+            ? scheduleForm.recurrenceRule.trim()
+            : recurrenceRuleForPreset(scheduleForm.recurrencePreset),
+        notes: scheduleForm.notes.trim(),
+        assigned_role:
+          scheduleForm.assignmentMode === "role" ? optionalRole(scheduleForm.assignedRole) : null,
+        assigned_user_id:
+          scheduleForm.assignmentMode === "person"
+            ? optionalNumber(scheduleForm.assignedUserId)
+            : null,
+      } satisfies CreateWorkflowScheduleRequest;
+
+      await api.createWorkflowSchedule(payload);
+    },
+    onSuccess: async () => {
+      setScheduleForm(defaultScheduleForm);
+      setCreateError(null);
+      await invalidateConsoleData();
+    },
+    onError: (error) => setCreateError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const createDirectiveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        patient_id: optionalNumber(directiveForm.patientId),
+        title: directiveForm.title.trim(),
+        directive_text: directiveForm.directiveText.trim(),
+        target_role:
+          directiveForm.assignmentMode === "role" ? optionalRole(directiveForm.targetRole) : null,
+        target_user_id:
+          directiveForm.assignmentMode === "person"
+            ? optionalNumber(directiveForm.targetUserId)
+            : null,
+        effective_from: directiveForm.effectiveFrom ? toRequiredIso(directiveForm.effectiveFrom) : null,
+      } satisfies CreateWorkflowDirectiveRequest;
+
+      await api.createWorkflowDirective(payload);
+    },
+    onSuccess: async () => {
+      setDirectiveForm(defaultDirectiveForm);
+      setCreateError(null);
+      await invalidateConsoleData();
+    },
+    onError: (error) => setCreateError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const claimMutation = useMutation({
+    mutationFn: async (payload: { row: WorkflowListRow; note: string }) =>
+      api.post<unknown>(
+        `/workflow/items/${encodeURIComponent(payload.row.itemType)}/${payload.row.id}/claim`,
+        { note: payload.note },
+      ),
+    onSuccess: async () => {
+      setTransferDialog(null);
+      setTransferNote("");
+      await invalidateConsoleData();
+    },
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const handoffMutation = useMutation({
+    mutationFn: async (payload: {
+      row: WorkflowListRow;
+      note: string;
+      targetMode: AssignmentMode;
+      targetRole: string;
+      targetUserId: string;
+    }) =>
+      api.post<unknown>(
+        `/workflow/items/${encodeURIComponent(payload.row.itemType)}/${payload.row.id}/handoff`,
+        {
+          target_mode: payload.targetMode === "role" ? "role" : "user",
+          target_role: payload.targetMode === "role" ? payload.targetRole : null,
+          target_user_id:
+            payload.targetMode === "person" ? optionalNumber(payload.targetUserId) : null,
+          note: payload.note,
+        },
+      ),
+    onSuccess: async () => {
+      setTransferDialog(null);
+      setTransferTargetMode("role");
+      setTransferTargetRole("caregiver");
+      setTransferTargetUserId(EMPTY_SELECT);
+      setTransferNote("");
+      await invalidateConsoleData();
+    },
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const sendThreadMessageMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedRow) throw new Error("No workflow item selected.");
+      if (!selectedRow.routingRole && !selectedRow.routingUserId) {
+        throw new Error("This item does not have a routing target yet.");
+      }
+      const payload = {
+        recipient_role: selectedRow.routingUserId ? null : selectedRow.routingRole,
+        recipient_user_id: selectedRow.routingUserId,
+        patient_id: selectedRow.patientId,
+        workflow_item_type: selectedRow.itemType,
+        workflow_item_id: selectedRow.id,
+        subject: `Update: ${selectedRow.title}`,
+        body: replyBody.trim(),
+      } satisfies SendWorkflowMessageRequest;
+      await api.sendWorkflowMessage(payload);
+    },
+    onSuccess: async () => {
+      setReplyBody("");
+      setDetailError(null);
+      await invalidateConsoleData();
+      if (selectedRow) {
+        await queryClient.invalidateQueries({
+          queryKey: [...baseKey, "detail", selectedRow.itemType, selectedRow.id],
+        });
+      }
+    },
+    onError: (error) => setDetailError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        recipient_role:
+          messageForm.targetMode === "role" ? optionalRole(messageForm.recipientRole) : null,
+        recipient_user_id:
+          messageForm.targetMode === "person" ? optionalNumber(messageForm.recipientUserId) : null,
+        patient_id: optionalNumber(messageForm.patientId),
+        subject: messageForm.subject.trim(),
+        body: messageForm.body.trim(),
+      } satisfies SendWorkflowMessageRequest;
+      await api.sendWorkflowMessage(payload);
+    },
+    onSuccess: async () => {
+      setMessageForm(defaultMessageForm);
+      setCoordinationError(null);
+      await invalidateConsoleData();
+    },
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const createHandoverMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        patient_id: optionalNumber(handoverForm.patientId),
+        target_role: optionalRole(handoverForm.targetRole),
+        shift_date: handoverForm.shiftDate || null,
+        shift_label: handoverForm.shiftLabel.trim(),
+        priority: handoverForm.priority,
+        note: handoverForm.note.trim(),
+      } satisfies CreateWorkflowHandoverRequest;
+      await api.createWorkflowHandover(payload);
+    },
+    onSuccess: async () => {
+      setHandoverForm(defaultHandoverForm(t("workflow.console.currentShift")));
+      setCoordinationError(null);
+      await invalidateConsoleData();
+    },
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
+  });
+
+  const summaryMetrics = useMemo<Array<{
+    icon: typeof Bell;
+    label: string;
+    value: number;
+    tone: "info" | "warning" | "critical" | "success";
+  }>>(
+    () => [
+      {
+        icon: ClipboardList,
+        label: t("workflow.console.summary.openItems"),
+        value: openQueueRows.length,
+        tone: openQueueRows.length > 0 ? "warning" : "success",
+      },
+      {
+        icon: Bell,
+        label: t("workflow.console.summary.activeAlerts"),
+        value: wardSummary?.active_alerts ?? alertSummary?.total_active ?? alerts.length,
+        tone:
+          (wardSummary?.active_alerts ?? alertSummary?.total_active ?? alerts.length) > 0
+            ? "critical"
+            : "success",
+      },
+      {
+        icon: MessageSquare,
+        label: t("workflow.console.summary.messages"),
+        value: recentMessages.length,
+        tone: recentMessages.length > 0 ? "info" : "success",
+      },
+      {
+        icon: ArrowRightLeft,
+        label: t("workflow.console.summary.handovers"),
+        value: handovers.length,
+        tone: handovers.length > 0 ? "warning" : "info",
+      },
+    ],
+    [alertSummary?.total_active, alerts.length, handovers.length, openQueueRows.length, recentMessages.length, t, wardSummary?.active_alerts],
+  );
+
+  const queueColumns = useMemo<ColumnDef<WorkflowListRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: t("workflow.console.column.item"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium text-foreground">{row.original.title}</p>
+              <Badge variant="outline">{row.original.itemType}</Badge>
+            </div>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.notePreview || "-"}</p>
+          </div>
+        ),
+      },
+      { accessorKey: "patientName", header: t("workflow.console.field.patient") },
+      { accessorKey: "ownerLabel", header: t("workflow.console.field.owner") },
+      {
+        accessorKey: "secondaryLabel",
+        header: t("workflow.console.column.typePriority"),
+        cell: ({ row }) => <Badge variant="secondary">{row.original.secondaryLabel || "-"}</Badge>,
+      },
+      {
+        accessorKey: "status",
+        header: t("workflow.console.field.status"),
+        cell: ({ row }) => <Badge variant={statusVariant(row.original.status)}>{row.original.status}</Badge>,
+      },
+      {
+        accessorKey: "timestamp",
+        header: t("workflow.console.column.nextAction"),
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <Button type="button" size="sm" variant="outline" onClick={() => setSelectedRow(row.original)}>
+            {t("workflow.console.action.open")}
+          </Button>
+        ),
+      },
+    ],
+    [setSelectedRow, t],
+  );
+
+  const transferColumns = useMemo<ColumnDef<WorkflowListRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: t("workflow.console.workflowItem"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="text-xs text-muted-foreground">{row.original.patientName}</p>
+          </div>
+        ),
+      },
+      { accessorKey: "ownerLabel", header: t("workflow.console.currentOwner") },
+      {
+        accessorKey: "status",
+        header: t("workflow.console.field.status"),
+        cell: ({ row }) => <Badge variant={statusVariant(row.original.status)}>{row.original.status}</Badge>,
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setTransferDialog({ mode: "claim", row: row.original });
+                setTransferNote("");
+                setCoordinationError(null);
+              }}
+            >
+              <UserCheck className="mr-2 h-4 w-4" />
+              {t("workflow.console.action.claim")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setTransferDialog({ mode: "handoff", row: row.original });
+                setTransferTargetMode("role");
+                setTransferTargetRole("caregiver");
+                setTransferTargetUserId(EMPTY_SELECT);
+                setTransferNote("");
+                setCoordinationError(null);
+              }}
+            >
+              <ArrowRightLeft className="mr-2 h-4 w-4" />
+              {t("workflow.console.action.handoff")}
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [
+      setCoordinationError,
+      setTransferDialog,
+      setTransferNote,
+      setTransferTargetMode,
+      setTransferTargetRole,
+      setTransferTargetUserId,
+      t,
+    ],
+  );
+
+  const messageColumns = useMemo<ColumnDef<ListWorkflowMessagesResponse[number]>[]>(
+    () => [
+      {
+        accessorKey: "subject",
+        header: t("workflow.console.message"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.subject || t("workflow.console.noSubject")}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.body}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "recipient_role",
+        header: t("workflow.console.routing"),
+        cell: ({ row }) => {
+          const sender =
+            row.original.sender_person?.display_name || `User #${row.original.sender_user_id}`;
+          const recipient = row.original.recipient_person?.display_name
+            || row.original.recipient_role
+            || (row.original.recipient_user_id ? `User #${row.original.recipient_user_id}` : t("workflow.console.direct"));
+          return (
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>{t("workflow.console.from")}: {sender}</p>
+              <p>{t("workflow.console.to")}: {recipient}</p>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "patient_id",
+        header: t("workflow.console.field.patient"),
+        cell: ({ row }) =>
+          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("workflow.console.created"),
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.created_at)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.created_at)}</p>
+          </div>
+        ),
+      },
+    ],
+    [patientMap, t, unitWide],
+  );
+
+  const handoverColumns = useMemo<ColumnDef<HandoverNoteOut>[]>(
+    () => [
+      {
+        accessorKey: "note",
+        header: t("workflow.console.handover"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={priorityVariant(row.original.priority)}>{row.original.priority}</Badge>
+              <p className="text-xs text-muted-foreground">{row.original.shift_label || t("workflow.console.shiftHandoff")}</p>
+            </div>
+            <p className="line-clamp-3 text-sm text-foreground">{row.original.note}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "patient_id",
+        header: t("workflow.console.field.patient"),
+        cell: ({ row }) =>
+          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
+      },
+      {
+        accessorKey: "target_role",
+        header: t("workflow.console.target"),
+        cell: ({ row }) => row.original.target_role || t("workflow.console.openHandoff"),
+      },
+      {
+        accessorKey: "created_at",
+        header: t("workflow.console.created"),
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.created_at)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.created_at)}</p>
+          </div>
+        ),
+      },
+    ],
+    [patientMap, t, unitWide],
+  );
+
+  const auditColumns = useMemo<ColumnDef<AuditTrailEventOut>[]>(
+    () => [
+      { accessorKey: "domain", header: t("workflow.console.domain") },
+      { accessorKey: "action", header: t("workflow.console.actionLabel") },
+      {
+        accessorKey: "entity_type",
+        header: t("workflow.console.entity"),
+        cell: ({ row }) =>
+          `${row.original.entity_type}${row.original.entity_id != null ? ` #${row.original.entity_id}` : ""}`,
+      },
+      {
+        accessorKey: "patient_id",
+        header: t("workflow.console.field.patient"),
+        cell: ({ row }) =>
+          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("workflow.console.created"),
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.created_at)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.created_at)}</p>
+          </div>
+        ),
+      },
+    ],
+    [patientMap, t, unitWide],
+  );
+
+  const isLoadingAny =
+    patientsQuery.isLoading ||
+    usersQuery.isLoading ||
+    tasksQuery.isLoading ||
+    schedulesQuery.isLoading ||
+    directivesQuery.isLoading;
+
+  return (
+    <div className="space-y-6 pb-6 animate-fade-in">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
+            <p className="max-w-3xl text-sm text-muted-foreground">{subtitle}</p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => void invalidateConsoleData()}>
+            {t("workflow.console.refresh")}
+          </Button>
+        </div>
+      </div>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {summaryMetrics.map((metric) => (
+          <SummaryStatCard
+            key={metric.label}
+            icon={metric.icon}
+            label={metric.label}
+            value={metric.value}
+            tone={metric.tone}
+          />
+        ))}
+      </section>
+
+      {!isWorkflowEmbeddedInTasksHub ? (
+        <Card className="border-border/70">
+          <CardContent className="flex flex-wrap gap-2 p-3">
+            {([
+              ["queue", t("workflow.console.tab.queue")],
+              ["transfer", t("workflow.console.tab.transfer")],
+              ["coordination", t("workflow.console.tab.coordination")],
+              ["audit", t("workflow.console.tab.audit")],
+              ["reports", t("workflow.console.tab.reports")],
+            ] as const).map(([tab, label]) => (
+              <Button
+                key={tab}
+                type="button"
+                variant={activeTab === tab ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams.toString());
+                  if (tab === "queue") {
+                    next.delete(WORKFLOW_CONSOLE_TAB_QP);
+                    stripLegacyConsoleTabFromTabQP(next);
+                  } else {
+                    next.set(WORKFLOW_CONSOLE_TAB_QP, tab);
+                    stripLegacyConsoleTabFromTabQP(next);
+                  }
+                  const query = next.toString();
+                  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {activeTab === "queue" ? (
+        <div className="space-y-4">
+          <Card className="border-border/70">
+            <CardContent className="grid auto-rows-fr gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="workflow-search">{t("workflow.console.searchQueue")}</Label>
+                <Input
+                  id="workflow-search"
+                  value={queueSearch}
+                  onChange={(event) => setQueueSearch(event.target.value)}
+                  placeholder={t("workflow.console.searchPlaceholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("workflow.console.itemType")}</Label>
+                <Select
+                  value={queueTypeFilter}
+                  onValueChange={(value) => setQueueTypeFilter(value as "all" | WorkflowItemType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("workflow.console.allItems")}</SelectItem>
+                    <SelectItem value="task">{t("workflow.console.tasks")}</SelectItem>
+                    <SelectItem value="schedule">{t("workflow.console.schedules")}</SelectItem>
+                    <SelectItem value="directive">{t("workflow.console.directives")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("workflow.console.field.status")}</Label>
+                <Select value={queueStatusFilter} onValueChange={setQueueStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("workflow.console.allStatuses")}</SelectItem>
+                    <SelectItem value="pending">{t("workflow.console.status.pending")}</SelectItem>
+                    <SelectItem value="in_progress">{t("workflow.console.status.inProgress")}</SelectItem>
+                    <SelectItem value="scheduled">{t("workflow.console.status.scheduled")}</SelectItem>
+                    <SelectItem value="active">{t("workflow.console.status.active")}</SelectItem>
+                    <SelectItem value="completed">{t("workflow.console.status.completed")}</SelectItem>
+                    <SelectItem value="acknowledged">{t("workflow.console.status.acknowledged")}</SelectItem>
+                    <SelectItem value="cancelled">{t("workflow.console.status.cancelled")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <DataTableCard
+            title={t("workflow.console.queueTitle")}
+            description={t("workflow.console.queueDescription")}
+            data={filteredQueueRows}
+            columns={queueColumns}
+            isLoading={isLoadingAny}
+            emptyText={t("workflow.console.queueEmpty")}
+          />
+        </div>
+      ) : null}
+
+      {activeTab === "transfer" ? (
+        <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-[1.04fr_0.96fr]">
+            <Card className="border-border/70">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-base">{t("workflow.console.createTitle")}</CardTitle>
+                <CardDescription>
+                  {t("workflow.console.createDescription")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {(["task", "schedule", "directive"] as const).map((itemType) => (
+                    <Button
+                      key={itemType}
+                      type="button"
+                      variant={formKind === itemType ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setFormKind(itemType)}
+                    >
+                      {t(`workflow.console.type.${itemType}`)}
+                    </Button>
+                  ))}
+                </div>
+
+                {formKind === "task" ? (
+                  <form
+                    className="space-y-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      setCreateError(null);
+                      createTaskMutation.mutate();
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.title")}</Label>
+                      <Input
+                        value={taskForm.title}
+                        onChange={(event) =>
+                          setTaskForm((current) => ({ ...current, title: event.target.value }))
+                        }
+                        placeholder={t("workflow.console.taskTitlePlaceholder")}
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.patient")}</Label>
+                        <Select
+                          value={taskForm.patientId}
+                          onValueChange={(value) =>
+                            setTaskForm((current) => ({ ...current, patientId: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={unitWide} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
+                            {patients.map((patient) => (
+                              <SelectItem key={patient.id} value={String(patient.id)}>
+                                {labelPatient(patient, unitWide)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.priority")}</Label>
+                        <Select
+                          value={taskForm.priority}
+                          onValueChange={(value) =>
+                            setTaskForm((current) => ({ ...current, priority: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">{t("workflow.console.priority.normal")}</SelectItem>
+                            <SelectItem value="high">{t("workflow.console.priority.high")}</SelectItem>
+                            <SelectItem value="critical">{t("workflow.console.priority.critical")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.description")}</Label>
+                      <Textarea
+                        rows={3}
+                        value={taskForm.description}
+                        onChange={(event) =>
+                          setTaskForm((current) => ({ ...current, description: event.target.value }))
+                        }
+                        placeholder={t("workflow.console.taskDescriptionPlaceholder")}
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.dueAt")}</Label>
+                        <Input
+                          type="datetime-local"
+                          value={taskForm.dueAt}
+                          onChange={(event) =>
+                            setTaskForm((current) => ({ ...current, dueAt: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.assignBy")}</Label>
+                        <Select
+                          value={taskForm.assignmentMode}
+                          onValueChange={(value) =>
+                            setTaskForm((current) => ({
+                              ...current,
+                              assignmentMode: value as AssignmentMode,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                            <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {taskForm.assignmentMode === "role" ? (
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.assignedRole")}</Label>
+                        <Select
+                          value={taskForm.assignedRole}
+                          onValueChange={(value) =>
+                            setTaskForm((current) => ({ ...current, assignedRole: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STAFF_ROLE_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.assignedPerson")}</Label>
+                        <Select
+                          value={taskForm.assignedUserId}
+                          onValueChange={(value) =>
+                            setTaskForm((current) => ({ ...current, assignedUserId: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("workflow.console.selectUser")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {userOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <Button type="submit" disabled={createTaskMutation.isPending}>
+                      <Plus className="mr-2 h-4 w-4" />
+                        {t("workflow.console.createTask")}
+                    </Button>
+                  </form>
+                ) : null}
+
+                {formKind === "schedule" ? (
+                  <form
+                    className="space-y-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      setCreateError(null);
+                      createScheduleMutation.mutate();
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.title")}</Label>
+                      <Input
+                        value={scheduleForm.title}
+                        onChange={(event) =>
+                          setScheduleForm((current) => ({ ...current, title: event.target.value }))
+                        }
+                        placeholder={t("workflow.console.scheduleTitlePlaceholder")}
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.patient")}</Label>
+                        <Select
+                          value={scheduleForm.patientId}
+                          onValueChange={(value) =>
+                            setScheduleForm((current) => ({ ...current, patientId: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={unitWide} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
+                            {patients.map((patient) => (
+                              <SelectItem key={patient.id} value={String(patient.id)}>
+                                {labelPatient(patient, unitWide)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.scheduleType")}</Label>
+                        <Input
+                          value={scheduleForm.scheduleType}
+                          onChange={(event) =>
+                            setScheduleForm((current) => ({
+                              ...current,
+                              scheduleType: event.target.value,
+                            }))
+                          }
+                        placeholder={t("workflow.console.scheduleTypePlaceholder")}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.startsAt")}</Label>
+                        <Input
+                          type="datetime-local"
+                          value={scheduleForm.startsAt}
+                          onChange={(event) =>
+                            setScheduleForm((current) => ({
+                              ...current,
+                              startsAt: event.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.recurrence")}</Label>
+                        <Select
+                          value={scheduleForm.recurrencePreset}
+                          onValueChange={(value) =>
+                            setScheduleForm((current) => {
+                              const preset = value as RecurrencePreset;
+                              return {
+                                ...current,
+                                recurrencePreset: preset,
+                                recurrenceRule: recurrenceRuleForPreset(preset),
+                              };
+                            })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="once">{t("workflow.console.recurrence.once")}</SelectItem>
+                            <SelectItem value="every_shift">{t("workflow.console.recurrence.everyShift")}</SelectItem>
+                            <SelectItem value="daily">{t("workflow.console.recurrence.daily")}</SelectItem>
+                            <SelectItem value="weekdays">{t("workflow.console.recurrence.weekdays")}</SelectItem>
+                            <SelectItem value="weekly">{t("workflow.console.recurrence.weekly")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.notes")}</Label>
+                      <Textarea
+                        rows={3}
+                        value={scheduleForm.notes}
+                        onChange={(event) =>
+                          setScheduleForm((current) => ({ ...current, notes: event.target.value }))
+                        }
+                        placeholder={t("workflow.console.scheduleNotesPlaceholder")}
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.assignBy")}</Label>
+                        <Select
+                          value={scheduleForm.assignmentMode}
+                          onValueChange={(value) =>
+                            setScheduleForm((current) => ({
+                              ...current,
+                              assignmentMode: value as AssignmentMode,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                            <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {scheduleForm.assignmentMode === "role" ? (
+                        <div className="space-y-2">
+                          <Label>{t("workflow.console.field.assignedRole")}</Label>
+                          <Select
+                            value={scheduleForm.assignedRole}
+                            onValueChange={(value) =>
+                              setScheduleForm((current) => ({ ...current, assignedRole: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STAFF_ROLE_OPTIONS.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label>{t("workflow.console.field.assignedPerson")}</Label>
+                          <Select
+                            value={scheduleForm.assignedUserId}
+                            onValueChange={(value) =>
+                              setScheduleForm((current) => ({ ...current, assignedUserId: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("workflow.console.selectUser")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {userOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                    <Button type="submit" disabled={createScheduleMutation.isPending}>
+                      <Plus className="mr-2 h-4 w-4" />
+                        {t("workflow.console.createSchedule")}
+                    </Button>
+                  </form>
+                ) : null}
+
+                {formKind === "directive" ? (
+                  <form
+                    className="space-y-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      setCreateError(null);
+                      createDirectiveMutation.mutate();
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.title")}</Label>
+                      <Input
+                        value={directiveForm.title}
+                        onChange={(event) =>
+                          setDirectiveForm((current) => ({ ...current, title: event.target.value }))
+                        }
+                        placeholder={t("workflow.console.directiveTitlePlaceholder")}
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.patient")}</Label>
+                        <Select
+                          value={directiveForm.patientId}
+                          onValueChange={(value) =>
+                            setDirectiveForm((current) => ({ ...current, patientId: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={unitWide} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
+                            {patients.map((patient) => (
+                              <SelectItem key={patient.id} value={String(patient.id)}>
+                                {labelPatient(patient, unitWide)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.effectiveFrom")}</Label>
+                        <Input
+                          type="datetime-local"
+                          value={directiveForm.effectiveFrom}
+                          onChange={(event) =>
+                            setDirectiveForm((current) => ({
+                              ...current,
+                              effectiveFrom: event.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t("workflow.console.field.assignBy")}</Label>
+                        <Select
+                          value={directiveForm.assignmentMode}
+                          onValueChange={(value) =>
+                            setDirectiveForm((current) => ({
+                              ...current,
+                              assignmentMode: value as AssignmentMode,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                            <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {directiveForm.assignmentMode === "role" ? (
+                        <div className="space-y-2">
+                          <Label>{t("workflow.console.field.targetRole")}</Label>
+                          <Select
+                            value={directiveForm.targetRole}
+                            onValueChange={(value) =>
+                              setDirectiveForm((current) => ({ ...current, targetRole: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STAFF_ROLE_OPTIONS.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label>{t("workflow.console.field.targetPerson")}</Label>
+                          <Select
+                            value={directiveForm.targetUserId}
+                            onValueChange={(value) =>
+                              setDirectiveForm((current) => ({ ...current, targetUserId: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("workflow.console.selectUser")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {userOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.directive")}</Label>
+                      <Textarea
+                        rows={4}
+                        value={directiveForm.directiveText}
+                        onChange={(event) =>
+                          setDirectiveForm((current) => ({
+                            ...current,
+                            directiveText: event.target.value,
+                          }))
+                        }
+                        placeholder={t("workflow.console.directivePlaceholder")}
+                      />
+                    </div>
+                    <Button type="submit" disabled={createDirectiveMutation.isPending}>
+                      <Plus className="mr-2 h-4 w-4" />
+                        {t("workflow.console.createDirective")}
+                    </Button>
+                  </form>
+                ) : null}
+
+                {createError ? <p className="text-sm text-destructive">{createError}</p> : null}
+              </CardContent>
+            </Card>
+
+            <DataTableCard
+            title={t("workflow.console.transferTitle")}
+            description={t("workflow.console.transferDescription")}
+              data={openQueueRows}
+              columns={transferColumns}
+              isLoading={isLoadingAny}
+            emptyText={t("workflow.console.transferEmpty")}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {activeTab === "coordination" ? (
+        <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Card className="border-border/70">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-base">{t("workflow.console.roleMessage")}</CardTitle>
+                <CardDescription>
+                  Send operational context to a role or a named person.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    setCoordinationError(null);
+                    sendMessageMutation.mutate();
+                  }}
+                >
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.targetMode")}</Label>
+                      <Select
+                        value={messageForm.targetMode}
+                        onValueChange={(value) =>
+                          setMessageForm((current) => ({
+                            ...current,
+                            targetMode: value as AssignmentMode,
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                          <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.patient")}</Label>
+                      <Select
+                        value={messageForm.patientId}
+                        onValueChange={(value) =>
+                          setMessageForm((current) => ({ ...current, patientId: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={unitWide} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
+                          {patients.map((patient) => (
+                            <SelectItem key={patient.id} value={String(patient.id)}>
+                              {labelPatient(patient, unitWide)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {messageForm.targetMode === "role" ? (
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.recipientRole")}</Label>
+                      <Select
+                        value={messageForm.recipientRole}
+                        onValueChange={(value) =>
+                          setMessageForm((current) => ({ ...current, recipientRole: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STAFF_ROLE_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.recipientPerson")}</Label>
+                      <Select
+                        value={messageForm.recipientUserId}
+                        onValueChange={(value) =>
+                          setMessageForm((current) => ({ ...current, recipientUserId: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("workflow.console.selectUser")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {userOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>{t("workflow.console.field.subject")}</Label>
+                    <Input
+                      value={messageForm.subject}
+                      onChange={(event) =>
+                        setMessageForm((current) => ({ ...current, subject: event.target.value }))
+                      }
+                      placeholder={t("workflow.console.messageSubjectPlaceholder")}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("workflow.console.field.body")}</Label>
+                    <Textarea
+                      rows={4}
+                      value={messageForm.body}
+                      onChange={(event) =>
+                        setMessageForm((current) => ({ ...current, body: event.target.value }))
+                      }
+                      placeholder={t("workflow.console.messageBodyPlaceholder")}
+                    />
+                  </div>
+                  <Button type="submit" disabled={sendMessageMutation.isPending}>
+                    <Send className="mr-2 h-4 w-4" />
+                    {t("workflow.console.sendMessage")}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/70">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-base">{t("workflow.console.createHandover")}</CardTitle>
+                <CardDescription>
+                  Record shift-to-shift continuity with target role and priority.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    setCoordinationError(null);
+                    createHandoverMutation.mutate();
+                  }}
+                >
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.patient")}</Label>
+                      <Select
+                        value={handoverForm.patientId}
+                        onValueChange={(value) =>
+                          setHandoverForm((current) => ({ ...current, patientId: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={unitWide} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
+                          {patients.map((patient) => (
+                            <SelectItem key={patient.id} value={String(patient.id)}>
+                              {labelPatient(patient, unitWide)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.targetRole")}</Label>
+                      <Select
+                        value={handoverForm.targetRole}
+                        onValueChange={(value) =>
+                          setHandoverForm((current) => ({ ...current, targetRole: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>{t("workflow.console.openHandoff")}</SelectItem>
+                          {STAFF_ROLE_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.shiftDate")}</Label>
+                      <Input
+                        type="date"
+                        value={handoverForm.shiftDate}
+                        onChange={(event) =>
+                          setHandoverForm((current) => ({ ...current, shiftDate: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("workflow.console.field.shiftLabel")}</Label>
+                      <Input
+                        value={handoverForm.shiftLabel}
+                        onChange={(event) =>
+                          setHandoverForm((current) => ({ ...current, shiftLabel: event.target.value }))
+                        }
+                        placeholder={t("workflow.console.shiftLabelPlaceholder")}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("workflow.console.field.priority")}</Label>
+                    <Select
+                      value={handoverForm.priority}
+                      onValueChange={(value) =>
+                        setHandoverForm((current) => ({ ...current, priority: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="routine">{t("workflow.console.priority.routine")}</SelectItem>
+                        <SelectItem value="urgent">{t("workflow.console.priority.urgent")}</SelectItem>
+                        <SelectItem value="critical">{t("workflow.console.priority.critical")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("workflow.console.field.note")}</Label>
+                    <Textarea
+                      rows={4}
+                      value={handoverForm.note}
+                      onChange={(event) =>
+                        setHandoverForm((current) => ({ ...current, note: event.target.value }))
+                      }
+                      placeholder={t("workflow.console.handoverNotePlaceholder")}
+                    />
+                  </div>
+                  <Button type="submit" disabled={createHandoverMutation.isPending}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t("workflow.console.saveHandover")}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          {coordinationError ? <p className="text-sm text-destructive">{coordinationError}</p> : null}
+
+          <DataTableCard
+              title={t("workflow.console.recentMessages")}
+              description={t("workflow.console.recentMessagesDescription")}
+            data={recentMessages}
+            columns={messageColumns}
+            isLoading={messagesQuery.isLoading || patientsQuery.isLoading}
+              emptyText={t("workflow.console.messagesEmpty")}
+          />
+
+          <DataTableCard
+              title={t("workflow.console.recentHandovers")}
+              description={t("workflow.console.recentHandoversDescription")}
+            data={handovers}
+            columns={handoverColumns}
+            isLoading={handoversQuery.isLoading || patientsQuery.isLoading}
+              emptyText={t("workflow.console.handoversEmpty")}
+          />
+        </div>
+      ) : null}
+
+      {activeTab === "audit" ? (
+        <DataTableCard
+            title={t("workflow.console.auditTitle")}
+            description={t("workflow.console.auditDescription")}
+          data={auditEvents}
+          columns={auditColumns}
+          isLoading={auditQuery.isLoading || patientsQuery.isLoading}
+            emptyText={t("workflow.console.auditEmpty")}
+          rightSlot={<History className="h-4 w-4 text-muted-foreground" />}
+        />
+      ) : null}
+
+      {activeTab === "reports" ? (
+        <div className="space-y-4">
+          <Card className="border-border/70">
+            <CardContent className="grid auto-rows-fr gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="space-y-2">
+                <Label>{t("workflow.console.reports.reportTemplate")}</Label>
+                <Select
+                  value={reportTemplateId}
+                  onValueChange={(value) => setReportTemplateId(value as ReportTemplateId)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reportTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {reportTemplates.find((item) => item.id === reportTemplateId)?.description}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("workflow.console.reports.window")}</Label>
+                <Select value={reportWindowHours} onValueChange={setReportWindowHours}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6">{t("workflow.console.reports.window6h")}</SelectItem>
+                    <SelectItem value="12">{t("workflow.console.reports.window12h")}</SelectItem>
+                    <SelectItem value="24">{t("workflow.console.reports.window24h")}</SelectItem>
+                    <SelectItem value="72">{t("workflow.console.reports.window72h")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("workflow.console.reports.auditDomain")}</Label>
+                <Select value={auditDomain} onValueChange={setAuditDomain}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("workflow.console.option.all")}</SelectItem>
+                    <SelectItem value="task">{t("workflow.console.type.task")}</SelectItem>
+                    <SelectItem value="schedule">{t("workflow.console.type.schedule")}</SelectItem>
+                    <SelectItem value="directive">{t("workflow.console.type.directive")}</SelectItem>
+                    <SelectItem value="handover">{t("workflow.console.type.handover")}</SelectItem>
+                    <SelectItem value="messaging">{t("workflow.console.type.messaging")}</SelectItem>
+                    <SelectItem value="alert">{t("workflow.console.type.alert")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-wrap items-end gap-2 self-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    downloadTextFile(
+                      buildReportFilename(reportView.title, Number(reportWindowHours)),
+                      buildReportCsv(reportView.columns, reportView.rows),
+                      "text/csv",
+                    )
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {t("workflow.console.reports.csv")}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  {t("workflow.console.reports.print")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {reportView.metrics.map((metric) => (
+              <SummaryStatCard
+                key={metric.label}
+                icon={metric.icon}
+                label={metric.label}
+                value={metric.value}
+                tone={metric.tone}
+              />
+            ))}
+          </div>
+
+          <Card className="border-border/70">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-base">{reportView.title}</CardTitle>
+              <CardDescription>{reportView.subtitle}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ReportPreviewTable
+                columns={reportView.columns}
+                rows={reportView.rows}
+                emptyText={t("workflow.console.reports.emptyTable")}
+                caption={reportView.note}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      <Dialog
+        open={selectedRow !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedRow(null);
+            setReplyBody("");
+            setDetailError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{selectedRow?.title ?? t("workflow.console.workflowItem")}</DialogTitle>
+            <DialogDescription>
+              {selectedRow ? `${selectedRow.itemType} | ${selectedRow.patientName}` : t("workflow.console.workflowDetail")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[72vh] space-y-5 overflow-y-auto px-6 pb-6">
+            {detailQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">{t("workflow.console.loadingDetail")}</p>
+            ) : detailQuery.isError ? (
+              <p className="text-sm text-destructive">{formatConsoleError(detailQuery.error, requestFailedMsg)}</p>
+            ) : detailQuery.data != null &&
+              detailQuery.data.item != null &&
+              typeof detailQuery.data.item === "object" ? (
+              <>
+                <section className="grid gap-3 rounded-lg border border-border bg-muted/25 p-4 md:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("workflow.console.field.status")}
+                    </p>
+                    <Badge className="mt-2" variant={statusVariant(String(detailQuery.data?.item?.status ?? selectedRow?.status ?? "open"))}>
+                      {String(detailQuery.data?.item?.status ?? selectedRow?.status ?? "open")}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("workflow.console.field.owner")}
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-foreground">
+                      {selectedRow?.ownerLabel ?? unassignedLabel}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("workflow.console.field.patient")}
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-foreground">
+                      {selectedRow?.patientName ?? unitWide}
+                    </p>
+                  </div>
+                </section>
+
+                <section className="grid gap-3 md:grid-cols-2">
+                  {[
+                    {
+                      label: t("workflow.console.field.priority"),
+                      value:
+                        typeof detailQuery.data?.item?.priority === "string"
+                          ? detailQuery.data?.item?.priority
+                          : null,
+                    },
+                    {
+                      label: t("workflow.console.field.scheduleType"),
+                      value:
+                        typeof detailQuery.data?.item?.schedule_type === "string"
+                          ? detailQuery.data?.item?.schedule_type
+                          : null,
+                    },
+                    {
+                      label: t("workflow.console.field.dueAt"),
+                      value:
+                        typeof detailQuery.data?.item?.due_at === "string"
+                          ? formatDateTime(detailQuery.data?.item?.due_at)
+                          : null,
+                    },
+                    {
+                      label: t("workflow.console.field.startsAt"),
+                      value:
+                        typeof detailQuery.data?.item?.starts_at === "string"
+                          ? formatDateTime(detailQuery.data?.item?.starts_at)
+                          : null,
+                    },
+                    {
+                      label: t("workflow.console.field.effectiveFrom"),
+                      value:
+                        typeof detailQuery.data?.item?.effective_from === "string"
+                          ? formatDateTime(detailQuery.data?.item?.effective_from)
+                          : null,
+                    },
+                  ]
+                    .filter((field) => field.value)
+                    .map((field) => (
+                      <div key={field.label} className="rounded-lg border border-border p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {field.label}
+                        </p>
+                        <p className="mt-1 text-sm text-foreground">{field.value}</p>
+                      </div>
+                    ))}
+                </section>
+
+                {[
+                  {
+                    label: t("workflow.console.field.description"),
+                    value:
+                      typeof detailQuery.data?.item?.description === "string"
+                        ? detailQuery.data?.item?.description
+                        : null,
+                  },
+                  {
+                    label: t("workflow.console.field.notes"),
+                    value:
+                      typeof detailQuery.data?.item?.notes === "string"
+                        ? detailQuery.data?.item?.notes
+                        : null,
+                  },
+                  {
+                    label: t("workflow.console.field.directive"),
+                    value:
+                      typeof detailQuery.data?.item?.directive_text === "string"
+                        ? detailQuery.data?.item?.directive_text
+                        : null,
+                  },
+                ]
+                  .filter((field) => field.value)
+                  .map((field) => (
+                    <section key={field.label} className="rounded-lg border border-border p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {field.label}
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{field.value}</p>
+                    </section>
+                  ))}
+
+                <section className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">{t("workflow.console.discussion")}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {t("workflow.console.discussionDescription")}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {(detailQuery.data?.messages ?? []).length === 0 ? (
+                      <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+                        {t("workflow.console.discussionEmpty")}
+                      </p>
+                    ) : (
+                      (detailQuery.data?.messages ?? []).map((message) => (
+                        <div key={message.id} className="rounded-lg border border-border p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-medium text-foreground">
+                              {message.sender_person?.display_name || `User #${message.sender_user_id}`}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatRelativeTime(message.created_at)}
+                            </p>
+                          </div>
+                          {message.subject ? (
+                            <p className="mt-2 text-xs font-semibold text-muted-foreground">
+                              {message.subject}
+                            </p>
+                          ) : null}
+                          <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <form
+                    className="space-y-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      sendThreadMessageMutation.mutate();
+                    }}
+                  >
+                    <Label htmlFor="workflow-thread-reply">{t("workflow.console.reply")}</Label>
+                    <Textarea
+                      id="workflow-thread-reply"
+                      rows={3}
+                      value={replyBody}
+                      onChange={(event) => setReplyBody(event.target.value)}
+                      placeholder={t("workflow.console.replyPlaceholder")}
+                    />
+                    {detailError ? <p className="text-sm text-destructive">{detailError}</p> : null}
+                    <Button type="submit" disabled={!replyBody.trim() || sendThreadMessageMutation.isPending}>
+                      <Send className="mr-2 h-4 w-4" />
+                      {t("workflow.console.sendReply")}
+                    </Button>
+                  </form>
+                </section>
+
+                <section className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">{t("workflow.console.audit")}</h3>
+                  {(detailQuery.data?.audit ?? []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t("workflow.console.itemAuditEmpty")}</p>
+                  ) : (
+                    (detailQuery.data?.audit ?? []).map((event) => (
+                      <div key={event.id} className="rounded-lg border border-border p-3 text-sm">
+                        <p className="font-medium text-foreground">{event.action}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {event.entity_type} | {formatRelativeTime(event.created_at)}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </section>
+              </>
+            ) : detailQuery.data ? (
+              <p className="text-sm text-muted-foreground">
+                {t("workflow.console.detailMissing")}
+              </p>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={transferDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTransferDialog(null);
+            setTransferNote("");
+            setCoordinationError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {transferDialog?.mode === "claim"
+                ? t("workflow.console.claimItemTitle")
+                : t("workflow.console.handoffItemTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {transferDialog
+                ? `${transferDialog.row.title} | ${transferDialog.row.patientName}`
+                : t("workflow.console.transferItem")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {transferDialog?.mode === "handoff" ? (
+              <>
+                <div className="space-y-2">
+                  <Label>{t("workflow.console.field.targetMode")}</Label>
+                  <Select
+                    value={transferTargetMode}
+                    onValueChange={(value) => setTransferTargetMode(value as AssignmentMode)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="role">{t("workflow.console.option.role")}</SelectItem>
+                      <SelectItem value="person">{t("workflow.console.option.person")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {transferTargetMode === "role" ? (
+                  <div className="space-y-2">
+                    <Label>{t("workflow.console.field.targetRole")}</Label>
+                    <Select value={transferTargetRole} onValueChange={setTransferTargetRole}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STAFF_ROLE_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>{t("workflow.console.field.targetPerson")}</Label>
+                    <Select value={transferTargetUserId} onValueChange={setTransferTargetUserId}>
+                      <SelectTrigger>
+                      <SelectValue placeholder={t("workflow.console.selectUser")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
+            ) : null}
+
+            <div className="space-y-2">
+              <Label>{t("workflow.console.field.note")}</Label>
+              <Textarea
+                rows={4}
+                value={transferNote}
+                onChange={(event) => setTransferNote(event.target.value)}
+                placeholder={
+                  transferDialog?.mode === "claim"
+                    ? t("workflow.console.claimNotePlaceholder")
+                    : t("workflow.console.handoffContextPlaceholder")
+                }
+              />
+            </div>
+
+            {coordinationError ? <p className="text-sm text-destructive">{coordinationError}</p> : null}
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setTransferDialog(null);
+                  setTransferNote("");
+                  setCoordinationError(null);
+                }}
+              >
+                {t("common.cancel")}
+              </Button>
+              {transferDialog?.mode === "claim" ? (
+                <Button
+                  type="button"
+                  disabled={claimMutation.isPending}
+                  onClick={() => {
+                    if (!transferDialog) return;
+                    setCoordinationError(null);
+                    claimMutation.mutate({ row: transferDialog.row, note: transferNote.trim() });
+                  }}
+                >
+                  {t("workflow.console.claimItem")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  disabled={
+                    handoffMutation.isPending
+                    || (transferTargetMode === "person" && transferTargetUserId === EMPTY_SELECT)
+                  }
+                  onClick={() => {
+                    if (!transferDialog) return;
+                    setCoordinationError(null);
+                    handoffMutation.mutate({
+                      row: transferDialog.row,
+                      note: transferNote.trim(),
+                      targetMode: transferTargetMode,
+                      targetRole: transferTargetRole,
+                      targetUserId: transferTargetUserId,
+                    });
+                  }}
+                >
+                  {t("workflow.console.handoffItem")}
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

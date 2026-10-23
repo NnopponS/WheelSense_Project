@@ -1,0 +1,7 @@
+# components/head-caregiver/DataTableCard.tsx
+
+- DataTableCsvExport · type · L29-L34 — type DataTableCsvExport<TData> = { /** Filename stem without extension, ASCII recommended (date is appended). */ fileNameBase: string; headers: string[]; getRowValues: (row: TData) => (string | number | null | undefined)[]; };
+- getMobileCellLabel · function · L36-L43 — function getMobileCellLabel<TData>(cell: Cell<TData, unknown>): string | null
+- isMobileActionCell · function · L45-L48 — function isMobileActionCell<TData>(cell: Cell<TData, unknown>): boolean
+- Props · type · L50-L66 — type Props<TData> = { title: string; data: TData[]; columns: ColumnDef<TData>[]; isLoading?: boolean; emptyText?: string; description?: string; rightSlot?: React.ReactNode; pageSize?: number; csvExport?: DataTableCsvExport<TData>; /** When set, each body row gets this `id` (e.g. deep-link targets `ws-alert-12`). */ getRowDomId?: (row: TData) => string | undefined; getRowClassName?: (row: TData) => string | undefined; /** Mobile-first roles can render each row as a compact card instead of forcing a wide table. */ mobileMode?: "table" | "cards"; renderMobileCard?: (row: TData) => React.ReactNode; };
+- DataTableCard · function · L68-L274 — function DataTableCard<TData>({ title, data, columns, isLoading = false, emptyText, description, rightSlot, pageSize = 10, csvExport, getRowDomId, getRowClassName, mobileMode = "table", renderMobileCard, }: Props<TData>)

@@ -143,19 +143,18 @@ services:
     #           count: all
     #           capabilities: [ gpu ]
 
-  # ==================== Dashboard (Frontend) ====================
+  # ==================== Dashboard (Frontend - Next.js) ====================
   dashboard:
     build:
-      context: ./services/dashboard
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=/api
-        - VITE_MQTT_WS_URL=ws://localhost/mqtt
+      context: ../frontend
+      dockerfile: Dockerfile.standalone
     container_name: wheelsense-dashboard
     restart: unless-stopped
-    # Dashboard is accessed through nginx proxy, no direct port mapping needed
-    # ports:
-    #   - "3000:80"
+    environment:
+      - NODE_ENV=production
+      - PORT=80
+      - HOSTNAME=0.0.0.0
+      - WHEELSENSE_API_ORIGIN=http://backend:8000
     depends_on:
       backend:
         condition: service_healthy

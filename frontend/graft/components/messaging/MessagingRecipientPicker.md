@@ -1,0 +1,7 @@
+# components/messaging/MessagingRecipientPicker.tsx
+
+- MessagingRecipientRow · type · L9-L18 — type MessagingRecipientRow = { id: number; username: string; display_name: string; role: string; /** From API: patient-linked accounts may still carry a non-patient `role` in edge cases. */ kind?: "staff" | "patient" | "unlinked"; employee_code?: string | null; linked_name?: string | null; };
+- matchesRecipientRoleFilter · function · L21-L32 — function matchesRecipientRoleFilter( r: MessagingRecipientRow, filterRole: string, ): boolean
+- matchesRecipientSearch · function · L34-L48 — function matchesRecipientSearch(r: MessagingRecipientRow, raw: string): boolean
+- Props · type · L50-L66 — type Props = { idPrefix: string; value: string; onChange: (userId: string) => void; allRecipients: MessagingRecipientRow[]; candidates: MessagingRecipientRow[]; search: string; onSearchChange: (value: string) => void; loading: boolean; disabled?: boolean; label: string; searchPlaceholderKey: TranslationKey; hintWhenHasMatchesKey: TranslationKey; emptyRoleKey: TranslationKey; noMatchKey: TranslationKey; t: (key: TranslationKey) => string; };
+- MessagingRecipientPicker · function · L68-L154 — function MessagingRecipientPicker({ idPrefix, value, onChange, allRecipients, candidates, search, onSearchChange, loading, disabled, label, searchPlaceholderKey, hintWhenHasMatchesKey, emptyRoleKey, noMatchKey, t, }: Props)

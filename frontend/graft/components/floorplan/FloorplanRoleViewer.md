@@ -1,0 +1,27 @@
+# components/floorplan/FloorplanRoleViewer.tsx
+
+- Props · type · L42-L49 — type Props = { className?: string; compact?: boolean; showPresence?: boolean; initialFacilityId?: number | null; initialFloorId?: number | null; initialRoomName?: string | null; };
+- PatientHint · type · L51-L51 — type PatientHint = NonNullable<FloorplanPresenceOut["rooms"][number]["patient_hint"]>;
+- RoomOccupant · type · L53-L66 — type RoomOccupant = { actor_type: string; actor_id: number; display_name: string; subtitle?: string; role?: string | null; patient_id?: number | null; user_id?: number | null; caregiver_id?: number | null; room_id?: number | null; source: string; updated_at?: string | null; photo_url?: string | null; };
+- RoomSmartDeviceStateSummary · type · L68-L75 — type RoomSmartDeviceStateSummary = { id: number; name: string; device_type: string; ha_entity_id?: string; state?: string; is_active?: boolean; };
+- RoomCameraSummary · type · L77-L83 — type RoomCameraSummary = { device_id?: string | null; latest_photo_id?: number | null; latest_photo_url?: string | null; captured_at?: string | null; capture_available?: boolean; };
+- LegacyStaffHint · type · L85-L91 — type LegacyStaffHint = { caregiver_id: number; first_name: string; last_name: string; role?: string; source?: string; };
+- PresenceRoom · type · L93-L100 — type PresenceRoom = FloorplanPresenceOut["rooms"][number] & { patient_hints?: PatientHint[]; staff_hints?: LegacyStaffHint[]; occupants?: RoomOccupant[]; alert_count?: number; smart_devices_summary?: RoomSmartDeviceStateSummary[]; camera_summary?: RoomCameraSummary | null; };
+- PresenceResponse · type · L102-L104 — type PresenceResponse = Omit<FloorplanPresenceOut, "rooms"> & { rooms: PresenceRoom[]; };
+- safeRoomName · function · L106-L108 — function safeRoomName(value: string | null | undefined): string
+- safeNodeDeviceId · function · L110-L112 — function safeNodeDeviceId(value: string | null | undefined): string
+- describePatientName · function · L114-L117 — function describePatientName(patient: PatientHint): string
+- formatSourceLabel · function · L119-L121 — function formatSourceLabel(source: string | undefined): string
+- getNodeTone · function · L123-L130 — function getNodeTone(room: PresenceRoom | null): FloorplanRoomTone
+- describeNodeStatus · function · L132-L140 — function describeNodeStatus(room: PresenceRoom | null): string
+- getPredictionChip · function · L142-L150 — function getPredictionChip(room: PresenceRoom): FloorplanRoomChip | null
+- buildFallbackOccupants · function · L152-L202 — function buildFallbackOccupants(room: PresenceRoom): RoomOccupant[]
+- getRoomOccupants · function · L204-L210 — function getRoomOccupants(room: PresenceRoom | null): RoomOccupant[]
+- presenceHrefForOccupant · function · L212-L221 — function presenceHrefForOccupant(o: RoomOccupant, roleBase: string | null): string | null
+- buildPresenceMeta · function · L223-L281 — function buildPresenceMeta(room: PresenceRoom, roleBase: string | null): FloorplanRoomMeta
+- SummaryStat · function · L283-L312 — function SummaryStat({ icon: Icon, label, value, tone, }: { icon: typeof Users; label: string; value: string | number; tone: FloorplanRoomTone; })
+- OccupantList · function · L314-L362 — function OccupantList({ title, items, emptyText, }: { title: string; items: RoomOccupant[]; emptyText: string; })
+- RoomEntry · type · L364-L367 — type RoomEntry = { room: FloorplanRoomShape; presenceRoom: PresenceRoom | null; };
+- RoomInspectorContent · function · L369-L562 — function RoomInspectorContent({ selectedRoomEntry, selectedPresenceRoom, selectedPatients, selectedStaff, inspectorDevices, captureBusy, captureMessage, requestCapture, refetchPresence, }: { selectedRoomEntry: RoomEntry; selectedPresenceRoom: PresenceRoom | null; selectedPatients: RoomOccupant[]; selectedStaff: RoomOccupant[]; inspectorDevices: Array<RoomSmartDeviceStateSummary | SmartDevice>; captureBusy: boolean; captureMessage: string | null; requestCapture: () => void; refetchPresence: () => void; })
+- FloorplanRoleViewer · function · L567-L1142 — function FloorplanRoleViewer({ className = "", compact = false, showPresence = true, initialFacilityId = null, initialFloorId = null, initialRoomName = null, }: Props)
+- requestCapture · function · L860-L875 — async function requestCapture()

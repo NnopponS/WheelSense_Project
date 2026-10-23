@@ -1,0 +1,46 @@
+# components/ai/EaseAIResponseCards.tsx
+
+- JsonRecord · type · L24-L24 — type JsonRecord = Record<string, unknown>;
+- EaseAIBackendCard · type · L26-L26 — type EaseAIBackendCard = JsonRecord;
+- Choice · type · L28-L34 — type Choice = { key: string; label: string; reply: string; description?: string; recommended?: boolean; };
+- Column · type · L36-L39 — type Column = { key: string; label: string; };
+- EaseAIResponseCardsProps · type · L41-L45 — type EaseAIResponseCardsProps = { cards: EaseAIBackendCard[]; onQuestionChoice?: (reply: string) => void; onNavigate?: (href: string) => void; };
+- asRecord · function · L47-L49 — function asRecord(value: unknown): JsonRecord | null
+- asArray · function · L51-L53 — function asArray(value: unknown): unknown[]
+- asString · function · L55-L57 — function asString(value: unknown): string
+- asNumber · function · L59-L66 — function asNumber(value: unknown): number | null
+- cardType · function · L68-L78 — function cardType(card: EaseAIBackendCard): string
+- cardPayload · function · L80-L82 — function cardPayload(card: EaseAIBackendCard): JsonRecord
+- nestedPayload · function · L84-L91 — function nestedPayload(card: EaseAIBackendCard, keys: string[]): JsonRecord
+- firstRecord · function · L93-L99 — function firstRecord(...values: unknown[]): JsonRecord | null
+- titleFor · function · L101-L104 — function titleFor(card: EaseAIBackendCard, fallback: string): string
+- provenanceItems · function · L106-L126 — function provenanceItems(card: EaseAIBackendCard): string[]
+- CardShell · function · L128-L150 — function CardShell({ icon, title, children, className, }: { icon: React.ReactNode; title: string; children: React.ReactNode; className?: string; })
+- Provenance · function · L152-L163 — function Provenance({ items }: { items: string[] })
+- TimelineCard · function · L165-L189 — function TimelineCard({ card }: { card: EaseAIBackendCard })
+- metricText · function · L191-L198 — function metricText(metric: unknown): string
+- PatientHealthAnalysisCard · function · L200-L253 — function PatientHealthAnalysisCard({ card }: { card: EaseAIBackendCard })
+- TaskDraftCard · function · L255-L278 — function TaskDraftCard({ card }: { card: EaseAIBackendCard })
+- normalizeChoices · function · L280-L307 — function normalizeChoices(card: EaseAIBackendCard): Choice[]
+- QuestionChoicesCard · function · L309-L382 — function QuestionChoicesCard({ card, onQuestionChoice, }: { card: EaseAIBackendCard; onQuestionChoice?: (reply: string) => void; })
+- buildCustomReply · function · L321-L326 — function buildCustomReply(value: string): string
+- PlanSummaryCard · function · L384-L405 — function PlanSummaryCard({ card }: { card: EaseAIBackendCard })
+- formatDatePart · function · L407-L413 — function formatDatePart(value: unknown): string
+- formatTimePart · function · L415-L421 — function formatTimePart(value: unknown): string
+- TaskSuccessCard · function · L423-L466 — function TaskSuccessCard({ card }: { card: EaseAIBackendCard })
+- normalizeColumns · function · L468-L483 — function normalizeColumns(rows: JsonRecord[], rawColumns: unknown[]): Column[]
+- DataTableCard · function · L485-L539 — function DataTableCard({ card }: { card: EaseAIBackendCard })
+- PatientSummaryCard · function · L541-L572 — function PatientSummaryCard({ card }: { card: EaseAIBackendCard })
+- displayValue · function · L574-L579 — function displayValue(value: unknown): string
+- ProfileSummaryCard · function · L581-L617 — function ProfileSummaryCard({ card }: { card: EaseAIBackendCard })
+- StaffSummaryCard · function · L619-L650 — function StaffSummaryCard({ card }: { card: EaseAIBackendCard })
+- StaffTimelineResponseCard · function · L652-L697 — function StaffTimelineResponseCard({ card }: { card: EaseAIBackendCard })
+- SensorStatusCard · function · L699-L740 — function SensorStatusCard({ card }: { card: EaseAIBackendCard })
+- HealthTrendChartCard · function · L742-L784 — function HealthTrendChartCard({ card }: { card: EaseAIBackendCard })
+- ToolResultCard · function · L786-L805 — function ToolResultCard({ card }: { card: EaseAIBackendCard })
+- NavigationCard · function · L807-L828 — function NavigationCard({ card, onNavigate }: { card: EaseAIBackendCard; onNavigate?: (href: string) => void })
+- renderCard · function · L830-L877 — function renderCard( card: EaseAIBackendCard, onQuestionChoice?: (reply: string) => void, onNavigate?: (href: string) => void, )
+- EaseAIResponseCards · function · L879-L891 — function EaseAIResponseCards({ cards, onQuestionChoice, onNavigate }: EaseAIResponseCardsProps)
+- responseCardsFromUnknown · function · L893-L906 — function responseCardsFromUnknown(value: unknown): EaseAIBackendCard[]
+- taskSuccessCardFromResult · function · L908-L915 — function taskSuccessCardFromResult(result: JsonRecord): EaseAIBackendCard
+- timelineCardFromPayload · function · L917-L924 — function timelineCardFromPayload(payload: JsonRecord): EaseAIBackendCard

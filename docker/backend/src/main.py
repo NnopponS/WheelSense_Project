@@ -604,6 +604,10 @@ app.include_router(chat_router)
 from .api.health import router as health_router
 app.include_router(health_router)
 
+# Frontend V2 Compatibility router
+from .api.frontend_v2_compat import router as frontend_v2_compat_router
+app.include_router(frontend_v2_compat_router)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -864,9 +868,9 @@ async def get_stream_url(room_id: str):
 @app.get("/api/video/{room_id}")
 async def get_video_frame(room_id: str):
     """Get latest video frame as JPEG (polling endpoint for fallback)."""
+    from fastapi.responses import Response
     if room_id not in stream_handler.latest_frames:
         # Return 1x1 transparent PNG as placeholder
-        from fastapi.responses import Response
         placeholder = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xdb\x00\x00\x00\x00IEND\xaeB`\x82'
         return Response(content=placeholder, media_type="image/png")
     

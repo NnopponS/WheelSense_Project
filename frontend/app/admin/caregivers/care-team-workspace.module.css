@@ -1,0 +1,179 @@
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.summaryItem {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.summaryItem dt,
+.staffFacts dt {
+  color: var(--muted-foreground);
+}
+
+.summaryItem dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs,
+.view {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.view[data-state="inactive"] {
+  display: none;
+}
+
+.tabList {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.toolbar {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.toolbarControls {
+  min-width: 0;
+}
+
+.searchBar {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.view {
+  margin-top: 0;
+}
+
+.viewActions {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+.staffGrid,
+.scrollPane {
+  min-width: 0;
+}
+
+.staffGrid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.staffDetail,
+.staffSelection {
+  display: none;
+}
+
+.mobileProfile {
+  font-weight: 600;
+}
+
+.mobileProfile:hover {
+  color: var(--primary);
+}
+
+.mobileProfile:focus-visible,
+.staffSelection:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+.staffFacts {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.staffFacts dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1024px) {
+  .toolbar {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .toolbarControls {
+    flex: 1;
+    max-width: 32rem;
+  }
+
+  .staffGrid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 1fr);
+    align-items: start;
+  }
+
+  .staffDetail {
+    display: block;
+  }
+
+  .staffSelection {
+    display: inline;
+    min-height: 2.75rem;
+    text-align: left;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .staffSelection:hover,
+  .staffSelection[aria-pressed="true"] {
+    color: var(--primary);
+  }
+
+  .mobileProfile {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) and (min-height: 640px) {
+  .tabs,
+  .view,
+  .staffGrid {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .staffGrid {
+    align-items: stretch;
+  }
+
+  .scrollPane,
+  .staffDetail {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .view > .scrollPane {
+    flex: 1;
+  }
+}

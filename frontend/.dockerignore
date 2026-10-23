@@ -1,0 +1,14 @@
+node_modules
+.next/*
+!.next/standalone
+!.next/standalone/**
+!.next/static
+!.next/static/**
+.git
+.env
+.env.*
+coverage
+test-results
+next-dev.log
+next-dev.err.log
+npm-debug.log

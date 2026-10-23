@@ -1,0 +1,29 @@
+# components/patients/PatientHealthAnalysisPanel.tsx
+
+- TrendRange · type · L34-L34 — type TrendRange = "day" | "week" | "month" | "year" | "all";
+- AISettingsOut · type · L36-L41 — type AISettingsOut = { provider?: "ollama" | "copilot"; model?: string; workspace_default_provider?: "ollama" | "copilot"; workspace_default_model?: string; };
+- AIHealthOut · type · L43-L47 — type AIHealthOut = { default_provider?: "ollama" | "copilot"; ollama_configured?: boolean; copilot_configured?: boolean; };
+- VitalTrendReading · type · L49-L53 — type VitalTrendReading = { timestamp: string; heart_rate_bpm: number | null; spo2: number | null; };
+- DeviceAssignmentLike · type · L55-L59 — type DeviceAssignmentLike = { device_id: string; device_role: string; is_active: boolean; };
+- ImuTelemetryRow · type · L61-L66 — type ImuTelemetryRow = { timestamp?: string | null; motion?: { distance_m?: number | null; } | null; };
+- TrendBucket · type · L68-L77 — type TrendBucket = { key: string; label: string; time: number; heartRateTotal: number; heartRateCount: number; spo2Total: number; spo2Count: number; distance_m: number; };
+- TrendPoint · type · L79-L87 — type TrendPoint = { key: string; label: string; time: number; heart_rate_bpm: number | null; spo2: number | null; calories_kcal: number | null; distance_m: number | null; };
+- rangeHours · function · L104-L106 — function rangeHours(range: TrendRange): number | null
+- bucketFor · function · L108-L138 — function bucketFor(date: Date, range: TrendRange): { key: string; label: string; time: number }
+- upsertBucket · function · L140-L154 — function upsertBucket(map: Map<string, TrendBucket>, date: Date, range: TrendRange): TrendBucket
+- buildTrendSeries · function · L156-L213 — function buildTrendSeries( vitals: VitalTrendReading[], imuRows: ImuTelemetryRow[], range: TrendRange, ): TrendPoint[]
+- metricLabel · function · L215-L226 — function metricLabel(key: string, t: (key: string) => string)
+- StatusDot · type · L228-L228 — type StatusDot = "normal" | "warning" | "critical" | "unknown";
+- statusDot · function · L230-L235 — function statusDot(severity?: HealthRiskSeverity): StatusDot
+- StatusDotBadge · function · L237-L256 — function StatusDotBadge({ status, label }: { status: StatusDot; label: string })
+- ActivityNotConnected · function · L258-L265 — function ActivityNotConnected({ t }: { t: (key: string) => string })
+- severityChip · function · L267-L275 — function severityChip(severity: HealthRiskSeverity, t: (key: string) => string)
+- riskBannerColors · function · L277-L282 — function riskBannerColors(level: PatientHealthAnalysis["risk_level"])
+- riskLevelLabel · function · L284-L289 — function riskLevelLabel(level: PatientHealthAnalysis["risk_level"], t: (key: string) => string)
+- qualityText · function · L291-L295 — function qualityText(value: PatientHealthAnalysis["data_quality"], t: (key: string) => string)
+- VitalCard · function · L298-L325 — function VitalCard({ metricKey, metric, t, }: { metricKey: string; metric?: PatientHealthAnalysis["baseline"][string]; t: (key: string) => string; })
+- ActivityCard · function · L328-L366 — function ActivityCard({ icon, label, value, unit, connected, t, }: { icon: React.ReactNode; label: string; value: number | null; unit: string; connected: boolean; t: (key: string) => string; })
+- HealthTrendChart · function · L369-L432 — function HealthTrendChart({ metric, data, t, }: { metric: (typeof TREND_METRICS)[number]; data: TrendPoint[]; t: (key: string) => string; })
+- RecommendationCard · function · L434-L454 — function RecommendationCard({ item, t }: { item: PatientHealthAnalysis["recommendations"][number]; t: (key: string) => string })
+- PatientHealthAnalysisPanel · function · L457-L822 — function PatientHealthAnalysisPanel({ patientId, compact = false, className, }: { patientId: number; compact?: boolean; className?: string; })
+- refreshAnalysis · function · L549-L563 — async function refreshAnalysis()

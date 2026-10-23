@@ -1,0 +1,109 @@
+{
+  "asset": "wheelsense_shared_care_ground_level.png",
+  "coordinateSystem": {
+    "width": 1448,
+    "height": 1086
+  },
+  "note": "Illustrative starter coordinates for the Ground Level Shared Care floor-plan concept. Verify exact geometry before operational use.",
+  "rooms": [
+    {
+      "id": "restroom_nw",
+      "label": "Accessible Restroom",
+      "type": "bathroom",
+      "x": 52,
+      "y": 79,
+      "width": 180,
+      "height": 175
+    },
+    {
+      "id": "utility",
+      "label": "Utility / Laundry",
+      "type": "utility",
+      "x": 235,
+      "y": 79,
+      "width": 203,
+      "height": 175
+    },
+    {
+      "id": "shared_lounge",
+      "label": "Shared Care Lounge",
+      "type": "lounge",
+      "x": 54,
+      "y": 254,
+      "width": 457,
+      "height": 505
+    },
+    {
+      "id": "main_hall",
+      "label": "Main Hall",
+      "type": "common_area",
+      "x": 489,
+      "y": 80,
+      "width": 462,
+      "height": 828
+    },
+    {
+      "id": "physiotherapy",
+      "label": "Physiotherapy Room",
+      "type": "therapy",
+      "x": 956,
+      "y": 78,
+      "width": 390,
+      "height": 352
+    },
+    {
+      "id": "nurses_station",
+      "label": "Nurses' Station",
+      "type": "staff",
+      "x": 957,
+      "y": 438,
+      "width": 391,
+      "height": 289
+    },
+    {
+      "id": "restroom_se",
+      "label": "Accessible Restroom",
+      "type": "bathroom",
+      "x": 1053,
+      "y": 731,
+      "width": 180,
+      "height": 176
+    },
+    {
+      "id": "treatment_room",
+      "label": "Treatment Room",
+      "type": "treatment",
+      "x": 1236,
+      "y": 732,
+      "width": 179,
+      "height": 176
+    },
+    {
+      "id": "entry_south",
+      "label": "Main Entrance",
+      "type": "entry",
+      "x": 667,
+      "y": 948,
+      "width": 183,
+      "height": 108
+    },
+    {
+      "id": "garden_southwest",
+      "label": "Southwest Garden Edge",
+      "type": "outdoor",
+      "x": 381,
+      "y": 892,
+      "width": 235,
+      "height": 145
+    },
+    {
+      "id": "garden_southeast",
+      "label": "Southeast Garden Edge",
+      "type": "outdoor",
+      "x": 841,
+      "y": 892,
+      "width": 545,
+      "height": 145
+    }
+  ]
+}
