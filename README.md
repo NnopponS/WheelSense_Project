@@ -42,7 +42,7 @@ Smart Home System for wheelchair users with real-time tracking, appliance contro
          ▼                    ▼                    ▼
 ┌─────────────┐      ┌─────────────┐      ┌──────────────┐
 │  Dashboard  │      │   Backend   │      │    Ollama    │
-│   (React)   │      │  (FastAPI)  │      │   (LLM AI)   │
+│  (Next.js)  │      │  (FastAPI)  │      │   (LLM AI)   │
 │  Port 3000  │      │  Port 8000  │      │  Port 11434  │
 └─────────────┘      └─────────────┘      └──────────────┘
                             │
@@ -106,65 +106,44 @@ docker-compose logs -f backend
 
 ```
 WheelSenseMockUp/
-├── docker/                     # Docker configuration
-│   ├── docker-compose.yml      # Main compose file
-│   ├── backend/                # FastAPI Backend
+├── frontend/                   # Next.js dashboard (admin/caregiver/patient)
+│   ├── app/                    #   App Router pages per role
+│   ├── components/             #   Shared UI components
+│   ├── lib/ hooks/ types/      #   Client logic + types
+│   └── Dockerfile.standalone   #   Image used by the compose `dashboard` service
+│
+├── docker/                     # Docker stack (see docker/README.md)
+│   ├── docker-compose.yml      # Main compose file (+ .cpu/.gpu/.test variants)
+│   ├── setup_rooms.py          # Seed rooms/devices via the API
+│   ├── backend/                # FastAPI backend
 │   │   ├── Dockerfile
-│   │   ├── src/
-│   │   │   ├── main.py             # App entry point
-│   │   │   ├── core/
-│   │   │   │   ├── config.py       # Environment settings
-│   │   │   │   ├── database.py     # SQLite operations
-│   │   │   │   └── mongodb_compat.py # Compatibility layer
-│   │   │   ├── services/
-│   │   │   │   ├── ai_service.py   # Ollama/Gemini AI
-│   │   │   │   ├── mqtt_handler.py # MQTT communication
-│   │   │   │   └── websocket_handler.py # Video streaming
-│   │   │   └── routes/             # API route modules
-│   │   │       ├── rooms.py        # Room CRUD
-│   │   │       ├── appliances.py   # Appliance control
-│   │   │       ├── timeline.py     # Timeline + Location
-│   │   │       ├── patients.py     # Patient CRUD
-│   │   │       ├── routines.py     # Routine management
-│   │   │       ├── wheelchairs.py  # Wheelchair CRUD
-│   │   │       ├── map.py          # Buildings/Floors/Rooms
-│   │   │       ├── devices.py      # Device management
-│   │   │       ├── emergency.py    # Emergency alerts
-│   │   │       └── chat.py         # AI Chat endpoint
-│   │   └── data/                   # Data directory (SQLite in volume)
+│   │   ├── pytest.ini  tests/  # Test suite (smoke/integration/e2e/reliability)
+│   │   └── src/
+│   │       ├── main.py             # App entry point (REST + WebSocket)
+│   │       ├── api/                # REST routers (rooms, patients, devices,
+│   │       │                       #   map, emergency, chat, video, ...)
+│   │       ├── core/               # config, database, mqtt_handler,
+│   │       │                       #   websocket_handler, state_manager
+│   │       ├── services/           # llm_client, context_builder, emergency,
+│   │       │                       #   notification_service, schedule_checker
+│   │       └── mcp/                # MCP protocol router/server
 │   │
 │   └── services/
-│       ├── dashboard/          # React Frontend
-│       │   ├── src/
-│       │   │   ├── App.jsx         # Main app + routing
-│       │   │   ├── pages/
-│       │   │   │   ├── Admin/      # Admin mode pages
-│       │   │   │   └── User/       # User mode pages
-│       │   │   └── components/
-│       │   │       └── AIChatPopup.jsx # AI chat with TTS
-│       │   └── Dockerfile
-│       │
-│       ├── camera-service/     # Wheelchair Detection (YOLO)
-│       │   ├── src/
-│       │   │   ├── main.py         # Detection service
-│       │   │   └── detector.py     # YOLOv8 integration
-│       │   └── models/             # YOLO weights
-│       │
-│       ├── detection-test/     # Detection Test Page
-│       ├── mosquitto/          # MQTT config
+│       ├── camera-service/     # Wheelchair Detection (YOLOv8) → MQTT
+│       ├── detection-test/     # Detection Test Page (port 3001)
+│       ├── mosquitto/          # MQTT broker config
 │       └── nginx/              # Reverse proxy config
 │
-├── CucumberRS-Controller/      # ESP32-S2 Appliance Controller
-│   └── src/main.cpp                # Firmware
+├── docs/                       # Project documentation
+│   ├── ARCHITECTURE.md         #   System overview (TH)
+│   ├── NETWORK_SETUP.md        #   Camera/host IP setup guide
+│   ├── backend/                #   Backend internals docs
+│   └── archive/                #   Historical analyses
 │
-├── TsimCam-Controller/         # ESP32-CAM Camera
-│   └── src/main.cpp                # Camera firmware
-│
-├── Xiao_Wheel/                 # Xiao BLE Sensor (Gyroscope)
-│   └── src/                        # Sensor firmware
-│
-└── xiao-sensor-service/        # Python BLE Scanner Service
-    └── server.py                   # BLE to WebSocket bridge
+├── CucumberRS-Controller/      # ESP32-S2 Appliance Controller firmware
+├── TsimCam-Controller/         # ESP32-CAM Camera firmware
+├── Xiao_Wheel/                 # Xiao BLE Sensor (Gyroscope) firmware
+└── xiao-sensor-service/        # Python BLE→WebSocket bridge service
 ```
 
 ---
@@ -189,18 +168,16 @@ WheelSenseMockUp/
 | Devices | `/devices` | Device management |
 
 ### Dashboard (Port 3000/80)
-**React SPA with Admin and User modes**
+**Next.js app (`frontend/`) with role-based views**
 
 | Route | Description |
 |-------|-------------|
-| `/` | Map view with rooms |
-| `/Admin/Monitoring` | Camera monitoring |
-| `/Admin/Appliances` | Appliance control |
-| `/Admin/Patients` | Patient list |
-| `/Admin/Timeline` | Activity timeline |
-| `/User/Home` | User dashboard |
-| `/User/Health` | Health tracking |
-| `/User/Video` | Video streaming |
+| `/admin` | Admin dashboard (devices, alerts, floorplans, staff, audit) |
+| `/head-caregiver` | Head caregiver / supervisor views |
+| `/caregiver` | Caregiver monitoring (alerts, map, patients) |
+| `/patient` | Patient portal view |
+| `/map`, `/floorplans` | Shared map & floorplan views |
+| `/login` | Authentication |
 
 ### Camera Service (YOLO Detection)
 **Wheelchair detection using YOLOv8**
@@ -370,12 +347,12 @@ uvicorn src.main:app --reload --port 8000
 
 ### Dashboard Development
 ```powershell
-cd docker/services/dashboard
+cd frontend
 
 # Install
 npm install
 
-# Dev server
+# Dev server (http://localhost:3000)
 npm run dev
 
 # Build
