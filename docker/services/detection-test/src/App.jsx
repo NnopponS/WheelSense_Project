@@ -216,7 +216,25 @@ function App() {
       const response = await fetch('/api/map/devices')
       const data = await response.json()
       const cameraDevices = data.devices?.filter(d => d.type === 'camera' || !d.type) || []
-      setDevices(cameraDevices)
+      // One tile per room: a physical camera may report a raw id (e.g. TSIM_003)
+      // alongside the room's canonical MODEL_NODE_* slot — keep the online one.
+      const ROOM_ORDER = ['livingroom', 'bedroom', 'kitchen', 'bathroom']
+      const byRoom = new Map()
+      for (const d of cameraDevices) {
+        const room = (d.room || d.roomType || 'unknown').toLowerCase()
+        const existing = byRoom.get(room)
+        if (!existing || (!existing.online && d.online)) {
+          byRoom.set(room, d)
+        }
+      }
+      const deduped = [...byRoom.entries()]
+        .sort((a, b) => {
+          const ai = ROOM_ORDER.indexOf(a[0])
+          const bi = ROOM_ORDER.indexOf(b[0])
+          return (ai === -1 ? ROOM_ORDER.length : ai) - (bi === -1 ? ROOM_ORDER.length : bi)
+        })
+        .map(([, d]) => d)
+      setDevices(deduped)
     } catch (error) {
       console.error('Failed to fetch devices:', error)
     }
