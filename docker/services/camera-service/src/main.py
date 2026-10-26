@@ -7,6 +7,7 @@ import asyncio
 import logging
 import signal
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
@@ -41,8 +42,11 @@ class CameraService:
         # Room-specific detection state tracking
         self.room_states: dict = {}  # room -> {stable_count, no_detection_count, state}
         
-        # Thread pool for running detection in background
-        self.detection_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="detection")
+        # Thread pool for running detection in background (single worker preserves frame ordering)
+        self.detection_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="detection")
+        # Set while the worker owns a frame; frames arriving while busy are
+        # dropped instead of queued so detection always runs on a fresh frame.
+        self._detection_busy = threading.Event()
     
     def _get_detector(self):
         """Get or create the shared detector (single instance for all rooms)."""
@@ -178,6 +182,8 @@ class CameraService:
             self._on_frame_received(frame, meta)
         except Exception as e:
             logger.error(f"❌ Error in background detection: {e}", exc_info=True)
+        finally:
+            self._detection_busy.clear()
     
     def start(self):
         """Start the camera service."""
@@ -229,9 +235,14 @@ class CameraService:
                     if frame_count % 30 == 0:  # Log every 30 frames
                         logger.info(f"Processing video frames... (received {frame_count} frames so far)")
                     
-                    # Submit detection to thread pool (non-blocking)
-                    # This allows main loop to continue pulling frames while detection runs in background
-                    self.detection_executor.submit(self._process_detection_sync, frame.copy(), meta.copy())
+                    # Submit detection to thread pool only when this room is due
+                    # and the worker is idle. Queued frames go stale quickly, so
+                    # an unbounded submit would run YOLO on old frames and add lag.
+                    room = meta.get("room", "livingroom")
+                    if (not self._detection_busy.is_set()
+                            and time.time() - self.last_detection_publish.get(room, 0) >= settings.DETECTION_INTERVAL_SEC):
+                        self._detection_busy.set()
+                        self.detection_executor.submit(self._process_detection_sync, frame.copy(), meta.copy())
                 else:
                     # Check if no frames received for too long
                     time_since_last_frame = time.time() - last_frame_time
