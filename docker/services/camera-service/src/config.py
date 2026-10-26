@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     DETECTION_CONFIDENCE_THRESHOLD: float = 0.4  # Lowered to allow frontend slider filtering
     DETECTION_INTERVAL_SEC: float = 0.1  # Allow up to 10 FPS detection
     
-    # YOLO Model Path
-    YOLO_MODEL_PATH: str = "/app/models/yolov8-model/best.pt"
+    # YOLO Model Path (best2.pt = 2-class fall model: green_obj normal, red_obj fall)
+    YOLO_MODEL_PATH: str = "/app/models/yolov8-model/best2.pt"
     
     # Preview Mode (for debugging - shows OpenCV window with detection visualization)
     ENABLE_PREVIEW: bool = False  # Set to True to enable preview window

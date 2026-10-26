@@ -173,6 +173,22 @@ input[type="range"] {
   box-shadow: 0 0 20px rgba(0, 210, 106, 0.4);
 }
 
+/* Red border when a fall is detected (red_obj class) */
+.camera-viewer.fall {
+  border-color: #e53935;
+  box-shadow: 0 0 20px rgba(229, 57, 53, 0.55);
+}
+
+.fall-badge {
+  background: #e53935;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
 /* Overlay Header */
 .camera-header {
   position: absolute;
@@ -226,6 +242,198 @@ input[type="range"] {
 .rotation-control {
   display: flex;
   align-items: center;
+  gap: 4px;
+}
+
+.rec-btn.recording {
+  background: rgba(239, 68, 68, 0.6);
+  border-color: rgba(239, 68, 68, 0.9);
+  animation: recPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.folder-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.folder-btn:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Folder picker modal */
+.picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.picker-modal {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  width: 420px;
+  max-width: 92vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.6rem;
+  color: #e2e8f0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.picker-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.picker-breadcrumb {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  overflow-wrap: anywhere;
+}
+
+.picker-crumb {
+  color: #7dd3fc;
+  cursor: pointer;
+}
+
+.picker-crumb:hover {
+  text-decoration: underline;
+}
+
+.picker-list {
+  flex: 1;
+  min-height: 140px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.picker-item {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.picker-item:hover {
+  background: rgba(125, 211, 252, 0.12);
+}
+
+.picker-up {
+  color: #94a3b8;
+}
+
+.picker-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.picker-new {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.picker-new input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  color: white;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.picker-new button {
+  background: rgba(125, 211, 252, 0.15);
+  border: 1px solid rgba(125, 211, 252, 0.4);
+  color: #7dd3fc;
+  border-radius: 5px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.picker-error {
+  color: #fca5a5;
+  font-size: 0.75rem;
+}
+
+.picker-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.picker-choose {
+  background: #16a34a;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.picker-choose:hover {
+  background: #15803d;
+}
+
+.picker-cancel {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.fps-input {
+  width: 3rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+
+.save-path-hint {
+  margin-top: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--text-muted, #94a3b8);
+  text-align: right;
+}
+
+.save-path-hint code {
+  color: #7dd3fc;
+}
+
+.save-notice {
+  margin-left: 0.75rem;
+  color: #4ade80;
+  font-weight: 600;
 }
 
 .rotate-btn {

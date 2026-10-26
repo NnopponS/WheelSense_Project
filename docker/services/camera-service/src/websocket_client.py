@@ -258,7 +258,11 @@ class WebSocketCameraClient:
                 "confidence": detection.get("confidence", 0.0),
                 "bbox": detection.get("bbox"),
                 "frame_size": detection.get("frame_size"),
-                "method": detection.get("method", "unknown")
+                "method": detection.get("method", "unknown"),
+                "fall_detected": detection.get("fall_detected", False),
+                "fall_reason": detection.get("fall_reason"),
+                "class_name": detection.get("class_name"),
+                "detections": detection.get("detections") or []
             }
             
             await self.websocket.send(json.dumps(detection_msg))

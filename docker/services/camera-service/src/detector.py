@@ -7,6 +7,8 @@ import cv2
 import numpy as np
 import logging
 import os
+import threading
+import time
 from typing import Optional, Tuple, Dict
 
 logger = logging.getLogger(__name__)
@@ -45,9 +47,12 @@ class YOLODetector:
     5. Return detections with bounding boxes
     """
     
-    # Model paths
-    MODEL_PATH = '/app/models/yolov8-model/best.pt'
-    FALLBACK_MODEL_PATH = 'models/yolov8-model/best.pt'  # For local development
+    # Model paths (best2.pt = 2-class fall model: green_obj normal, red_obj fall)
+    MODEL_PATH = '/app/models/yolov8-model/best2.pt'
+    FALLBACK_MODEL_PATH = 'models/yolov8-model/best2.pt'  # For local development
+
+    # Class names that mean "object has fallen" in models that carry a fall class
+    FALL_CLASS_NAMES = {"red_obj", "red", "fall", "fallen", "fall_detected"}
     
     def __init__(self, confidence_threshold: float = 0.5, model_path: str = None, show_preview: bool = False):
         self.confidence_threshold = confidence_threshold
@@ -56,6 +61,9 @@ class YOLODetector:
         self.device = 'cpu'
         self.show_preview = show_preview
         self.preview_window_name = "WheelSense YOLO Detection"
+        # True when the loaded model has a dedicated fall class (e.g. red_obj in
+        # best2.pt) — then fall = class, and the geometric heuristics stay off.
+        self.model_has_fall_class = False
         
         # Detect GPU
         if TORCH_AVAILABLE:
@@ -81,6 +89,14 @@ class YOLODetector:
         self.no_detection_count = 0
         self.detection_state = False
         self.current_room_has_wheelchair = False
+        
+        # 3D model tip-over / fall tracking
+        self._lock = threading.Lock()
+        self.last_upright_time = 0.0
+        self.baseline_aspect_ratio = None
+        self.baseline_cy_norm = None
+        self.fall_streak = 0
+        self.fall_detected = False
         
         # Frame counter
         self.frame_count = 0
@@ -109,11 +125,16 @@ class YOLODetector:
     
     def _load_model(self, model_path: str = None):
         """Load YOLOv8 model and move to GPU if available."""
-        # Determine model path
+        # Determine model path (legacy single-class best.pt kept as last resort)
         paths_to_try = []
         if model_path:
             paths_to_try.append(model_path)
-        paths_to_try.extend([self.MODEL_PATH, self.FALLBACK_MODEL_PATH])
+        paths_to_try.extend([
+            self.MODEL_PATH,
+            self.FALLBACK_MODEL_PATH,
+            '/app/models/yolov8-model/best.pt',
+            'models/yolov8-model/best.pt',
+        ])
         
         model_file = None
         for path in paths_to_try:
@@ -140,6 +161,12 @@ class YOLODetector:
             # Log model info
             if hasattr(self.model, 'names'):
                 logger.info(f"  Classes: {self.model.names}")
+                names = {str(n).strip().lower() for n in self.model.names.values()}
+                self.model_has_fall_class = bool(names & self.FALL_CLASS_NAMES)
+                if self.model_has_fall_class:
+                    logger.info("  Fall class found -> class-based fall detection ACTIVE")
+                else:
+                    logger.info("  No fall class -> geometric tip-over heuristics ACTIVE")
             
         except Exception as e:
             logger.error(f"❌ Failed to load YOLO model: {e}")
@@ -164,114 +191,228 @@ class YOLODetector:
         if frame is None or frame.size == 0:
             return self._create_result(False, 0.0, None, None, False, {}, [])
         
-        self.frame_count += 1
-        
-        # If model not available, return no detection
-        if not self.loaded or self.model is None:
-            if self.frame_count % self.debug_interval == 0:
-                logger.warning("YOLOv8 model not available, detection disabled")
-            return self._create_result(False, 0.0, None, None, False, {}, [])
-        
-        try:
-            # Run YOLOv8 inference on GPU
-            results = self.model(frame, conf=self.confidence_threshold, verbose=False, device=self.device)
+        with self._lock:
+            self.frame_count += 1
             
-            # Parse detections
-            detections = []
-            best_conf = 0.0
-            best_bbox = None
-            best_class = None
+            # If model not available, return no detection
+            if not self.loaded or self.model is None:
+                if self.frame_count % self.debug_interval == 0:
+                    logger.warning("YOLOv8 model not available, detection disabled")
+                return self._create_result(False, 0.0, None, None, False, {}, [])
             
-            if len(results) > 0:
-                result = results[0]
-                boxes = result.boxes
+            try:
+                # Run YOLOv8 inference on GPU
+                results = self.model(frame, conf=self.confidence_threshold, verbose=False, device=self.device)
                 
-                for box in boxes:
-                    # Get bounding box coordinates (xyxy format)
-                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-                    
-                    # Convert to xywh format
-                    x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-                    
-                    # Get confidence and class
-                    conf = float(box.conf[0].cpu().numpy())
-                    cls = int(box.cls[0].cpu().numpy())
-                    class_name = self.model.names[cls] if hasattr(self.model, 'names') else str(cls)
-                    
-                    # Store detection
-                    detections.append({
-                        'bbox': (x, y, w, h),
-                        'confidence': conf,
-                        'class': class_name
-                    })
-                    
-                    # Track best detection
-                    if conf > best_conf:
-                        best_conf = conf
-                        best_bbox = (x, y, w, h)
-                        best_class = class_name
-            
-            # Determine detection state
-            prev_state = self.detection_state
-            is_detected = len(detections) > 0
-            
-            if is_detected:
-                self.stable_detection_count += 1
-                self.no_detection_count = 0
+                # Parse detections
+                detections = []
+                best_conf = 0.0
+                best_bbox = None
+                best_class = None
+                best_fall_conf = 0.0
+                best_fall_bbox = None
+                best_fall_class = None
                 
-                # Immediate detection (changed from >= 2 to >= 1)
-                # This allows instant detection when YOLO finds wheelchair above threshold
-                if self.stable_detection_count >= 1:
-                    self.detection_state = True
-                    self.current_room_has_wheelchair = True
-            else:
-                self.no_detection_count += 1
-                self.stable_detection_count = 0
+                if len(results) > 0:
+                    result = results[0]
+                    boxes = result.boxes
+                    
+                    for box in boxes:
+                        # Get bounding box coordinates (xyxy format)
+                        x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                        
+                        # Convert to xywh format
+                        x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
+                        
+                        # Get confidence and class
+                        conf = float(box.conf[0].cpu().numpy())
+                        cls = int(box.cls[0].cpu().numpy())
+                        class_name = self.model.names[cls] if hasattr(self.model, 'names') else str(cls)
+                        
+                        # Store detection
+                        detections.append({
+                            'bbox': (x, y, w, h),
+                            'confidence': conf,
+                            'class': class_name
+                        })
+                        
+                        # Track best detection
+                        if conf > best_conf:
+                            best_conf = conf
+                            best_bbox = (x, y, w, h)
+                            best_class = class_name
+                        
+                        # Track best fall-class detection (red_obj in best2.pt)
+                        if (
+                            class_name.strip().lower() in self.FALL_CLASS_NAMES
+                            and conf > best_fall_conf
+                        ):
+                            best_fall_conf = conf
+                            best_fall_bbox = (x, y, w, h)
+                            best_fall_class = class_name
                 
-                if self.no_detection_count >= 5:
-                    self.detection_state = False
-                    self.current_room_has_wheelchair = False
-            
-            # Determine if state changed
-            state_changed = self.detection_state != prev_state
-            
-            # Create probability dict
-            all_probs = {}
-            if best_class:
-                all_probs[best_class] = best_conf
-            
-            # Log periodic status
-            if self.frame_count % self.debug_interval == 0:
-                logger.debug(f"📊 Frame {self.frame_count}: {len(detections)} detections, "
-                           f"detected={self.detection_state}, device={self.device}")
-            
-            # Log state changes
-            if state_changed:
-                if self.detection_state:
-                    logger.info(f"✅ Wheelchair DETECTED! {len(detections)} object(s), "
-                              f"best: {best_class} ({best_conf:.2f})")
+                # Determine detection state
+                prev_state = self.detection_state
+                is_detected = len(detections) > 0
+                
+                # --- Fall Detection ---
+                now_ts = time.time()
+                fh, fw = frame.shape[:2]
+                fall_candidate = False
+                fall_reason = None
+                
+                if self.model_has_fall_class:
+                    # 2-class model (green_obj = normal, red_obj = fall):
+                    # the red class IS the fall signal; also report its bbox
+                    # so alerts/test-page boxes point at the fallen object.
+                    if best_fall_bbox is not None:
+                        fall_candidate = True
+                        is_detected = True
+                        fall_reason = f"fall_class:{best_fall_class}({best_fall_conf:.2f})"
+                        best_conf = best_fall_conf
+                        best_bbox = best_fall_bbox
+                        best_class = best_fall_class
                 else:
-                    logger.info(f"❌ Wheelchair LOST. No detections above threshold.")
+                    # --- 3D Miniature Wheelchair Tip-Over / Fall Detection ---
+                    # (legacy heuristics for single-class WheelChair models)
+                    
+                    # Expire stale upright baseline only after prolonged absence (>25s),
+                    # NOT after a brief 3-frame hand occlusion while tipping the 3D model over.
+                    if self.baseline_aspect_ratio is not None and (now_ts - self.last_upright_time) > 25.0:
+                        self.baseline_aspect_ratio = None
+                        self.baseline_cy_norm = None
+                    
+                    if is_detected and best_bbox:
+                        bx, by, bw, bh = best_bbox
+                        aspect = bw / max(bh, 1)
+                        cy_norm = (by + bh / 2.0) / max(fh, 1)
+                        if (
+                            self.baseline_aspect_ratio is not None
+                            and aspect >= max(self.baseline_aspect_ratio * 1.35, 1.28)
+                            and cy_norm >= (self.baseline_cy_norm - 0.05)
+                        ):
+                            fall_candidate = True
+                            fall_reason = f"bbox_tip_over(aspect={aspect:.2f},base={self.baseline_aspect_ratio:.2f})"
+                        elif self.baseline_aspect_ratio is None and aspect >= 1.42:
+                            fall_candidate = True
+                            fall_reason = f"bbox_horizontal(aspect={aspect:.2f})"
+                        elif aspect < 1.22:
+                            if self.baseline_aspect_ratio is None:
+                                self.baseline_aspect_ratio = aspect
+                                self.baseline_cy_norm = cy_norm
+                            else:
+                                self.baseline_aspect_ratio = 0.85 * self.baseline_aspect_ratio + 0.15 * aspect
+                                self.baseline_cy_norm = 0.85 * self.baseline_cy_norm + 0.15 * cy_norm
+                            self.last_upright_time = now_ts
+                    
+                    # Check 90-degree sideways orientation when recently seen upright,
+                    # when a fall streak is already in progress (prevents streak oscillation 0->1->0),
+                    # or on periodic frames when no upright detection was found.
+                    recently_seen = (now_ts - self.last_upright_time) < 30.0
+                    if not fall_candidate and (
+                        (recently_seen and best_conf < 0.70)
+                        or self.fall_streak > 0
+                        or (self.frame_count % 2 == 0 and not is_detected)
+                    ):
+                        rot_thresh = max(0.32, self.confidence_threshold - 0.12)
+                        for rot_code, rot_name in [(cv2.ROTATE_90_CLOCKWISE, "90_cw"), (cv2.ROTATE_90_COUNTERCLOCKWISE, "90_ccw")]:
+                            rot_frame = cv2.rotate(frame, rot_code)
+                            rot_res = self.model(rot_frame, conf=rot_thresh, verbose=False, device=self.device)
+                            if len(rot_res) > 0 and len(rot_res[0].boxes) > 0:
+                                rbox = rot_res[0].boxes[0]
+                                rconf = float(rbox.conf[0].cpu().numpy())
+                                if rconf > (best_conf + 0.08) and rconf >= 0.36:
+                                    rx1, ry1, rx2, ry2 = rbox.xyxy[0].cpu().numpy()
+                                    # Map rotated bbox back to original frame coordinates
+                                    if rot_code == cv2.ROTATE_90_CLOCKWISE:
+                                        ox1, oy1 = int(ry1), int(fh - rx2)
+                                        ox2, oy2 = int(ry2), int(fh - rx1)
+                                    else:
+                                        ox1, oy1 = int(fw - ry2), int(rx1)
+                                        ox2, oy2 = int(fw - ry1), int(rx2)
+                                    ox1, oy1 = max(0, ox1), max(0, oy1)
+                                    ow, oh = max(10, ox2 - ox1), max(10, oy2 - oy1)
+                                    fall_candidate = True
+                                    fall_reason = f"sideways_{rot_name}(conf={rconf:.2f})"
+                                    is_detected = True
+                                    best_conf = max(best_conf, rconf)
+                                    best_bbox = (ox1, oy1, ow, oh)
+                                    best_class = "WheelChair"
+                                    detections.append({
+                                        'bbox': best_bbox,
+                                        'confidence': rconf,
+                                        'class': "WheelChair (Fallen)"
+                                    })
+                                    break
+                
+                if fall_candidate:
+                    self.fall_streak += 1
+                else:
+                    self.fall_streak = 0
+                
+                self.fall_detected = self.fall_streak >= 2
+                if self.fall_detected:
+                    logger.warning(f"⚠️ 3D WHEELCHAIR FALL / TIP-OVER DETECTED! Reason: {fall_reason}")
             
-            # Show preview window if enabled
-            if self.show_preview:
-                self._show_preview(frame, detections, self.detection_state, best_conf)
-            
-            # Return is_detected (current frame result) instead of detection_state (persistent state)
-            # This prevents false positives across rooms when detector is shared
-            return self._create_result(
-                is_detected,
-                best_conf,
-                best_bbox,
-                best_class,
-                state_changed,
-                all_probs,
-                detections
-            )
-            
-        except Exception as e:
-            logger.error(f"Detection error: {e}")
-            return self._create_result(False, 0.0, None, None, False, {}, [])
+                if is_detected:
+                    self.stable_detection_count += 1
+                    self.no_detection_count = 0
+                    
+                    # Immediate detection (changed from >= 2 to >= 1)
+                    # This allows instant detection when YOLO finds wheelchair above threshold
+                    if self.stable_detection_count >= 1:
+                        self.detection_state = True
+                        self.current_room_has_wheelchair = True
+                else:
+                    self.no_detection_count += 1
+                    self.stable_detection_count = 0
+                    
+                    if self.no_detection_count >= 5:
+                        self.detection_state = False
+                        self.current_room_has_wheelchair = False
+                
+                # Determine if state changed
+                state_changed = self.detection_state != prev_state
+                
+                # Create probability dict
+                all_probs = {}
+                if best_class:
+                    all_probs[best_class] = best_conf
+                
+                # Log periodic status
+                if self.frame_count % self.debug_interval == 0:
+                    logger.debug(f"📊 Frame {self.frame_count}: {len(detections)} detections, "
+                               f"detected={self.detection_state}, fall={self.fall_detected}, device={self.device}")
+                
+                # Log state changes
+                if state_changed:
+                    if self.detection_state:
+                        logger.info(f"✅ Wheelchair DETECTED! {len(detections)} object(s), "
+                                  f"best: {best_class} ({best_conf:.2f})")
+                    else:
+                        logger.info(f"❌ Wheelchair LOST. No detections above threshold.")
+                
+                # Show preview window if enabled
+                if self.show_preview:
+                    self._show_preview(frame, detections, self.detection_state, best_conf)
+                
+                # Return is_detected (current frame result) instead of detection_state (persistent state)
+                # This prevents false positives across rooms when detector is shared
+                return self._create_result(
+                    is_detected,
+                    best_conf,
+                    best_bbox,
+                    best_class,
+                    state_changed,
+                    all_probs,
+                    detections,
+                    fall_detected=self.fall_detected,
+                    fall_reason=fall_reason
+                )
+                
+            except Exception as e:
+                logger.error(f"Detection error: {e}")
+                return self._create_result(False, 0.0, None, None, False, {}, [])
     
     def _show_preview(self, frame: np.ndarray, detections: list, detected: bool, confidence: float):
         """Show preview window with detection visualization."""
@@ -342,7 +483,8 @@ class YOLODetector:
     
     def _create_result(self, detected: bool, confidence: float, bbox: Optional[Tuple],
                        class_name: Optional[str], position_changed: bool, 
-                       all_probs: Dict, detections: list) -> Dict:
+                       all_probs: Dict, detections: list,
+                       fall_detected: bool = False, fall_reason: Optional[str] = None) -> Dict:
         """Create a detection result dictionary."""
         return {
             "detected": detected,
@@ -352,7 +494,9 @@ class YOLODetector:
             "class_name": class_name,
             "position_changed": position_changed,
             "all_probs": all_probs,
-            "detections": detections
+            "detections": detections,
+            "fall_detected": fall_detected,
+            "fall_reason": fall_reason
         }
     
     def draw_detection(self, frame: np.ndarray, detection: Dict) -> np.ndarray:
