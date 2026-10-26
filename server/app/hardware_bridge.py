@@ -27,17 +27,19 @@ import subprocess
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import aiomqtt
 import websockets
-from fastapi import APIRouter, Request, WebSocket
+from fastapi import APIRouter, HTTPException, Request, WebSocket
 from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy import desc, select
 
 from app.config import settings
 from app.db.session import AsyncSessionLocal
 from app.models.activity import ActivityTimeline, Alert
+from app.models.facility import Facility, Floor
 from app.models.base import utcnow
 from app.models.core import Device, Room, SmartDevice, Workspace
 from app.models.patients import Patient, PatientDeviceAssignment
@@ -47,6 +49,18 @@ from app.services.mqtt_publish import publish_alert_to_mqtt_background
 logger = logging.getLogger("wheelsense.hardware_bridge")
 
 video_router = APIRouter()
+
+# Root directory for frame captures/recordings (bind-mounted to the host in compose).
+CAPTURE_ROOT = Path(os.getenv("CAPTURE_ROOT") or "/app/captures")
+
+
+def _safe_subdir(raw: Any) -> str:
+    """Sanitize a user-chosen save subdirectory: relative path, no traversal."""
+    text = str(raw or "").strip().replace("\\", "/").strip("/")
+    if not text:
+        return ""
+    parts = [p for p in text.split("/") if p and p not in (".", "..")]
+    return "/".join(parts)
 
 PHYSICAL_ROOM_META: dict[str, dict[str, Any]] = {
     "livingroom": {
@@ -202,6 +216,7 @@ class HardwareBridge:
         self.last_house_check_alert_ts: float = 0.0
         self.detection_listeners: set[Any] = set()
         self.stream_subscribers: dict[str, set[Any]] = {}
+        self.frame_recorders: dict[str, dict[str, Any]] = {}
         self.detection_threshold: float = 0.8
         self._tasks: list[asyncio.Task[Any]] = []
         self._ws_server: Any = None
@@ -363,6 +378,9 @@ class HardwareBridge:
                     }
                     if self.stream_subscribers.get(room_key):
                         asyncio.create_task(self._fanout_stream_frame(room_key, message))
+                    recorder = self.frame_recorders.get(room_key)
+                    if recorder is not None:
+                        self._record_frame(recorder, room_key, message)
                     asyncio.create_task(self._forward_to_camera_service(room_key, message, device_id))
                 elif isinstance(message, str):
                     try:
@@ -402,6 +420,9 @@ class HardwareBridge:
             logger.debug("TsimCam connection closed (%s): %s", device_id, exc)
         finally:
             self.camera_connections.pop(device_id, None)
+            if device_id in self.device_status:
+                self.device_status[device_id]["online"] = False
+                self.device_status[device_id]["last_seen"] = utcnow()
 
     async def _handle_camera_service(self, websocket: Any, initial_data: dict[str, Any] | None = None) -> None:
         try:
@@ -539,6 +560,77 @@ class HardwareBridge:
             if not subs:
                 self.stream_subscribers.pop(room_key, None)
 
+    def _record_frame(self, rec: dict[str, Any], room_key: str, frame: bytes) -> None:
+        """Write a captured frame to disk, throttled to the recorder's fps."""
+        now = time.monotonic()
+        if now - rec["last_ts"] < rec["interval"]:
+            return
+        if len(frame) < 100 or frame[0:2] != b"\xff\xd8":
+            return
+        rec["last_ts"] = now
+        rec["count"] += 1
+        n = rec["count"]
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:-3]
+        try:
+            (rec["dir"] / f"{room_key}_{ts}_{n:05d}.jpg").write_bytes(frame)
+            mjpg = rec.get("mjpg")
+            if mjpg is not None:
+                mjpg.write(frame)
+                if n % 50 == 0:
+                    mjpg.flush()
+        except Exception as exc:
+            logger.warning("frame recorder write failed (%s): %s", room_key, exc)
+
+    def start_recording(self, room_key: str, save_dir: str, fps: float) -> dict[str, Any]:
+        if room_key in self.frame_recorders:
+            raise HTTPException(status_code=409, detail=f"Already recording {room_key}")
+        out_dir = CAPTURE_ROOT / save_dir / room_key if save_dir else CAPTURE_ROOT / room_key
+        out_dir.mkdir(parents=True, exist_ok=True)
+        mjpg = open(out_dir / f"{room_key}.mjpg", "ab")
+        interval = 1.0 / fps if fps > 0 else 0.0
+        rec = {
+            "room": room_key,
+            "dir": out_dir,
+            "rel_dir": str(out_dir.relative_to(CAPTURE_ROOT)),
+            "interval": interval,
+            "count": 0,
+            "last_ts": 0.0,
+            "started": datetime.now(timezone.utc).isoformat(),
+            "mjpg": mjpg,
+        }
+        self.frame_recorders[room_key] = rec
+        logger.info("recording started for %s -> %s (fps=%.2f)", room_key, out_dir, fps)
+        return {"recording": True, "room": room_key, "dir": rec["rel_dir"], "fps": fps}
+
+    def stop_recording(self, room_key: str) -> dict[str, Any] | None:
+        rec = self.frame_recorders.pop(room_key, None)
+        if rec is None:
+            return None
+        try:
+            rec["mjpg"].close()
+        except Exception:
+            pass
+        logger.info("recording stopped for %s: %d frames in %s", room_key, rec["count"], rec["dir"])
+        return {
+            "recording": False,
+            "room": room_key,
+            "dir": rec["rel_dir"],
+            "frames": rec["count"],
+            "video": f"{rec['rel_dir']}/{room_key}.mjpg",
+        }
+
+    def recording_status(self) -> dict[str, Any]:
+        return {
+            room: {
+                "recording": True,
+                "dir": rec["rel_dir"],
+                "frames": rec["count"],
+                "interval": rec["interval"],
+                "started": rec["started"],
+            }
+            for room, rec in self.frame_recorders.items()
+        }
+
     async def handle_fastapi_camera_service(self, websocket: Any) -> None:
         await websocket.accept()
         try:
@@ -668,7 +760,7 @@ class HardwareBridge:
                             event_type="room_exit",
                             room_id=prev_room.id,
                             room_name=prev_room.name,
-                            description=f"Left {prev_room.name} (TsimCam YOLOv8)",
+                            description=f"Left {prev_room.name}",
                             data={"source": "tsimcam_yolo", "destination": target_room.name},
                             source="auto",
                         )
@@ -719,7 +811,7 @@ class HardwareBridge:
                         event_type="room_enter",
                         room_id=target_room.id,
                         room_name=target_room.name,
-                        description=f"Entered {target_room.name} (TsimCam YOLOv8)",
+                        description=f"Entered {target_room.name}",
                         data={
                             "source": "tsimcam_yolo",
                             "confidence": round(confidence, 2),
@@ -737,6 +829,15 @@ class HardwareBridge:
 
             if fall_detected and (now_mono - self.last_fall_alert_ts) >= 30.0:
                 self.last_fall_alert_ts = now_mono
+                q_loc = await session.execute(
+                    select(Floor.name, Facility.name)
+                    .join(Facility, Facility.id == Floor.facility_id)
+                    .where(Floor.id == target_room.floor_id)
+                )
+                floor_name, facility_name = q_loc.one_or_none() or ("", "")
+                location_line = ", ".join(
+                    part for part in (target_room.name, floor_name or "", facility_name or "") if part
+                )
                 fall_alert = Alert(
                     workspace_id=ws_id,
                     patient_id=robert.id,
@@ -746,8 +847,8 @@ class HardwareBridge:
                     severity="critical",
                     title=f"Fall Detected: Robert Chen in {target_room.name}",
                     description=(
-                        f"YOLOv8 camera ({device_id}) detected a wheelchair fall for Robert Chen "
-                        f"in {target_room.name} (confidence {confidence:.0%})."
+                        f"Wheelchair fall detected for Robert Chen — "
+                        f"location: {location_line or target_room.name}."
                     ),
                     data={
                         "room_id": target_room.id,
@@ -1119,3 +1220,104 @@ async def detection_notify(request: Request) -> dict[str, Any]:
             }
         )
     return {"status": "ok"}
+
+
+@video_router.get("/capture/config")
+async def capture_config() -> dict[str, Any]:
+    """Save root + active recordings for the detection-test capture UI."""
+    return {
+        "root": str(CAPTURE_ROOT),
+        "recording": hardware_bridge.recording_status(),
+    }
+
+
+@video_router.get("/capture/browse")
+async def capture_browse(path: str = "") -> dict[str, Any]:
+    """List subdirectories under CAPTURE_ROOT for the folder picker."""
+    rel = _safe_subdir(path)
+    root = CAPTURE_ROOT.resolve()
+    target = (root / rel).resolve() if rel else root
+    if target != root and root not in target.parents:
+        raise HTTPException(status_code=400, detail="Path outside capture root")
+    if not target.exists():
+        raise HTTPException(status_code=404, detail=f"Folder not found: {rel or '/'}")
+    if not target.is_dir():
+        raise HTTPException(status_code=400, detail="Not a folder")
+    dirs = sorted(
+        p.name for p in target.iterdir() if p.is_dir() and not p.name.startswith(".")
+    )
+    parent = rel.rsplit("/", 1)[0] if "/" in rel else ""
+    return {
+        "path": rel,
+        "parent": parent if rel else None,
+        "dirs": dirs,
+        "root": str(root),
+    }
+
+
+@video_router.post("/capture/mkdir")
+async def capture_mkdir(request: Request) -> dict[str, Any]:
+    """Create a folder under CAPTURE_ROOT from the folder picker."""
+    data = await request.json()
+    rel = _safe_subdir(data.get("path"))
+    if not rel:
+        raise HTTPException(status_code=400, detail="Invalid folder name")
+    target = (CAPTURE_ROOT / rel).resolve()
+    root = CAPTURE_ROOT.resolve()
+    if root not in target.parents:
+        raise HTTPException(status_code=400, detail="Path outside capture root")
+    target.mkdir(parents=True, exist_ok=True)
+    return {"status": "ok", "path": rel}
+
+
+@video_router.post("/capture/{room_ref}/snapshot")
+async def capture_snapshot(room_ref: str, request: Request) -> dict[str, Any]:
+    """Save the latest JPEG frame for one camera to disk."""
+    room_key = normalize_physical_room_key(room_ref)
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    save_dir = _safe_subdir(data.get("save_dir")) or "snapshots"
+    frame = hardware_bridge.latest_frames.get(room_key)
+    if not frame or len(frame) < 100 or frame[0:2] != b"\xff\xd8":
+        raise HTTPException(status_code=404, detail=f"No frame available for {room_key}")
+    out_dir = CAPTURE_ROOT / save_dir / room_key
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")[:-3]
+    path = out_dir / f"{room_key}_{ts}.jpg"
+    path.write_bytes(frame)
+    return {
+        "status": "ok",
+        "room": room_key,
+        "file": str(path.relative_to(CAPTURE_ROOT)),
+        "bytes": len(frame),
+    }
+
+
+@video_router.get("/record/status")
+async def record_status() -> dict[str, Any]:
+    return {"recording": hardware_bridge.recording_status()}
+
+
+@video_router.post("/record/{room_ref}/start")
+async def record_start(room_ref: str, request: Request) -> dict[str, Any]:
+    """Start saving frames for one camera: JPEG sequence + .mjpg video."""
+    room_key = normalize_physical_room_key(room_ref)
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    save_dir = _safe_subdir(data.get("save_dir"))
+    fps = float(data.get("fps", 5) or 5)
+    fps = min(max(fps, 0.2), 15.0)
+    return hardware_bridge.start_recording(room_key, save_dir, fps)
+
+
+@video_router.post("/record/{room_ref}/stop")
+async def record_stop(room_ref: str) -> dict[str, Any]:
+    room_key = normalize_physical_room_key(room_ref)
+    result = hardware_bridge.stop_recording(room_key)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Not recording {room_key}")
+    return result
