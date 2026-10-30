@@ -227,8 +227,7 @@ export function useNotifications(): UseNotificationsReturn {
   const canListWorkflowTasks = Boolean(user?.role && WORKFLOW_TASKS_ROLES.has(user.role));
   const arrivalTracker = useRef<{ identity: string; seen: NotificationSeen }>({ identity: "", seen: new Map() });
   const [popupState, setPopupState] = useState<{ identity: string; items: Notification[] }>({ identity: "", items: [] });
-  /** Critical alerts that arrived this session and are still active — the alarm loops while non-empty. */
-  const ringingAlertIds = useRef<Set<string>>(new Set());
+  /** Critical-alert popups currently on screen — the alarm loops while any are showing. */
 
   const { data: alertsData } = useQuery({
     queryKey: ["notifications", "alerts", identity],
@@ -286,7 +285,6 @@ export function useNotifications(): UseNotificationsReturn {
 
   useEffect(() => {
     if (!identity) {
-      ringingAlertIds.current.clear();
       stopAlertAlarm();
       return;
     }
@@ -296,16 +294,6 @@ export function useNotifications(): UseNotificationsReturn {
     const arrivals = collectNotificationArrivals(arrivalTracker.current.seen, sources).filter(
       item => item.type === "alert" && (item.data as AlertOut | undefined)?.severity === "critical",
     );
-    for (const item of arrivals) ringingAlertIds.current.add(item.id);
-    const live = new Set(notifications.filter(n => n.type === "alert" && !n.read).map(n => n.id));
-    for (const id of ringingAlertIds.current) {
-      if (!live.has(id)) ringingAlertIds.current.delete(id);
-    }
-    if (ringingAlertIds.current.size) {
-      startAlertAlarm();
-    } else {
-      stopAlertAlarm();
-    }
     setPopupState(previous => {
       const previousItems = previous.identity === identity ? previous.items : [];
       const items = refreshNotificationQueue(previousItems, notifications, arrivals, sources.filter(source => source.ready).map(source => source.type));
@@ -313,6 +301,21 @@ export function useNotifications(): UseNotificationsReturn {
       return { identity, items };
     });
   }, [identity, notifications, alertsData, tasksData, workflowJobsData, messagesData]);
+
+  // Siren follows the popup lifecycle: loops while any critical-alert popup is
+  // on screen, silences the moment the last one is dismissed (independent of
+  // whether the underlying alert is still active).
+  const popupItems = popupState.items;
+  useEffect(() => {
+    const ringing = popupItems.some(
+      item => item.type === "alert" && (item.data as AlertOut | undefined)?.severity === "critical",
+    );
+    if (ringing) {
+      startAlertAlarm();
+    } else {
+      stopAlertAlarm();
+    }
+  }, [popupItems]);
 
   useEffect(() => () => stopAlertAlarm(), []);
 
