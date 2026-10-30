@@ -4,16 +4,25 @@ import { createContext, useContext, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
+  BellRing,
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
+  Fan,
   Gauge,
   HeartPulse,
   HelpCircle,
+  House,
+  Lightbulb,
   ListChecks,
+  Power,
+  Siren,
   Smartphone,
+  Snowflake,
   Table2,
+  Tv,
   UserRound,
+  Users,
   Wrench,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -863,6 +872,414 @@ function NavigationCard({ card, onNavigate }: { card: EaseAIBackendCard; onNavig
   );
 }
 
+type LayoutRoom = { room_id: number | null; label: string; x: number; y: number; w: number; h: number };
+
+function normalizeLayoutRooms(card: JsonRecord): LayoutRoom[] {
+  const payload = cardPayload(card);
+  const source =
+    asArray(payload.layout_rooms).length > 0 ? asArray(payload.layout_rooms) : asArray(card.layout_rooms);
+  return source
+    .map((item): LayoutRoom | null => {
+      const record = asRecord(item);
+      if (!record) return null;
+      const x = asNumber(record.x);
+      const y = asNumber(record.y);
+      const w = asNumber(record.w);
+      const h = asNumber(record.h);
+      if (x == null || y == null || w == null || h == null) return null;
+      return {
+        room_id: asNumber(record.room_id),
+        label: asString(record.label) || asString(record.name),
+        x,
+        y,
+        w,
+        h,
+      };
+    })
+    .filter(Boolean) as LayoutRoom[];
+}
+
+function FloorplanSvg({
+  layoutRooms,
+  roomState,
+}: {
+  layoutRooms: LayoutRoom[];
+  roomState?: (roomId: number | null) => "critical" | "occupied" | "normal" | "none";
+}) {
+  const pad = 2;
+  const maxX = Math.max(...layoutRooms.map((r) => r.x + r.w));
+  const maxY = Math.max(...layoutRooms.map((r) => r.y + r.h));
+  const tones = {
+    critical: { fill: "rgba(220,38,38,0.18)", stroke: "#dc2626" },
+    occupied: { fill: "rgba(16,185,129,0.30)", stroke: "#059669" },
+    normal: { fill: "rgba(16,185,129,0.08)", stroke: "#10b981" },
+    none: { fill: "rgba(148,163,184,0.10)", stroke: "#94a3b8" },
+  } as const;
+  return (
+    <svg
+      viewBox={`0 0 ${maxX + pad} ${maxY + pad}`}
+      role="img"
+      aria-label="Floor plan"
+      className="mt-1.5 w-full rounded-md border border-outline-variant/15 bg-surface"
+    >
+      {layoutRooms.map((room, index) => {
+        const state = roomState?.(room.room_id) ?? "none";
+        const tone = tones[state];
+        const fontSize = Math.min(3.2, room.h * 0.28);
+        return (
+          <g key={`${room.room_id ?? room.label}-${index}`}>
+            <rect x={room.x} y={room.y} width={room.w} height={room.h} rx={1.2} fill={tone.fill} stroke={tone.stroke} strokeWidth={0.7} />
+            <text
+              x={room.x + room.w / 2}
+              y={room.y + room.h / 2}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={fontSize}
+              fill="currentColor"
+              className="text-foreground"
+            >
+              {room.label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function FloorplanMapCard({ card }: { card: EaseAIBackendCard }) {
+  const layoutRooms = normalizeLayoutRooms(card);
+  return (
+    <CardShell icon={<House className="h-4 w-4" />} title={titleFor(card, "Floor plan")}>
+      {layoutRooms.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No layout rooms.</p>
+      ) : (
+        <FloorplanSvg layoutRooms={layoutRooms} />
+      )}
+      <Provenance items={provenanceItems(card)} />
+    </CardShell>
+  );
+}
+
+function smartDeviceIcon(device: JsonRecord) {
+  const name = asString(device.name).toLowerCase();
+  const dtype = asString(device.device_type).toLowerCase();
+  if (name.includes("tv") || name.includes("television")) return Tv;
+  if (name.includes("alarm") || name.includes("siren") || name.includes("bell")) return BellRing;
+  if (dtype === "light") return Lightbulb;
+  if (dtype === "climate" || dtype === "ac") return Snowflake;
+  if (dtype === "fan") return Fan;
+  return Power;
+}
+
+function SmartHomeCard({
+  card,
+  onQuestionChoice,
+}: {
+  card: EaseAIBackendCard;
+  onQuestionChoice?: (reply: string) => void;
+}) {
+  const payload = cardPayload(card);
+  const rooms = asArray(payload.rooms).map((item) => asRecord(item)).filter(Boolean) as JsonRecord[];
+  const stats = asRecord(payload.stats) ?? {};
+  const alertTotal = asNumber(stats.alerts) ?? 0;
+  const layoutRooms = normalizeLayoutRooms(card);
+  const stateByRoomId = new Map<number, "critical" | "occupied" | "normal">();
+  for (const room of rooms) {
+    const roomId = asNumber(room.room_id);
+    if (roomId == null) continue;
+    stateByRoomId.set(
+      roomId,
+      (asNumber(room.alert_count) ?? 0) > 0 ? "critical" : room.occupied === true ? "occupied" : "normal",
+    );
+  }
+
+  return (
+    <CardShell icon={<House className="h-4 w-4" />} title={titleFor(card, "Smart home status")}>
+      <div className="mb-2 flex flex-wrap gap-1.5 text-[10px]">
+        <Badge variant="outline" className="rounded-full px-2 py-0">
+          {asNumber(stats.occupied_rooms) ?? 0}/{asNumber(stats.total_rooms) ?? rooms.length} rooms occupied
+        </Badge>
+        <Badge variant="outline" className="rounded-full px-2 py-0">
+          {asNumber(stats.devices_on) ?? 0}/{asNumber(stats.total_devices) ?? 0} devices on
+        </Badge>
+        {alertTotal > 0 ? (
+          <Badge variant="destructive" className="rounded-full px-2 py-0">
+            {alertTotal} alert{alertTotal === 1 ? "" : "s"}
+          </Badge>
+        ) : null}
+      </div>
+      {layoutRooms.length > 0 ? (
+        <FloorplanSvg layoutRooms={layoutRooms} roomState={(roomId) => (roomId == null ? "none" : stateByRoomId.get(roomId) ?? "none")} />
+      ) : null}
+      <div className="space-y-2">
+        {rooms.map((room, index) => {
+          const roomAlerts = asNumber(room.alert_count) ?? 0;
+          const occupied = room.occupied === true;
+          const occupants = asArray(room.occupants).map(asString).filter(Boolean);
+          const devices = asArray(room.devices).map((item) => asRecord(item)).filter(Boolean) as JsonRecord[];
+          const cameraUrl = asString(room.camera_url);
+          const hasCamera = room.camera_available === true || Boolean(cameraUrl);
+          return (
+            <div
+              key={`${asString(room.room_id)}-${index}`}
+              className={cn(
+                "rounded-lg border bg-surface px-2.5 py-2",
+                roomAlerts > 0 ? "border-critical/40" : "border-outline-variant/20",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "h-2 w-2 shrink-0 rounded-full",
+                      roomAlerts > 0 ? "bg-critical" : occupied ? "bg-emerald-500" : "bg-muted-foreground/40",
+                    )}
+                  />
+                  <span className="min-w-0 truncate text-xs font-semibold text-foreground">
+                    {asString(room.room_name) || `Room ${asString(room.room_id)}`}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {roomAlerts > 0 ? (
+                    <Badge variant="destructive" className="rounded-full px-1.5 py-0 text-[10px]">
+                      {roomAlerts} alert{roomAlerts === 1 ? "" : "s"}
+                    </Badge>
+                  ) : null}
+                  {occupied ? (
+                    <Badge variant="success" className="rounded-full px-1.5 py-0 text-[10px]">
+                      occupied
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px] text-muted-foreground">
+                      empty
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              {occupants.length > 0 ? (
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Users className="h-3 w-3" />
+                  {occupants.join(", ")}
+                </p>
+              ) : null}
+              {cameraUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- live camera frame from platform API
+                <img
+                  src={cameraUrl}
+                  alt={`${asString(room.room_name) || "Room"} camera`}
+                  loading="lazy"
+                  className="mt-1.5 h-24 w-full rounded-md border border-outline-variant/15 object-cover"
+                />
+              ) : null}
+              {devices.length > 0 ? (
+                <ul className="mt-1.5 space-y-1">
+                  {devices.map((device, deviceIndex) => {
+                    const Icon = smartDeviceIcon(device);
+                    const isOn = device.on === true;
+                    const deviceName = asString(device.name) || "Device";
+                    const controllable = Boolean(onQuestionChoice) && device.is_active !== false;
+                    return (
+                      <li
+                        key={`${asString(device.id)}-${deviceIndex}`}
+                        className="flex items-center gap-1.5 text-[11px]"
+                      >
+                        <Icon
+                          className={cn("h-3.5 w-3.5 shrink-0", isOn ? "text-emerald-600" : "text-muted-foreground")}
+                        />
+                        <span className="min-w-0 flex-1 truncate text-foreground">{deviceName}</span>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-1.5 py-0 text-[10px] font-medium",
+                            isOn ? "bg-emerald-500/15 text-emerald-700" : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {asString(device.state) || (isOn ? "on" : "off")}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={!controllable}
+                          onClick={() =>
+                            onQuestionChoice?.(`Turn ${isOn ? "off" : "on"} ${deviceName}`)
+                          }
+                          className={cn(
+                            "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition-smooth",
+                            isOn
+                              ? "bg-surface-container-high text-foreground hover:bg-surface-container-highest"
+                              : "bg-primary text-primary-foreground hover:bg-primary/90",
+                            !controllable && "cursor-not-allowed opacity-50",
+                          )}
+                        >
+                          {isOn ? "Turn off" : "Turn on"}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                hasCamera ? null : <p className="mt-1 text-[11px] text-muted-foreground">No smart devices</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <Provenance items={provenanceItems(card)} />
+    </CardShell>
+  );
+}
+
+const ALERT_CRITICAL = new Set(["critical", "emergency", "high", "fall", "fall_detected", "sos"]);
+const ALERT_WARNING = new Set(["warning", "medium", "caution"]);
+
+function alertSeverityTone(alert: JsonRecord): "critical" | "warning" | "info" {
+  const severity = asString(alert.severity).toLowerCase();
+  const alertType = asString(alert.alert_type).toLowerCase();
+  if (ALERT_CRITICAL.has(severity) || ALERT_CRITICAL.has(alertType)) return "critical";
+  if (ALERT_WARNING.has(severity)) return "warning";
+  return "info";
+}
+
+function AlertFeedCard({
+  card,
+  onQuestionChoice,
+  onNavigate,
+}: {
+  card: EaseAIBackendCard;
+  onQuestionChoice?: (reply: string) => void;
+  onNavigate?: (href: string) => void;
+}) {
+  const payload = cardPayload(card);
+  const alerts = asArray(payload.alerts).map((item) => asRecord(item)).filter(Boolean) as JsonRecord[];
+  const total = asNumber(payload.total_count) ?? alerts.length;
+
+  return (
+    <CardShell icon={<Siren className="h-4 w-4" />} title={titleFor(card, "Active alerts")}>
+      {alerts.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No active alerts.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {alerts.slice(0, 8).map((alert, index) => {
+            const tone = alertSeverityTone(alert);
+            const alertId = asNumber(alert.id);
+            const label = (asString(alert.alert_type) || "alert").replace(/_/g, " ");
+            return (
+              <li
+                key={`${asString(alert.id)}-${index}`}
+                className={cn(
+                  "rounded-lg border px-2.5 py-2 text-xs",
+                  tone === "critical"
+                    ? "border-critical/40 bg-critical/5"
+                    : tone === "warning"
+                      ? "border-amber-300/60 bg-amber-50/60"
+                      : "border-outline-variant/20 bg-surface",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <Badge
+                      variant={tone === "critical" ? "destructive" : tone === "warning" ? "warning" : "outline"}
+                      className="shrink-0 rounded-full px-1.5 py-0 text-[10px] capitalize"
+                    >
+                      {asString(alert.severity) || "info"}
+                    </Badge>
+                    <span className="min-w-0 truncate font-medium capitalize text-foreground">{label}</span>
+                  </div>
+                  {alertId != null && onQuestionChoice ? (
+                    <button
+                      type="button"
+                      onClick={() => onQuestionChoice(`Acknowledge alert ${alertId}`)}
+                      className="shrink-0 rounded-md bg-surface-container-high px-1.5 py-0.5 text-[10px] font-semibold text-foreground transition-smooth hover:bg-surface-container-highest"
+                    >
+                      Acknowledge
+                    </button>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {[
+                    alert.patient_id != null ? `Patient #${String(alert.patient_id)}` : "",
+                    asString(alert.created_at) ? formatDateTime(asString(alert.created_at)) : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {total > alerts.length ? (
+        <p className="mt-1.5 text-[11px] text-muted-foreground">+{total - alerts.length} more</p>
+      ) : null}
+      {onNavigate ? (
+        <button
+          type="button"
+          onClick={() => onNavigate("/admin")}
+          className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline"
+        >
+          Open overview
+          <ArrowRight className="h-3 w-3" />
+        </button>
+      ) : null}
+      <Provenance items={provenanceItems(card)} />
+    </CardShell>
+  );
+}
+
+function deviceDisplayLabel(payload: JsonRecord): string {
+  const entity = asString(payload.ha_entity_id);
+  if (entity) {
+    const slug = entity.split(".").pop() || "";
+    const stripped = slug.replace(/^ws\d+_room\d+_/, "").replace(/_/g, " ");
+    if (stripped.trim()) return stripped.trim();
+  }
+  return payload.device_id != null ? `Device #${String(payload.device_id)}` : "Device";
+}
+
+function DeviceControlCard({
+  card,
+  onQuestionChoice,
+}: {
+  card: EaseAIBackendCard;
+  onQuestionChoice?: (reply: string) => void;
+}) {
+  const payload = cardPayload(card);
+  const isOn = payload.on === true;
+  const label = deviceDisplayLabel(payload);
+  const action = (asString(payload.action) || "").replace(/_/g, " ");
+  const state = asString(payload.state) || (isOn ? "on" : "off");
+
+  return (
+    <CardShell icon={<Power className="h-4 w-4" />} title={titleFor(card, "Device updated")}>
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+            isOn ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground",
+          )}
+        >
+          <Power className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-semibold capitalize text-foreground">{label}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {action ? `${action} → ` : ""}now {state}
+          </p>
+        </div>
+        {onQuestionChoice ? (
+          <button
+            type="button"
+            onClick={() => onQuestionChoice(`Turn ${isOn ? "off" : "on"} ${label}`)}
+            className="shrink-0 rounded-md bg-surface-container-high px-2 py-1 text-[10px] font-semibold text-foreground transition-smooth hover:bg-surface-container-highest"
+          >
+            {isOn ? "Turn off" : "Turn on"}
+          </button>
+        ) : null}
+      </div>
+      <Provenance items={provenanceItems(card)} />
+    </CardShell>
+  );
+}
+
 function renderCard(
   card: EaseAIBackendCard,
   onQuestionChoice?: (reply: string) => void,
@@ -901,6 +1318,17 @@ function renderCard(
       return <ProfileSummaryCard card={card} />;
     case "navigation":
       return <NavigationCard card={card} onNavigate={onNavigate} />;
+    case "smart_home":
+    case "smart_home_status":
+      return <SmartHomeCard card={card} onQuestionChoice={onQuestionChoice} />;
+    case "alert_feed":
+    case "alerts":
+      return <AlertFeedCard card={card} onQuestionChoice={onQuestionChoice} onNavigate={onNavigate} />;
+    case "device_control":
+    case "device_control_result":
+      return <DeviceControlCard card={card} onQuestionChoice={onQuestionChoice} />;
+    case "floorplan_map":
+      return <FloorplanMapCard card={card} />;
     case "sensor_status":
       return <SensorStatusCard card={card} />;
     case "health_trend_chart":
