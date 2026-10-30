@@ -1342,6 +1342,12 @@ async def _apply_mobile_fall_event(
             )
 
             push_alert_cleared_to_room_screens_background(ws_id, alert.id)
+            # Tell the mobile app the alert closed (it listens on alerts/*).
+            from app.services.mqtt_publish import (
+                publish_alert_resolved_to_mqtt_background,
+            )
+
+            publish_alert_resolved_to_mqtt_background(alert)
 
 
 def _room_tracker_key(ws_id: int, patient_id: int) -> str:

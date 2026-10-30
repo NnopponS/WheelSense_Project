@@ -49,3 +49,7 @@ touches:
   fall_canceled -> status none acked; home_command fan toggle -> home_state
   pushed back in ~1.5s over emqx round trip.
 - Secondary publish queue is best-effort (drops on full), ordering preserved FIFO.
+- Alert resolution was NOT propagated to the mobile app: nothing published on
+  WheelSense/alerts/* for resolves. publish_alert_resolved_to_mqtt sends
+  status:"resolved" + same alert_id + severity:"info" (app dedupes by alert_id,
+  no re-alarm). Wired into alert_service.resolve and the fall_canceled loop.

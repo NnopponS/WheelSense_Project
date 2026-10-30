@@ -161,6 +161,36 @@ def publish_alert_to_mqtt_background(alert) -> None:
     asyncio.create_task(publish_alert_to_mqtt(alert))
 
 
+async def publish_alert_resolved_to_mqtt(alert) -> None:
+    """Tell alert subscribers (mobile app) the alert is closed — same alert_id
+    so the app replaces its entry; downgraded severity so it does not re-alarm."""
+    body = {
+        "alert_id": alert.id,
+        "alert_type": alert.alert_type,
+        "severity": "info",
+        "title": f"Resolved: {alert.title}",
+        "description": alert.resolution_note or "Alert resolved",
+        "patient_id": alert.patient_id,
+        "device_id": alert.device_id,
+        "status": "resolved",
+        "timestamp": (
+            alert.resolved_at or alert.timestamp
+        ).isoformat()
+        if (alert.resolved_at or alert.timestamp)
+        else None,
+    }
+    if alert.patient_id is not None:
+        await mqtt_publish_json(f"WheelSense/alerts/{alert.patient_id}", body)
+    elif alert.device_id:
+        await mqtt_publish_json(f"WheelSense/alerts/{alert.device_id}", body)
+
+
+def publish_alert_resolved_to_mqtt_background(alert) -> None:
+    if not settings.mqtt_rest_publish_enabled:
+        return
+    asyncio.create_task(publish_alert_resolved_to_mqtt(alert))
+
+
 def build_mobile_mqtt_config_payload(
     linked_patient_id: int | None,
     linked_caregiver_id: int | None = None,
