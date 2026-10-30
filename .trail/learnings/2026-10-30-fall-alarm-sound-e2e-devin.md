@@ -68,3 +68,11 @@ popup rings immediately. Also: the speaker toggle was `hidden sm:inline-flex`
 (invisible <640px) — now always visible. WAV verified valid PCM 44.1kHz/16-bit.
 Note: `getAlertSoundEnabled()` is per-origin localStorage — the flag must be set
 once per origin (localhost vs each rotating trycloudflare URL).
+
+## Alarm tone swapped to IEC 60601-1-8 high-priority medical pattern
+User asked for the real hospital alarm sound. Standard medical-device high-priority
+alarm is a 3+2 pulse burst ("bip-bip-bip bip-bip"). Generated with `py` (Windows
+Python launcher — `python`/`python3` not on PATH): 950Hz + odd harmonics (piezo
+monitor timbre), 110ms pulses, ~1.95s cycle, PCM 44.1kHz/16-bit mono → both
+`frontend/public/sounds/fall-alarm.wav` and the Flutter raw res. WAV lives in
+`public/` so it needs an image rebuild (not just container restart) to deploy.
