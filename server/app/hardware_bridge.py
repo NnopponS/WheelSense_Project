@@ -9,9 +9,9 @@ Connects:
    - Live JPEG frame endpoint at /api/video/{room_ref}
 2. camera-service (YOLOv8 Wheelchair & Fall Detection):
    - WebSocket /camera-service on port 8765
-   - Maps detections in the 4 physical rooms (livingroom -> Model Living Room,
-     bedroom -> Model Bedroom, kitchen -> Model Kitchen, bathroom -> Model Bathroom)
-     on Level 2 - Model Home directly to patient **Robert Chen**
+   - Maps detections in the 4 physical rooms (livingroom -> Living Room,
+     bedroom -> Bedroom, kitchen -> Kitchen, bathroom -> Bathroom)
+     on Level 2 - Residence directly to patient **Robert Chen**
      (while other patients remain in sim mode).
 3. CucumberRS-Controller (ESP32-S2 4-Room Appliance Controller):
    - Publishes MQTT control commands to WheelSense/{room_key}/control on local Mosquitto
@@ -65,28 +65,32 @@ def _safe_subdir(raw: Any) -> str:
 PHYSICAL_ROOM_META: dict[str, dict[str, Any]] = {
     "livingroom": {
         "key": "livingroom",
-        "facility_room_name": "Model Living Room",
-        "name_th": "ห้องนั่งเล่น (โมเดล)",
+        "facility_room_name": "Living Room",
+        "name_th": "ห้องนั่งเล่น",
         "default_node": "MODEL_NODE_01",
     },
     "bedroom": {
         "key": "bedroom",
-        "facility_room_name": "Model Bedroom",
-        "name_th": "ห้องนอน (โมเดล)",
+        "facility_room_name": "Bedroom",
+        "name_th": "ห้องนอน",
         "default_node": "MODEL_NODE_02",
     },
     "kitchen": {
         "key": "kitchen",
-        "facility_room_name": "Model Kitchen",
-        "name_th": "ห้องครัว (โมเดล)",
+        "facility_room_name": "Kitchen",
+        "name_th": "ห้องครัว",
         "default_node": "MODEL_NODE_03",
     },
     "bathroom": {
         "key": "bathroom",
-        "facility_room_name": "Model Bathroom",
-        "name_th": "ห้องน้ำ (โมเดล)",
+        "facility_room_name": "Bathroom",
+        "name_th": "ห้องน้ำ",
         "default_node": "MODEL_NODE_04",
     },
+}
+
+_NODE_ID_TO_ROOM_KEY: dict[str, str] = {
+    meta["default_node"]: key for key, meta in PHYSICAL_ROOM_META.items()
 }
 
 ROOM_REF_ALIASES: dict[str, str] = {
@@ -220,6 +224,7 @@ class HardwareBridge:
         self.detection_threshold: float = 0.8
         self._tasks: list[asyncio.Task[Any]] = []
         self._ws_server: Any = None
+        self._local_hw_client: Any = None
 
     @property
     def local_mqtt_broker(self) -> str:
@@ -663,13 +668,49 @@ class HardwareBridge:
     async def _handle_yolo_detection(self, detection: dict[str, Any]) -> None:
         """Process YOLOv8 wheelchair/fall detection and apply it to Robert Chen."""
         detected = bool(detection.get("detected", False))
+        raw_room = (
+            detection.get("room")
+            or detection.get("room_key")
+            or detection.get("room_name")
+            or detection.get("camera_room")
+        )
+        if raw_room:
+            room_key = normalize_physical_room_key(raw_room)
+        else:
+            node_id = str(detection.get("device_id") or detection.get("camera_id") or "")
+            room_key = _NODE_ID_TO_ROOM_KEY.get(node_id, "livingroom")
         if not detected:
+            if room_key == self.last_detected_room_key:
+                self.last_detected_room_key = None
+                await self._handle_room_vacated(room_key)
+            elif raw_room or str(
+                detection.get("device_id") or detection.get("camera_id") or ""
+            ) in _NODE_ID_TO_ROOM_KEY:
+                # Camera reports a room empty that we weren't tracking as
+                # occupied (e.g. after a restart): still retire any stale
+                # prediction that places someone there, but leave lighting
+                # alone so vacancy heartbeats can't kill manually lit rooms.
+                # Payloads that can't name a known room/camera must not clear
+                # the "livingroom" fallback by accident.
+                await self._clear_vacated_room_presence(room_key)
             return
 
-        room_key = normalize_physical_room_key(detection.get("room", "livingroom"))
         confidence = float(detection.get("confidence", 0.9) or 0.9)
         fall_detected = bool(detection.get("fall_detected", False))
-        # TsimCam data is recorded under the room's Model-Node id (Model-Node 1-4);
+        if not fall_detected:
+            if detection.get("fall_reason"):
+                fall_detected = True
+            else:
+                for d in detection.get("detections") or []:
+                    txt = (
+                        " ".join(str(v) for v in d.values()).lower()
+                        if isinstance(d, dict)
+                        else str(d).lower()
+                    )
+                    if "fall" in txt or "red_obj" in txt:
+                        fall_detected = True
+                        break
+        # TsimCam data is recorded under the room's camera node id (Camera Node 1-4);
         # the raw camera-reported id is kept for traceability only.
         reported_device_id = str(detection.get("device_id") or "")
         device_id = str(PHYSICAL_ROOM_META[room_key]["default_node"])
@@ -677,12 +718,13 @@ class HardwareBridge:
 
         now_mono = time.monotonic()
         room_changed = self.last_detected_room_key != room_key
-        if not room_changed and not fall_detected and (now_mono - self.last_detection_ts) < 2.0:
+        if not room_changed and not fall_detected and (now_mono - self.last_detection_ts) < 0.75:
             return
 
         prev_room_key = self.last_detected_room_key
         self.last_detected_room_key = room_key
         self.last_detection_ts = now_mono
+        lighting_rooms: list[tuple[int, int]] = []
 
         async with AsyncSessionLocal() as session:
             # Find Robert Chen (prefer demo workspace)
@@ -702,10 +744,18 @@ class HardwareBridge:
             q_room = await session.execute(
                 select(Room).where(
                     Room.workspace_id == ws_id,
-                    Room.name == target_room_name,
+                    Room.node_device_id == device_id,
                 )
             )
             target_room = q_room.scalars().first()
+            if target_room is None:
+                q_room = await session.execute(
+                    select(Room).where(
+                        Room.workspace_id == ws_id,
+                        Room.name == target_room_name,
+                    )
+                )
+                target_room = q_room.scalars().first()
             if target_room is None:
                 return
 
@@ -747,10 +797,16 @@ class HardwareBridge:
 
             if room_changed and prev_room_key is not None:
                 prev_room_name = PHYSICAL_ROOM_META[prev_room_key]["facility_room_name"]
+                prev_node = str(PHYSICAL_ROOM_META[prev_room_key]["default_node"])
                 q_prev = await session.execute(
-                    select(Room).where(Room.workspace_id == ws_id, Room.name == prev_room_name)
+                    select(Room).where(Room.workspace_id == ws_id, Room.node_device_id == prev_node)
                 )
                 prev_room = q_prev.scalars().first()
+                if prev_room is None:
+                    q_prev = await session.execute(
+                        select(Room).where(Room.workspace_id == ws_id, Room.name == prev_room_name)
+                    )
+                    prev_room = q_prev.scalars().first()
                 if prev_room is not None:
                     session.add(
                         ActivityTimeline(
@@ -765,6 +821,13 @@ class HardwareBridge:
                             source="auto",
                         )
                     )
+                    # Vacated room: auto-off its lights (living room is a shared
+                    # space and stays on for the "left on -> remote off" flow).
+                    if prev_room_key != "livingroom":
+                        if await self.apply_room_exit_lighting(
+                            session, workspace_id=ws_id, room=prev_room
+                        ):
+                            lighting_rooms.append((ws_id, prev_room.id))
                     # House Check: check if any appliance was left ON in prev_room
                     if (now_mono - self.last_house_check_alert_ts) >= 20.0:
                         q_smart = await session.execute(
@@ -827,7 +890,14 @@ class HardwareBridge:
                     confidence,
                 )
 
-            if fall_detected and (now_mono - self.last_fall_alert_ts) >= 30.0:
+            if room_changed:
+                # Presence-driven lighting: switch on the entered room's light.
+                if await self.apply_room_entry_lighting(
+                    session, workspace_id=ws_id, room=target_room
+                ):
+                    lighting_rooms.append((ws_id, target_room.id))
+
+            if fall_detected and (now_mono - self.last_fall_alert_ts) >= 10.0:
                 self.last_fall_alert_ts = now_mono
                 q_loc = await session.execute(
                     select(Floor.name, Facility.name)
@@ -866,6 +936,13 @@ class HardwareBridge:
                 logger.warning("TsimCam YOLOv8 FALL ALERT created for Robert Chen in %s", target_room.name)
 
             await session.commit()
+
+        # Reflect presence-driven light changes on room screens (E84 nodes).
+        if lighting_rooms:
+            from app.services.room_node import push_home_state_to_room_background
+
+            for lws_id, lroom_id in lighting_rooms:
+                push_home_state_to_room_background(lws_id, lroom_id)
 
     async def save_room_snapshot_if_available(
         self,
@@ -948,6 +1025,7 @@ class HardwareBridge:
                         self.local_mqtt_broker,
                         self.local_mqtt_port,
                     )
+                    self._local_hw_client = client
                     async for message in client.messages:
                         topic = str(message.topic)
                         try:
@@ -978,6 +1056,8 @@ class HardwareBridge:
             except Exception as exc:
                 logger.debug("Local hardware MQTT reconnect in 5s (%s)", exc)
                 await asyncio.sleep(5.0)
+            finally:
+                self._local_hw_client = None
 
     async def _handle_cucumber_state_sync_request(self, client: aiomqtt.Client) -> None:
         """Send current SmartDevice states for all 4 rooms to CucumberRS."""
@@ -1035,13 +1115,24 @@ class HardwareBridge:
             cmd["value"] = int(round(float(value)))
 
         topic = f"WheelSense/{norm_room}/control"
+        body = json.dumps(cmd).encode("utf-8")
         try:
-            async with aiomqtt.Client(
-                hostname=self.local_mqtt_broker,
-                port=self.local_mqtt_port,
-                identifier=f"wheelsense-ctrl-{uuid.uuid4().hex[:8]}",
-            ) as client:
-                await client.publish(topic, json.dumps(cmd).encode("utf-8"), qos=1)
+            # Reuse the warm listener connection when it's up — saves a full
+            # MQTT handshake per appliance command.
+            client = self._local_hw_client
+            if client is not None:
+                try:
+                    await client.publish(topic, body, qos=1)
+                except Exception:
+                    self._local_hw_client = None
+                    client = None
+            if client is None:
+                async with aiomqtt.Client(
+                    hostname=self.local_mqtt_broker,
+                    port=self.local_mqtt_port,
+                    identifier=f"wheelsense-ctrl-{uuid.uuid4().hex[:8]}",
+                ) as fresh_client:
+                    await fresh_client.publish(topic, body, qos=1)
             logger.info(
                 "CucumberRS MQTT control sent: %s -> %s=%s",
                 topic,
@@ -1052,6 +1143,294 @@ class HardwareBridge:
         except Exception as exc:
             logger.warning("Failed to publish CucumberRS control to %s: %s", topic, exc)
             return False
+
+    async def apply_room_entry_lighting(
+        self,
+        session: Any,
+        *,
+        workspace_id: int,
+        room: Room,
+    ) -> list[str]:
+        """Presence lighting: switch on the entered room's linked light device(s).
+
+        Mirrors the POST /api/ha/devices/{id}/control path: the SmartDevice row
+        is set to "on" and, when the device carries a CucumberRS room_key (or
+        the room name maps to a physical room), the same MQTT control command
+        is published so the physical light follows occupancy.
+        Returns the names of devices that were off and got turned on.
+        """
+        q = await session.execute(
+            select(SmartDevice).where(
+                SmartDevice.workspace_id == workspace_id,
+                SmartDevice.room_id == room.id,
+                SmartDevice.is_active.is_(True),
+            )
+        )
+        fallback_key = facility_room_name_to_physical_key(room.name)
+        turned_on: list[str] = []
+        for sd in q.scalars().all():
+            cfg = sd.config if isinstance(sd.config, dict) else {}
+            appliance = str(cfg.get("appliance") or "").strip()
+            dtype = (sd.device_type or "").strip().lower()
+            if appliance.lower() != "light" and dtype != "light":
+                continue
+            is_on = (sd.state or "off").strip().lower() not in (
+                "off",
+                "unknown",
+                "unavailable",
+            )
+            if not is_on:
+                sd.state = "on"
+                session.add(sd)
+                turned_on.append(sd.name)
+            room_key = str(cfg.get("room_key") or fallback_key or "").strip()
+            if room_key:
+                await self.publish_cucumber_control(
+                    room_key=room_key,
+                    appliance=appliance or "light",
+                    state=True,
+                )
+        if turned_on:
+            logger.info(
+                "Presence lighting: turned ON %s in %s",
+                ", ".join(turned_on),
+                room.name,
+            )
+        return turned_on
+
+    async def apply_room_exit_lighting(
+        self,
+        session: Any,
+        *,
+        workspace_id: int,
+        room: Room,
+    ) -> list[str]:
+        """Vacancy lighting: switch off the vacated room's linked light device(s).
+
+        Mirrors apply_room_entry_lighting; used when the camera reports the room
+        empty or the person moved elsewhere. Returns names of devices turned off.
+        """
+        q = await session.execute(
+            select(SmartDevice).where(
+                SmartDevice.workspace_id == workspace_id,
+                SmartDevice.room_id == room.id,
+                SmartDevice.is_active.is_(True),
+            )
+        )
+        fallback_key = facility_room_name_to_physical_key(room.name)
+        turned_off: list[str] = []
+        for sd in q.scalars().all():
+            cfg = sd.config if isinstance(sd.config, dict) else {}
+            appliance = str(cfg.get("appliance") or "").strip()
+            dtype = (sd.device_type or "").strip().lower()
+            if appliance.lower() != "light" and dtype != "light":
+                continue
+            is_on = (sd.state or "off").strip().lower() not in (
+                "off",
+                "unknown",
+                "unavailable",
+            )
+            if is_on:
+                sd.state = "off"
+                session.add(sd)
+                turned_off.append(sd.name)
+            room_key = str(cfg.get("room_key") or fallback_key or "").strip()
+            if room_key:
+                await self.publish_cucumber_control(
+                    room_key=room_key,
+                    appliance=appliance or "light",
+                    state=False,
+                )
+        if turned_off:
+            logger.info(
+                "Presence lighting: turned OFF %s in %s",
+                ", ".join(turned_off),
+                room.name,
+            )
+        return turned_off
+
+    async def _handle_room_vacated(self, room_key: str) -> None:
+        """Camera reports the tracked room empty: clear its presence
+        predictions, then off its lights, or (living room) warn."""
+        meta = PHYSICAL_ROOM_META.get(room_key)
+        if meta is None:
+            return
+        try:
+            async with AsyncSessionLocal() as session:
+                q_room = await session.execute(
+                    select(Room).where(Room.node_device_id == str(meta["default_node"]))
+                )
+                room = q_room.scalars().first()
+                if room is None:
+                    return
+                # Presence: retire predictions that still place someone in the
+                # vacated room (committed before lighting so the early-return
+                # bedroom path can't strand them).
+                await self._insert_vacancy_markers(session, room=room)
+                await session.commit()
+                if room_key != "livingroom":
+                    turned_off = await self.apply_room_exit_lighting(
+                        session, workspace_id=room.workspace_id, room=room
+                    )
+                    await session.commit()
+                    if turned_off:
+                        from app.services.room_node import (
+                            push_home_state_to_room_background,
+                        )
+
+                        push_home_state_to_room_background(room.workspace_id, room.id)
+                    return
+                # Living room is a shared space and exempt from auto-off: keep
+                # devices running and raise the left-on warning so staff/AI can
+                # act on it.
+                q_smart = await session.execute(
+                    select(SmartDevice).where(
+                        SmartDevice.workspace_id == room.workspace_id,
+                        SmartDevice.room_id == room.id,
+                        SmartDevice.is_active.is_(True),
+                    )
+                )
+                left_on = [
+                    sd.name
+                    for sd in q_smart.scalars().all()
+                    if (sd.state or "off").lower() not in ("off", "unknown", "unavailable")
+                ]
+                if not left_on:
+                    return
+                if (time.monotonic() - self.last_house_check_alert_ts) < 20.0:
+                    return
+                self.last_house_check_alert_ts = time.monotonic()
+                q_robert = await session.execute(
+                    select(Patient)
+                    .where(Patient.first_name.ilike("Robert%"), Patient.is_active.is_(True))
+                    .order_by(Patient.id.asc())
+                )
+                robert = q_robert.scalars().first()
+                if robert is None:
+                    return
+                hc_alert = Alert(
+                    workspace_id=room.workspace_id,
+                    patient_id=robert.id,
+                    device_id=None,
+                    timestamp=utcnow(),
+                    alert_type="zone_violation",
+                    severity="warning",
+                    title=f"Appliance Left ON in {room.name}",
+                    description=(
+                        f"{room.name} is unoccupied while {', '.join(left_on)} remained ON."
+                    ),
+                    data={
+                        "room_id": room.id,
+                        "room_name": room.name,
+                        "devices_left_on": left_on,
+                        "source": "house_check",
+                    },
+                    status="active",
+                )
+                session.add(hc_alert)
+                await session.flush()
+                publish_alert_to_mqtt_background(hc_alert)
+                await session.commit()
+        except Exception as exc:
+            logger.warning("Vacancy lighting failed for %s: %s", room_key, exc)
+
+    async def _insert_vacancy_markers(self, session: Any, *, room: Room) -> list[str]:
+        """Retire room-presence predictions for a camera-reported empty room.
+
+        For every device whose freshest RoomPrediction still places it in
+        `room`, append a new prediction row with predicted_room_id=NULL so the
+        floorplan presence projection stops listing that occupant — the same
+        "latest prediction wins" rule that moves people between rooms. A newer
+        detection elsewhere is never clobbered because only devices whose
+        latest row still points at this room are touched.
+        Returns the device_ids that were cleared.
+        """
+        pred_rows = list(
+            (
+                await session.execute(
+                    select(RoomPrediction)
+                    .where(RoomPrediction.workspace_id == room.workspace_id)
+                    .order_by(desc(RoomPrediction.timestamp))
+                    .limit(1000)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        latest_by_device: dict[str, RoomPrediction] = {}
+        for pred in pred_rows:
+            latest_by_device.setdefault(pred.device_id, pred)
+        now_dt = utcnow()
+        cleared: list[str] = []
+        for dev_id, pred in latest_by_device.items():
+            if pred.predicted_room_id != room.id:
+                continue
+            session.add(
+                RoomPrediction(
+                    workspace_id=room.workspace_id,
+                    device_id=dev_id,
+                    timestamp=now_dt,
+                    predicted_room_id=None,
+                    predicted_room_name="",
+                    confidence=0.0,
+                    model_type="yolov8",
+                    # Marker payload read by the presence projection to also
+                    # suppress a roster/assignment occupant in the vacated room.
+                    rssi_vector={"vacated_room_id": room.id},
+                )
+            )
+            cleared.append(dev_id)
+        if cleared:
+            logger.info(
+                "Presence cleared in %s (camera reported empty): %s",
+                room.name,
+                ", ".join(cleared),
+            )
+        return cleared
+
+    async def _clear_vacated_room_presence(self, room_key: str) -> None:
+        """Retire stale presence predictions for a camera-reported empty room
+        without touching lighting — used when the room wasn't the tracked one."""
+        meta = PHYSICAL_ROOM_META.get(room_key)
+        if meta is None:
+            return
+        try:
+            async with AsyncSessionLocal() as session:
+                q_room = await session.execute(
+                    select(Room).where(Room.node_device_id == str(meta["default_node"]))
+                )
+                room = q_room.scalars().first()
+                if room is None:
+                    return
+                await self._insert_vacancy_markers(session, room=room)
+                await session.commit()
+        except Exception as exc:
+            logger.warning("Presence clearing failed for %s: %s", room_key, exc)
+
+    def tsimcam_node_online(self, node_id: str) -> bool | None:
+        """Honest online flag for a canonical TsimCam node (MODEL_NODE_*).
+
+        Returns None when `node_id` isn't a TsimCam room slot, so callers can
+        fall back to last_seen-based status for registry-only nodes. Mirrors
+        GET /api/map/devices: a node is online when its own WS is up or any
+        reported camera id folded into the same room is.
+        """
+        node_id = str(node_id)
+        room_key = _NODE_ID_TO_ROOM_KEY.get(node_id)
+        if room_key is None:
+            return None
+        if node_id in self.camera_connections or self.device_status.get(
+            node_id, {}
+        ).get("online"):
+            return True
+        for did, room in self.device_rooms.items():
+            if normalize_physical_room_key(room) != room_key:
+                continue
+            if did in self.camera_connections or self.device_status.get(did, {}).get(
+                "online"
+            ):
+                return True
+        return False
 
 
 hardware_bridge = HardwareBridge()
@@ -1204,21 +1583,18 @@ async def set_detection_threshold(request: Request) -> dict[str, Any]:
 
 @video_router.post("/detection/notify")
 async def detection_notify(request: Request) -> dict[str, Any]:
-    """Forward a detection confirmed on the test page into the position pipeline."""
+    """Forward a detection confirmed on the test page into the position pipeline.
+
+    Passes the request body through untouched so every field the handler reads
+    (room, room_key, room_name, camera_room, device_id, camera_id, confidence,
+    fall flags, detections[], image fields) reaches it — dropping camera_id
+    used to mis-resolve payloads to the fallback room.
+    """
     data = await request.json()
-    if data.get("detected"):
-        await hardware_bridge._handle_yolo_detection(
-            {
-                "type": "detection",
-                "room": data.get("room"),
-                "detected": True,
-                "confidence": float(data.get("confidence", 0.9) or 0.9),
-                "bbox": data.get("bbox"),
-                "device_id": data.get("device_id"),
-                "fall_detected": data.get("fall_detected", False),
-                "fall_reason": data.get("fall_reason"),
-            }
-        )
+    if "detected" in data:
+        payload = dict(data)
+        payload.setdefault("type", "detection")
+        await hardware_bridge._handle_yolo_detection(payload)
     return {"status": "ok"}
 
 
