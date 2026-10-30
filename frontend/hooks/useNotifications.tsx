@@ -26,8 +26,8 @@ import type {
 /** Matches server `ROLE_CLINICAL_STAFF` for `GET /api/workflow/tasks` (patients are forbidden). */
 const WORKFLOW_TASKS_ROLES = new Set(["admin", "head_caregiver", "caregiver"]);
 
-const ALERT_POLL_MS = 10_000;
-const DEFAULT_POLL_MS = 30_000;
+const ALERT_POLL_MS = 2_500;
+const DEFAULT_POLL_MS = 8_000;
 
 export type NotificationType = "alert" | "message" | "task" | "workflow_job";
 
@@ -65,39 +65,80 @@ function formatRoomLocationLine(room: Room): string {
   return [facility, floor, name].filter(Boolean).join(" · ");
 }
 
+export interface PatientAlertContext {
+  nameLine: string;
+  roomLine: string;
+  photoUrl: string | null;
+  initials: string;
+  ageYears: number | null;
+  gender: string;
+  bloodType: string;
+  mobilityType: string;
+  careLevel: string;
+}
+
 export async function resolvePatientAlertContext(
   patientId: number,
   t: (key: TranslationKey) => string,
-): Promise<{ nameLine: string; roomLine: string }> {
+): Promise<PatientAlertContext> {
   const fallbackName = t("notifications.toastPatientNameFallback").replace("{id}", String(patientId));
   const unknownRoom = t("notifications.toastPatientLocationUnknown");
   const noRoom = t("notifications.toastPatientNoRoomOnRecord");
 
+  const base: Omit<PatientAlertContext, "nameLine" | "roomLine"> = {
+    photoUrl: null,
+    initials: "?",
+    ageYears: null,
+    gender: "",
+    bloodType: "",
+    mobilityType: "",
+    careLevel: "",
+  };
+
   try {
     const p = await api.getPatient(patientId);
     const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || fallbackName;
+    const initials =
+      `${p.first_name?.trim().charAt(0) ?? ""}${p.last_name?.trim().charAt(0) ?? ""}`.toUpperCase() || name.charAt(0).toUpperCase() || "?";
+    const dobMs = p.date_of_birth ? Date.parse(p.date_of_birth + "T12:00:00") : NaN;
+    const details: Omit<PatientAlertContext, "nameLine" | "roomLine"> = {
+      photoUrl: p.photo_url?.trim() || null,
+      initials,
+      ageYears: Number.isFinite(dobMs)
+        ? Math.max(0, Math.floor((Date.now() - dobMs) / (365.25 * 24 * 3600 * 1000)))
+        : null,
+      gender: p.gender ?? "",
+      bloodType: p.blood_type ?? "",
+      mobilityType: p.mobility_type ?? "",
+      careLevel: p.care_level ?? "",
+    };
 
     if (p.room_id == null) {
-      return { nameLine: name, roomLine: noRoom };
+      return { nameLine: name, roomLine: noRoom, ...details };
     }
 
     try {
       const room = await api.getRoom(p.room_id);
       const line = formatRoomLocationLine(room);
-      return { nameLine: name, roomLine: line.trim() ? line : unknownRoom };
+      return { nameLine: name, roomLine: line.trim() ? line : unknownRoom, ...details };
     } catch {
-      return { nameLine: name, roomLine: unknownRoom };
+      return { nameLine: name, roomLine: unknownRoom, ...details };
     }
   } catch {
-    return { nameLine: fallbackName, roomLine: unknownRoom };
+    return { nameLine: fallbackName, roomLine: unknownRoom, ...base };
   }
 }
 
-function transformAlert(alert: AlertOut, role: AppRole): Notification {
+function transformAlert(alert: AlertOut, role: AppRole, t: (key: TranslationKey) => string): Notification {
+  const title = alert.title?.trim()
+    ? alert.title
+    : alert.alert_type === "fall"
+      ? t("demoControl.fallDetectedTitle")
+      : alert.alert_type;
   return {
     id: `alert-${alert.id}`,
     type: "alert",
-    title: alert.title || alert.alert_type,
+    title,
     message: alert.description || "",
     timestamp: alert.timestamp || alert.acknowledged_at || "",
     read: alert.status !== "active",
@@ -186,6 +227,9 @@ export function useNotifications(): UseNotificationsReturn {
   const canListWorkflowTasks = Boolean(user?.role && WORKFLOW_TASKS_ROLES.has(user.role));
   const arrivalTracker = useRef<{ identity: string; seen: NotificationSeen }>({ identity: "", seen: new Map() });
   const [popupState, setPopupState] = useState<{ identity: string; items: Notification[] }>({ identity: "", items: [] });
+  /** Critical alerts that arrived this session and are still active — the alarm loops while non-empty. */
+  const ringingAlertIds = useRef<Set<string>>(new Set());
+  const alarmInterval = useRef<number | null>(null);
 
   const { data: alertsData } = useQuery({
     queryKey: ["notifications", "alerts", identity],
@@ -218,7 +262,7 @@ export function useNotifications(): UseNotificationsReturn {
   const notifications: Notification[] = useMemo(() => {
     const rows: Notification[] = [
       ...(alertsData?.map((a) => {
-        const n = transformAlert(a, role);
+        const n = transformAlert(a, role, t);
         return {
           ...n,
           message: n.message.trim() ? n.message : t("notifications.detailsMissing"),
@@ -242,12 +286,34 @@ export function useNotifications(): UseNotificationsReturn {
   }, [alertsData, tasksData, workflowJobsData, messagesData, role, t]);
 
   useEffect(() => {
-    if (!identity) return;
+    const stopAlarm = () => {
+      if (alarmInterval.current !== null) {
+        window.clearInterval(alarmInterval.current);
+        alarmInterval.current = null;
+      }
+    };
+    if (!identity) {
+      ringingAlertIds.current.clear();
+      stopAlarm();
+      return;
+    }
     if (arrivalTracker.current.identity !== identity) arrivalTracker.current = { identity, seen: new Map() };
     const ready = { alert: alertsData !== undefined, task: tasksData !== undefined, workflow_job: workflowJobsData !== undefined, message: messagesData !== undefined };
     const sources = (["alert", "task", "workflow_job", "message"] as const).map(type => ({ type, ready: ready[type], items: notifications.filter(item => item.type === type) }));
-    const arrivals = collectNotificationArrivals(arrivalTracker.current.seen, sources);
-    if (arrivals.length) playAlertChime();
+    const arrivals = collectNotificationArrivals(arrivalTracker.current.seen, sources).filter(
+      item => item.type === "alert" && (item.data as AlertOut | undefined)?.severity === "critical",
+    );
+    for (const item of arrivals) ringingAlertIds.current.add(item.id);
+    const live = new Set(notifications.filter(n => n.type === "alert" && !n.read).map(n => n.id));
+    for (const id of ringingAlertIds.current) {
+      if (!live.has(id)) ringingAlertIds.current.delete(id);
+    }
+    if (ringingAlertIds.current.size && alarmInterval.current === null) {
+      playAlertChime();
+      alarmInterval.current = window.setInterval(playAlertChime, 1700);
+    } else if (!ringingAlertIds.current.size) {
+      stopAlarm();
+    }
     setPopupState(previous => {
       const previousItems = previous.identity === identity ? previous.items : [];
       const items = refreshNotificationQueue(previousItems, notifications, arrivals, sources.filter(source => source.ready).map(source => source.type));
@@ -255,6 +321,13 @@ export function useNotifications(): UseNotificationsReturn {
       return { identity, items };
     });
   }, [identity, notifications, alertsData, tasksData, workflowJobsData, messagesData]);
+
+  useEffect(
+    () => () => {
+      if (alarmInterval.current !== null) window.clearInterval(alarmInterval.current);
+    },
+    [],
+  );
 
   const dismissPopup = useCallback((id: string) => {
     setPopupState(previous => ({ ...previous, items: previous.items.filter(item => item.id !== id) }));

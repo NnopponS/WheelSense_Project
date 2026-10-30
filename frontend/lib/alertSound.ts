@@ -34,15 +34,21 @@ export function playAlertChime(): void {
     void audioCtx.resume().catch(() => {});
   }
   const ctx = audioCtx;
+  const now = ctx.currentTime;
+  const duration = 1.5;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.type = "sine";
-  osc.frequency.value = 880;
-  gain.gain.value = 0.08;
+  osc.type = "triangle";
+  const steps = 6;
+  for (let i = 0; i <= steps; i++) {
+    osc.frequency.setValueAtTime(i % 2 === 0 ? 880 : 660, now + (duration / steps) * i);
+  }
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.3, now + 0.05);
+  gain.gain.setValueAtTime(0.3, now + duration - 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
   osc.connect(gain);
   gain.connect(ctx.destination);
-  const now = ctx.currentTime;
   osc.start(now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
-  osc.stop(now + 0.26);
+  osc.stop(now + duration);
 }
