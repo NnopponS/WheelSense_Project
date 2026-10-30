@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { endOfDay, format, isSameDay, startOfDay } from "date-fns";
 import {
-  Accessibility, Activity, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, Download, Ellipsis, HeartPulse, Info, Plug2, Server, ShieldAlert, Smartphone, TriangleAlert, Wifi,
+  Accessibility, Activity, ArrowRight, ArrowUpRight, ChevronDown, Download, Ellipsis, HeartPulse, Info, Move3d, Plug2, Server, ShieldAlert, Smartphone, Sparkles, TriangleAlert, Wifi,
   Bell,
   Building2,
   ClipboardList,
@@ -21,8 +22,8 @@ import { isSmartDeviceOnline } from "@/lib/smartDeviceOnline";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { useTranslation } from "@/lib/i18n";
-import type { Device, HardwareType, SmartDevice } from "@/lib/types";
-import type { ListAlertsResponse, ListDeviceActivityResponse, ListUsersResponse } from "@/lib/api/task-scope-types";
+import type { Device, HardwareType, Room, SmartDevice } from "@/lib/types";
+import type { CareScheduleOut, ListAlertsResponse, ListDeviceActivityResponse, ListUsersResponse } from "@/lib/api/task-scope-types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildCsvFromRows, downloadCsvFile } from "@/lib/csv";
@@ -30,6 +31,8 @@ import { StatusSegments } from "@/components/dashboard/StatusSegments";
 import { sortOverviewAlerts } from "@/lib/overviewStatus";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
+import { BeltPresenceCard } from "@/components/overview/BeltPresenceCard";
+import { schedulesToCalendarEvents } from "@/components/calendar/scheduleEventMapper";
 import styles from "./overview-workspace.module.css";
 import { DataState } from "@/components/layout/DataState";
 import { AppPage } from "@/components/layout/AppPage";
@@ -46,6 +49,7 @@ type PlatformHealth = {
 };
 
 const HARDWARE_ROWS: Array<{
+  /** `companion_m5` registry rows are the same physical belt M5 — counted under `belt`. */
   hardware: HardwareType;
   label: string;
 }> = [
@@ -53,7 +57,19 @@ const HARDWARE_ROWS: Array<{
   { hardware: "node", label: "Nodes" },
   { hardware: "polar_sense", label: "Polar Sense" },
   { hardware: "mobile_phone", label: "Mobile phones" },
+  { hardware: "belt", label: "Fall belts" },
 ];
+
+/** Robert Chen — resident whose daily routine is spotlighted on the overview. */
+const DAILY_PLAN_PATIENT_ID = 2;
+const DAILY_PLAN_PATIENT_NAME = "Robert Chen";
+/** AI quick-action prompts stay English-only — the assistant is English-tuned. */
+const DAILY_PLAN_AI_PROMPTS = {
+  summarizeDay:
+    "Summarize everywhere Robert Chen went today and flag anything unusual in his routine.",
+  planHealthCheck:
+    "Create a care schedule for a health check for Robert Chen tomorrow morning.",
+} as const;
 
 function formatTemplate(template: string, values: Record<string, string | number>): string {
   return Object.entries(values).reduce(
@@ -119,14 +135,34 @@ export default function AdminDashboardPage() {
   const alertsQuery = useQuery({
     queryKey: ["admin", "dashboard", "alerts"],
     queryFn: () => api.listAlerts({ status: "active", limit: 100 }),
-    staleTime: 15_000,
-    refetchInterval: 15_000,
+    staleTime: 2_000,
+    refetchInterval: 3_000,
+  });
+
+  const timelineQuery = useQuery({
+    queryKey: ["admin", "dashboard", "timeline", user?.workspace_id],
+    queryFn: () => api.listTimelineEvents({ limit: 15 }),
+    enabled: Boolean(user?.role) && user?.role !== "patient",
+    staleTime: 4_000,
+    refetchInterval: 5_000,
   });
 
   const healthQuery = useQuery({
     queryKey: ["platform", "health"],
     queryFn: () => api.get<PlatformHealth>("/health"),
     enabled: Boolean(user), staleTime: 15_000, refetchInterval: 30_000, retry: false,
+  });
+
+  const dailyPlanSchedulesQuery = useQuery({
+    queryKey: ["admin", "overview", "daily-plan", "schedules", DAILY_PLAN_PATIENT_ID],
+    queryFn: () => api.listWorkflowSchedules({ patient_id: DAILY_PLAN_PATIENT_ID, limit: 100 }),
+    staleTime: 60_000,
+  });
+  const dailyPlanRoomsQuery = useQuery({
+    queryKey: ["admin", "overview", "daily-plan", "rooms"],
+    queryFn: () => api.listRooms(),
+    enabled: (dailyPlanSchedulesQuery.data ?? []).some((schedule) => schedule.room_id != null),
+    staleTime: 60_000,
   });
   const devices = devicesQuery.data;
   const smartDevices = smartQuery.data;
@@ -137,7 +173,10 @@ export default function AdminDashboardPage() {
   const fleetByType = useMemo(
     () =>
       HARDWARE_ROWS.map(({ hardware, label }) => {
-        const rows = (devices ?? []).filter((device) => device.hardware_type === hardware);
+        const rows = (devices ?? []).filter((device) =>
+          hardware === "belt"
+            ? device.hardware_type === "belt" || device.hardware_type === "companion_m5"
+            : device.hardware_type === hardware);
         const online = rows.filter((device) => isDeviceOnline(device.last_seen, Math.max(nowMs, devicesQuery.dataUpdatedAt))).length;
         const missing = rows.filter(device => !device.last_seen || !Number.isFinite(Date.parse(device.last_seen))).length;
         return { hardware, label, total: rows.length, online, missing, stale: rows.length - online - missing };
@@ -168,13 +207,43 @@ export default function AdminDashboardPage() {
     return { total: list.length, active, inactive: list.length - active, byRole };
   }, [users]);
 
-  const latestActivity = useMemo(
-    () =>
-      [...(activity ?? [])]
-        .sort((left, right) => right.occurred_at.localeCompare(left.occurred_at))
-        .slice(0, 5),
-    [activity],
-  );
+  const latestActivity = useMemo(() => {
+    const items: Array<{
+      id: string;
+      event_type: string;
+      summary: string;
+      occurred_at: string;
+      severity: string | null;
+      status: string | null;
+    }> = [
+      ...(activity ?? []).map((entry) => ({
+        id: `device-${entry.id}`,
+        event_type: entry.event_type,
+        summary: entry.summary ?? "",
+        occurred_at: entry.occurred_at ?? "",
+        severity: null,
+        status: typeof entry.details?.status === "string" ? entry.details.status : null,
+      })),
+      ...(alertsData ?? []).map((alert) => ({
+        id: `alert-${alert.id}`,
+        event_type: alert.alert_type,
+        summary: alert.description || alert.title || "",
+        occurred_at: alert.timestamp ?? "",
+        severity: alert.severity ?? null,
+        status: alert.status ?? null,
+      })),
+      ...(timelineQuery.data ?? []).map((event) => ({
+        id: `timeline-${event.id}`,
+        event_type: event.event_type,
+        summary: event.description || event.room_name || "",
+        occurred_at: event.timestamp ?? "",
+        severity: null,
+        status: null,
+      })),
+    ];
+    items.sort((left, right) => (right.occurred_at || "").localeCompare(left.occurred_at || ""));
+    return items.slice(0, 8);
+  }, [activity, alertsData, timelineQuery.data]);
   const alerts = useMemo(() => (alertsData ?? []) as ListAlertsResponse, [alertsData]);
   const criticalAlerts = useMemo(
     () => alerts.filter((alert) => alert.status === "active" && alert.severity === "critical"),
@@ -204,15 +273,37 @@ export default function AdminDashboardPage() {
   const priorityAlerts = sortOverviewAlerts(alerts);
   const warningCount = alerts.filter(alert => alert.severity === "warning").length;
   const otherCount = alerts.length - criticalAlerts.length - warningCount;
+
+  const dailyPlanSchedules = useMemo(
+    () => (dailyPlanSchedulesQuery.data ?? []) as CareScheduleOut[],
+    [dailyPlanSchedulesQuery.data],
+  );
+  const dailyPlanEvents = useMemo(() => {
+    if (!dailyPlanSchedules.length) return [];
+    const now = new Date(nowMs);
+    const patientNameById = new Map<number, string>([
+      [DAILY_PLAN_PATIENT_ID, DAILY_PLAN_PATIENT_NAME],
+    ]);
+    const todayRange = { start: startOfDay(now), end: endOfDay(now) };
+    return schedulesToCalendarEvents(dailyPlanSchedules, patientNameById, todayRange)
+      .filter((event) => isSameDay(event.startTime, now))
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  }, [dailyPlanSchedules, nowMs]);
+  const dailyPlanRoomByScheduleId = useMemo(() => {
+    const rooms = (dailyPlanRoomsQuery.data ?? []) as Room[];
+    const nameByRoomId = new Map<number, string>();
+    for (const room of rooms) nameByRoomId.set(room.id, room.name);
+    const map = new Map<number, string>();
+    for (const schedule of dailyPlanSchedules) {
+      if (schedule.room_id == null) continue;
+      const name = nameByRoomId.get(schedule.room_id);
+      if (name) map.set(schedule.id, name);
+    }
+    return map;
+  }, [dailyPlanSchedules, dailyPlanRoomsQuery.data]);
+  const openDailyPlanAi = (prompt: string) =>
+    window.dispatchEvent(new CustomEvent("wheelsense:open-ai", { detail: { prompt } }));
   const apiReported = !healthQuery.isError && typeof healthQuery.data?.status === "string";
-  const apiHealthy = apiReported && healthQuery.data?.status === "ok";
-  const serviceRows: Array<{ key: HealthServiceKey; name: string }> = [
-    { key: "api", name: "API" },
-    { key: "database", name: t("overview.database") },
-    { key: "mqtt", name: "MQTT" },
-    { key: "automation", name: t("overview.automation") },
-  ];
-  const servicesReported = serviceRows.filter(({ key }) => key === "api" ? apiReported : typeof healthQuery.data?.services?.[key] === "string").length;
   const fleetLabel = `${totalDevicesOnline} ${t("devices.online")} · ${totalDevicesStale} ${t("overview.stale")} · ${totalDevicesMissing} ${t("overview.missing")}`;
   const exportOverview = () => downloadCsvFile(buildCsvFromRows(
     [t("admin.system.csvMetric"), t("admin.system.csvArea"), t("admin.system.csvTotal"), t("admin.system.csvPrimaryState"), t("admin.system.csvSecondaryState")],
@@ -251,7 +342,7 @@ export default function AdminDashboardPage() {
         <Card><CardContent className={styles.metric}><Users aria-hidden/><div><dl><dt>{t("admin.system.users")}</dt><dd><Link href="/admin/users">{users && !usersQuery.isError ? userStats.active : "—"}</Link></dd></dl><small>{t("admin.system.activeAccount")}</small></div></CardContent></Card>
         <Card><CardContent className={styles.metric}><Tablet aria-hidden/><div><dl><dt>{t("admin.system.fleetOnline")}</dt><dd><Link href="/admin/devices">{devices && !devicesQuery.isError ? `${totalDevicesOnline}/${totalFleet}` : "—"}</Link></dd></dl><StatusSegments total={devicesQuery.isError ? 0 : totalFleet} label={devicesQuery.isError ? t("redesign.unavailable") : fleetLabel} segments={[{value:totalDevicesOnline,tone:"success"},{value:totalDevicesStale,tone:"warning"},{value:totalDevicesMissing,tone:"muted"}]}/></div></CardContent></Card>
         <Card><CardContent className={styles.metric}><Bell aria-hidden/><div><dl><dt>{t("admin.openAlerts")}</dt><dd><Link href="/admin/alerts">{alertsData && !alertsQuery.isError ? alerts.length : "—"}</Link></dd></dl><small className={styles.severityCounts}>{alertsQuery.isError || !alertsData ? <span>{t(alertsQuery.isError ? "overview.visual.lastKnown" : "common.loading")}</span> : <><span>{criticalAlerts.length} {t("overview.visual.criticalShort")}</span><span>{warningCount} {t("overview.visual.warningShort")}</span>{otherCount>0 ? <span>{otherCount} {t("overview.visual.other")}</span> : null}</>}</small></div></CardContent></Card>
-        <Card><CardContent className={styles.metric}><Server aria-hidden/><div><dl><dt>{t("overview.visual.platform")}</dt><dd><Link href="#system-health">{healthQuery.isPending ? "—" : `${Number(apiReported)}/4`}</Link></dd></dl><small>{t("overview.visual.reporting")}</small></div></CardContent></Card>
+        <Card><CardContent className={styles.metric}><Server aria-hidden/><div><dl><dt>{t("overview.visual.platform")}</dt><dd><Link href="/admin/device-health">{healthQuery.isPending ? "—" : `${Number(apiReported)}/4`}</Link></dd></dl><small>{t("overview.visual.reporting")}</small></div></CardContent></Card>
       </section>
 
       <div className={styles.primary}>
@@ -261,7 +352,7 @@ export default function AdminDashboardPage() {
           {!alertsQuery.isError && alertsData ? <StatusSegments total={alerts.length} label={`${criticalAlerts.length} ${t("overview.visual.criticalShort")} · ${warningCount} ${t("overview.visual.warningShort")} · ${otherCount} ${t("overview.visual.other")}`} segments={[{value:criticalAlerts.length,tone:"critical"},{value:warningCount,tone:"warning"},{value:otherCount,tone:"info"}]}/> : null}
           {alertsQuery.isError ? <p role="status" className="text-sm text-muted-foreground">{t("redesign.unavailable")} · {t("overview.visual.lastKnown")}</p> : null}
           {priorityAlerts.length ? <ul className={styles.alertList} tabIndex={0} aria-label={t("redesign.attention")}>
-            {priorityAlerts.map(alert=>{
+            {priorityAlerts.slice(0,5).map(alert=>{
               const Icon=alert.severity==="critical" ? ShieldAlert : alert.severity==="warning" ? TriangleAlert : Info;
               return <li key={alert.id} className={styles.alertRow} data-severity={alert.severity}>
                 <Icon aria-hidden className="size-4 shrink-0"/>
@@ -272,26 +363,70 @@ export default function AdminDashboardPage() {
               </li>;
             })}
           </ul> : <p className={styles.empty}>{alertsQuery.isError ? t("redesign.unavailable") : alertsData ? t("redesign.attentionEmpty") : t("common.loading")}</p>}
+          {priorityAlerts.length > 5 ? <p className={styles.hint}><Link href="/admin/alerts">+{priorityAlerts.length - 5} {t("overview.visual.allAlerts")}</Link></p> : null}
           <p className={styles.hint}>{t("overview.visual.alertHint")}</p>
+          <BeltPresenceCard devices={devices} />
         </section>
       </div>
+
+      {dailyPlanEvents.length ? (
+        <section className={styles.dailyPlan} aria-labelledby="daily-plan-title">
+          <div className={styles.dailyPlanHeader}>
+            <h2 id="daily-plan-title">{t("overview.dailyPlan.title")}</h2>
+            <div className={styles.dailyPlanActions}>
+              <button type="button" onClick={() => openDailyPlanAi(DAILY_PLAN_AI_PROMPTS.summarizeDay)}>
+                <Sparkles aria-hidden className="size-3" />{t("overview.dailyPlan.summarizeDay")}
+              </button>
+              <button type="button" onClick={() => openDailyPlanAi(DAILY_PLAN_AI_PROMPTS.planHealthCheck)}>
+                <Sparkles aria-hidden className="size-3" />{t("overview.dailyPlan.planHealthCheck")}
+              </button>
+            </div>
+          </div>
+          <ol className={styles.dailyPlanStrip}>
+            {dailyPlanEvents.map((event) => {
+              const state = event.endTime.getTime() <= nowMs ? "done" : event.startTime.getTime() <= nowMs ? "now" : "upcoming";
+              const roomName = dailyPlanRoomByScheduleId.get(event.sourceScheduleId ?? event.id);
+              return (
+                <li key={event.instanceKey ?? event.id} className={styles.dailyPlanEvent} data-state={state}>
+                  <time dateTime={event.startTime.toISOString()}>{format(event.startTime, "HH:mm")}</time>
+                  <span className={styles.dailyPlanMeta}>
+                    <strong>{event.title}</strong>
+                    {roomName ? <small>{roomName}</small> : null}
+                  </span>
+                  {state === "now"
+                    ? <span className={styles.dailyPlanNowBadge}>{t("overview.dailyPlan.now")}</span>
+                    : <span className="sr-only">{t(state === "done" ? "overview.dailyPlan.done" : "overview.dailyPlan.upcoming")}</span>}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ) : null}
 
       <div className={styles.secondary}>
         <Card className={styles.fleet} role="region" aria-labelledby="fleet-title">
           <CardHeader className={styles.fleetHeader}><CardTitle id="fleet-title">{t("admin.system.fleetOnline")}</CardTitle><p className={styles.fleetUpdated}>{devicesUpdatedLabel(devicesQuery.dataUpdatedAt)}</p></CardHeader>
-          <CardContent className={styles.fleetContents}><ul className={styles.fleetRows}>
+          <CardContent className={styles.fleetContents}><ul className={styles.fleetGrid}>
             {[
               ...fleetByType.map(row=>({...row,label:t(`overview.visual.hardware.${row.hardware}`),available:Boolean(devices)&&!devicesQuery.isError,pending:devicesQuery.isPending})),
               {hardware:"smart",label:t("smartDevices.title"),...smartStats,available:Boolean(smartDevices)&&!smartQuery.isError,pending:smartQuery.isPending},
             ].map(row=>{
-              const Icon=row.hardware==="wheelchair" ? Accessibility : row.hardware==="node" ? Wifi : row.hardware==="polar_sense" ? HeartPulse : row.hardware==="mobile_phone" ? Smartphone : Plug2;
+              const Icon=row.hardware==="wheelchair" ? Accessibility : row.hardware==="node" ? Wifi : row.hardware==="polar_sense" ? HeartPulse : row.hardware==="mobile_phone" ? Smartphone : row.hardware==="belt" ? Move3d : Plug2;
               const state=row.pending ? "pending" : !row.available ? "unavailable" : !row.total ? "empty" : row.online===row.total ? "online" : row.stale>0 ? "stale" : row.online>0 ? "partial" : "unknown";
               const status=row.pending ? t("common.loading") : !row.available ? t("redesign.unavailable") : !row.total ? t("patient.health.notConfigured") : state==="online" ? t("devices.online") : state==="unknown" ? t("patient.roomControls.unknownState") : t("admin.system.statusNeedsReview");
               const detail=row.hardware==="smart" ? `${row.missing} ${t("overview.unavailableOrDisabled")}` : `${row.stale} ${t("overview.stale")} · ${row.missing} ${t("overview.missing")}`;
-              return <li key={row.hardware}><Link href={`/admin/devices?tab=${row.hardware==="smart" ? "smart_home" : row.hardware}`} className={styles.fleetRow} data-state={state}>
-                <Icon aria-hidden className="size-4"/><span className={styles.fleetCategory}>{row.label}{row.available && row.total>row.online ? <small>{detail}</small> : null}</span>
-                <span className={styles.fleetVisual}><StatusSegments total={row.available ? row.total : 0} label={row.available ? `${row.label}: ${row.online}/${row.total} ${t("devices.online")} · ${detail}` : status} segments={[{value:row.online,tone:"success"},{value:row.stale,tone:"warning"},{value:row.missing,tone:"muted"}]}/></span>
-                <span className={styles.fleetReading}><strong>{row.available ? `${row.online}/${row.total}` : "—"}</strong><span>{status}</span></span><ArrowUpRight aria-hidden className="size-3"/>
+              const onlinePct=row.available&&row.total ? (row.online/row.total)*100 : 0;
+              const stalePct=row.available&&row.total ? (row.stale/row.total)*100 : 0;
+              const label=`${row.label}: ${row.available ? `${row.online}/${row.total} ${t("devices.online")}` : status} · ${detail}`;
+              return <li key={row.hardware}><Link href={`/admin/devices?tab=${row.hardware==="smart" ? "smart_home" : row.hardware}`} className={styles.fleetTile} data-state={state} aria-label={label}>
+                <svg viewBox="0 0 36 36" className={styles.fleetRing} role="img" aria-hidden>
+                  <circle className={styles.fleetRingTrack} cx="18" cy="18" r="15.9"/>
+                  {onlinePct>0 ? <circle className={styles.fleetRingOnline} cx="18" cy="18" r="15.9" pathLength="100" strokeDasharray={`${onlinePct} 100`} transform="rotate(-90 18 18)"/> : null}
+                  {stalePct>0 ? <circle className={styles.fleetRingStale} cx="18" cy="18" r="15.9" pathLength="100" strokeDasharray={`${stalePct} 100`} strokeDashoffset={-onlinePct} transform="rotate(-90 18 18)"/> : null}
+                  <text x="18" y="20.5" textAnchor="middle" className={styles.fleetRingText}>{row.available ? `${row.online}/${row.total}` : "—"}</text>
+                </svg>
+                <span className={styles.fleetCategory}><Icon aria-hidden className="size-3"/>{row.label}{row.available && row.total>row.online ? <small>{detail}</small> : null}</span>
+                <span className={styles.fleetState}>{status}</span>
               </Link></li>;
             })}
           </ul></CardContent>
@@ -299,21 +434,9 @@ export default function AdminDashboardPage() {
         </Card>
 
         <div className={styles.operations}>
-          <Card id="system-health" className={styles.health} role="region" aria-labelledby="health-title">
-            <CardHeader className={styles.fleetHeader}><CardTitle id="health-title">{t("admin.system.systemHealth")}</CardTitle><span className={styles.fleetUpdated}>{servicesReported}/4 {t("overview.visual.reporting")}</span></CardHeader>
-            <CardContent className={styles.healthContents}><dl className={styles.serviceGrid}>{serviceRows.map(({ key, name }) => {
-              const serviceState = key === "api"
-                ? apiHealthy ? "online" : healthQuery.isError || apiReported ? "review" : "unknown"
-                : healthQuery.data?.services?.[key] === "online" ? "online" : healthQuery.data?.services?.[key] === "offline" ? "review" : "unknown";
-              const stateLabel = serviceState === "online" ? t("devices.online") : serviceState === "review" ? t("admin.system.statusNeedsReview") : t("overview.visual.notReported");
-              return <div key={key} data-state={serviceState}><dt>{serviceState === "online" ? <CheckCircle2 aria-hidden/> : serviceState === "review" ? <TriangleAlert aria-hidden/> : <span aria-hidden className={styles.unknownDot}/>}<span>{name}</span></dt><dd>{stateLabel}</dd></div>;
-            })}</dl>
-              <details className={styles.diagnostics}><summary>{t("overview.visual.diagnostics")}<ChevronDown aria-hidden className="size-3"/></summary><div><p>{t("overview.visual.healthNote")}</p><p>{devicesUpdatedLabel(healthQuery.dataUpdatedAt)}</p>{typeof healthQuery.data?.model_ready==="boolean"&&!healthQuery.isError ? <p>{t("overview.visual.model")}: {t(healthQuery.data.model_ready ? "overview.visual.ready" : "overview.visual.notReady")}</p> : null}<div className={styles.contextLinks}><Button variant="outline" size="sm" onClick={()=>void healthQuery.refetch()}>{t("redesign.retry")}</Button><Link href="/admin/settings?tab=server">{t("nav.settings")}</Link><Link href="/admin/device-health">{t("admin.system.viewAllServices")}</Link><Link href="/admin/devices?tab=smart_home">{t("smartDevices.title")}</Link></div></div></details>
-            </CardContent>
-          </Card>
           <section className={styles.activity}>
             <details open={latestActivity.length>0||activityQuery.isError}><summary><span>{t("admin.system.recentActivity")}</span><small>{activity && !activityQuery.isError ? latestActivity.length : "—"}</small><ChevronDown aria-hidden className="size-3"/></summary>
-              <div>{activityQuery.isError ? <p role="status">{t("redesign.unavailable")}</p> : activityQuery.isPending ? <p>{t("common.loading")}</p> : latestActivity.length ? <ol className={styles.activityList} tabIndex={0} aria-label={t("admin.system.recentActivity")}>{latestActivity.map(entry=><li key={entry.id}><span>{entry.event_type}</span><p>{entry.summary||t("admin.system.noDescription")}</p><time dateTime={entry.occurred_at} title={formatDateTime(entry.occurred_at)}>{formatDateTime(entry.occurred_at)} · {formatRelativeTime(entry.occurred_at)}</time>{typeof entry.details?.status==="string" ? <StatusBadge tone="neutral" label={entry.details.status}/> : null}</li>)}</ol> : <p>{t("admin.system.noRecentActivity")}</p>}<Link href="/admin/audit">{t("admin.system.viewAuditLog")}<ArrowRight aria-hidden className="size-4"/></Link></div>
+              <div>{activityQuery.isError ? <p role="status">{t("redesign.unavailable")}</p> : activityQuery.isPending ? <p>{t("common.loading")}</p> : latestActivity.length ? <ol className={styles.activityList} tabIndex={0} aria-label={t("admin.system.recentActivity")}>{latestActivity.map(entry=><li key={entry.id} data-severity={entry.severity ?? undefined}><span>{entry.event_type}</span><p>{entry.summary||t("admin.system.noDescription")}</p><time dateTime={entry.occurred_at} title={formatDateTime(entry.occurred_at)}>{formatDateTime(entry.occurred_at)} · {formatRelativeTime(entry.occurred_at)}</time>{entry.severity ? <StatusBadge tone={entry.severity==="critical" ? "critical" : entry.severity==="warning" ? "warning" : "info"} label={entry.severity}/> : null}{entry.status ? <StatusBadge tone="neutral" label={entry.status}/> : null}</li>)}</ol> : <p>{t("admin.system.noRecentActivity")}</p>}<Link href="/admin/audit">{t("admin.system.viewAuditLog")}<ArrowRight aria-hidden className="size-4"/></Link></div>
             </details>
           </section>
           <nav aria-label={t("admin.system.quickActions")} className={styles.quickActions}>
