@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu, Volume2, VolumeX } from "lucide-react";
-import { getAlertSoundEnabled, primeAlertAudioFromUserGesture, setAlertSoundEnabled, stopAlertAlarm } from "@/lib/alertSound";
+import { getAlertSoundEnabled, primeAlertAudioFromUserGesture, setAlertSoundEnabled, startAlertAlarm, stopAlertAlarm } from "@/lib/alertSound";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -89,6 +89,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
     primeAlertAudioFromUserGesture();
     setAlertSoundEnabled(true);
     setAlertSoundOn(true);
+    startAlertAlarm();
   }
 
   return (
@@ -161,7 +162,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
               type="button"
               variant="ghost"
               size="icon"
-              className={alertSoundOn ? "hidden text-primary sm:inline-flex" : "hidden text-muted-foreground sm:inline-flex"}
+              className={alertSoundOn ? "text-primary" : "text-muted-foreground"}
               aria-label={alertSoundOn ? t("shell.alertSoundOn") : t("shell.alertSoundOff")}
               aria-pressed={alertSoundOn}
               title={t("shell.alertSound")}
@@ -169,10 +170,12 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
                 const next = !alertSoundOn;
                 if (next) {
                   primeAlertAudioFromUserGesture();
+                  setAlertSoundEnabled(true);
+                  startAlertAlarm();
                 } else {
+                  setAlertSoundEnabled(false);
                   stopAlertAlarm();
                 }
-                setAlertSoundEnabled(next);
                 setAlertSoundOn(next);
               }}
             >

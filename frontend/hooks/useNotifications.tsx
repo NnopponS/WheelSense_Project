@@ -310,11 +310,13 @@ export function useNotifications(): UseNotificationsReturn {
     const ringing = popupItems.some(
       item => item.type === "alert" && (item.data as AlertOut | undefined)?.severity === "critical",
     );
-    if (ringing) {
-      startAlertAlarm();
-    } else {
+    if (!ringing) {
       stopAlertAlarm();
+      return;
     }
+    startAlertAlarm();
+    const retry = window.setInterval(() => startAlertAlarm(), 1500);
+    return () => window.clearInterval(retry);
   }, [popupItems]);
 
   useEffect(() => () => stopAlertAlarm(), []);

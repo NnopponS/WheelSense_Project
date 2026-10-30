@@ -56,3 +56,15 @@ touches:
   Grace in Living Room" → alerts/5 critical + E84 control active (×2
   brokers) → alert_ack → alerts/5 "Resolved: ..." info + control
   status:none.
+
+## Follow-up: why the web siren could stay silent
+`startAlertAlarm()` ran once when the critical popup mounted and early-returned if
+`wheelsense_alert_sound` wasn't set yet — no retry, so enabling sound after the
+popup appeared stayed silent until the next fall. Fix: the popup-lifecycle effect
+now retries `startAlertAlarm()` every 1.5s while a critical popup is on screen
+(idempotent), and both `enableAlertSound` (popup footer button) and the TopBar
+speaker toggle call `startAlertAlarm()` right after persisting the flag so an open
+popup rings immediately. Also: the speaker toggle was `hidden sm:inline-flex`
+(invisible <640px) — now always visible. WAV verified valid PCM 44.1kHz/16-bit.
+Note: `getAlertSoundEnabled()` is per-origin localStorage — the flag must be set
+once per origin (localhost vs each rotating trycloudflare URL).
