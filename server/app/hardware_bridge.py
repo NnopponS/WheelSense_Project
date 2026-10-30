@@ -225,6 +225,10 @@ class HardwareBridge:
         self._tasks: list[asyncio.Task[Any]] = []
         self._ws_server: Any = None
         self._local_hw_client: Any = None
+        # Live per-room people count from camera detection (room_key -> count);
+        # drives the E84 screen's occupancy instead of roster estimates.
+        self.live_room_occupancy: dict[str, int] = {}
+        self._occ_push_ts: dict[str, float] = {}
 
     @property
     def local_mqtt_broker(self) -> str:
@@ -680,6 +684,7 @@ class HardwareBridge:
             node_id = str(detection.get("device_id") or detection.get("camera_id") or "")
             room_key = _NODE_ID_TO_ROOM_KEY.get(node_id, "livingroom")
         if not detected:
+            await self._set_live_room_occupancy(room_key, 0)
             if room_key == self.last_detected_room_key:
                 self.last_detected_room_key = None
                 await self._handle_room_vacated(room_key)
@@ -716,6 +721,10 @@ class HardwareBridge:
         device_id = str(PHYSICAL_ROOM_META[room_key]["default_node"])
         target_room_name = PHYSICAL_ROOM_META[room_key]["facility_room_name"]
 
+        # Live people count for the room screen: detected objects, >=1.
+        live_count = len(detection.get("detections") or []) or 1
+        await self._set_live_room_occupancy(room_key, live_count)
+
         now_mono = time.monotonic()
         room_changed = self.last_detected_room_key != room_key
         if not room_changed and not fall_detected and (now_mono - self.last_detection_ts) < 0.75:
@@ -724,6 +733,10 @@ class HardwareBridge:
         prev_room_key = self.last_detected_room_key
         self.last_detected_room_key = room_key
         self.last_detection_ts = now_mono
+        if prev_room_key is not None and prev_room_key != room_key:
+            # Person moved away — the vacated room stops getting frames, so
+            # its live count must be zeroed here or it would stick forever.
+            await self._set_live_room_occupancy(prev_room_key, 0)
         lighting_rooms: list[tuple[int, int]] = []
 
         async with AsyncSessionLocal() as session:
@@ -1248,6 +1261,57 @@ class HardwareBridge:
                 room.name,
             )
         return turned_off
+
+    async def _set_live_room_occupancy(self, room_key: str, count: int) -> None:
+        """Update the live people count for a physical room and re-push the
+        retained assignment to its E84 nodes when the value actually changes.
+        Occupied-count changes are throttled; transitions to empty push at once."""
+        prev = self.live_room_occupancy.get(room_key)
+        if prev == count:
+            return
+        self.live_room_occupancy[room_key] = count
+        now = time.monotonic()
+        if count > 0 and now - self._occ_push_ts.get(room_key, 0.0) < 2.0:
+            return
+        self._occ_push_ts[room_key] = now
+        await self._push_room_assignment(room_key)
+
+    async def _push_room_assignment(self, room_key: str) -> None:
+        """Re-publish the retained room assignment (carries occupancy) to the
+        E84 nodes bound to the physical room."""
+        meta = PHYSICAL_ROOM_META.get(room_key)
+        if meta is None:
+            return
+        try:
+            async with AsyncSessionLocal() as session:
+                room = (
+                    await session.execute(
+                        select(Room).where(
+                            Room.node_device_id == str(meta["default_node"])
+                        )
+                    )
+                ).scalars().first()
+                if room is None:
+                    room = (
+                        await session.execute(
+                            select(Room).where(
+                                Room.name == meta["facility_room_name"]
+                            )
+                        )
+                    ).scalars().first()
+                if room is None:
+                    return
+                from app.services.room_node import (
+                    publish_assignment,
+                    room_screen_nodes,
+                )
+
+                for node in await room_screen_nodes(
+                    session, room.workspace_id, room
+                ):
+                    await publish_assignment(session, node, room)
+        except Exception:
+            logger.debug("Room assignment push failed for %s", room_key)
 
     async def _handle_room_vacated(self, room_key: str) -> None:
         """Camera reports the tracked room empty: clear its presence

@@ -53,3 +53,9 @@ touches:
   WheelSense/alerts/* for resolves. publish_alert_resolved_to_mqtt sends
   status:"resolved" + same alert_id + severity:"info" (app dedupes by alert_id,
   no re-alarm). Wired into alert_service.resolve and the fall_canceled loop.
+- E84 occupancy was roster/prediction-based, not live. hardware_bridge now
+  keeps live_room_occupancy (room_key -> count from YOLO detections, >=1 when
+  detected, 0 when the room reports empty, prev room zeroed on move).
+  publish_assignment uses the live count for rooms whose name maps to a
+  physical key (else old behavior); assignment is re-pushed on every count
+  change (2s throttle for occupied-count changes, instant on ->0).
