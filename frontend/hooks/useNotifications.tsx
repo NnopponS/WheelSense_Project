@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
-import { playAlertChime } from "@/lib/alertSound";
+import { startAlertAlarm, stopAlertAlarm } from "@/lib/alertSound";
 import {
   alertsInboxUrl,
   staffMessagesPath,
@@ -229,7 +229,6 @@ export function useNotifications(): UseNotificationsReturn {
   const [popupState, setPopupState] = useState<{ identity: string; items: Notification[] }>({ identity: "", items: [] });
   /** Critical alerts that arrived this session and are still active — the alarm loops while non-empty. */
   const ringingAlertIds = useRef<Set<string>>(new Set());
-  const alarmInterval = useRef<number | null>(null);
 
   const { data: alertsData } = useQuery({
     queryKey: ["notifications", "alerts", identity],
@@ -286,15 +285,9 @@ export function useNotifications(): UseNotificationsReturn {
   }, [alertsData, tasksData, workflowJobsData, messagesData, role, t]);
 
   useEffect(() => {
-    const stopAlarm = () => {
-      if (alarmInterval.current !== null) {
-        window.clearInterval(alarmInterval.current);
-        alarmInterval.current = null;
-      }
-    };
     if (!identity) {
       ringingAlertIds.current.clear();
-      stopAlarm();
+      stopAlertAlarm();
       return;
     }
     if (arrivalTracker.current.identity !== identity) arrivalTracker.current = { identity, seen: new Map() };
@@ -308,11 +301,10 @@ export function useNotifications(): UseNotificationsReturn {
     for (const id of ringingAlertIds.current) {
       if (!live.has(id)) ringingAlertIds.current.delete(id);
     }
-    if (ringingAlertIds.current.size && alarmInterval.current === null) {
-      playAlertChime();
-      alarmInterval.current = window.setInterval(playAlertChime, 1700);
-    } else if (!ringingAlertIds.current.size) {
-      stopAlarm();
+    if (ringingAlertIds.current.size) {
+      startAlertAlarm();
+    } else {
+      stopAlertAlarm();
     }
     setPopupState(previous => {
       const previousItems = previous.identity === identity ? previous.items : [];
@@ -322,12 +314,7 @@ export function useNotifications(): UseNotificationsReturn {
     });
   }, [identity, notifications, alertsData, tasksData, workflowJobsData, messagesData]);
 
-  useEffect(
-    () => () => {
-      if (alarmInterval.current !== null) window.clearInterval(alarmInterval.current);
-    },
-    [],
-  );
+  useEffect(() => () => stopAlertAlarm(), []);
 
   const dismissPopup = useCallback((id: string) => {
     setPopupState(previous => ({ ...previous, items: previous.items.filter(item => item.id !== id) }));

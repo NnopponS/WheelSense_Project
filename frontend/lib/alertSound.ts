@@ -1,4 +1,5 @@
 const STORAGE_KEY = "wheelsense_alert_sound";
+const ALARM_URL = "/sounds/fall-alarm.wav";
 
 export function getAlertSoundEnabled(): boolean {
   if (typeof window === "undefined") return false;
@@ -11,44 +12,60 @@ export function setAlertSoundEnabled(on: boolean): void {
 }
 
 let audioCtx: AudioContext | null = null;
+let alarmEl: HTMLAudioElement | null = null;
+let alarmPlaying = false;
 
-/** Call from a click handler so browsers allow AudioContext.resume(). */
+function getAlarmElement(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (!alarmEl) {
+    alarmEl = new Audio(ALARM_URL);
+    alarmEl.loop = true;
+    alarmEl.preload = "auto";
+  }
+  return alarmEl;
+}
+
+/** Call from a click handler so browsers allow AudioContext.resume() and later media playback. */
 export function primeAlertAudioFromUserGesture(): void {
   if (typeof window === "undefined") return;
   const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return;
-  if (!audioCtx) {
+  if (Ctor && !audioCtx) {
     audioCtx = new Ctor();
   }
-  void audioCtx.resume().catch(() => {});
+  void audioCtx?.resume().catch(() => {});
+  getAlarmElement()?.load();
 }
 
+/** Loop the fall-alarm siren; idempotent — safe to call on every poll. */
+export function startAlertAlarm(): void {
+  if (!getAlertSoundEnabled() || alarmPlaying) return;
+  const el = getAlarmElement();
+  if (!el) return;
+  alarmPlaying = true;
+  void el.play().catch(() => {
+    alarmPlaying = false;
+  });
+}
+
+/** Stop the siren; idempotent. */
+export function stopAlertAlarm(): void {
+  alarmPlaying = false;
+  const el = alarmEl;
+  if (!el) return;
+  el.pause();
+  try {
+    el.currentTime = 0;
+  } catch {
+    /* not seekable yet */
+  }
+}
+
+/** One-shot siren burst (e.g. a single critical alert arrival). */
 export function playAlertChime(): void {
-  if (!getAlertSoundEnabled() || typeof window === "undefined") return;
-  const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return;
-  if (!audioCtx || audioCtx.state === "closed") {
-    audioCtx = new Ctor();
-  }
-  if (audioCtx.state === "suspended") {
-    void audioCtx.resume().catch(() => {});
-  }
-  const ctx = audioCtx;
-  const now = ctx.currentTime;
-  const duration = 1.5;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = "triangle";
-  const steps = 6;
-  for (let i = 0; i <= steps; i++) {
-    osc.frequency.setValueAtTime(i % 2 === 0 ? 880 : 660, now + (duration / steps) * i);
-  }
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.3, now + 0.05);
-  gain.gain.setValueAtTime(0.3, now + duration - 0.08);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + duration);
+  if (!getAlertSoundEnabled() || typeof window === "undefined" || alarmPlaying) return;
+  const el = getAlarmElement();
+  if (!el) return;
+  const once = el.cloneNode(true) as HTMLAudioElement;
+  once.loop = false;
+  void once.play().catch(() => {});
 }
