@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WheelSense — เลือกเสียงเตือน</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;max-width:640px;margin:0 auto;padding:24px}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#94a3b8;font-size:14px;margin-bottom:20px}
+  .card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .card h2{font-size:15px;margin:0 0 2px}
+  .card p{font-size:13px;color:#94a3b8;margin:0 0 10px}
+  audio{width:100%;height:36px}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle}
+  .hi{background:#7f1d1d;color:#fecaca}.med{background:#713f12;color:#fde68a}.soft{background:#14532d;color:#bbf7d0}
+  .cur{outline:2px solid #38bdf8}
+  .hint{font-size:12px;color:#64748b;margin-top:18px}
+</style>
+</head>
+<body>
+<h1>เลือกเสียงเตือนล้ม</h1>
+<p class="sub">กด ▶ ฟังทีละอัน — อันไหนชอบบอกเลขมาได้เลย</p>
+
+<div class="card cur"><h2>1 · สัญญาณเครื่องมอนิเตอร์ (เร่งด่วนสูง) <span class="tag hi">ตัวปัจจุบัน</span></h2>
+<p>IEC 60601-1-8 — มาตรฐานเครื่องมือแพทย์จริง "บี๊บ-บี๊บ-บี๊บ บี๊บ-บี๊บ" ฟังดูจริงจังสุด</p>
+<audio controls loop src="opt1-iec-high.wav"></audio></div>
+
+<div class="card"><h2>2 · สัญญาณเครื่องมอนิเตอร์ (ระดับกลาง)</h2>
+<p>บี๊บ 3 ทีเสียงไล่ต่ำ→สูง — เตือนแบบสุภาพกว่า ยังคงฟังเป็นอุปกรณ์แพทย์</p>
+<audio controls loop src="opt2-iec-medium.wav"></audio></div>
+
+<div class="card"><h2>3 · เสียงเตือนวิกฤตแบบ ICU</h2>
+<p>บี๊บถี่ 5 ทีรวดเร็ว — เหมือนหน้าจอมอนิเตอร์ตอนค่าผิดปกติมาก กระชั้นใจสุด</p>
+<audio controls loop src="opt3-monitor-critical.wav"></audio></div>
+
+<div class="card"><h2>4 · เสียงประกาศทางสาย รพ. <span class="tag soft">นุ่มนวล</span></h2>
+<p>กังวาน 3 โทนลง เหมือนเสียงก่อนประกาศ "Code Blue" — สุภาพแต่คุ้นหู</p>
+<audio controls loop src="opt4-code-chime.wav"></audio></div>
+
+<div class="card"><h2>5 · เสียงเรียกพยาบาล / เครื่องให้น้ำเกลือ <span class="tag med">กลาง</span></h2>
+<p>บี๊บสองทีสูง-ต่ำ ซ้ำ 3 ชุด — เหมือนเสียงกดเรียกพยาบาลข้างเตียง</p>
+<audio controls loop src="opt5-nurse-call.wav"></audio></div>
+
+<div class="card"><h2>6 · เสียงแจ้งเบาๆ <span class="tag soft">เบาที่สุด</span></h2>
+<p>กระดิ่งเดี่ยวทีละดัง — เหมาะถ้าไม่อยากให้ฟังดูน่าตกใจ</p>
+<audio controls loop src="opt6-gentle-ding.wav"></audio></div>
+
+<p class="hint">ตอนใช้จริง เสียงจะวนลูปจนกว่าจะปิด popup — กดเล่น loop ฟังเพื่อจินตนาการ</p>
+</body>
+</html>
