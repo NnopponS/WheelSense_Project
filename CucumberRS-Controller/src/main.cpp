@@ -426,25 +426,25 @@ void requestInitialState();  // Request current state from backend (Dashboard is
      
      switch (roomIndex) {
          case ROOM_BEDROOM:
-             // Bedroom: TV GPIO18, Light GPIO26, AC GPIO34, Alarm GPIO38
-             if (strcmp(appliance, "light") == 0) {
+             // Bedroom: TV GPIO18, Light GPIO17, AC GPIO34, Alarm GPIO38
+             if (strcasecmp(appliance, "light") == 0) {
                  digitalWrite(PIN_BEDROOM_LIGHT, room.light ? HIGH : LOW);
                  Serial.printf("[GPIO] Bedroom light -> GPIO%d = %s\n", PIN_BEDROOM_LIGHT, room.light ? "HIGH" : "LOW");
-             } else if (strcmp(appliance, "AC") == 0) {
+             } else if (strcasecmp(appliance, "AC") == 0 || strcasecmp(appliance, "aircon") == 0) {
                  digitalWrite(PIN_BEDROOM_AIRCON, room.aircon ? HIGH : LOW);
                  Serial.printf("[GPIO] Bedroom AC -> GPIO%d = %s\n", PIN_BEDROOM_AIRCON, room.aircon ? "HIGH" : "LOW");
-             } else if (strcmp(appliance, "alarm") == 0) {
+             } else if (strcasecmp(appliance, "alarm") == 0) {
                  digitalWrite(PIN_BEDROOM_ALARM, room.alarm ? HIGH : LOW);
                  Serial.printf("[GPIO] Bedroom alarm -> GPIO%d = %s\n", PIN_BEDROOM_ALARM, room.alarm ? "HIGH" : "LOW");
-             } else if (strcmp(appliance, "tv") == 0) {
+             } else if (strcasecmp(appliance, "tv") == 0) {
                  digitalWrite(PIN_BEDROOM_TV, room.tv ? HIGH : LOW);
                  Serial.printf("[GPIO] Bedroom TV -> GPIO%d = %s\n", PIN_BEDROOM_TV, room.tv ? "HIGH" : "LOW");
              }
              break;
              
          case ROOM_BATHROOM:
-             // Bathroom: Light GPIO40
-             if (strcmp(appliance, "light") == 0) {
+             // Bathroom: Light GPIO14
+             if (strcasecmp(appliance, "light") == 0) {
                  digitalWrite(PIN_BATHROOM_LIGHT, room.light ? HIGH : LOW);
                  Serial.printf("[GPIO] Bathroom light -> GPIO%d = %s\n", PIN_BATHROOM_LIGHT, room.light ? "HIGH" : "LOW");
              }
@@ -452,27 +452,27 @@ void requestInitialState();  // Request current state from backend (Dashboard is
              
          case ROOM_KITCHEN:
              // Kitchen: Light GPIO5, Alarm GPIO7
-             if (strcmp(appliance, "light") == 0) {
+             if (strcasecmp(appliance, "light") == 0) {
                  digitalWrite(PIN_KITCHEN_LIGHT, room.light ? HIGH : LOW);
                  Serial.printf("[GPIO] Kitchen light -> GPIO%d = %s\n", PIN_KITCHEN_LIGHT, room.light ? "HIGH" : "LOW");
-             } else if (strcmp(appliance, "alarm") == 0) {
+             } else if (strcasecmp(appliance, "alarm") == 0) {
                  digitalWrite(PIN_KITCHEN_ALARM, room.alarm ? HIGH : LOW);
                  Serial.printf("[GPIO] Kitchen alarm -> GPIO%d = %s\n", PIN_KITCHEN_ALARM, room.alarm ? "HIGH" : "LOW");
              }
              break;
              
          case ROOM_LIVINGROOM:
-             // Living Room: AC GPIO3, TV GPIO1, Light GPIO46, FAN GPIO20
-             if (strcmp(appliance, "light") == 0) {
+             // Living Room: AC GPIO4, TV GPIO1, Light GPIO21, FAN GPIO20
+             if (strcasecmp(appliance, "light") == 0) {
                  digitalWrite(PIN_LIVINGROOM_LIGHT, room.light ? HIGH : LOW);
                  Serial.printf("[GPIO] Living room light -> GPIO%d = %s\n", PIN_LIVINGROOM_LIGHT, room.light ? "HIGH" : "LOW");
-             } else if (strcmp(appliance, "fan") == 0) {
+             } else if (strcasecmp(appliance, "fan") == 0) {
                  digitalWrite(PIN_LIVINGROOM_FAN, room.fan ? HIGH : LOW);
                  Serial.printf("[GPIO] Living room fan -> GPIO%d = %s\n", PIN_LIVINGROOM_FAN, room.fan ? "HIGH" : "LOW");
-             } else if (strcmp(appliance, "tv") == 0) {
+             } else if (strcasecmp(appliance, "tv") == 0) {
                  digitalWrite(PIN_LIVINGROOM_TV, room.tv ? HIGH : LOW);
                  Serial.printf("[GPIO] Living room TV -> GPIO%d = %s\n", PIN_LIVINGROOM_TV, room.tv ? "HIGH" : "LOW");
-             } else if (strcmp(appliance, "AC") == 0) {
+             } else if (strcasecmp(appliance, "AC") == 0 || strcasecmp(appliance, "aircon") == 0) {
                  digitalWrite(PIN_LIVINGROOM_AC, room.aircon ? HIGH : LOW);
                  Serial.printf("[GPIO] Living room AC -> GPIO%d = %s\n", PIN_LIVINGROOM_AC, room.aircon ? "HIGH" : "LOW");
              }
@@ -490,19 +490,19 @@ void requestInitialState();  // Request current state from backend (Dashboard is
      RoomAppliances& room = roomStates[roomIndex];
      Serial.printf("[Appliance] %s/%s -> %s\n", room.roomName, appliance, state ? "ON" : "OFF");
     
-     if (strcmp(appliance, "light") == 0) {
+     if (strcasecmp(appliance, "light") == 0) {
          room.light = state;
      }
-     else if (strcmp(appliance, "AC") == 0) {
+     else if (strcasecmp(appliance, "AC") == 0 || strcasecmp(appliance, "aircon") == 0) {
          room.aircon = state;
      }
-     else if (strcmp(appliance, "fan") == 0) {
+     else if (strcasecmp(appliance, "fan") == 0) {
          room.fan = state;
      }
-     else if (strcmp(appliance, "tv") == 0) {
+     else if (strcasecmp(appliance, "tv") == 0) {
          room.tv = state;
      }
-     else if (strcmp(appliance, "alarm") == 0) {
+     else if (strcasecmp(appliance, "alarm") == 0) {
          room.alarm = state;
          if (state) {
              Serial.printf("[ALARM] %s room ALARM TRIGGERED!\n", room.roomName);
@@ -812,6 +812,22 @@ bool resolveServerIPs() {
         }
     }
 
+    // C. Full subnet sweep (2..254) for Android 11+ hotspots that randomize DHCP host IDs
+    Serial.println("[Discovery] Performing full /24 subnet sweep for Android Hotspot...");
+    for (int h = 2; h <= 254; h++) {
+        if (h == myHost || h == gw[3]) continue;
+        if ((h >= 2 && h <= 25) || (h >= 100 && h <= 115) || abs(h - (int)myHost) <= 8) continue;
+        IPAddress target(ip0, ip1, ip2, (uint8_t)h);
+        if (checkMQTTServer(target, MQTT_PORT, 22)) {
+            mqttServerIP = target.toString();
+            Serial.printf("[Discovery] Full subnet scan found MQTT broker: %s\n", mqttServerIP.c_str());
+            pushDisplayLog("Found: " + mqttServerIP);
+            markDisplayDirty();
+            return true;
+        }
+        if (h % 16 == 0) yield();
+    }
+
     Serial.println("[Discovery] ❌ Server discovery failed");
     pushDisplayLog("Server not found");
     markDisplayDirty();
@@ -1058,6 +1074,7 @@ void configModeCallback(WiFiManager *myWiFiManager) {
      Serial.println("========================================\n");
     
      setupAppliances();
+     pinMode(0, INPUT_PULLUP); // BOOT button for WiFi config portal reset
      initDisplay();
      pushDisplayLog("GPIO ready");
     
@@ -1069,6 +1086,14 @@ void configModeCallback(WiFiManager *myWiFiManager) {
      wifiManager.setAPCallback(configModeCallback);
      wifiManager.setConfigPortalBlocking(true);
      wifiManager.setConfigPortalTimeout(180);  // 3 minutes timeout
+
+     if (digitalRead(0) == LOW) {
+         Serial.println("[WiFi] BOOT button held -> Resetting WiFi settings...");
+         pushDisplayLog("WiFi Reset...");
+         refreshDisplay(true);
+         wifiManager.resetSettings();
+         delay(1000);
+     }
      
      // Try to connect, if fails start config portal
      if (!wifiManager.autoConnect(WIFI_AP_NAME, WIFI_AP_PASSWORD)) {
@@ -1192,6 +1217,23 @@ void configModeCallback(WiFiManager *myWiFiManager) {
  void loop() {
      unsigned long now = millis();
     
+     // Hold BOOT button (GPIO 0) for 3 seconds to reset WiFi credentials and reopen WheelSense-Setup AP
+     static unsigned long resetPressStart = 0;
+     if (digitalRead(0) == LOW) {
+         if (resetPressStart == 0) {
+             resetPressStart = now;
+         } else if (now - resetPressStart > 3000) {
+             Serial.println("[WiFi] BOOT button held 3s -> Resetting WiFi settings & restarting...");
+             pushDisplayLog("WiFi Reset...");
+             refreshDisplay(true);
+             wifiManager.resetSettings();
+             delay(500);
+             ESP.restart();
+         }
+     } else {
+         resetPressStart = 0;
+     }
+
      // Handle MQTT
      static unsigned long lastMQTTTry = 0;
      if (now - lastMQTTTry > 5000) {

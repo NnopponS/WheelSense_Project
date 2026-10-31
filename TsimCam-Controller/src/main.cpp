@@ -225,11 +225,13 @@ void handleSaveConfig();
 
 /* ===== Load Configuration =====  */
 void loadConfig() {
-  preferences.begin("wheelsense", true);
+  preferences.begin("wheelsense", false);
   wifiSSID = preferences.getString("ssid", "");
   wifiPassword = preferences.getString("password", "");
-  deviceId = preferences.getString("deviceId", "TSIM_001");
-  roomType = preferences.getString("roomType", "livingroom");
+  deviceId = "TSIM_001";
+  roomType = "livingroom";
+  preferences.putString("deviceId", deviceId);
+  preferences.putString("roomType", roomType);
   serverIP = preferences.getString("serverIP", "");
   orientationMode = static_cast<OrientationMode>(preferences.getUChar("orientation", ORIENTATION_0));
   preferences.end();
@@ -817,6 +819,21 @@ bool discoverServer() {
       Serial.printf("[Discovery] Subnet scan found server: %s\n", discoveredServerIP.c_str());
       return true;
     }
+  }
+
+  // C. Full subnet sweep (2..254) for Android 11+ hotspots that randomize DHCP host IDs
+  Serial.println("[Discovery] Performing full /24 subnet sweep for Android Hotspot...");
+  for (int h = 2; h <= 254; h++) {
+    if (h == myHost || h == gw[3]) continue;
+    if ((h >= 2 && h <= 25) || (h >= 100 && h <= 115) || abs(h - (int)myHost) <= 8) continue;
+    IPAddress target(ip0, ip1, ip2, (uint8_t)h);
+    if (checkWebSocketServer(target, WEBSOCKET_PORT, 22)) {
+      discoveredServerIP = target.toString();
+      serverDiscovered = true;
+      Serial.printf("[Discovery] Full subnet scan found server: %s\n", discoveredServerIP.c_str());
+      return true;
+    }
+    if (h % 16 == 0) yield();
   }
 
   Serial.println("[Discovery] No server found on network");
