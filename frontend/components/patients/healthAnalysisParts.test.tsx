@@ -53,7 +53,7 @@ describe("HealthTrendsWorkspace", () => {
 });
 
 const analysis:PatientHealthAnalysis={patient_id:1,generated_at:"2026-10-18T10:00:00Z",window_hours:24,overall_score:42,risk_level:"watch",data_quality:"partial",latest_vitals:{},baseline:{},trend_summary:"Full recorded summary that should stay available through expansion.",risk_factors:[{label:"Low movement",severity:"watch",evidence:"Recorded distance: 0 m",source:"imu"},{label:"Concern two",severity:"info",evidence:"Second evidence",source:"vitals"},{label:"Concern three",severity:"warning",evidence:"Third evidence",source:"timeline"}],recommendations:[],activity:{steps:null,distance_m:0,calories_kcal:null,polar_connected:false,source:"imu"}};
-const anomalyProps={aiProvider:"ollama",aiModel:"recorded-model",aiConfigured:true,isRefreshing:false,isFetching:false,onRefresh:jest.fn()};
+const anomalyProps={aiProvider:"copilot",aiModel:"recorded-model",aiConfigured:true,isRefreshing:false,isFetching:false,onRefresh:jest.fn()};
 it.each(["normal","watch","warning","critical"] as const)("shows reported %s severity visually while preserving full evidence",risk_level=>{
  const {container}=render(<I18nProvider><AnomalyInsightCard {...anomalyProps} data={{...analysis,risk_level}}/></I18nProvider>);
  expect(screen.getByRole("img",{name:/Reported severity/})).toBeInTheDocument();

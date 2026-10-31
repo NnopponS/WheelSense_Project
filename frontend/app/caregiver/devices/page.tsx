@@ -11,6 +11,7 @@ import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { hardwareTypeLabel } from "@/lib/deviceHardwareTabs";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
@@ -177,6 +178,7 @@ export default function ObserverDevicesPage() {
       {
         accessorKey: "hardwareType",
         header: t("observer.tasks.hardware"),
+        cell: ({ row }) => hardwareTypeLabel(row.original.hardwareType, t),
       },
       {
         accessorKey: "isOnline",

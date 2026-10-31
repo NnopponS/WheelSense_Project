@@ -1,10 +1,109 @@
-/* Critical information owns protected focus; all content remains reachable in short viewports. */
-.screen { inset: 0; display: flex; width: 100%; max-width: none; height: 100dvh; max-height: 100dvh; flex-direction: column; gap: 0; transform: none; translate: none; border: 0; border-radius: 0; overflow-y: auto; }
-.header { display: flex; flex-shrink: 0; flex-direction: column; gap: .5rem; border-bottom: 1px solid var(--border); padding: 1.25rem 4rem 1.25rem 1.5rem; }
-.body { display: flex; flex: 1; align-items: center; justify-content: center; padding: clamp(1rem,4vw,3rem); }
-.evidence { display: flex; width: min(100%,60rem); min-width: 0; flex-direction: column; gap: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); padding: clamp(1rem,4vw,2.5rem); background: var(--card); overflow-wrap: anywhere; }
-.evidence[data-severity="critical"] { border-color: var(--critical); background: var(--critical-soft); }
-.evidence[data-severity="warning"] { border-color: var(--warning); }
-.title { font-size: clamp(1.625rem,3vw,2.5rem); line-height: 1.2; outline: none; }
-.description { font-size: 1rem; line-height: 1.65; color: var(--foreground); white-space: pre-wrap; }
-.footer { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--border); padding: 1rem 1.5rem max(1rem,env(safe-area-inset-bottom)); }
+/* Floating popup (not fullscreen); content scrolls inside the card on short viewports. */
+.popup {
+  display: flex;
+  width: min(calc(100vw - 2rem), 28rem);
+  max-width: 28rem;
+  max-height: 88dvh;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  border-radius: calc(var(--radius) + 0.25rem);
+  padding: 0;
+}
+.popup::before {
+  content: "";
+  display: block;
+  height: 0.375rem;
+  flex-shrink: 0;
+  background: var(--primary);
+}
+.popup[data-severity="critical"]::before { background: var(--critical); }
+.popup[data-severity="warning"]::before { background: var(--warning); }
+
+.header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.875rem;
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 3.25rem 1rem 1.25rem;
+}
+.severityIcon {
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--primary-container);
+  color: var(--primary-container-foreground);
+}
+.popup[data-severity="critical"] .severityIcon {
+  background: var(--critical-soft);
+  color: var(--critical-foreground);
+}
+.popup[data-severity="warning"] .severityIcon {
+  background: var(--warning-soft);
+  color: var(--warning-foreground);
+}
+.headerText { display: flex; min-width: 0; flex-direction: column; gap: 0.25rem; }
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+.title { font-size: 1.25rem; line-height: 1.25; outline: none; }
+.description { font-size: 0.9375rem; line-height: 1.6; color: var(--foreground); white-space: pre-wrap; }
+
+.patientCard {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  background: var(--muted);
+}
+.avatar {
+  display: flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  border: 2px solid var(--border);
+  background: color-mix(in srgb, var(--primary) 14%, var(--card));
+}
+.popup[data-severity="critical"] .avatar { border-color: var(--critical); }
+.avatarImage { height: 100%; width: 100%; object-fit: cover; }
+.avatarInitials { font-size: 1.125rem; font-weight: 700; color: var(--primary); }
+.chips { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.5rem; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.footer {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
+}

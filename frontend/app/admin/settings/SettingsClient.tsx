@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import AiSettingsPanel from "@/components/admin/settings/AiSettingsPanel";
 import ServerSettingsPanel from "@/components/admin/settings/ServerSettingsPanel";
 import MlCalibrationClient from "@/app/admin/ml-calibration/MlCalibrationClient";
+import { AccountContent } from "@/app/account/AccountContent";
+import { AuditContent } from "@/app/admin/audit/AuditContent";
 import { AppPage } from "@/components/layout/AppPage";
 
 export type SettingsTabKey = "profile" | "ai" | "server" | "audit" | "system";
@@ -81,14 +83,7 @@ export default function AdminSettingsClient() {
       <div className="min-w-0">
       {tab === "profile" ? (
         <div className="space-y-6">
-          <Card>
-            <CardContent className="space-y-4 pt-6">
-              <p className="text-sm text-muted-foreground">{t("settings.profileRedirectBody")}</p>
-              <Button type="button" onClick={() => router.push("/account")}>
-                {t("settings.profileOpenAccount")}
-              </Button>
-            </CardContent>
-          </Card>
+          <AccountContent embedded />
 
           <Card>
             <CardContent className="pt-6">
@@ -110,16 +105,7 @@ export default function AdminSettingsClient() {
 
       {tab === "server" ? <ServerSettingsPanel /> : null}
 
-      {tab === "audit" ? (
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <p className="text-sm text-muted-foreground">{t("admin.auditLog.recordsDesc")}</p>
-            <Button type="button" onClick={() => router.push("/admin/audit")}>
-              {t("nav.auditLog")}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
+      {tab === "audit" ? <AuditContent embedded /> : null}
 
       {tab === "system" ? <MlCalibrationClient embedded /> : null}
       </div>

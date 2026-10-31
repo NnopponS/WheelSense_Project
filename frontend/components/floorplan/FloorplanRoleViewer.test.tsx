@@ -81,12 +81,13 @@ it("uses saved geometry read-only, counts recorded occupants and keeps stale/off
  expect(screen.getByTestId("saved-map")).toHaveAttribute("data-readonly","true");
  expect(within(screen.getByTestId("saved-map")).getByText("Room 10")).toHaveAttribute("data-x","200");
  fireEvent.change(screen.getByRole("combobox",{name:"overview.inspectRoom"}),{target:{value:"room-10"}});
- expect(screen.getByRole("link",{name:"Real resident"})).toHaveAttribute("href","/admin/patients/20");
- expect(screen.getByText(/overview.node.offline/)).toBeInTheDocument();
+ expect(screen.getByRole("dialog")).toBeInTheDocument();
+ expect(screen.getByRole("link",{name:/Real resident/})).toHaveAttribute("href","/admin/patients/20");
+ expect(screen.getAllByText("overview.node.unmapped").length).toBeGreaterThan(0);
  fireEvent.change(screen.getByLabelText("floorplan.floor"),{target:{value:"3"}});
- expect(screen.queryByRole("link",{name:"Real resident"})).not.toBeInTheDocument();
+ expect(screen.queryByRole("link",{name:/Real resident/})).not.toBeInTheDocument();
  expect(mockQueries.some(q=>JSON.stringify(q.queryKey).includes("floor_id=3"))).toBe(true);
- expect(mockQueries.some(q=>q.refetchInterval===5000 && q.refetchIntervalInBackground===true)).toBe(true);
+ expect(mockQueries.some(q=>q.refetchInterval===2000 && q.refetchIntervalInBackground===true)).toBe(true);
  expect(container.querySelector("[data-testid=saved-map]")).toBeTruthy();
 });
 
@@ -113,8 +114,8 @@ it("distinguishes a failed facility source from an empty facility directory",()=
 
 it("keeps the existing full viewer presentation outside the Overview opt-in",()=>{
  render(<FloorplanRoleViewer />);
- expect(screen.getByRole("heading",{name:"Live operations map"})).toBeInTheDocument();
+ expect(screen.getByRole("heading",{name:"floorplan.liveOpsTitle"})).toBeInTheDocument();
  expect(screen.queryByRole("heading",{name:"overview.ward"})).not.toBeInTheDocument();
- expect(screen.getByRole("button",{name:"List"})).toBeInTheDocument();
- expect(screen.getByRole("button",{name:"Floorplan"})).toBeInTheDocument();
+ expect(screen.getByRole("button",{name:"floorplan.viewList"})).toBeInTheDocument();
+ expect(screen.getByRole("button",{name:"floorplan.viewFloorplan"})).toBeInTheDocument();
 });

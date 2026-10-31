@@ -2,7 +2,7 @@ import type { ListAlertsResponse } from "./api/task-scope-types";
 
 const severityRank: Record<string, number> = { critical: 3, warning: 2, info: 1 };
 export function sortOverviewAlerts(alerts: ListAlertsResponse) {
-  return [...alerts].sort((a, b) => (severityRank[b.severity] ?? 0) - (severityRank[a.severity] ?? 0) || b.timestamp.localeCompare(a.timestamp));
+  return [...alerts].sort((a, b) => (severityRank[b.severity] ?? 0) - (severityRank[a.severity] ?? 0) || (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
 }
 
 export function overviewRoomTone(room: { roomId: number | null; nodeId?: string | null; patientIds: number[]; nodeStatus?: string; alertCount: number }, alerts: ListAlertsResponse = []): "critical" | "warning" | "success" | "info" {

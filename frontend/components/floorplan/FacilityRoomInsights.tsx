@@ -17,7 +17,7 @@ export function FacilityRoomInsights({room,shape,presence,presenceState,tab,layo
  const alerts=useQuery({queryKey:["floorplan-room-insights","alerts",room?.id],queryFn:()=>api.listAlerts({limit:100}),enabled:tab==="alerts" && room!=null,staleTime:15000,refetchInterval:15000});
  const activity=useQuery({queryKey:["floorplan-room-insights","activity",room?.id],queryFn:()=>api.get<ListDeviceActivityResponse>("/devices/activity?limit=100"),enabled:tab==="history" && room!=null && ["admin","head_caregiver"].includes(user?.role??""),staleTime:30000,refetchInterval:30000});
  const matches=(roomId:unknown,nodeId:unknown)=>room!=null && (String(roomId)===String(room.id) || Boolean(room.node_device_id && nodeId===room.node_device_id));
- const roomAlerts=(alerts.data??[]).filter(alert=>matches(alert.data?.room_id,alert.device_id)).sort((a,b)=>Number(b.severity==="critical")-Number(a.severity==="critical") || b.timestamp.localeCompare(a.timestamp));
+ const roomAlerts=(alerts.data??[]).filter(alert=>matches(alert.data?.room_id,alert.device_id)).sort((a,b)=>Number(b.severity==="critical")-Number(a.severity==="critical") || (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
  const events=(activity.data??[]).filter(event=>matches(event.details?.room_id,event.registry_device_id));
  const live=presenceState==="ready" && presence;
  const occupants=Array.isArray(presence?.occupants) ? presence.occupants : null;

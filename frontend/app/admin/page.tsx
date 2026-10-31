@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { endOfDay, format, isSameDay, startOfDay } from "date-fns";
 import {
-  Accessibility, Activity, ArrowRight, ArrowUpRight, ChevronDown, Download, Ellipsis, HeartPulse, Info, Move3d, Plug2, Server, ShieldAlert, Smartphone, Sparkles, TriangleAlert, Wifi,
+  Accessibility, Activity, ArrowRight, ArrowUpRight, ChevronDown, Download, Ellipsis, HeartPulse, Info, Plug2, Server, ShieldAlert, Smartphone, Sparkles, TriangleAlert, Wifi,
   Bell,
   Building2,
   ClipboardList,
@@ -31,6 +31,7 @@ import { StatusSegments } from "@/components/dashboard/StatusSegments";
 import { sortOverviewAlerts } from "@/lib/overviewStatus";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
+import { BeltIcon } from "@/components/icons/BeltIcon";
 import { BeltPresenceCard } from "@/components/overview/BeltPresenceCard";
 import { schedulesToCalendarEvents } from "@/components/calendar/scheduleEventMapper";
 import styles from "./overview-workspace.module.css";
@@ -411,7 +412,7 @@ export default function AdminDashboardPage() {
               ...fleetByType.map(row=>({...row,label:t(`overview.visual.hardware.${row.hardware}`),available:Boolean(devices)&&!devicesQuery.isError,pending:devicesQuery.isPending})),
               {hardware:"smart",label:t("smartDevices.title"),...smartStats,available:Boolean(smartDevices)&&!smartQuery.isError,pending:smartQuery.isPending},
             ].map(row=>{
-              const Icon=row.hardware==="wheelchair" ? Accessibility : row.hardware==="node" ? Wifi : row.hardware==="polar_sense" ? HeartPulse : row.hardware==="mobile_phone" ? Smartphone : row.hardware==="belt" ? Move3d : Plug2;
+              const Icon=row.hardware==="wheelchair" ? Accessibility : row.hardware==="node" ? Wifi : row.hardware==="polar_sense" ? HeartPulse : row.hardware==="mobile_phone" ? Smartphone : row.hardware==="belt" ? BeltIcon : Plug2;
               const state=row.pending ? "pending" : !row.available ? "unavailable" : !row.total ? "empty" : row.online===row.total ? "online" : row.stale>0 ? "stale" : row.online>0 ? "partial" : "unknown";
               const status=row.pending ? t("common.loading") : !row.available ? t("redesign.unavailable") : !row.total ? t("patient.health.notConfigured") : state==="online" ? t("devices.online") : state==="unknown" ? t("patient.roomControls.unknownState") : t("admin.system.statusNeedsReview");
               const detail=row.hardware==="smart" ? `${row.missing} ${t("overview.unavailableOrDisabled")}` : `${row.stale} ${t("overview.stale")} · ${row.missing} ${t("overview.missing")}`;

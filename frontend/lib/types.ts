@@ -95,7 +95,8 @@ export type HardwareType =
   | "wheelchair"
   | "node"
   | "polar_sense"
-  | "mobile_phone";
+  | "mobile_phone"
+  | "belt";
 
 /** List/summary row from GET /api/devices */
 export interface Device {

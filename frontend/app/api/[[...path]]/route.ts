@@ -40,18 +40,6 @@ function fallbackResponseForApiPath(pathname: string) {
     );
   }
 
-  if (pathname === "settings/ai/ollama/models") {
-    return NextResponse.json(
-      {
-        models: [],
-        reachable: false,
-        origin: null,
-        message: "Ollama models are currently unavailable because the backend could not be reached.",
-      },
-      { status: 200 },
-    );
-  }
-
   if (pathname === "settings/ai/copilot/status") {
     return NextResponse.json({ connected: false }, { status: 200 });
   }
@@ -76,7 +64,7 @@ function authCookieBase() {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env["NODE_ENV"] === "production",
+    secure: process.env["COOKIE_SECURE"] === "true",
     path: "/",
   };
 }
@@ -254,6 +242,25 @@ async function handleImpersonationStart(req: NextRequest, pathSegments: string[]
 }
 
 async function handleImpersonationStop(req: NextRequest) {
+  // Revoke the backend act-as auth_sessions row before restoring the admin
+  // cookie; otherwise the impersonation session stays active until expiry.
+  const actAsToken = req.cookies.get(AUTH_COOKIE)?.value ?? null;
+  if (actAsToken) {
+    try {
+      await fetch(new URL("/api/auth/logout", getBackendOrigin()), {
+        method: "POST",
+        headers: { authorization: `Bearer ${actAsToken}` },
+        signal: AbortSignal.timeout(10_000),
+        cache: "no-store",
+      });
+    } catch (error) {
+      // Best effort: still restore the admin cookie even if the backend is down.
+      console.error(
+        "Failed to revoke impersonation session on backend",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
   const response = new NextResponse(null, { status: 204 });
   const backupToken = req.cookies.get(IMPERSONATION_BACKUP_COOKIE)?.value ?? null;
   if (backupToken) {

@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { isDeviceOnline } from "@/lib/deviceOnline";
+import { hardwareTypeLabel } from "@/lib/deviceHardwareTabs";
 import {
   preferredRoomNodeDeviceKey,
   roomNodeDeviceMatchesDevice,
@@ -67,9 +68,27 @@ const EMPTY_SELECT_VALUE = "__empty__";
 const UNASSIGNED_FACILITY_KEY = "__facility_unassigned__";
 const UNASSIGNED_FLOOR_KEY = "__floor_unassigned__";
 
-const hardwareTypeSchema = z.enum(["node", "wheelchair", "mobile_phone", "polar_sense"]);
+const hardwareTypeSchema = z.enum([
+  "node",
+  "wheelchair",
+  "mobile_phone",
+  "polar_sense",
+  "belt",
+  "companion_m5",
+]);
 
 type HardwareType = z.infer<typeof hardwareTypeSchema>;
+
+/**
+ * IMU wearables — wheelchair M5 and M5StickC fall-sensor form factors (waist belt,
+ * phone-linked companion). The backend reports all of them through the shared
+ * `wheelchair_metrics` / `realtime` IMU shape and the `wheelchair` history bucket.
+ */
+const IMU_WEARABLE_TYPES: ReadonlySet<HardwareType> = new Set([
+  "wheelchair",
+  "belt",
+  "companion_m5",
+]);
 
 type TFn = (key: TranslationKey) => string;
 
@@ -267,6 +286,7 @@ function resolveHardwareType(raw: string | null | undefined): HardwareType {
 function defaultDeviceRole(hardwareType: HardwareType): string {
   if (hardwareType === "polar_sense") return "polar_hr";
   if (hardwareType === "mobile_phone") return "mobile";
+  if (hardwareType === "belt" || hardwareType === "companion_m5") return "m5_companion";
   return "wheelchair_sensor";
 }
 
@@ -347,16 +367,20 @@ function Metric({ label, value }: { label: string; value: string }) {
 type DeviceHistory = z.infer<typeof deviceHistorySchema>;
 type DeviceHistoryPoint = z.infer<typeof deviceHistoryPointSchema>;
 
+const IMU_HISTORY_METRICS: Array<{ key: string; label: string; color: string; unit?: string }> = [
+  { key: "battery_pct", label: "Battery", color: "var(--chart-2)", unit: "%" },
+  { key: "velocity_ms", label: "Velocity", color: "var(--chart-2)", unit: " m/s" },
+  { key: "distance_m", label: "Distance", color: "var(--chart-1)", unit: " m" },
+  { key: "accel_ms2", label: "Acceleration", color: "var(--chart-3)", unit: " m/s2" },
+];
+
 const HISTORY_METRICS: Record<
   HardwareType,
   Array<{ key: string; label: string; color: string; unit?: string }>
 > = {
-  wheelchair: [
-    { key: "battery_pct", label: "Battery", color: "var(--chart-2)", unit: "%" },
-    { key: "velocity_ms", label: "Velocity", color: "var(--chart-2)", unit: " m/s" },
-    { key: "distance_m", label: "Distance", color: "var(--chart-1)", unit: " m" },
-    { key: "accel_ms2", label: "Acceleration", color: "var(--chart-3)", unit: " m/s2" },
-  ],
+  wheelchair: IMU_HISTORY_METRICS,
+  belt: IMU_HISTORY_METRICS,
+  companion_m5: IMU_HISTORY_METRICS,
   mobile_phone: [
     { key: "battery_pct", label: "Battery", color: "var(--chart-2)", unit: "%" },
     { key: "steps", label: "Steps", color: "var(--chart-1)" },
@@ -377,7 +401,7 @@ const HISTORY_METRICS: Record<
 
 function historyRowsForHardware(history: DeviceHistory | null | undefined, hardwareType: HardwareType) {
   if (!history) return [] as DeviceHistoryPoint[];
-  if (hardwareType === "wheelchair") return history.wheelchair;
+  if (IMU_WEARABLE_TYPES.has(hardwareType)) return history.wheelchair;
   if (hardwareType === "mobile_phone") return history.mobile;
   if (hardwareType === "polar_sense") return history.polar;
   return history.node;
@@ -562,7 +586,9 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const hardwareType = resolveHardwareType(detail?.hardware_type);
   const isNodeDevice = hardwareType === "node";
   const isPatientAssignable =
-    hardwareType === "wheelchair" || hardwareType === "mobile_phone" || hardwareType === "polar_sense";
+    IMU_WEARABLE_TYPES.has(hardwareType) ||
+    hardwareType === "mobile_phone" ||
+    hardwareType === "polar_sense";
   const supportsStaffDeviceLink = hardwareType === "mobile_phone" || hardwareType === "polar_sense";
 
   const userRole = user?.role;
@@ -1043,7 +1069,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                     {online ? t("devices.online") : t("devices.offline")}
                   </Badge>
                   <Badge variant="outline">{detail.device_id}</Badge>
-                  <Badge variant="outline">{hardwareType}</Badge>
+                  <Badge variant="outline">{hardwareTypeLabel(hardwareType, t)}</Badge>
                 </div>
 
                 <Card>
@@ -1087,7 +1113,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                         }
                       />
                     )}
-                    <Metric label={t("devicesDetail.hardware")} value={hardwareType} />
+                    <Metric label={t("devicesDetail.hardware")} value={hardwareTypeLabel(hardwareType, t)} />
                     <Metric
                       label={t("devices.lastSeen")}
                       value={detail.last_seen ? formatDateTime(detail.last_seen) : "-"}
@@ -1120,7 +1146,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   </CardContent>
                 </Card>
 
-                {hardwareType === "wheelchair" && detail.wheelchair_metrics ? (
+                {IMU_WEARABLE_TYPES.has(hardwareType) && detail.wheelchair_metrics ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">{t("devicesDetail.realtime")}</CardTitle>

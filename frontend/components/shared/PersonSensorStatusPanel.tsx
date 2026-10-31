@@ -12,6 +12,7 @@ import {
   Smartphone,
   Watch,
 } from "lucide-react";
+import { BeltIcon } from "@/components/icons/BeltIcon";
 import { api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
@@ -92,6 +93,8 @@ function resolveHardwareType(detail: DeviceDetail | null, role: string): string 
   if (role === "wheelchair_sensor") return "wheelchair";
   if (role === "mobile" || role === "mobile_phone") return "mobile_phone";
   if (role === "polar_hr") return "polar_sense";
+  if (role === "belt") return "belt";
+  if (role === "m5_companion") return "companion_m5";
   return "unknown";
 }
 
@@ -99,6 +102,7 @@ function hardwareIcon(hardwareType: string) {
   if (hardwareType === "mobile_phone") return Smartphone;
   if (hardwareType === "polar_sense") return Watch;
   if (hardwareType === "wheelchair") return Gauge;
+  if (hardwareType === "belt" || hardwareType === "companion_m5") return BeltIcon;
   return Activity;
 }
 
@@ -111,6 +115,10 @@ function roleLabel(role: string, t: (key: string) => string): string {
       return t("patient.sensors.roleMobile");
     case "polar_hr":
       return t("patient.sensors.rolePolar");
+    case "belt":
+      return t("patient.sensors.roleBelt");
+    case "m5_companion":
+      return t("patient.sensors.roleM5Companion");
     default:
       return role.replaceAll("_", " ");
   }
@@ -177,7 +185,7 @@ function DeviceMetrics({
   const mobile = detail?.mobile_metrics ?? null;
   const polar = detail?.polar_metrics ?? detail?.polar_vitals ?? null;
 
-  if (hardwareType === "wheelchair") {
+  if (hardwareType === "wheelchair" || hardwareType === "belt" || hardwareType === "companion_m5") {
     return (
       <div className="space-y-2 border-t border-border/60 pt-3">
         <MetricRow label={t("patient.sensors.distance")} value={fmtNumber(wheelchair?.distance_m, 1, " m")} />

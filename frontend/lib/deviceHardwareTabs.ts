@@ -8,6 +8,7 @@ export const DEVICE_HARDWARE_TABS: Array<{ key: HardwareType | "all"; labelKey: 
   { key: "node", labelKey: "devicesDetail.tabNode" },
   { key: "polar_sense", labelKey: "devicesDetail.tabPolar" },
   { key: "mobile_phone", labelKey: "devicesDetail.tabMobile" },
+  { key: "belt", labelKey: "devicesDetail.tabBelt" },
 ];
 
 /** Admin fleet view: registry hardware tabs plus smart-home (Home Assistant) mappings. */
@@ -19,6 +20,7 @@ const TAB_QUERY_SLUG: Record<DeviceFleetTab, string> = {
   node: "node",
   polar_sense: "polar_sense",
   mobile_phone: "mobile_phone",
+  belt: "belt",
   smart_ha: "smart_home",
 };
 
@@ -39,6 +41,8 @@ const QUERY_TO_FLEET_TAB: Record<string, DeviceFleetTab> = {
   polar: "polar_sense",
   mobile: "mobile_phone",
   phone: "mobile_phone",
+  belt: "belt",
+  waist: "belt",
 };
 
 /** Parse `?tab=` from /admin/devices (accepts aliases). */
@@ -72,4 +76,29 @@ export function vitalMatchesHardwareTab(
     if (hwNorm === "wheelchair" && (v.source === "ble" || v.source === "sim_seed")) return true;
   }
   return false;
+}
+
+/**
+ * Human labels for registry `hardware_type` values (fleet Type column, drawer badges).
+ * Covers backend values beyond the fleet tabs (`companion_m5` M5StickC companion rows,
+ * `mobile_app` legacy alias); unknown strings pass through unchanged.
+ */
+const HARDWARE_TYPE_LABEL_KEY: Record<string, TranslationKey> = {
+  wheelchair: "devices.hardwareType.wheelchair",
+  node: "devices.hardwareType.node",
+  polar_sense: "devices.hardwareType.polarSense",
+  mobile_phone: "devices.hardwareType.mobilePhone",
+  companion_m5: "devices.hardwareType.companionM5",
+  belt: "devices.hardwareType.belt",
+};
+
+export function hardwareTypeLabel(
+  hardwareType: string | null | undefined,
+  t: (key: TranslationKey) => string,
+): string {
+  const raw = (hardwareType ?? "").trim();
+  if (!raw) return "-";
+  const norm = raw === "mobile_app" ? "mobile_phone" : raw;
+  const key = HARDWARE_TYPE_LABEL_KEY[norm];
+  return key ? t(key) : raw;
 }

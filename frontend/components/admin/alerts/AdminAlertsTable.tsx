@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 
-export type AdminAlertFilterStatus = "all" | "active" | "acknowledged" | "resolved";
+export type AdminAlertFilterStatus = "all" | "active" | "acknowledged" | "resolved" | "closed";
 
 type Props = {
   alerts: Alert[] | null | undefined;
@@ -33,10 +33,12 @@ function getSeverityVariant(severity: Alert["severity"]) {
   return "default" as const;
 }
 
-function getStatusVariant(status: Alert["status"]) {
+function getStatusVariant(status: string) {
   if (status === "active") return "destructive" as const;
   if (status === "acknowledged") return "warning" as const;
-  return "success" as const;
+  if (status === "resolved") return "success" as const;
+  // "closed" and any other terminal status get a muted/neutral badge.
+  return "secondary" as const;
 }
 
 export function AdminAlertsTable({
@@ -65,13 +67,13 @@ export function AdminAlertsTable({
         String(alert.id).includes(query) ||
         `${patientMap.get(alert.patient_id ?? -1)?.first_name ?? ""} ${patientMap.get(alert.patient_id ?? -1)?.last_name ?? ""}`.toLowerCase().includes(query)
       );
-    }).sort((a, b) => Number(b.status === "active") - Number(a.status === "active") || Number(b.severity === "critical") - Number(a.severity === "critical") || b.timestamp.localeCompare(a.timestamp));
+    }).sort((a, b) => Number(b.status === "active") - Number(a.status === "active") || Number(b.severity === "critical") - Number(a.severity === "critical") || (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
   }, [alerts, filter, search, patientMap]);
 
   const renderActions = useCallback((alert: Alert) => (
     <div className="flex flex-wrap gap-2">
       {alert.status === "active" && canAcknowledge ? <Button type="button" variant="outline" size="sm" onClick={() => onUpdateStatus(alert.id, "acknowledged")}>{t("alerts.acknowledge")}</Button> : null}
-      {alert.status !== "resolved" && canAcknowledge ? <ResolveAlertButton alertTitle={alert.title} onConfirm={() => onUpdateStatus(alert.id, "resolved")} /> : null}
+      {(alert.status === "active" || alert.status === "acknowledged") && canAcknowledge ? <ResolveAlertButton alertTitle={alert.title} onConfirm={() => onUpdateStatus(alert.id, "resolved")} /> : null}
     </div>
   ), [canAcknowledge, onUpdateStatus, t]);
 
@@ -170,7 +172,7 @@ export function AdminAlertsTable({
       total: source.length,
       active: source.filter((alert) => alert.status === "active").length,
       acknowledged: source.filter((alert) => alert.status === "acknowledged").length,
-      critical: source.filter((alert) => alert.severity === "critical" && alert.status !== "resolved").length,
+      critical: source.filter((alert) => alert.severity === "critical" && alert.status === "active").length,
     };
   }, [alerts]);
 
@@ -194,7 +196,7 @@ export function AdminAlertsTable({
         isLoading={isLoading}
         emptyText={t("alerts.empty")}
         getRowDomId={(alert) => `ws-alert-${alert.id}`}
-        getRowClassName={(alert) => alert.severity === "critical" && alert.status !== "resolved" ? "bg-critical-bg/40" : undefined}
+        getRowClassName={(alert) => alert.severity === "critical" && (alert.status === "active" || alert.status === "acknowledged") ? "bg-critical-bg/40" : undefined}
         mobileMode="cards"
         renderMobileCard={(alert) => {
           const patient = patientMap.get(alert.patient_id ?? -1);

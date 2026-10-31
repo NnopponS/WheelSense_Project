@@ -16,7 +16,7 @@ print("\n1. Creating YOLO detector...")
 detector = create_detector(
     method="yolo",
     confidence_threshold=0.8,
-    model_path="models/yolov8-model/best.pt"
+    model_path="models/yolov8-model/best3.pt"
 )
 
 print(f"✅ Detector created: {type(detector).__name__}")

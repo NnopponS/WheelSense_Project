@@ -80,6 +80,9 @@ export function getMlCalibrationPath(role: string): string {
 
 /** Get monitoring page path based on role. */
 export function getMonitoringPath(role: string, roomId?: number | string): string {
+  if (role === "patient") {
+    return roomId !== undefined ? `/patient/room-controls?room=${roomId}` : "/patient/room-controls";
+  }
   const base = role === "admin"
     ? "/admin/facility-management"
     : `/${role.replaceAll("_", "-")}/floorplans`;

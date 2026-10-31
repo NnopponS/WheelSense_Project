@@ -47,9 +47,9 @@ class YOLODetector:
     5. Return detections with bounding boxes
     """
     
-    # Model paths (best2.pt = 2-class fall model: green_obj normal, red_obj fall)
-    MODEL_PATH = '/app/models/yolov8-model/best2.pt'
-    FALLBACK_MODEL_PATH = 'models/yolov8-model/best2.pt'  # For local development
+    # Model paths (best3.pt = retrained model with improved detection accuracy)
+    MODEL_PATH = '/app/models/yolov8-model/best3.pt'
+    FALLBACK_MODEL_PATH = 'models/yolov8-model/best3.pt'  # For local development
 
     # Class names that mean "object has fallen" in models that carry a fall class
     FALL_CLASS_NAMES = {"red_obj", "red", "fall", "fallen", "fall_detected"}
@@ -62,7 +62,7 @@ class YOLODetector:
         self.show_preview = show_preview
         self.preview_window_name = "WheelSense YOLO Detection"
         # True when the loaded model has a dedicated fall class (e.g. red_obj in
-        # best2.pt) — then fall = class, and the geometric heuristics stay off.
+        # earlier models) — then fall = class, and the geometric heuristics stay off.
         self.model_has_fall_class = False
         
         # Detect GPU
@@ -125,15 +125,13 @@ class YOLODetector:
     
     def _load_model(self, model_path: str = None):
         """Load YOLOv8 model and move to GPU if available."""
-        # Determine model path (legacy single-class best.pt kept as last resort)
+        # Determine model path
         paths_to_try = []
         if model_path:
             paths_to_try.append(model_path)
         paths_to_try.extend([
             self.MODEL_PATH,
             self.FALLBACK_MODEL_PATH,
-            '/app/models/yolov8-model/best.pt',
-            'models/yolov8-model/best.pt',
         ])
         
         model_file = None
@@ -242,7 +240,7 @@ class YOLODetector:
                             best_bbox = (x, y, w, h)
                             best_class = class_name
                         
-                        # Track best fall-class detection (red_obj in best2.pt)
+                        # Track best fall-class detection
                         if (
                             class_name.strip().lower() in self.FALL_CLASS_NAMES
                             and conf > best_fall_conf

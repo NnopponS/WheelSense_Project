@@ -980,7 +980,7 @@ export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) 
   return (
     <>
       {open && (
-        <div className="fixed inset-x-3 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-50 flex h-[min(78vh,36rem)] overflow-hidden rounded-2xl border border-outline-variant/20 surface-card shadow-modal sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[min(100vw-2rem,28rem)]">
+        <div className="fixed inset-x-3 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-50 flex h-[min(78vh,36rem)] overflow-hidden rounded-2xl border border-border bg-card shadow-[0_28px_70px_-16px_rgb(15_23_42/0.45)] sm:inset-x-auto sm:bottom-24 sm:right-6 sm:w-[min(100vw-2rem,28rem)]">
           {showHistory && (
             <div className="flex w-56 shrink-0 flex-col border-r border-outline-variant/15 bg-surface-container-low">
               <div className="flex items-center justify-between border-b border-outline-variant/15 px-3 py-2">

@@ -766,9 +766,11 @@ export default function PatientDetailPage() {
 
           {/* ── 2. MAIN DASHBOARD GRID (main 70% + right rail 30%) ─────── */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-10">
-            {/* EMERGENCY RAIL — first in DOM and mobile reading order */}
-            <aside className="space-y-4 xl:col-span-3 xl:col-start-8 xl:row-start-1">
+            {/* RIGHT RAIL — one column on xl so the cards stack flush with no row
+                gap; dissolves on mobile to keep emergency first / staff last order */}
+            <div className="space-y-4 max-xl:contents xl:col-span-3 xl:col-start-8 xl:row-start-1">
               <EmergencyAlertRail
+                className="max-xl:order-first"
                 contact={primaryContact}
                 severeAnomalyActive={severeAnomalyActive}
                 anomalySummary={anomalySummary}
@@ -796,10 +798,30 @@ export default function PatientDetailPage() {
                 onSave={() => void saveCard("emergency")}
                 error={cardErrors.emergency}
               />
-            </aside>
+
+              {/* STAFF — follows clinical content on mobile */}
+              <AssignedStaffCard
+                className="max-xl:order-last"
+                staffCount={caregiverDraftIds.length}
+                canManage={canManageResponsibleStaff}
+                staffSearch={staffSearch}
+                onStaffSearchChange={setStaffSearch}
+                staffPickerOptions={staffPickerOptions}
+                staffSearchInputId={staffSearchInputId}
+                staffSearchListboxId={staffSearchListboxId}
+                onSelectStaff={(optId) => { const n = Number(optId); if (!Number.isFinite(n)) return; setCaregiverDraftIds((prev) => (prev.includes(n) ? prev : [...prev, n])); setStaffSearch(""); }}
+                draftStaff={draftCaregiversOrdered}
+                authRole={authUser?.role || "admin"}
+                onRemoveStaff={(id) => setCaregiverDraftIds((prev) => prev.filter((x) => x !== id))}
+                onSaveStaff={() => void handleSaveResponsibleStaff()}
+                staffSaving={staffSaving}
+                staffError={staffError}
+                readOnlyHint={t("patients.responsibleStaffReadOnlyHint")}
+              />
+            </div>
 
             {/* MAIN COLUMN */}
-            <div className="space-y-4 xl:col-span-7 xl:col-start-1 xl:row-span-2 xl:row-start-1">
+            <div className="space-y-4 max-xl:contents xl:col-span-7 xl:col-start-1 xl:row-start-1">
               {/* ── 3. FOUR FEATURE NAV / SUMMARY CARDS ──────────────────── */}
               <FeatureNavCards
                 riskLevel={healthRiskLevel}
@@ -871,26 +893,6 @@ export default function PatientDetailPage() {
               </ProfileCard>
             </div>
 
-            {/* STAFF RAIL — follows clinical content on mobile */}
-            <aside className="space-y-4 xl:col-span-3 xl:col-start-8 xl:row-start-2">
-              <AssignedStaffCard
-                staffCount={caregiverDraftIds.length}
-                canManage={canManageResponsibleStaff}
-                staffSearch={staffSearch}
-                onStaffSearchChange={setStaffSearch}
-                staffPickerOptions={staffPickerOptions}
-                staffSearchInputId={staffSearchInputId}
-                staffSearchListboxId={staffSearchListboxId}
-                onSelectStaff={(optId) => { const n = Number(optId); if (!Number.isFinite(n)) return; setCaregiverDraftIds((prev) => (prev.includes(n) ? prev : [...prev, n])); setStaffSearch(""); }}
-                draftStaff={draftCaregiversOrdered}
-                authRole={authUser?.role || "admin"}
-                onRemoveStaff={(id) => setCaregiverDraftIds((prev) => prev.filter((x) => x !== id))}
-                onSaveStaff={() => void handleSaveResponsibleStaff()}
-                staffSaving={staffSaving}
-                staffError={staffError}
-                readOnlyHint={t("patients.responsibleStaffReadOnlyHint")}
-              />
-            </aside>
           </div>
         </TabsContent>
         <TabsContent value="care" className="mt-0 space-y-6">

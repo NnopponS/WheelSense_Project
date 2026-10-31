@@ -39,7 +39,7 @@ export default function AdminAlertsPage() {
   const alertsQuery = useQuery({
     queryKey: ["admin", "alerts", "list"],
     queryFn: () => api.listAlerts({ limit: 500 }),
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
   });
 
   const updateAlertMutation = useMutation({
@@ -102,6 +102,7 @@ export default function AdminAlertsPage() {
               <SelectItem value="active">{t("alerts.active")}</SelectItem>
               <SelectItem value="acknowledged">{t("alerts.acknowledged")}</SelectItem>
               <SelectItem value="resolved">{t("headNurse.alerts.statusResolved")}</SelectItem>
+              <SelectItem value="closed">{t("admin.support.ticketStatusClosed")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

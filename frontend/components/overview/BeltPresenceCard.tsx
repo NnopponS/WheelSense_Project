@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useQueries } from "@tanstack/react-query";
-import { ArrowUpRight, Move3d } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { BeltIcon } from "@/components/icons/BeltIcon";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/datetime";
 import { isDeviceOnline } from "@/lib/deviceOnline";
@@ -69,7 +70,7 @@ export function BeltPresenceCard({ devices }: { devices?: Device[] }) {
               className={styles.beltRow}
               data-state={online ? "online" : "offline"}
             >
-              <Move3d aria-hidden />
+              <BeltIcon aria-hidden />
               <div className={styles.beltMeta}>
                 <strong>{belt.display_name || belt.device_id}</strong>
                 <span>

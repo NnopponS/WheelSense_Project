@@ -20,7 +20,7 @@ beforeEach(() => { jest.clearAllMocks(); });
 it("dismisses a popup without acknowledging or resolving the alert", () => {
   renderDialog();
   expect(screen.getByRole("dialog", { name: notification.title })).toBeVisible();
-  expect(screen.getByText("Simulation · synthetic data")).toBeVisible();
+  expect(screen.queryByText("Simulation · synthetic data")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Dismiss popup" }));
   expect(dismiss).toHaveBeenCalledWith("alert-91");
   expect(api.acknowledgeAlert).not.toHaveBeenCalled();

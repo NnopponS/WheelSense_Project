@@ -4,6 +4,107 @@
  */
 
 export interface paths {
+    "/api/video/{room_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Live Video Frame
+         * @description Serve the latest live JPEG frame from TsimCam or a live status SVG preview.
+         */
+        get: operations["get_live_video_frame_api_video__room_ref__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/map/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Map Devices
+         * @description Camera devices for the detection-test page, one tile per physical room.
+         *
+         *     Cameras report their own device_id (e.g. TSIM_003); every live connection
+         *     is folded into the canonical MODEL_NODE_* slot for its room so the same
+         *     physical camera can never appear as a second tile.
+         */
+        get: operations["list_map_devices_api_map_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/nodes/{device_id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate Map Device
+         * @description Set camera rotation applied server-side before YOLO detection.
+         */
+        post: operations["rotate_map_device_api_nodes__device_id__rotate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/detection/threshold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Detection Threshold */
+        post: operations["set_detection_threshold_api_detection_threshold_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/detection/notify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Detection Notify
+         * @description Forward a detection confirmed on the test page into the position pipeline.
+         */
+        post: operations["detection_notify_api_detection_notify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/profile-images/{filename}": {
         parameters: {
             query?: never;
@@ -1984,57 +2085,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/settings/ai/ollama/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Ollama List Models */
-        get: operations["ollama_list_models_api_settings_ai_ollama_models_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/ai/ollama/pull": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Ollama Pull Model */
-        post: operations["ollama_pull_model_api_settings_ai_ollama_pull_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/ai/ollama/models/{name}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Ollama Delete Model */
-        delete: operations["ollama_delete_model_api_settings_ai_ollama_models__name__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/settings/ai/health": {
         parameters: {
             query?: never;
@@ -3705,6 +3755,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Legacy Health */
+        get: operations["legacy_health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -3749,14 +3816,14 @@ export interface components {
              * Provider
              * @enum {string}
              */
-            provider: "ollama" | "copilot" | "openai" | "openrouter";
+            provider: "copilot" | "openai" | "openrouter";
             /** Model */
             model: string;
             /**
              * Workspace Default Provider
              * @enum {string}
              */
-            workspace_default_provider: "ollama" | "copilot" | "openai" | "openrouter";
+            workspace_default_provider: "copilot" | "openai" | "openrouter";
             /** Workspace Default Model */
             workspace_default_model: string;
             /**
@@ -3779,7 +3846,7 @@ export interface components {
              * Provider
              * @enum {string}
              */
-            provider: "ollama" | "copilot" | "openai" | "openrouter";
+            provider: "copilot" | "openai" | "openrouter";
             /** Model */
             model: string;
             /**
@@ -5136,7 +5203,7 @@ export interface components {
             /** Conversation Id */
             conversation_id?: number | null;
             /** Provider */
-            provider?: ("ollama" | "copilot" | "openai" | "openrouter") | null;
+            provider?: ("copilot" | "openai" | "openrouter") | null;
             /** Model */
             model?: string | null;
         };
@@ -5901,7 +5968,7 @@ export interface components {
              * Default Provider
              * @enum {string}
              */
-            default_provider: "ollama" | "copilot" | "openai" | "openrouter";
+            default_provider: "copilot" | "openai" | "openrouter";
             /** Default Model */
             default_model: string;
             /**
@@ -6632,34 +6699,6 @@ export interface components {
              * @default 0.2
              */
             test_split: number;
-        };
-        /** OllamaModelInfo */
-        OllamaModelInfo: {
-            /** Name */
-            name: string;
-            /** Size */
-            size?: number | null;
-            /** Digest */
-            digest?: string | null;
-        };
-        /** OllamaModelsOut */
-        OllamaModelsOut: {
-            /** Models */
-            models: components["schemas"]["OllamaModelInfo"][];
-            /**
-             * Reachable
-             * @default false
-             */
-            reachable: boolean;
-            /** Origin */
-            origin?: string | null;
-            /** Message */
-            message?: string | null;
-        };
-        /** OllamaPullIn */
-        OllamaPullIn: {
-            /** Name */
-            name: string;
         };
         /** PatientAssignedStaffOut */
         PatientAssignedStaffOut: {
@@ -9332,6 +9371,138 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_live_video_frame_api_video__room_ref__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_map_devices_api_map_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    rotate_map_device_api_nodes__device_id__rotate_post: {
+        parameters: {
+            query?: {
+                degrees?: number;
+            };
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_detection_threshold_api_detection_threshold_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    detection_notify_api_detection_notify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     get_profile_image_api_public_profile_images__filename__get: {
         parameters: {
             query?: never;
@@ -13891,90 +14062,6 @@ export interface operations {
             };
         };
     };
-    ollama_list_models_api_settings_ai_ollama_models_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OllamaModelsOut"];
-                };
-            };
-        };
-    };
-    ollama_pull_model_api_settings_ai_ollama_pull_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OllamaPullIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    ollama_delete_model_api_settings_ai_ollama_models__name__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     ai_backend_health_api_settings_ai_health_get: {
         parameters: {
             query?: never;
@@ -17664,6 +17751,26 @@ export interface operations {
         };
     };
     health_api_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    legacy_health_health_get: {
         parameters: {
             query?: never;
             header?: never;

@@ -22,7 +22,7 @@ Configure via environment variables:
 - `DETECTION_METHOD` - Detection method: `yolo` or `teachable_machine` (default: `yolo`)
 - `DETECTION_CONFIDENCE_THRESHOLD` - Detection threshold (default: `0.8`)
 - `DETECTION_INTERVAL_SEC` - Detection interval in seconds (default: `1.0`)
-- `YOLO_MODEL_PATH` - Path to YOLOv8 model file (default: `/app/models/yolov8-model/best.pt`)
+- `YOLO_MODEL_PATH` - Path to YOLOv8 model file (default: `/app/models/yolov8-model/best3.pt`)
 
 ## Running
 
@@ -47,13 +47,13 @@ The service supports two detection methods:
 
 ### 1. YOLOv8 Object Detection (Default)
 - **Type**: Object detection with bounding boxes
-- **Model**: Custom-trained YOLOv8 model (`best.pt`)
+- **Model**: Custom-trained YOLOv8 model (`best3.pt`)
 - **Features**:
   - Accurate bounding box coordinates
   - Can detect multiple wheelchairs in one frame
   - Per-object confidence scores
   - Real-time detection
-- **Model Location**: `/app/models/yolov8-model/best.pt`
+- **Model Location**: `/app/models/yolov8-model/best3.pt`
 
 ### 2. Teachable Machine Classification
 - **Type**: Image classification
@@ -76,7 +76,7 @@ Example in docker-compose.yml:
 camera-service:
   environment:
     - DETECTION_METHOD=yolo
-    - YOLO_MODEL_PATH=/app/models/yolov8-model/best.pt
+    - YOLO_MODEL_PATH=/app/models/yolov8-model/best3.pt
 ```
 
 ## MQTT Topics
@@ -104,7 +104,7 @@ camera-service:
 ## Notes
 
 - Supports two detection methods: **YOLOv8** (object detection) and **Teachable Machine** (classification)
-- YOLOv8 model should be placed in `/app/models/yolov8-model/best.pt`
+- YOLOv8 model should be placed in `/app/models/yolov8-model/best3.pt`
 - Teachable Machine model should be placed in `/app/models/tm-my-image-model/`
 - See `models/README.md` for model setup instructions
 - Use `DETECTION_METHOD` environment variable to switch between methods

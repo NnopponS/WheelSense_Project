@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   BarChart3,
@@ -30,8 +31,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MovementTimelineCard } from "@/components/timeline/MovementTimelineCard";
 import { formatDateTime } from "@/lib/datetime";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import type { SmartDevice } from "@/lib/types";
 
 type JsonRecord = Record<string, unknown>;
 const TechnicalDetails = createContext(false);
@@ -335,12 +338,92 @@ function QuestionChoicesCard({
   const choices = normalizeChoices(card);
   const payload = cardPayload(card);
   const [customReply, setCustomReply] = useState("");
+  const sections = asArray(payload.sections).map(asRecord).filter(Boolean) as JsonRecord[];
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [customs, setCustoms] = useState<Record<string, string>>({});
 
   function buildCustomReply(value: string): string {
     const template = asString(payload.custom_reply_template);
     if (template) return template.split("{input}").join(value);
     const prefix = asString(payload.custom_reply_prefix);
     return prefix ? `${prefix}${value}` : value;
+  }
+
+  if (sections.length > 0) {
+    const sectionValue = (field: string) => picked[field] || customs[field]?.trim() || "";
+    const allAnswered = sections.every(
+      (section, index) => sectionValue(asString(section.field) || `s${index}`) !== "",
+    );
+    return (
+      <CardShell icon={<HelpCircle className="h-4 w-4" />} title={titleFor(card, "Choose a Reply")}>
+        {asString(payload.question) ? (
+          <p className="mb-2 text-xs text-muted-foreground">{asString(payload.question)}</p>
+        ) : null}
+        <div className="space-y-3">
+          {sections.map((section, index) => {
+            const field = asString(section.field) || `s${index}`;
+            const sectionChoices = normalizeChoices(section as EaseAIBackendCard);
+            const selected = picked[field] || "";
+            const customValue = customs[field] || "";
+            return (
+              <div key={field}>
+                <p className="mb-1 text-xs font-medium text-foreground">{asString(section.question)}</p>
+                {sectionChoices.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {sectionChoices.map((choice) => (
+                      <Button
+                        key={choice.key}
+                        type="button"
+                        size="sm"
+                        variant={selected === choice.reply ? "default" : "outline"}
+                        className="h-auto px-3 py-1.5"
+                        onClick={() =>
+                          setPicked((prev) => ({
+                            ...prev,
+                            [field]: prev[field] === choice.reply ? "" : choice.reply,
+                          }))
+                        }
+                        disabled={!onQuestionChoice}
+                      >
+                        {choice.label}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+                {section.allow_custom !== false ? (
+                  <Input
+                    className="mt-1.5"
+                    aria-label={asString(section.question) || field}
+                    value={customValue}
+                    onChange={(event) =>
+                      setCustoms((prev) => ({ ...prev, [field]: event.target.value }))
+                    }
+                    placeholder={asString(section.custom_placeholder) || "Type an answer…"}
+                    disabled={!onQuestionChoice}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          className="mt-3 w-full"
+          disabled={!onQuestionChoice || !allAnswered}
+          onClick={() => {
+            const parts = sections.map((section, index) => {
+              const field = asString(section.field) || `s${index}`;
+              return `${asString(section.reply_prefix)}${sectionValue(field)}`;
+            });
+            onQuestionChoice?.(parts.join(" · "));
+          }}
+        >
+          Send
+        </Button>
+        <Provenance items={provenanceItems(card)} />
+      </CardShell>
+    );
   }
 
   return (
@@ -972,6 +1055,131 @@ function smartDeviceIcon(device: JsonRecord) {
   return Power;
 }
 
+const CHAT_DEVICE_OFF_STATES = new Set(["off", "unknown", "unavailable", "standby", "none", ""]);
+
+function deviceStateIsOn(state: unknown): boolean {
+  return !CHAT_DEVICE_OFF_STATES.has(String(state ?? "").trim().toLowerCase());
+}
+
+type DeviceControlOverride = { state: string; on: boolean; pending: boolean; error: boolean };
+
+/**
+ * Direct smart-device toggles from chat cards. Card buttons behave like the
+ * Smart Home dashboard's manual toggles (POST /api/ha/devices/{id}/control),
+ * which drives the physical relays and keeps room screens in sync — the same
+ * endpoint the REST UI uses, so no extra confirmation round-trip is needed.
+ */
+function useDirectDeviceControl() {
+  const queryClient = useQueryClient();
+  const [overrides, setOverrides] = useState<Record<number, DeviceControlOverride>>({});
+
+  const toggle = useCallback(
+    async (deviceId: number, currentlyOn: boolean) => {
+      setOverrides((prev) => ({
+        ...prev,
+        [deviceId]: {
+          state: prev[deviceId]?.state ?? (currentlyOn ? "on" : "off"),
+          on: currentlyOn,
+          pending: true,
+          error: false,
+        },
+      }));
+      try {
+        const res = await api.post<{ data?: { state?: string } }>(
+          `/ha/devices/${deviceId}/control`,
+          { action: currentlyOn ? "turn_off" : "turn_on" },
+        );
+        const nextState = res?.data?.state ?? (currentlyOn ? "off" : "on");
+        setOverrides((prev) => ({
+          ...prev,
+          [deviceId]: { state: nextState, on: deviceStateIsOn(nextState), pending: false, error: false },
+        }));
+        void queryClient.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey.some(
+              (key) => typeof key === "string" && (key.includes("smart-devices") || key === "ha"),
+            ),
+        });
+      } catch {
+        setOverrides((prev) => ({
+          ...prev,
+          [deviceId]: {
+            ...(prev[deviceId] ?? { state: "", on: currentlyOn }),
+            pending: false,
+            error: true,
+          },
+        }));
+      }
+    },
+    [queryClient],
+  );
+
+  return { overrides, toggle };
+}
+
+type DirectDeviceControl = ReturnType<typeof useDirectDeviceControl>;
+
+function SmartDeviceControlRow({
+  device,
+  control,
+  onQuestionChoice,
+}: {
+  device: JsonRecord;
+  control: DirectDeviceControl;
+  onQuestionChoice?: (reply: string) => void;
+}) {
+  const Icon = smartDeviceIcon(device);
+  const deviceId = asNumber(device.id);
+  const deviceName = asString(device.name) || "Device";
+  const override = deviceId != null ? control.overrides[deviceId] : undefined;
+  const state = override?.state ?? (asString(device.state) || (device.on === true ? "on" : "off"));
+  const isOn = override ? override.on : device.on === true || deviceStateIsOn(state);
+  const pending = override?.pending === true;
+  const errored = override?.error === true;
+  const controllable = device.is_active !== false;
+
+  return (
+    <li className="flex items-center gap-1.5 text-[11px]">
+      <Icon
+        className={cn("h-3.5 w-3.5 shrink-0", isOn ? "text-emerald-600" : "text-muted-foreground")}
+      />
+      <span className="min-w-0 flex-1 truncate text-foreground">{deviceName}</span>
+      <span
+        className={cn(
+          "shrink-0 rounded-full px-1.5 py-0 text-[10px] font-medium",
+          errored
+            ? "bg-critical/15 text-critical"
+            : isOn
+              ? "bg-emerald-500/15 text-emerald-700"
+              : "bg-muted text-muted-foreground",
+        )}
+      >
+        {errored ? "failed" : pending ? "…" : state || (isOn ? "on" : "off")}
+      </span>
+      <button
+        type="button"
+        disabled={!controllable || pending || (deviceId == null && !onQuestionChoice)}
+        onClick={() => {
+          if (deviceId != null) {
+            void control.toggle(deviceId, isOn);
+          } else {
+            onQuestionChoice?.(`Turn ${isOn ? "off" : "on"} ${deviceName}`);
+          }
+        }}
+        className={cn(
+          "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition-smooth",
+          isOn
+            ? "bg-surface-container-high text-foreground hover:bg-surface-container-highest"
+            : "bg-primary text-primary-foreground hover:bg-primary/90",
+          (!controllable || pending) && "cursor-not-allowed opacity-50",
+        )}
+      >
+        {pending ? "…" : isOn ? "Turn off" : "Turn on"}
+      </button>
+    </li>
+  );
+}
+
 function SmartHomeCard({
   card,
   onQuestionChoice,
@@ -980,6 +1188,7 @@ function SmartHomeCard({
   onQuestionChoice?: (reply: string) => void;
 }) {
   const payload = cardPayload(card);
+  const control = useDirectDeviceControl();
   const rooms = asArray(payload.rooms).map((item) => asRecord(item)).filter(Boolean) as JsonRecord[];
   const stats = asRecord(payload.stats) ?? {};
   const alertTotal = asNumber(stats.alerts) ?? 0;
@@ -1074,47 +1283,14 @@ function SmartHomeCard({
               ) : null}
               {devices.length > 0 ? (
                 <ul className="mt-1.5 space-y-1">
-                  {devices.map((device, deviceIndex) => {
-                    const Icon = smartDeviceIcon(device);
-                    const isOn = device.on === true;
-                    const deviceName = asString(device.name) || "Device";
-                    const controllable = Boolean(onQuestionChoice) && device.is_active !== false;
-                    return (
-                      <li
-                        key={`${asString(device.id)}-${deviceIndex}`}
-                        className="flex items-center gap-1.5 text-[11px]"
-                      >
-                        <Icon
-                          className={cn("h-3.5 w-3.5 shrink-0", isOn ? "text-emerald-600" : "text-muted-foreground")}
-                        />
-                        <span className="min-w-0 flex-1 truncate text-foreground">{deviceName}</span>
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full px-1.5 py-0 text-[10px] font-medium",
-                            isOn ? "bg-emerald-500/15 text-emerald-700" : "bg-muted text-muted-foreground",
-                          )}
-                        >
-                          {asString(device.state) || (isOn ? "on" : "off")}
-                        </span>
-                        <button
-                          type="button"
-                          disabled={!controllable}
-                          onClick={() =>
-                            onQuestionChoice?.(`Turn ${isOn ? "off" : "on"} ${deviceName}`)
-                          }
-                          className={cn(
-                            "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition-smooth",
-                            isOn
-                              ? "bg-surface-container-high text-foreground hover:bg-surface-container-highest"
-                              : "bg-primary text-primary-foreground hover:bg-primary/90",
-                            !controllable && "cursor-not-allowed opacity-50",
-                          )}
-                        >
-                          {isOn ? "Turn off" : "Turn on"}
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {devices.map((device, deviceIndex) => (
+                    <SmartDeviceControlRow
+                      key={`${asString(device.id)}-${deviceIndex}`}
+                      device={device}
+                      control={control}
+                      onQuestionChoice={onQuestionChoice}
+                    />
+                  ))}
                 </ul>
               ) : (
                 hasCamera ? null : <p className="mt-1 text-[11px] text-muted-foreground">No smart devices</p>
@@ -1243,10 +1419,34 @@ function DeviceControlCard({
   onQuestionChoice?: (reply: string) => void;
 }) {
   const payload = cardPayload(card);
-  const isOn = payload.on === true;
+  const control = useDirectDeviceControl();
+  const targetId = asNumber(payload.device_id);
+  const { data: haDevices } = useQuery({
+    queryKey: ["chat", "ha", "devices"],
+    queryFn: () => api.get<SmartDevice[]>("/ha/devices"),
+    staleTime: 10_000,
+    retry: false,
+  });
+  const target = useMemo(
+    () => (targetId == null ? null : (haDevices ?? []).find((d) => d.id === targetId) ?? null),
+    [haDevices, targetId],
+  );
+  const roomId = target?.room_id ?? null;
+  const roomDevices = useMemo(() => {
+    if (!haDevices || roomId == null) return [] as SmartDevice[];
+    return haDevices.filter((d) => d.room_id === roomId && d.is_active !== false);
+  }, [haDevices, roomId]);
+  const roomConfig = asRecord(target?.config);
+  const roomName =
+    asString(roomConfig?.room_name) || asString(roomConfig?.room_key) || "this room";
+
+  const override = targetId != null ? control.overrides[targetId] : undefined;
+  const baseIsOn = payload.on === true || deviceStateIsOn(payload.state);
+  const isOn = override ? override.on : baseIsOn;
+  const pending = override?.pending === true;
   const label = deviceDisplayLabel(payload);
   const action = (asString(payload.action) || "").replace(/_/g, " ");
-  const state = asString(payload.state) || (isOn ? "on" : "off");
+  const state = override?.state ?? (asString(payload.state) || (isOn ? "on" : "off"));
 
   return (
     <CardShell icon={<Power className="h-4 w-4" />} title={titleFor(card, "Device updated")}>
@@ -1265,16 +1465,41 @@ function DeviceControlCard({
             {action ? `${action} → ` : ""}now {state}
           </p>
         </div>
-        {onQuestionChoice ? (
-          <button
-            type="button"
-            onClick={() => onQuestionChoice(`Turn ${isOn ? "off" : "on"} ${label}`)}
-            className="shrink-0 rounded-md bg-surface-container-high px-2 py-1 text-[10px] font-semibold text-foreground transition-smooth hover:bg-surface-container-highest"
-          >
-            {isOn ? "Turn off" : "Turn on"}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          disabled={pending || (targetId == null && !onQuestionChoice)}
+          onClick={() => {
+            if (targetId != null) {
+              void control.toggle(targetId, isOn);
+            } else {
+              onQuestionChoice?.(`Turn ${isOn ? "off" : "on"} ${label}`);
+            }
+          }}
+          className={cn(
+            "shrink-0 rounded-md bg-surface-container-high px-2 py-1 text-[10px] font-semibold text-foreground transition-smooth hover:bg-surface-container-highest",
+            pending && "cursor-not-allowed opacity-50",
+          )}
+        >
+          {pending ? "…" : isOn ? "Turn off" : "Turn on"}
+        </button>
       </div>
+      {roomDevices.length > 1 ? (
+        <div className="mt-2 border-t border-outline-variant/15 pt-2">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            All devices in {roomName}
+          </p>
+          <ul className="space-y-1">
+            {roomDevices.map((device) => (
+              <SmartDeviceControlRow
+                key={device.id}
+                device={device as unknown as JsonRecord}
+                control={control}
+                onQuestionChoice={onQuestionChoice}
+              />
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <Provenance items={provenanceItems(card)} />
     </CardShell>
   );

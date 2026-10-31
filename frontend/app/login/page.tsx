@@ -177,7 +177,7 @@ export default function LoginPage() {
                   if (fieldErrors.username) setFieldErrors((current) => ({ ...current, username: undefined }));
                 }}
                 className="input-field"
-                placeholder="admin"
+                placeholder={t("auth.username")}
                 autoComplete="username"
                 aria-invalid={fieldErrors.username ? true : undefined}
                 aria-describedby={fieldErrors.username ? "login-user-error" : undefined}

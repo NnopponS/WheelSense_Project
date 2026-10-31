@@ -170,6 +170,36 @@ async def lifespan(app: FastAPI):
             await db.sync_location_to_user_info(room_name_en, broadcast_user_info_update)
             logger.info(f"✅ Updated current_location to: {room_name_en} (room: {room_type})")
             
+            # Handle Camera Visual Fall / Tip-over Detection
+            if detection.get("fall_detected", False):
+                import time as _time
+                from .api.frontend_v2_compat import create_v2_alert_internal
+                last_fall = getattr(app.state, "last_auto_fall_ts", 0.0)
+                now_ts = _time.time()
+                if now_ts - last_fall >= 20.0:
+                    app.state.last_auto_fall_ts = now_ts
+                    fall_reason = detection.get("fall_reason") or "3D model tip-over in camera view"
+                    fall_msg = f"Camera AI detected 3D wheelchair fall/tip-over in {room_name_en} ({fall_reason})"
+                    create_v2_alert_internal(
+                        alert_type="fall",
+                        severity="critical",
+                        title=f"⚠️ Fall Detected in {room_name_en} (Camera AI)",
+                        description=fall_msg,
+                        room_ref=room_type,
+                        device_id=detection.get("device_id") or "TSIM_004",
+                        data={"fall_reason": fall_reason, "confidence": detection.get("confidence", 0.0)},
+                    )
+                    if emergency_service:
+                        try:
+                            await emergency_service.create_alert(
+                                room=room_type,
+                                event_type="fall",
+                                severity="critical",
+                                message=fall_msg,
+                            )
+                        except Exception as ef:
+                            logger.warning(f"Emergency service fall alert error: {ef}")
+            
             # Trigger house check and store notification for YES/NO response handling
             if app.state.house_check_service:
                 try:
@@ -188,6 +218,17 @@ async def lifespan(app: FastAPI):
                         }
                         logger.info(f"💾 Stored recent_notification in app.state: {len(result.get('devices', []))} device(s)")
                         logger.info(f"💾 Recent notification devices: {result.get('devices', [])}")
+                        try:
+                            from .api.frontend_v2_compat import create_v2_alert_internal
+                            create_v2_alert_internal(
+                                alert_type="appliance_left_on",
+                                severity="warning",
+                                title=f"💡 Forgotten Appliance in {previous_location}",
+                                description=result.get("message") or f"Appliance left ON in {previous_location} after moving to {room_name_en}",
+                                room_ref=previous_location,
+                            )
+                        except Exception as hc_alert_err:
+                            logger.debug(f"Could not create V2 house check alert: {hc_alert_err}")
                 except Exception as e:
                     logger.error(f"House check failed: {e}", exc_info=True)
             
@@ -594,6 +635,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Frontend V2 Compatibility router (mounted at both root and /api for Next.js proxy & Nginx)
+from .api.frontend_v2_compat import router as frontend_v2_compat_router
+app.include_router(frontend_v2_compat_router)
+app.include_router(frontend_v2_compat_router, prefix="/api")
+
 app.include_router(appliances_router)
 app.include_router(user_info_router)
 app.include_router(schedule_router)
@@ -603,10 +649,6 @@ app.include_router(chat_router)
 # Phase 4F: Add health check router
 from .api.health import router as health_router
 app.include_router(health_router)
-
-# Frontend V2 Compatibility router
-from .api.frontend_v2_compat import router as frontend_v2_compat_router
-app.include_router(frontend_v2_compat_router)
 
 # CORS middleware
 app.add_middleware(
@@ -1030,6 +1072,17 @@ async def create_emergency(alert: EmergencyAlert):
         severity=alert.severity,
         message=alert.message
     )
+    try:
+        from .api.frontend_v2_compat import create_v2_alert_internal
+        create_v2_alert_internal(
+            alert_type=alert.event_type,
+            severity=alert.severity,
+            title=alert.message,
+            description=alert.message,
+            room_ref=alert.room,
+        )
+    except Exception as e:
+        logger.debug(f"Could not sync emergency alert to V2 store: {e}")
     
     return {"event_id": str(event["_id"]), "status": "created"}
 
@@ -1231,7 +1284,9 @@ async def notify_detection(request: Request):
                 "confidence": confidence,
                 "bbox": bbox,
                 "frame_size": {},
-                "device_id": device_id
+                "device_id": device_id,
+                "fall_detected": data.get("fall_detected", False),
+                "fall_reason": data.get("fall_reason")
             })
         
         return {"status": "ok", "message": "Detection notification forwarded"}

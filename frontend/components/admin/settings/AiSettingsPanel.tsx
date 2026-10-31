@@ -7,9 +7,7 @@ import {
   CheckCheck,
   Copy,
   ExternalLink,
-  HardDrive,
   Loader2,
-  Trash2,
   WandSparkles,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
@@ -37,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type AIProvider = "ollama" | "copilot" | "openai" | "openrouter";
+type AIProvider = "copilot" | "openai" | "openrouter";
 
 type AISettingsOut = {
   provider: AIProvider;
@@ -53,15 +51,6 @@ type CopilotModel = {
   name: string;
   supports_reasoning_effort?: boolean;
   supports_vision?: boolean;
-};
-
-type OllamaTag = { name: string; size?: number; digest?: string };
-
-type OllamaModelsResponse = {
-  models: OllamaTag[];
-  reachable: boolean;
-  origin?: string | null;
-  message?: string | null;
 };
 
 type CopilotModelsResponse = {
@@ -91,37 +80,6 @@ type CopilotFlowStatus =
 
 const COPILOT_FLOW_KEY = "copilot_device_flow";
 const COPILOT_CLOSE_DELAY_MS = 2500;
-
-const PULL_PRESETS = ["gemma4:e4b"] as const;
-const PULL_OTHER = "__pull_other__";
-
-function parseOllamaPullNdjson(raw: string): { error: string | null } {
-  let error: string | null = null;
-
-  for (const line of raw.split("\n").map((value) => value.trim()).filter(Boolean)) {
-    try {
-      const parsed = JSON.parse(line) as Record<string, unknown>;
-      if ("error" in parsed && parsed.error != null) {
-        error =
-          typeof parsed.error === "string"
-            ? parsed.error
-            : JSON.stringify(parsed.error);
-      }
-    } catch {
-      // ignore non-JSON fragments from stream boundaries
-    }
-  }
-
-  return { error };
-}
-
-function formatBytes(bytes?: number) {
-  if (!bytes) return "";
-  const gb = bytes / 1024 ** 3;
-  if (gb >= 1) return `${gb.toFixed(1)} GB`;
-  const mb = bytes / 1024 ** 2;
-  return `${mb.toFixed(0)} MB`;
-}
 
 function readStoredCopilotFlow(): CopilotDeviceFlow | null {
   if (typeof window === "undefined") return null;
@@ -212,7 +170,6 @@ function ProviderModelSection({
   onProviderChange,
   model,
   onModelChange,
-  ollamaModels,
   copilotModels,
   disabled,
   saveLabel,
@@ -227,7 +184,6 @@ function ProviderModelSection({
   onProviderChange: (value: AIProvider) => void;
   model: string;
   onModelChange: (value: string) => void;
-  ollamaModels: OllamaModelsResponse | null;
   copilotModels: CopilotModelsResponse | null;
   disabled: boolean;
   saveLabel: string;
@@ -238,14 +194,8 @@ function ProviderModelSection({
 }) {
   const { t } = useTranslation();
   const cloudProvider = provider === "openai" || provider === "openrouter";
-  const ollamaNames = useMemo(
-    () => (ollamaModels?.models ?? []).map((entry) => entry.name).sort((a, b) => a.localeCompare(b)),
-    [ollamaModels],
-  );
   const copilotChoices = copilotModels?.models ?? [];
-  const options = provider === "ollama"
-    ? ollamaNames.map((value) => ({ value, label: value }))
-    : copilotChoices.map((entry) => ({ value: entry.id, label: `${entry.name} (${entry.id})` }));
+  const options = copilotChoices.map((entry) => ({ value: entry.id, label: `${entry.name} (${entry.id})` }));
   const currentValueInList = options.some((option) => option.value === model);
 
   return (
@@ -263,7 +213,6 @@ function ProviderModelSection({
                 <SelectValue placeholder={t("settings.ai.chooseProviderPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ollama">{t("settings.ai.providerOllama")}</SelectItem>
                 <SelectItem value="copilot">{t("settings.ai.providerCopilot")}</SelectItem>
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="openrouter">OpenRouter</SelectItem>
@@ -284,19 +233,13 @@ function ProviderModelSection({
             >
               <SelectTrigger id="ai-model">
                 <SelectValue
-                  placeholder={
-                    provider === "ollama"
-                      ? t("settings.ai.noOllamaInstalledSelect")
-                      : t("settings.ai.noCopilotModelsAvailable")
-                  }
+                  placeholder={t("settings.ai.noCopilotModelsAvailable")}
                 />
               </SelectTrigger>
               <SelectContent>
                 {options.length === 0 ? (
                   <SelectItem value="__empty__" disabled>
-                    {provider === "ollama"
-                      ? t("settings.ai.noOllamaInstalledSelect")
-                      : t("settings.ai.noCopilotModelsAvailable")}
+                    {t("settings.ai.noCopilotModelsAvailable")}
                   </SelectItem>
                 ) : (
                   options.map((option) => (
@@ -324,9 +267,6 @@ function ProviderModelSection({
           </div>
         ) : null}
 
-        {provider === "ollama" && ollamaModels?.reachable === false && ollamaModels.message ? (
-          <SectionMessage tone="warning">{ollamaModels.message}</SectionMessage>
-        ) : null}
         {provider === "copilot" && copilotModels?.message ? (
           <SectionMessage tone="warning">{copilotModels.message}</SectionMessage>
         ) : null}
@@ -358,13 +298,6 @@ export default function AiSettingsPanel() {
     staleTime: 60_000,
     refetchInterval: false,
   });
-  const { data: ollamaModels, refetch: refetchOllamaModelsBase } = useQuery({
-    queryKey: ["admin", "settings", "ai", "ollama-models"],
-    queryFn: () => api.get<OllamaModelsResponse>("/settings/ai/ollama/models"),
-    retry: false,
-    staleTime: 30_000,
-    refetchInterval: false,
-  });
   const { data: copilotStatus, refetch: refetchCopilotStatusBase } = useQuery({
     queryKey: ["admin", "settings", "ai", "copilot-status"],
     queryFn: () => api.get<{ connected: boolean }>("/settings/ai/copilot/status"),
@@ -381,11 +314,10 @@ export default function AiSettingsPanel() {
   });
 
   const refetchAi = useCallback(() => refetchOrThrow(refetchAiBase), [refetchAiBase]);
-  const refetchOllamaModels = useCallback(() => refetchOrThrow(refetchOllamaModelsBase), [refetchOllamaModelsBase]);
   const refetchCopilotStatus = useCallback(() => refetchOrThrow(refetchCopilotStatusBase), [refetchCopilotStatusBase]);
   const refetchCopilotModels = useCallback(() => refetchOrThrow(refetchCopilotModelsBase), [refetchCopilotModelsBase]);
 
-  const [workspaceProvider, setWorkspaceProvider] = useState<AIProvider>("ollama");
+  const [workspaceProvider, setWorkspaceProvider] = useState<AIProvider>("copilot");
   const [workspaceModel, setWorkspaceModel] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
@@ -397,11 +329,6 @@ export default function AiSettingsPanel() {
   );
   const [copilotFlowMessage, setCopilotFlowMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [pullName, setPullName] = useState("gemma4:e4b");
-  const [pulling, setPulling] = useState(false);
-  const [pullLog, setPullLog] = useState<string | null>(null);
-  const [pullProgress, setPullProgress] = useState<number | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const pollTimeoutRef = useRef<number | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
   const flowRef = useRef<CopilotDeviceFlow | null>(copilotFlow);
@@ -417,8 +344,7 @@ export default function AiSettingsPanel() {
       ? { ...copilotModels, connected: true, message: null }
       : copilotModels;
   const availableCopilotModels = sanitizedCopilotModels?.models ?? [];
-  const availableOllamaModels = ollamaModels?.models ?? [];
-  const activeProvider = aiSettings?.provider ?? "ollama";
+  const activeProvider = aiSettings?.provider ?? "copilot";
   const runtimeRowLabel = activeProvider === "copilot" ? t("settings.ai.copilotRowLabel") : activeProvider.toUpperCase();
   const runtimeProviderState = useMemo(() => {
     if (activeProvider === "openai" || activeProvider === "openrouter") {
@@ -429,61 +355,31 @@ export default function AiSettingsPanel() {
         hint: t("settings.ai.cloudProviderHint"),
       };
     }
-    if (activeProvider === "copilot") {
-      const connected = Boolean(copilotStatus?.connected);
-      if (!connected) {
-        return {
-          badge: "warning" as const,
-          text: t("settings.ai.runtimeUnavailable"),
-          hint: sanitizedCopilotModels?.message || t("settings.ai.copilotDisconnected"),
-        };
-      }
-      if (availableCopilotModels.length === 0) {
-        return {
-          badge: "warning" as const,
-          text: t("settings.ai.runtimeUnavailable"),
-          hint: t("settings.ai.noCopilotModelsAvailable"),
-        };
-      }
-      return {
-        badge: "success" as const,
-        text: t("settings.ai.runtimeConnected"),
-        hint: t("settings.ai.copilotModelsBridgeHint"),
-      };
-    }
-
-    const ollamaReachable = ollamaModels?.reachable !== false;
-    if (!ollamaReachable) {
+    const connected = Boolean(copilotStatus?.connected);
+    if (!connected) {
       return {
         badge: "warning" as const,
         text: t("settings.ai.runtimeUnavailable"),
-        hint: ollamaModels?.message || t("settings.ai.ollamaNotReachable"),
+        hint: sanitizedCopilotModels?.message || t("settings.ai.copilotDisconnected"),
       };
     }
-    if (availableOllamaModels.length === 0) {
+    if (availableCopilotModels.length === 0) {
       return {
         badge: "warning" as const,
         text: t("settings.ai.runtimeUnavailable"),
-        hint: "No Ollama models installed",
+        hint: t("settings.ai.noCopilotModelsAvailable"),
       };
     }
     return {
       badge: "success" as const,
       text: t("settings.ai.runtimeConnected"),
-      hint: t("settings.ai.ollamaWorkspaceUsesOrigin").replace(
-        "{origin}",
-        ollamaModels?.origin || "http://host.docker.internal:11434",
-      ),
+      hint: t("settings.ai.copilotModelsBridgeHint"),
     };
   }, [
     activeProvider,
     aiSettings,
     availableCopilotModels.length,
-    availableOllamaModels.length,
     copilotStatus?.connected,
-    ollamaModels?.message,
-    ollamaModels?.origin,
-    ollamaModels?.reachable,
     sanitizedCopilotModels?.message,
     t,
   ]);
@@ -693,94 +589,6 @@ export default function AiSettingsPanel() {
     }
   }
 
-  async function runOllamaPull() {
-    const name = pullName.trim();
-    if (!name) {
-      setPullLog(t("settings.ai.pullNameRequired"));
-      return;
-    }
-
-    setPulling(true);
-    setPullLog("");
-    setPullProgress(0);
-
-    try {
-      const response = await fetch("/api/settings/ai/ollama/pull", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name }),
-      });
-
-      if (!response.ok) {
-        setPullLog(await response.text());
-        setPullProgress(null);
-        return;
-      }
-
-      if (!response.body) {
-        setPullLog(t("settings.ai.pullEmptyResponse"));
-        setPullProgress(null);
-        return;
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let raw = "";
-
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        raw += decoder.decode(value, { stream: true });
-        const completeLines = raw.split("\n").slice(0, -1);
-        for (const line of completeLines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-          try {
-            const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-            if (parsed.completed && parsed.total) {
-              setPullProgress(
-                Math.round((Number(parsed.completed) / Number(parsed.total)) * 100),
-              );
-            }
-            if (typeof parsed.status === "string") {
-              setPullLog(parsed.status);
-            }
-          } catch {
-            setPullLog(trimmed.slice(-200));
-          }
-        }
-      }
-
-      const { error } = parseOllamaPullNdjson(raw);
-      if (error) {
-        setPullLog(`${t("settings.ai.pullStreamError")}: ${error}`);
-        setPullProgress(null);
-        return;
-      }
-
-      setPullProgress(100);
-      await refetchOllamaModels();
-      setPullLog(t("settings.ai.pullDoneSuccess"));
-    } catch (error) {
-      setPullLog(error instanceof Error ? error.message : t("settings.ai.pullFailedGeneric"));
-      setPullProgress(null);
-    } finally {
-      setPulling(false);
-    }
-  }
-
-  async function deleteOllamaModel(name: string) {
-    setDeleteTarget(name);
-    try {
-      await api.delete(`/settings/ai/ollama/models/${encodeURIComponent(name)}`);
-      await refetchOllamaModels();
-    } finally {
-      setDeleteTarget(null);
-    }
-  }
-
   function copyToClipboard(text: string) {
     void navigator.clipboard.writeText(text);
     setCopiedCode(true);
@@ -796,17 +604,15 @@ export default function AiSettingsPanel() {
             {t("settings.ai.runtimeSummaryTitle")}
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <CardContent className="grid gap-4 md:grid-cols-3">
           <StatusRow
             label={t("settings.ai.currentProvider")}
             value={
               <Badge variant={aiSettings?.provider === "copilot" ? "success" : "outline"}>
                 {aiSettings
-                  ? aiSettings.provider === "ollama"
-                    ? t("settings.ai.providerOllama")
-                    : aiSettings.provider === "copilot"
-                      ? t("settings.ai.providerCopilot")
-                      : aiSettings.provider === "openai" ? "OpenAI" : "OpenRouter"
+                  ? aiSettings.provider === "copilot"
+                    ? t("settings.ai.providerCopilot")
+                    : aiSettings.provider === "openai" ? "OpenAI" : "OpenRouter"
                   : "-"}
               </Badge>
             }
@@ -822,15 +628,6 @@ export default function AiSettingsPanel() {
             }
             hint={runtimeProviderState.hint}
           />
-          <StatusRow
-            label={t("settings.ai.ollamaOriginLabel")}
-            value={ollamaModels?.origin || t("settings.ai.hostNativeDefault")}
-            hint={
-              ollamaModels?.reachable === false
-                ? ollamaModels.message
-                : t("settings.ai.dockerOllamaHint")
-            }
-          />
         </CardContent>
       </Card>
 
@@ -842,16 +639,13 @@ export default function AiSettingsPanel() {
           setWorkspaceProvider(value);
           setApiKey("");
           setWorkspaceModel(
-            value === "ollama"
-              ? availableOllamaModels[0]?.name ?? ""
-              : value === "copilot"
-                ? availableCopilotModels[0]?.id ?? ""
-                : "",
+            value === "copilot"
+              ? availableCopilotModels[0]?.id ?? ""
+              : "",
           );
         }}
         model={workspaceModel}
         onModelChange={setWorkspaceModel}
-        ollamaModels={ollamaModels ?? null}
         copilotModels={sanitizedCopilotModels ?? null}
         disabled={saving}
         saveLabel={t("settings.ai.saveWorkspace")}
@@ -928,125 +722,6 @@ export default function AiSettingsPanel() {
               <Badge variant="warning">{t("settings.ai.noCopilotModelsAvailable")}</Badge>
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <HardDrive className="h-4 w-4" />
-            {t("settings.ai.ollamaSectionTitle")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <SectionMessage tone={ollamaModels?.reachable === false ? "warning" : "success"}>
-            {ollamaModels?.reachable === false
-              ? ollamaModels.message || t("settings.ai.ollamaNotReachable")
-              : t("settings.ai.ollamaWorkspaceUsesOrigin").replace(
-                  "{origin}",
-                  ollamaModels?.origin || "http://host.docker.internal:11434",
-                )}
-          </SectionMessage>
-
-          <p className="text-sm text-muted-foreground">{t("settings.ai.ollamaUseHostApp")}</p>
-
-          <div className="space-y-2">
-            {availableOllamaModels.length > 0 ? (
-              availableOllamaModels.map((model) => (
-                <div
-                  key={model.name}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 px-4 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-foreground">{model.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatBytes(model.size)}</p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={deleteTarget === model.name}
-                    onClick={() => void deleteOllamaModel(model.name)}
-                  >
-                    {deleteTarget === model.name ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                    Remove
-                  </Button>
-                </div>
-              ))
-            ) : (
-              <Badge variant="warning">{t("admin.ai.noOllamaModels")}</Badge>
-            )}
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-            <div className="space-y-2">
-              <Label htmlFor="ollama-pull-model">{t("admin.ai.ollamaPullModelLabel")}</Label>
-              <Select
-                value={(PULL_PRESETS as readonly string[]).includes(pullName) ? pullName : PULL_OTHER}
-                onValueChange={(value) => {
-                  if (value === PULL_OTHER) {
-                    setPullName((previous) =>
-                      (PULL_PRESETS as readonly string[]).includes(previous) ? "" : previous,
-                    );
-                    return;
-                  }
-                  setPullName(value);
-                }}
-              >
-                <SelectTrigger id="ollama-pull-model">
-                  <SelectValue placeholder={t("settings.ai.pullPresetLabel")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {PULL_PRESETS.map((preset) => (
-                    <SelectItem key={preset} value={preset}>
-                      {preset}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value={PULL_OTHER}>{t("settings.ai.pullOtherModel")}</SelectItem>
-                </SelectContent>
-              </Select>
-              {!(PULL_PRESETS as readonly string[]).includes(pullName) ? (
-                <Input
-                  value={pullName}
-                  onChange={(event) => setPullName(event.target.value)}
-                  placeholder={t("settings.ai.pullPlaceholder")}
-                />
-              ) : null}
-            </div>
-
-            <div className="flex items-end">
-              <Button
-                type="button"
-                onClick={() => void runOllamaPull()}
-                disabled={pulling || !pullName.trim()}
-              >
-                {pulling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {pulling ? "Pulling..." : t("settings.ai.pullModel")}
-              </Button>
-            </div>
-          </div>
-
-          {pulling && pullProgress !== null ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{pullLog || "Downloading..."}</span>
-                <span>{pullProgress}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div className="h-full bg-primary transition-all" style={{ width: `${pullProgress}%` }} />
-              </div>
-            </div>
-          ) : null}
-
-          {!pulling && pullLog ? (
-            <SectionMessage tone={pullLog === t("settings.ai.pullDoneSuccess") ? "success" : "warning"}>
-              {pullLog}
-            </SectionMessage>
-          ) : null}
         </CardContent>
       </Card>
 
@@ -1144,21 +819,7 @@ export default function AiSettingsPanel() {
                   {t("settings.ai.copilotSuccess")}
                 </span>
               </SectionMessage>
-            ) : copilotFlowStatus === "connected_unavailable" ? (
-              <SectionMessage tone="warning">{t("settings.ai.copilotConnectedButModelsUnavailable")}</SectionMessage>
-            ) : copilotFlowStatus === "expired" ? (
-              <SectionMessage tone="error">{t("settings.ai.copilotExpired")}</SectionMessage>
-            ) : copilotFlowStatus === "denied" ? (
-              <SectionMessage tone="error">{t("settings.ai.copilotDenied")}</SectionMessage>
-            ) : copilotFlowStatus === "slow_down" ? (
-              <SectionMessage tone="warning">{t("settings.ai.copilotSlowDown")}</SectionMessage>
-            ) : copilotFlowStatus === "backend_error" ? (
-              <SectionMessage tone="error">{copilotFlowMessage || t("settings.ai.copilotBackendError")}</SectionMessage>
-            ) : (
-              <p className="text-center text-sm text-muted-foreground">
-                {t("settings.ai.copilotPending")}
-              </p>
-            )}
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>

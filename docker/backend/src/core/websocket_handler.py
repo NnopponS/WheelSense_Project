@@ -570,7 +570,9 @@ class WebSocketStreamHandler:
                 "bbox": bbox,
                 "frame_size": frame_size,
                 "device_id": device_id,
-                "method": detection.get("method", "yolo")
+                "method": detection.get("method", "yolo"),
+                "fall_detected": detection.get("fall_detected", False),
+                "fall_reason": detection.get("fall_reason")
             }
             
             # CRITICAL: ALWAYS update database FIRST (no throttling for database sync)
@@ -585,8 +587,8 @@ class WebSocketStreamHandler:
             # Only broadcast to UI if detected AND (room changed OR throttle interval passed)
             # This throttles UI updates but database is already updated above
             # WebSocket broadcasts are OPTIONAL - system works without them
-            if is_detected and (room_changed or time_since_last_notify >= self.detection_throttle_seconds):
-                logger.info(f"🦽 AUTO-PROCESSING detection: room={room}, confidence={confidence:.2f}, device={device_id} "
+            if is_detected and (room_changed or time_since_last_notify >= self.detection_throttle_seconds or detection.get("fall_detected", False)):
+                logger.info(f"🦽 AUTO-PROCESSING detection: room={room}, confidence={confidence:.2f}, fall={detection.get('fall_detected', False)}, device={device_id} "
                           f"({'room changed' if room_changed else 'throttle interval'})")
                 
                 # Send detected=false for ALL other rooms (OPTIONAL - WebSocket only)
@@ -619,6 +621,8 @@ class WebSocketStreamHandler:
                     "bbox": bbox,
                     "frame_size": frame_size,
                     "method": detection.get("method", "yolo"),
+                    "fall_detected": detection.get("fall_detected", False),
+                    "fall_reason": detection.get("fall_reason"),
                     "timestamp": datetime.now().isoformat(),
                     "source": "detection-test"  # Use detection-test source for dashboard to accept
                 }

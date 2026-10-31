@@ -5,10 +5,10 @@ export type DeviceSortKey = "device" | "status" | "last_seen";
 export type DeviceSortDirection = "asc" | "desc";
 
 function compareDeviceLabels(left: Device, right: Device): number {
-  const leftLabel = left.display_name?.trim() || left.device_id;
-  const rightLabel = right.display_name?.trim() || right.device_id;
+  const leftLabel = left?.display_name?.trim() || left?.device_id || "";
+  const rightLabel = right?.display_name?.trim() || right?.device_id || "";
   const byLabel = leftLabel.localeCompare(rightLabel, undefined, { sensitivity: "base" });
-  return byLabel || left.device_id.localeCompare(right.device_id);
+  return byLabel || (left?.device_id || "").localeCompare(right?.device_id || "");
 }
 
 export function sortRegistryDevices(

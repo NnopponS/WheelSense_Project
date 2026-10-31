@@ -178,7 +178,7 @@ export function WorkflowJobsPanel({ variant }: { variant: WorkflowJobsPanelVaria
     },
   });
 
-  const jobs = (jobsQuery.data ?? []) as CareWorkflowJobOut[];
+  const jobs = useMemo(() => (jobsQuery.data ?? []) as CareWorkflowJobOut[], [jobsQuery.data]);
   const openedJobParam = useRef<string | null>(null);
 
   useEffect(() => {
@@ -192,7 +192,7 @@ export function WorkflowJobsPanel({ variant }: { variant: WorkflowJobsPanelVaria
     const requestedJob = jobs.find((job) => job.id === jobId);
     if (!requestedJob) return;
     openedJobParam.current = jobParam;
-    setDetailJob(requestedJob);
+    queueMicrotask(() => setDetailJob(requestedJob));
   }, [jobs]);
 
   return (

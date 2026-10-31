@@ -34,6 +34,10 @@ interface RoleSidebarProps {
   onMobileOpenChange?: (open: boolean) => void;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  /** Controlled: collapsed rail is temporarily expanded by hover */
+  peekOpen?: boolean;
+  /** Callback when hover-peek state changes */
+  onPeekOpenChange?: (open: boolean) => void;
 }
 
 const ROLE_LABEL_KEYS: Record<string, TranslationKey> = {
@@ -71,7 +75,7 @@ function NavSkeleton() {
  * Unified Role Sidebar Component
  * Renders navigation based on user role from sidebarConfig.ts
  */
-export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange, collapsed = false, onCollapsedChange }: RoleSidebarProps) {
+export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange, collapsed = false, onCollapsedChange, peekOpen = false, onPeekOpenChange }: RoleSidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -136,7 +140,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange, co
         {/* Header - Logo and Platform Name */}
         <div className={cn("flex h-[var(--topbar-height)] shrink-0 items-center", compact ? "justify-center px-1" : "justify-between px-5")}>
           {!compact ? <Logo size={32} /> : null}
-          {onCollapsedChange && showCollapseButton ? <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label={t(compact ? "shell.expandSidebar" : "shell.collapseSidebar")} title={t(compact ? "shell.expandSidebar" : "shell.collapseSidebar")} onClick={() => onCollapsedChange(!compact)}>{compact ? <PanelLeftOpen className="size-5" aria-hidden="true" /> : <PanelLeftClose className="size-5" aria-hidden="true" />}</Button> : null}
+          {onCollapsedChange && showCollapseButton ? <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label={t(collapsed ? "shell.expandSidebar" : "shell.collapseSidebar")} title={t(collapsed ? "shell.expandSidebar" : "shell.collapseSidebar")} onClick={() => onCollapsedChange(!collapsed)}>{collapsed ? <PanelLeftOpen className="size-5" aria-hidden="true" /> : <PanelLeftClose className="size-5" aria-hidden="true" />}</Button> : null}
         </div>
 
         {/* Navigation Groups */}
@@ -232,9 +236,13 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange, co
 
   return (
     <>
-      {/* Desktop Sidebar - Fixed at left */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-width)] shrink-0 flex-col border-r border-border bg-card lg:flex">
-        {renderContent(collapsed)}
+      {/* Desktop Sidebar - Fixed at left; hover expands the collapsed rail */}
+      <aside
+        className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-width)] shrink-0 flex-col overflow-hidden border-r border-border bg-card transition-[width] duration-[var(--duration-standard)] ease-[var(--ease-standard)] lg:flex"
+        onMouseEnter={() => onPeekOpenChange?.(true)}
+        onMouseLeave={() => onPeekOpenChange?.(false)}
+      >
+        {renderContent(collapsed && !peekOpen)}
       </aside>
 
       {/* Mobile Sidebar - Sheet component */}

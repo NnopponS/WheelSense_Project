@@ -1,0 +1,18 @@
+{
+  "name": "WheelSense Care Center — Level 3 Care Wing",
+  "coordinateSystem": { "width": 1600, "height": 1000 },
+  "rooms": [
+    { "label": "Room 301", "x": 148, "y": 100, "width": 324, "height": 152 },
+    { "label": "Room 302", "x": 148, "y": 256, "width": 324, "height": 152 },
+    { "label": "Room 303", "x": 148, "y": 412, "width": 324, "height": 152 },
+    { "label": "Room 304", "x": 148, "y": 568, "width": 324, "height": 152 },
+    { "label": "Assisted Bathroom", "x": 148, "y": 724, "width": 324, "height": 152 },
+    { "label": "Common Lounge", "x": 777, "y": 100, "width": 369, "height": 172 },
+    { "label": "Dining Hall", "x": 777, "y": 282, "width": 369, "height": 170 },
+    { "label": "Activity Room", "x": 777, "y": 462, "width": 369, "height": 208 },
+    { "label": "Staff Break Room", "x": 1157, "y": 100, "width": 313, "height": 230 },
+    { "label": "Treatment Room", "x": 1157, "y": 345, "width": 313, "height": 305 },
+    { "label": "Laundry / Utility", "x": 493, "y": 736, "width": 187, "height": 150 },
+    { "label": "Reception", "x": 685, "y": 736, "width": 785, "height": 150 }
+  ]
+}

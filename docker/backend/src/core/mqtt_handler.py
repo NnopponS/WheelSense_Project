@@ -145,11 +145,13 @@ class MQTTHandler:
         topic = msg.topic
         
         try:
-            # Get event loop (use current if available, otherwise use stored loop)
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = self.loop
+            # Prefer stored main event loop when running in paho-mqtt background thread
+            loop = self.loop
+            if loop is None or not loop.is_running():
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = None
             
             if loop is None:
                 logger.error("No event loop available for async operations")
@@ -521,18 +523,22 @@ class MQTTHandler:
                     # Get all device states from database (single source of truth)
                     all_states = await db.get_all_device_states()
                     
-                    # Send state sync to each room
+                    # Send state sync to each room (normalize keys so CucumberRS matches 'light', 'fan', 'tv', 'alarm', 'AC')
                     for room_name, devices in all_states.items():
+                        normalized_devices = {
+                            ("AC" if str(k).upper() == "AC" else str(k).lower()): bool(v)
+                            for k, v in (devices or {}).items()
+                        }
                         sync_topic = f"WheelSense/{room_name}/state_sync"
                         sync_payload = json.dumps({
                             "type": "state_sync",
                             "room": room_name,
-                            "appliances": devices
+                            "appliances": normalized_devices
                         })
                         
                         if self.client and self.is_connected:
                             self.client.publish(sync_topic, sync_payload)
-                            logger.debug(f"Sent state sync to {sync_topic}: {devices}")
+                            logger.debug(f"Sent state sync to {sync_topic}: {normalized_devices}")
                     
                     logger.info(f"✅ Sent state sync to device {device_id} for {len(all_states)} rooms")
                     

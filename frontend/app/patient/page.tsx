@@ -142,11 +142,11 @@ export default function PatientDashboardPage() {
         patient_id: Number(effectivePatientId),
         alert_type: kind === "sos" ? "emergency_sos" : "patient_assistance",
         severity: kind === "sos" ? "critical" : "warning",
-        title: kind === "sos" ? "Emergency SOS from patient" : "Patient assistance request",
+        title: kind === "sos" ? t("patient.page.sosAlertTitle") : t("patient.page.assistanceAlertTitle"),
         description:
           kind === "sos"
-            ? "Patient pressed emergency SOS from patient dashboard."
-            : "Patient requested non-emergency assistance from patient dashboard.",
+            ? t("patient.page.sosAlertDescription")
+            : t("patient.page.assistanceAlertDescription"),
         data: { source: "patient_dashboard", kind },
       });
       return kind;

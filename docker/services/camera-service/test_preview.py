@@ -19,7 +19,7 @@ print("\n1. Creating YOLO detector with preview mode...")
 detector = create_detector(
     method="yolo",
     confidence_threshold=0.5,
-    model_path="models/yolov8-model/best.pt",
+    model_path="models/yolov8-model/best3.pt",
     show_preview=True  # Enable preview window
 )
 

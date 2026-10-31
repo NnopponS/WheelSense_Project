@@ -66,9 +66,9 @@
   --ws-inline-gap: 1rem;
   --ws-touch-target-size: 2.75rem;
   --ws-mobile-nav-padding: 0.875rem;
-  --ws-mobile-bottom-bar: 5.75rem;
-  --ws-mobile-fab-offset: 5.25rem;
-  --ws-fab-clearance: 4.5rem;
+  --ws-mobile-bottom-bar: 4.5rem;
+  --ws-mobile-fab-offset: 4.75rem;
+  --ws-fab-clearance: 2rem;
 
   --ws-focus-ring-width: 3px;
   --ws-focus-ring-offset: 2px;

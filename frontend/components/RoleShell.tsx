@@ -104,13 +104,18 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarHoverPeek, setSidebarHoverPeek] = useState(false);
   const roleCheckDone = useRef(false);
 
   useEffect(() => {
-    setSidebarCollapsed(localStorage.getItem("wheelsense:sidebar-collapsed") === "true");
+    const isCollapsed = localStorage.getItem("wheelsense:sidebar-collapsed") === "true";
+    if (isCollapsed) {
+      queueMicrotask(() => setSidebarCollapsed(true));
+    }
   }, []);
 
-  const shellStyle = sidebarCollapsed ? { "--sidebar-width": "4.5rem" } as CSSProperties : undefined;
+  const sidebarPeekOpen = sidebarCollapsed && sidebarHoverPeek;
+  const shellStyle = sidebarCollapsed && !sidebarPeekOpen ? { "--sidebar-width": "var(--sidebar-collapsed)" } as CSSProperties : undefined;
 
   // Auth guard - redirect to login if not authenticated
   useEffect(() => {
@@ -171,6 +176,8 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
         mobileOpen={mobileNavOpen}
         onMobileOpenChange={setMobileNavOpen}
         collapsed={sidebarCollapsed}
+        peekOpen={sidebarPeekOpen}
+        onPeekOpenChange={setSidebarHoverPeek}
         onCollapsedChange={(collapsed) => {
           setSidebarCollapsed(collapsed);
           localStorage.setItem("wheelsense:sidebar-collapsed", String(collapsed));
@@ -178,7 +185,7 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
       />
 
       {/* Main Content Area */}
-      <div className="ws-shell-content flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[var(--sidebar-width)]">
+      <div className="ws-shell-content flex min-h-screen min-w-0 flex-1 flex-col transition-[margin] duration-[var(--duration-standard)] ease-[var(--ease-standard)] lg:ml-[var(--sidebar-width)]">
         {/* Top Navigation Bar */}
         <TopBar onMenuClick={() => setMobileNavOpen(true)} />
 

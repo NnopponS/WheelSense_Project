@@ -33,17 +33,20 @@ import {
   visibleCalendarRange,
 } from "@/components/calendar/scheduleEventMapper";
 
-const TABS: HubTab[] = [
-  { key: "schedule", label: "Schedule", icon: Calendar },
-  { key: "services", label: "Services", icon: Stethoscope },
-  { key: "pharmacy", label: "Pharmacy", icon: Pill },
-];
-
 export default function PatientSchedulePage() {
-  const tab = useHubTab(TABS);
+  const { t } = useTranslation();
+  const tabs = useMemo<HubTab[]>(
+    () => [
+      { key: "schedule", label: t("patient.hub.schedule"), icon: Calendar },
+      { key: "services", label: t("patient.hub.services"), icon: Stethoscope },
+      { key: "pharmacy", label: t("patient.hub.pharmacy"), icon: Pill },
+    ],
+    [t],
+  );
+  const tab = useHubTab(tabs);
   return (
     <div>
-      <Suspense><HubTabBar tabs={TABS} /></Suspense>
+      <Suspense><HubTabBar tabs={tabs} /></Suspense>
       {tab === "schedule" && <ScheduleContent />}
       {tab === "services" && <PatientServicesPage />}
       {tab === "pharmacy" && <PatientPharmacyPage />}

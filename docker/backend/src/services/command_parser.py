@@ -156,19 +156,24 @@ def find_devices(text: str) -> List[str]:
 
 
 def find_action(text: str) -> Optional[str]:
-    """Find action (ON/OFF) from text."""
+    """Find action (ON/OFF) from text without matching 'ปิด' inside 'เปิด' (เ+ปิด)."""
     normalized = normalize_text(text)
-    
-    # Check OFF first (more specific patterns)
-    for keyword in ACTION_OFF_KEYWORDS:
-        if normalize_text(keyword) in normalized:
-            return "OFF"
-    
-    # Check ON
-    for keyword in ACTION_ON_KEYWORDS:
-        if normalize_text(keyword) in normalized:
-            return "ON"
-    
+
+    # Mask 'เปิด' when checking for Thai 'ปิด' because 'เปิด' is '\u0e40' + 'ปิด'
+    normalized_without_open = normalized.replace("เปิด", " ")
+
+    # Check explicit OFF patterns first
+    if re.search(r"(?<!เ)ปิด", normalized_without_open) or re.search(
+        r"\b(turn\s+off|switch\s+off|off|disable|stop)\b", normalized
+    ):
+        return "OFF"
+
+    # Check ON patterns
+    if "เปิด" in normalized or re.search(
+        r"\b(turn\s+on|switch\s+on|on|enable|start)\b", normalized
+    ):
+        return "ON"
+
     return None
 
 

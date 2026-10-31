@@ -34,5 +34,9 @@ export function refreshNotificationQueue(queued: Notification[], current: Notifi
   const ready = new Set(readyTypes);
   const merged = new Map(queued.filter(item => !ready.has(item.type) || byId.get(item.id)?.read === false).map(item => [item.id, byId.get(item.id) ?? item]));
   arrivals.forEach(item => merged.set(item.id, item));
-  return [...merged.values()].sort((a, b) => notificationRank(a) - notificationRank(b));
+  return [...merged.values()].sort(
+    (a, b) =>
+      notificationRank(a) - notificationRank(b) ||
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  );
 }

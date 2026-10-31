@@ -7,6 +7,7 @@ import {
   Smartphone,
   Tablet,
 } from "lucide-react";
+import { BeltIcon } from "@/components/icons/BeltIcon";
 import type { HardwareType } from "@/lib/types";
 
 export interface DeviceCardIconPresentation {
@@ -40,6 +41,12 @@ const REGISTRY_MAP: Record<
     Icon: Smartphone,
     wrapClass: "bg-success-bg",
     iconClass: "text-success",
+  },
+  // M5StickC waist-worn fall sensor — belt strap + buckle motif.
+  belt: {
+    Icon: BeltIcon,
+    wrapClass: "bg-critical-bg",
+    iconClass: "text-critical",
   },
 };
 

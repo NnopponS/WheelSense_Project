@@ -52,5 +52,5 @@
 @keyframes staff-pulse { 50% { box-shadow: 0 0 0 .25rem color-mix(in srgb,var(--success) 18%,transparent); } }
 @media(prefers-reduced-motion:reduce) { .staffLocation i { animation: none; } }
 @media(max-width:639px) { .scope > div { grid-template-columns: minmax(0,1fr); }.scope label { width: 3rem; }.canvas > div > div:last-child { height: 12rem; }.mobileRooms { display: grid; gap: .375rem; grid-template-columns: repeat(2,minmax(0,1fr)); }.roomPicker { display: none; }.selection { padding: .625rem; }.residentPanel ul,.devicePanel ul { grid-template-columns: minmax(0,1fr); } }
-@media(min-width:1100px) { .canvas > div > div:last-child { height: clamp(12rem, calc(100dvh - 40rem), 16rem); } }
+@media(min-width:1100px) { .panel { position: sticky; top: .75rem; display: flex; height: auto; flex-direction: column; }.canvas { display: flex; min-height: 0; flex-direction: column; }.canvas > div { display: flex; min-height: 0; flex-direction: column; }.canvas > div.legend { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; }.canvas > div > div:last-child { height: clamp(18rem, 58vh, 36rem); min-height: 0; max-height: none; } }
 @media(min-width:1100px) and (max-height:800px) { .panel { padding-block: .375rem; }.header a { min-height: 2rem; }.scope select { min-height: 2.25rem; }.canvas button { min-height: 2.25rem; } }

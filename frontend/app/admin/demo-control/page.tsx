@@ -174,8 +174,8 @@ export default function AdminDemoControlPage() {
       description,
       data:
         alertType === "abnormal_hr"
-          ? { source: "demo_control", heart_rate_bpm: bpm, care_level: care }
-          : { source: "demo_control" },
+          ? { source: "operations_console", heart_rate_bpm: bpm, care_level: care }
+          : { source: "operations_console" },
     };
 
     void run(

@@ -108,9 +108,9 @@ DEVICES = [
     {
         "id": "TSIM_001",
         "deviceId": "TSIM_001",
-        "name": "TsimCam 1 - Bedroom",
+        "name": "TsimCam 1 - Living Room",
         "type": "camera",
-        "room": "bedroom",
+        "room": "livingroom",
         "ip": "192.168.1.178",
         "status": "offline",
         "rotation": 270
@@ -128,9 +128,9 @@ DEVICES = [
     {
         "id": "TSIM_003",
         "deviceId": "TSIM_003",
-        "name": "TsimCam 3 - Kitchen",
+        "name": "TsimCam 3 - Bedroom",
         "type": "camera",
-        "room": "kitchen",
+        "room": "bedroom",
         "ip": "192.168.1.175",
         "status": "offline",
         "rotation": 270
@@ -138,9 +138,9 @@ DEVICES = [
     {
         "id": "TSIM_004",
         "deviceId": "TSIM_004",
-        "name": "TsimCam 4 - Living Room",
+        "name": "TsimCam 4 - Kitchen",
         "type": "camera",
-        "room": "livingroom",
+        "room": "kitchen",
         "ip": "192.168.1.179",
         "status": "offline",
         "rotation": 270

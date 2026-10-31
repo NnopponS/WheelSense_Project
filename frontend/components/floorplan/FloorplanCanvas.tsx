@@ -454,15 +454,15 @@ export default function FloorplanCanvas({
     }
     if (tone === "success") {
       return {
-        fill: "rgba(74, 222, 128, 0.16)",
-        border: "rgb(22, 163, 74)",
+        fill: "rgba(52, 211, 153, 0.14)",
+        border: "rgb(5, 150, 105)",
         chip: "bg-emerald-500/20 text-emerald-800",
       };
     }
     return {
-      fill: "rgba(56, 189, 248, 0.12)",
-      border: "rgb(14, 116, 144)",
-      chip: "bg-sky-500/20 text-sky-800",
+      fill: "rgba(52, 211, 153, 0.10)",
+      border: "rgba(16, 185, 129, 0.55)",
+      chip: "bg-slate-500/15 text-slate-700",
     };
   }
 
@@ -534,6 +534,17 @@ export default function FloorplanCanvas({
             ? "max-h-[min(44vh,420px)] min-h-[280px]"
             : "max-h-[min(85vh,960px)] min-h-[min(78vh,720px)]"
         }`}
+        style={
+          fillViewport && background && background.width > 0 && background.height > 0
+            ? {
+                // Shape the viewport to the plan's own aspect so the map fills
+                // the card edge-to-edge instead of letterboxing left/right.
+                aspectRatio: `${background.width} / ${background.height}`,
+                height: "auto",
+                maxHeight: "min(65dvh, 40rem)",
+              }
+            : undefined
+        }
       >
         <svg
           ref={svgRef}

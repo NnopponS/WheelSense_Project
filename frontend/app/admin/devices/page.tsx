@@ -12,6 +12,7 @@ import {
   DEVICE_FLEET_TABS,
   fleetTabFromQuery,
   fleetTabToQuery,
+  hardwareTypeLabel,
   type DeviceFleetTab,
 } from "@/lib/deviceHardwareTabs";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
@@ -33,11 +34,11 @@ import { AppPage } from "@/components/layout/AppPage";
 import { DataState } from "@/components/layout/DataState";
 
 function compareSmartFleetDevices(a: SmartDevice, b: SmartDevice): number {
-  const byName = a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase(), undefined, {
+  const byName = (a?.name || "").toLocaleLowerCase().localeCompare((b?.name || "").toLocaleLowerCase(), undefined, {
     sensitivity: "base",
   });
   if (byName !== 0) return byName;
-  return String(a.id).localeCompare(String(b.id));
+  return String(a?.id || "").localeCompare(String(b?.id || ""));
 }
 
 function DevicesPageContent() {
@@ -275,6 +276,24 @@ function DevicesPageContent() {
                         {device.is_active ? t("smartDevices.active") : t("smartDevices.inactive")}
                       </Badge>
                     </div>
+                    <div className="mt-2 pt-2 border-t border-border flex items-center justify-between gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full"
+                        variant={String(device.state).toLowerCase() === "on" ? "default" : "outline"}
+                        onClick={async () => {
+                          try {
+                            await api.controlSmartDevice(device.id, { action: "toggle" });
+                            await refetchSmart();
+                          } catch {
+                            // ignore
+                          }
+                        }}
+                      >
+                        {String(device.state).toLowerCase() === "on" ? "Turn OFF (ปิด)" : "Turn ON (เปิด)"}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -351,7 +370,7 @@ function DevicesPageContent() {
                     </span>
                     <span className="col-start-1 row-start-2 text-sm text-foreground md:col-auto md:row-auto">
                       <span className="mr-2 text-xs font-medium text-muted-foreground md:hidden">{t("devices.type")}</span>
-                      {device.hardware_type}
+                      {hardwareTypeLabel(device.hardware_type, t)}
                     </span>
                     <span className="col-start-2 row-start-1 justify-self-end md:col-auto md:row-auto md:justify-self-start">
                       <Badge variant={online ? "success" : "warning"}>

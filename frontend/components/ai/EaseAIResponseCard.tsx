@@ -133,7 +133,7 @@ export function EaseAIResponseCard({
   const hasRichBlock = responseCards.length > 0;
 
   return (
-    <article className={cn("rounded-2xl border border-outline-variant/25 bg-surface p-3 shadow-sm", loading && "animate-pulse")}>
+    <article className={cn("rounded-2xl border border-border bg-card p-3 shadow-md", loading && "animate-pulse")}>
       <div className="mb-2 flex items-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Sparkles className="h-4 w-4" />

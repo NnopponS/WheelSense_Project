@@ -22,7 +22,7 @@
 .severityCounts { display: flex; flex-wrap: wrap; gap: .125rem .5rem; }
 .severityCounts span:first-child { color: var(--critical); }
 .primary,.secondary { display: grid; min-width: 0; align-items: start; gap: .875rem; }
-.attention { display: flex; min-width: 0; flex-direction: column; gap: .5rem; padding: .25rem 0; }
+.attention { display: flex; min-width: 0; flex-direction: column; gap: .5rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow-card); }
 .sectionHeader { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: .25rem .75rem; }
 .sectionHeader h2 { font-size: 1rem; font-weight: 600; }
 .sectionHeader a,.fleetLink { display: inline-flex; align-items: center; gap: .375rem; min-height: 2.5rem; color: var(--primary); font-size: .8125rem; }
@@ -64,17 +64,17 @@
 .fleetHeader { display: flex; flex-flow: row wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; padding: .75rem 1rem .375rem; }
 .fleetHeader h3 { font-size: 1rem; line-height: 1.5; }
 .fleetUpdated { color: var(--muted-foreground); font-size: .75rem; margin: 0; }
-.fleetContents { padding: 0 1rem; }
-.fleetGrid { list-style: none; margin: 0; padding: .25rem 0 .625rem; display: grid; grid-template-columns: repeat(auto-fill,minmax(6.75rem,1fr)); gap: .375rem; }
-.fleetTile { display: flex; flex-direction: column; align-items: center; gap: .375rem; padding: .75rem .5rem .625rem; border-radius: var(--radius-md); text-align: center; }
+.fleetContents { padding: 0 1rem; flex: 1; display: flex; flex-direction: column; }
+.fleetGrid { list-style: none; margin: 0; padding: .25rem 0 .625rem; display: grid; grid-template-columns: repeat(auto-fill,minmax(7.5rem,1fr)); gap: .5rem .375rem; flex: 1; align-content: space-evenly; }
+.fleetTile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; padding: .75rem .5rem .625rem; border-radius: var(--radius-md); text-align: center; }
 .fleetTile:hover { background: var(--muted); }
-.fleetRing { display: block; width: 3.5rem; height: 3.5rem; }
+.fleetRing { display: block; width: 4.5rem; height: 4.5rem; }
 .fleetRing circle { fill: none; }
 .fleetRingTrack { stroke: var(--muted); stroke-width: 3.2; }
 .fleetRingOnline { stroke: var(--success); stroke-width: 3.2; stroke-linecap: round; }
 .fleetRingStale { stroke: var(--warning); stroke-width: 3.2; stroke-linecap: round; }
-.fleetRingText { fill: var(--foreground); font-size: .5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.fleetCategory { display: flex; min-width: 0; align-items: center; justify-content: center; flex-wrap: wrap; gap: .125rem .375rem; font-size: .75rem; font-weight: 500; overflow-wrap: anywhere; }
+.fleetRingText { fill: var(--foreground); font-size: .55rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fleetCategory { display: flex; min-width: 0; align-items: center; justify-content: center; flex-wrap: wrap; gap: .125rem .375rem; font-size: .8125rem; font-weight: 500; overflow-wrap: anywhere; }
 .fleetCategory > svg { color: var(--muted-foreground); flex-shrink: 0; }
 .fleetCategory small { color: var(--muted-foreground); font-size: .625rem; font-weight: 400; flex-basis: 100%; }
 .fleetState { font-size: .625rem; color: var(--muted-foreground); }
@@ -84,7 +84,7 @@
 .legend { display: inline-flex; align-items: center; gap: .375rem; font-size: .6875rem; color: var(--muted-foreground); }
 .legend i { display: inline-block; width: .375rem; height: .375rem; border-radius: 50%; background: var(--muted-foreground); }
 .legend i[data-tone=online] { background: var(--success); }.legend i[data-tone=stale] { background: var(--warning); }
-.operations { display: flex; min-width: 0; flex-direction: column; gap: .625rem; }
+.operations { display: flex; min-width: 0; flex-direction: column; gap: .625rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow-card); }
 .contextLinks { display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: center; font-size: .8125rem; }
 .contextLinks a { display: inline-flex; align-items: center; min-height: 2.75rem; gap: .25rem; color: var(--primary); }
 .activity { border-bottom: 1px solid var(--border); }

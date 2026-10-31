@@ -25,18 +25,17 @@ const HEALTH_VIEWS: PatientHealthView[] = ["baseline", "anomaly", "plan"];
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
 type AISettingsOut = {
-  provider?: "ollama" | "copilot" | "openai" | "openrouter";
+  provider?: "copilot" | "openai" | "openrouter";
   model?: string;
-  workspace_default_provider?: "ollama" | "copilot" | "openai" | "openrouter";
+  workspace_default_provider?: "copilot" | "openai" | "openrouter";
   workspace_default_model?: string;
   openai_configured?: boolean;
   openrouter_configured?: boolean;
 };
 
 type AIHealthOut = {
-  default_provider?: "ollama" | "copilot" | "openai" | "openrouter";
-  ollama_configured?: boolean;
-  copilot_configured?: boolean;
+  default_provider?: "copilot" | "openai" | "openrouter";
+  copilot_device_flow_configured?: boolean;
 };
 
 type DeviceAssignmentLike = { device_id: string; device_role: string; is_active: boolean };
@@ -134,12 +133,10 @@ export function PatientHealthAnalysisPanel({
     aiSettingsQuery.data?.model ?? aiSettingsQuery.data?.workspace_default_model ?? null;
   const aiConfigured =
     aiProvider === "copilot"
-      ? aiHealthQuery.data?.copilot_configured
-      : aiProvider === "ollama"
-        ? aiHealthQuery.data?.ollama_configured
-        : aiProvider === "openai" || aiProvider === "openrouter"
-          ? aiSettingsQuery.data?.[`${aiProvider}_configured`]
-          : undefined;
+      ? aiHealthQuery.data?.copilot_device_flow_configured
+      : aiProvider === "openai" || aiProvider === "openrouter"
+        ? aiSettingsQuery.data?.[`${aiProvider}_configured`]
+        : undefined;
   const viewIndex = HEALTH_VIEWS.indexOf(view);
   const viewTitle = view === "baseline"
     ? t("patient.feature.healthProfile")

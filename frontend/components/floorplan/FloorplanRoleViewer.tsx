@@ -22,7 +22,6 @@ import overviewStyles from "./overview-floorplan.module.css";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { EntityHeader } from "@/components/shared/EntityHeader";
-import UserAvatar from "@/components/shared/UserAvatar";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
@@ -42,7 +41,7 @@ import { getCaregiverDetailPath, getPatientDetailPath } from "@/lib/routes";
 import { matchFloorRoomFromLayoutLabel } from "@/lib/floorplanRoomResolve";
 import { floorplanRoomIdToNumeric } from "@/lib/monitoringWorkspace";
 import { readFloorplanBackground } from "@/lib/floorplanEditor";
-import type { Facility, Floor, Room, SmartDevice } from "@/lib/types";
+import type { Device, Facility, Floor, Room, SmartDevice } from "@/lib/types";
 import FloorplanCanvas, {
   type FloorplanRoomChip,
   type FloorplanRoomMeta,
@@ -142,24 +141,56 @@ function getNodeTone(room: PresenceRoom | null): FloorplanRoomTone {
   return "info";
 }
 
-function describeNodeStatus(room: PresenceRoom | null): string {
-  if (!room) return "No node status";
-  if (!room.node_device_id) return "No node mapped";
-  if (room.node_status === "online") return "Node online";
-  if (room.node_status === "stale") return "Node stale";
-  if (room.node_status === "offline") return "Node offline";
-  if (room.node_status === "unmapped") return "Node unmapped";
+type TranslateFn = (key: string) => string;
+
+function describeNodeStatus(room: PresenceRoom | null, t: TranslateFn): string {
+  if (!room) return t("floorplan.nodeStatus.none");
+  if (!room.node_device_id) return t("overview.node.unmapped");
+  if (room.node_status === "online") return t("overview.node.online");
+  if (room.node_status === "stale") return t("overview.node.stale");
+  if (room.node_status === "offline") return t("overview.node.offline");
+  if (room.node_status === "unmapped") return t("overview.node.unmapped");
   return room.node_status.replace(/_/g, " ");
 }
 
-function getPredictionChip(room: PresenceRoom): FloorplanRoomChip | null {
+/** Simulator/model prefixes that should never be shown raw to staff. */
+const DEVICE_ID_PREFIXES = /^(?:MODEL|SIM|TSIM|DEMO|TEST)[_-]/i;
+
+/**
+ * Display label for a raw device/topic id (MODEL_NODE_01, SIM_WHEEL_02, …).
+ * Prefers the registry `display_name` from GET /api/devices; falls back to
+ * stripping known sim prefixes so users never see raw ids.
+ */
+function deviceDisplayLabel(
+  deviceId: string | null | undefined,
+  displayNameById: ReadonlyMap<string, string>,
+): string {
+  const raw = (deviceId ?? "").trim();
+  if (!raw) return "";
+  const known = displayNameById.get(raw.toLowerCase());
+  if (known && known.trim()) return known.trim();
+  return raw.replace(DEVICE_ID_PREFIXES, "").replace(/_/g, " ").trim() || raw;
+}
+
+/** "{count} X" labels with a separate singular form, matching overview.residentOne/Count style. */
+function countChipLabel(count: number, oneKey: string, manyKey: string, t: TranslateFn): string {
+  return count === 1 ? t(oneKey) : t(manyKey).replace("{count}", String(count));
+}
+
+/** Matches server semantics: any state outside off/unknown/unavailable counts as ON (e.g. climate "cool"). */
+function isSmartDeviceStateOn(state: unknown): boolean {
+  const normalized = String(state ?? "off").trim().toLowerCase();
+  return normalized !== "" && normalized !== "off" && normalized !== "unknown" && normalized !== "unavailable";
+}
+
+function getPredictionChip(room: PresenceRoom, t: TranslateFn): FloorplanRoomChip | null {
   if (!room.prediction_hint) return null;
   if ((room.prediction_hint as { model_type?: string }).model_type === "max_rssi") return null;
   const rawConfidence = room.prediction_hint.confidence;
-  if (rawConfidence == null || !Number.isFinite(rawConfidence)) return { label: "ML observation · confidence unavailable", tone: "info" };
+  if (rawConfidence == null || !Number.isFinite(rawConfidence)) return { label: t("floorplan.prediction.unknown"), tone: "info" };
   const confidence = Math.round(rawConfidence * 100);
   return {
-    label: `${confidence}% prediction`,
+    label: t("floorplan.prediction.confidence").replace("{confidence}", String(confidence)),
     tone: "info",
   };
 }
@@ -235,7 +266,12 @@ function presenceHrefForOccupant(o: RoomOccupant, roleBase: string | null): stri
   return null;
 }
 
-function buildPresenceMeta(room: PresenceRoom, roleBase: string | null): FloorplanRoomMeta {
+function buildPresenceMeta(
+  room: PresenceRoom,
+  roleBase: string | null,
+  t: TranslateFn,
+  deviceLabel: (deviceId: string | null | undefined) => string,
+): FloorplanRoomMeta {
   const occupants = getRoomOccupants(room);
   const patientCount = occupants.filter((item) => item.actor_type === "patient").length;
   const staffCount = occupants.filter((item) => item.actor_type === "staff").length;
@@ -245,41 +281,46 @@ function buildPresenceMeta(room: PresenceRoom, roleBase: string | null): Floorpl
   if (occupantNames.length > 0) {
     detailLines.push(occupantNames.join(", "));
   } else if (room.prediction_hint?.predicted_room_name?.trim()) {
-    detailLines.push(`Predicted from ${room.prediction_hint.device_id}`);
+    detailLines.push(
+      t("floorplan.predictedFrom").replace("{device}", deviceLabel(room.prediction_hint.device_id)),
+    );
   } else {
-    detailLines.push("No occupants in live feed");
+    detailLines.push(t("overview.noOccupants"));
   }
 
+  const nodeStatus = describeNodeStatus(room, t);
   if (room.node_device_id) {
-    detailLines.push(`${describeNodeStatus(room)} | ${room.node_device_id}`);
+    detailLines.push(`${nodeStatus} | ${deviceLabel(room.node_device_id)}`);
   } else {
-    detailLines.push(describeNodeStatus(room));
+    detailLines.push(nodeStatus);
   }
 
   if (room.camera_summary?.captured_at) {
-    detailLines.push(`Snapshot ${formatRelativeTime(room.camera_summary.captured_at)}`);
+    detailLines.push(
+      t("floorplan.snapshotAgo").replace("{time}", formatRelativeTime(room.camera_summary.captured_at)),
+    );
   }
 
   const chips: FloorplanRoomChip[] = [];
   if (patientCount > 0) {
-    chips.push({ label: `${patientCount} patient${patientCount > 1 ? "s" : ""}`, tone: "success" });
+    chips.push({ label: countChipLabel(patientCount, "floorplan.chip.patientOne", "floorplan.chip.patients", t), tone: "success" });
   }
   if (staffCount > 0) {
-    chips.push({ label: `${staffCount} staff`, tone: "info" });
+    chips.push({ label: t("floorplan.chip.staff").replace("{count}", String(staffCount)), tone: "info" });
   }
   if ((room.alert_count ?? 0) > 0) {
     chips.unshift({
-      label: `${room.alert_count} alert${(room.alert_count ?? 0) > 1 ? "s" : ""}`,
+      label: countChipLabel(room.alert_count ?? 0, "floorplan.chip.alertOne", "floorplan.chip.alerts", t),
       tone: "critical",
     });
   }
-  const predictionChip = getPredictionChip(room);
+  const predictionChip = getPredictionChip(room, t);
   if (predictionChip) {
     chips.push(predictionChip);
   }
   if (chips.length === 0) {
     chips.push({
-      label: describeNodeStatus(room),
+      label: nodeStatus,
       tone: getNodeTone(room),
     });
   }
@@ -346,6 +387,7 @@ function OccupantList({
   emptyText: string;
 }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const userRole = user?.role ?? "admin";
 
   return (
@@ -374,12 +416,12 @@ function OccupantList({
                     </p>
                   </div>
                   <Badge variant={item.actor_type === "patient" ? "success" : "secondary"}>
-                    {item.actor_type}
+                    {t(item.actor_type === "patient" ? "floorplan.actor.patient" : "floorplan.actor.staff")}
                   </Badge>
                 </div>
                 {item.updated_at ? (
                   <p className="mt-2 text-[11px] text-foreground-variant">
-                    Updated {formatRelativeTime(item.updated_at)}
+                    {t("patient.roomControls.lastUpdated")} {formatRelativeTime(item.updated_at)}
                   </p>
                 ) : null}
               </div>
@@ -418,6 +460,7 @@ function RoomInspectorContent({
   captureMessage,
   requestCapture,
   refetchPresence,
+  deviceLabel,
 }: {
   selectedRoomEntry: RoomEntry;
   selectedPresenceRoom: PresenceRoom | null;
@@ -428,8 +471,16 @@ function RoomInspectorContent({
   captureMessage: string | null;
   requestCapture: () => void;
   refetchPresence: () => void;
+  deviceLabel: (deviceId: string | null | undefined) => string;
 }) {
   const { t } = useTranslation();
+  const predictionHint = selectedPresenceRoom?.prediction_hint;
+  const isRssiPrediction =
+    (predictionHint as { model_type?: string } | undefined)?.model_type === "max_rssi";
+  const predictionConfidence = Math.round((predictionHint?.confidence ?? 0) * 100);
+  const predictionLabel = isRssiPrediction
+    ? t("floorplan.prediction.strongestRssi")
+    : t("floorplan.prediction.confidence").replace("{confidence}", String(predictionConfidence));
   return (
     <div className="space-y-4 border border-outline-variant/20 p-4 surface-card">
       <EntityHeader
@@ -437,31 +488,33 @@ function RoomInspectorContent({
         name={selectedRoomEntry.room.label}
         description={
           selectedPresenceRoom
-            ? `${describeNodeStatus(selectedPresenceRoom)}${selectedPresenceRoom.node_device_id ? ` | ${selectedPresenceRoom.node_device_id}` : ""}`
-            : "No live room telemetry yet"
+            ? `${describeNodeStatus(selectedPresenceRoom, t)}${selectedPresenceRoom.node_device_id ? ` | ${deviceLabel(selectedPresenceRoom.node_device_id)}` : ""}`
+            : t("floorplan.inspector.noTelemetry")
         }
         status={
           <StatusBadge
             tone={getNodeTone(selectedPresenceRoom)}
-            label={selectedPresenceRoom ? describeNodeStatus(selectedPresenceRoom) : "Layout only"}
+            label={selectedPresenceRoom ? describeNodeStatus(selectedPresenceRoom, t) : t("floorplan.inspector.layoutOnly")}
           />
         }
         metadata={
           <>
-            <StatusBadge tone="success" label={`${selectedPatients.length} patients`} />
-            <StatusBadge tone="neutral" label={`${selectedStaff.length} staff`} />
+            <StatusBadge
+              tone="success"
+              label={countChipLabel(selectedPatients.length, "floorplan.chip.patientOne", "floorplan.chip.patients", t)}
+            />
+            <StatusBadge
+              tone="neutral"
+              label={t("floorplan.chip.staff").replace("{count}", String(selectedStaff.length))}
+            />
             <StatusBadge
               tone={(selectedPresenceRoom?.alert_count ?? 0) > 0 ? "critical" : "neutral"}
-              label={`${selectedPresenceRoom?.alert_count ?? 0} alerts`}
+              label={countChipLabel(selectedPresenceRoom?.alert_count ?? 0, "floorplan.chip.alertOne", "floorplan.chip.alerts", t)}
             />
-            {selectedPresenceRoom?.prediction_hint ? (
+            {predictionHint ? (
               <StatusBadge
                 tone="info"
-                label={
-                  (selectedPresenceRoom.prediction_hint as { model_type?: string }).model_type === "max_rssi"
-                    ? "Strongest RSSI"
-                    : `${Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}% prediction`
-                }
+                label={predictionLabel}
               />
             ) : null}
           </>
@@ -483,26 +536,24 @@ function RoomInspectorContent({
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Clock3 className="h-4 w-4 text-primary" />
-          Room telemetry
+          {t("floorplan.inspector.telemetry")}
         </div>
         <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-3 py-3">
           <div className="flex items-center gap-2 text-sm text-foreground">
             <UserRound className="h-4 w-4 text-foreground-variant" />
-            {selectedPresenceRoom?.prediction_hint?.predicted_room_name?.trim()
-              ? `Latest prediction from ${selectedPresenceRoom.prediction_hint.device_id} points here`
-              : "No prediction hint for this room."}
+            {predictionHint?.predicted_room_name?.trim()
+              ? t("floorplan.inspector.predictionHere").replace("{device}", deviceLabel(predictionHint.device_id))
+              : t("floorplan.inspector.noPrediction")}
           </div>
-          {selectedPresenceRoom?.prediction_hint ? (
+          {predictionHint ? (
             <p className="mt-2 text-xs text-foreground-variant">
-              {(selectedPresenceRoom.prediction_hint as { model_type?: string }).model_type === "max_rssi"
-                ? "Source strongest RSSI"
-                : `Confidence ${Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}%`}{" "}
-              | computed {formatRelativeTime(selectedPresenceRoom.prediction_hint.computed_at)}
+              {predictionLabel}{" "}
+              | {t("floorplan.inspector.computedAt").replace("{time}", formatRelativeTime(predictionHint.computed_at))}
             </p>
           ) : null}
           {selectedPresenceRoom?.computed_at ? (
             <p className="mt-2 text-xs text-foreground-variant">
-              Presence updated {formatRelativeTime(selectedPresenceRoom.computed_at)}
+              {t("floorplan.inspector.presenceUpdated").replace("{time}", formatRelativeTime(selectedPresenceRoom.computed_at))}
             </p>
           ) : null}
         </div>
@@ -511,33 +562,53 @@ function RoomInspectorContent({
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Wifi className="h-4 w-4 text-primary" />
-          Home Assistant devices
+          {t("floorplan.summarySmart")}
         </div>
         {inspectorDevices.length === 0 ? (
           <div className="rounded-xl border border-dashed border-outline-variant/30 px-3 py-3 text-sm text-foreground-variant">
-            No smart devices are linked to this room.
+            {t("overview.noRoomDevices")}
           </div>
         ) : (
           <div className="space-y-2">
-            {inspectorDevices.map((device) => (
-              <div
-                key={`room-device-${device.id}`}
-                className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-3 py-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{device.name}</p>
-                    <p className="mt-1 text-xs text-foreground-variant">
-                      {device.device_type}
-                      {"ha_entity_id" in device && device.ha_entity_id ? ` | ${device.ha_entity_id}` : ""}
-                    </p>
+            {inspectorDevices.map((device) => {
+              const isOn = "state" in device && isSmartDeviceStateOn(device.state);
+              return (
+                <div
+                  key={`room-device-${device.id}`}
+                  className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-3 py-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{device.name}</p>
+                      <p className="mt-1 text-xs text-foreground-variant">
+                        {device.device_type}
+                        {"ha_entity_id" in device && device.ha_entity_id ? ` | ${device.ha_entity_id}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={isOn ? "success" : "secondary"}>
+                        {("state" in device && device.state) || t("patient.roomControls.unknownState")}
+                      </Badge>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isOn ? "default" : "outline"}
+                        onClick={async () => {
+                          try {
+                            await api.controlSmartDevice(device.id, { action: "toggle" });
+                            refetchPresence();
+                          } catch {
+                            // ignore
+                          }
+                        }}
+                      >
+                        {isOn ? t("patient.roomControls.turnOff") : t("patient.roomControls.turnOn")}
+                      </Button>
+                    </div>
                   </div>
-                  <Badge variant={device.is_active === false ? "outline" : "secondary"}>
-                    {("state" in device && device.state) || "unknown"}
-                  </Badge>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -545,14 +616,14 @@ function RoomInspectorContent({
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Camera className="h-4 w-4 text-primary" />
-          Latest room snapshot
+          {t("floorplan.inspector.snapshot")}
         </div>
 
         {selectedPresenceRoom?.camera_summary?.latest_photo_url ? (
           <div className="relative h-52 overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low/50">
             <Image
               src={selectedPresenceRoom.camera_summary.latest_photo_url}
-              alt={`Latest snapshot for ${selectedRoomEntry.room.label}`}
+              alt={t("floorplan.inspector.snapshotAlt").replace("{room}", selectedRoomEntry.room.label)}
               fill
               unoptimized
               className="object-cover"
@@ -560,13 +631,13 @@ function RoomInspectorContent({
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-outline-variant/30 bg-surface-container-low/40 px-3 py-6 text-center text-sm text-foreground-variant">
-            No snapshot is available for this room yet.
+            {t("floorplan.inspector.noSnapshot")}
           </div>
         )}
 
         {selectedPresenceRoom?.camera_summary?.captured_at ? (
           <p className="text-xs text-foreground-variant">
-            Captured {formatDateTime(selectedPresenceRoom.camera_summary.captured_at)} |{" "}
+            {t("floorplan.inspector.capturedAt").replace("{time}", formatDateTime(selectedPresenceRoom.camera_summary.captured_at))} |{" "}
             {formatRelativeTime(selectedPresenceRoom.camera_summary.captured_at)}
           </p>
         ) : null}
@@ -579,7 +650,7 @@ function RoomInspectorContent({
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-smooth hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {captureBusy ? <RefreshCcw className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            Capture now
+            {t("floorplan.inspector.captureNow")}
           </button>
           <button
             type="button"
@@ -587,7 +658,7 @@ function RoomInspectorContent({
             className="inline-flex items-center gap-2 rounded-xl border border-outline-variant/30 px-4 py-2 text-sm font-medium text-foreground transition-smooth hover:bg-surface-container-low"
           >
             <RefreshCcw className="h-5 w-5" />
-            Refresh
+            {t("common.refresh")}
           </button>
         </div>
 
@@ -735,16 +806,14 @@ export default function FloorplanRoleViewer({
     queryKey: ["shared", "floorplan-role-viewer", "presence", presenceEndpoint, compact],
     queryFn: () => api.get<PresenceResponse>(presenceEndpoint!),
     enabled: Boolean(presenceEndpoint),
-    refetchInterval: 5_000,
+    refetchInterval: 2_000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: presenceEndpoint ? getQueryStaleTimeMs(presenceEndpoint) : 0,
     retry: false,
   });
-  const refetchPresence = useCallback(() => refetchOrThrow(refetchPresenceBase), [refetchPresenceBase]);
-
-  const { data: allSmartDevices } = useQuery({
+  const { data: allSmartDevices, refetch: refetchSmartDevices } = useQuery({
     queryKey: ["shared", "floorplan-role-viewer", "ha-devices", compact],
     queryFn: () => api.get<SmartDevice[]>("/ha/devices"),
     enabled: !compact,
@@ -752,6 +821,34 @@ export default function FloorplanRoleViewer({
     refetchInterval: getQueryPollingMs("/ha/devices"),
     retry: false,
   });
+  const { data: registryDevices } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "devices", compact],
+    queryFn: () => api.get<Device[]>("/devices"),
+    staleTime: getQueryStaleTimeMs("/devices"),
+    refetchInterval: getQueryPollingMs("/devices"),
+    retry: false,
+  });
+  const deviceDisplayNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const device of registryDevices ?? []) {
+      const deviceId = device.device_id?.trim();
+      const displayName = device.display_name?.trim();
+      if (deviceId && displayName) {
+        map.set(deviceId.toLowerCase(), displayName);
+      }
+    }
+    return map;
+  }, [registryDevices]);
+  const deviceLabel = useCallback(
+    (deviceId: string | null | undefined) => deviceDisplayLabel(deviceId, deviceDisplayNameById),
+    [deviceDisplayNameById],
+  );
+  const refetchPresence = useCallback(async () => {
+    await refetchOrThrow(refetchPresenceBase);
+    if (!compact) {
+      await refetchSmartDevices();
+    }
+  }, [compact, refetchPresenceBase, refetchSmartDevices]);
 
   useEffect(() => {
     if (compact || rooms.length === 0) return;
@@ -816,11 +913,11 @@ export default function FloorplanRoleViewer({
     const next: Record<string, FloorplanRoomMeta> = {};
     for (const entry of roomEntries) {
       if (entry.presenceRoom) {
-        next[entry.room.id] = buildPresenceMeta(entry.presenceRoom, roleBase);
+        next[entry.room.id] = buildPresenceMeta(entry.presenceRoom, roleBase, t, deviceLabel);
       }
     }
     return next;
-  }, [roomEntries, roleBase]);
+  }, [roomEntries, roleBase, t, deviceLabel]);
 
   const hasSavedGeometry = normalizeFloorplanRooms(layoutRes?.layout_json).length > 0;
   const filteredRoomEntries = roomEntries.filter(entry => {
@@ -885,15 +982,6 @@ export default function FloorplanRoleViewer({
     () => selectedOccupants.filter((item) => item.actor_type === "staff"),
     [selectedOccupants],
   );
-  const floorStaffLocations = useMemo(() => {
-    const locations = new Map<number, { person: RoomOccupant; roomLabel: string }>();
-    for (const entry of roomEntries) {
-      for (const person of getRoomOccupants(entry.presenceRoom)) {
-        if (person.actor_type === "staff") locations.set(person.actor_id, { person, roomLabel: entry.room.label });
-      }
-    }
-    return [...locations.values()];
-  }, [roomEntries]);
 
   const inspectorDevices = useMemo(() => {
     if (!selectedPresenceRoom) return [] as Array<RoomSmartDeviceStateSummary | SmartDevice>;
@@ -924,10 +1012,10 @@ export default function FloorplanRoleViewer({
       const response = await api.post<{ message?: string }>(
         `/floorplans/rooms/${encodeURIComponent(String(selectedPresenceRoom.room_id))}/capture`,
       );
-      setCaptureMessage(response?.message ?? "Capture requested.");
+      setCaptureMessage(response?.message ?? t("floorplan.inspector.captureRequested"));
       await refetchPresence();
     } catch (error) {
-      setCaptureMessage(error instanceof ApiError ? error.message : "Could not trigger capture.");
+      setCaptureMessage(error instanceof ApiError ? error.message : t("floorplan.captureFailed"));
     } finally {
       setCaptureBusy(false);
     }
@@ -948,7 +1036,7 @@ export default function FloorplanRoleViewer({
           onClick={() => setSelectedId(entry.room.id)} aria-pressed={entry.room.id === visibleSelectedId}>
           <span className="text-base font-semibold">{entry.room.label}</span>
           <span className="flex flex-wrap gap-1">{meta?.chips?.map((chip, index) => <StatusBadge key={index} tone={chip.tone} label={chip.label} />)}</span>
-          <span className="text-sm text-muted-foreground">{meta?.detailLines?.join(" · ") || describeNodeStatus(entry.presenceRoom)}</span>
+          <span className="text-sm text-muted-foreground">{meta?.detailLines?.join(" · ") || describeNodeStatus(entry.presenceRoom, t)}</span>
         </button>;
       })}
     </div>
@@ -1079,40 +1167,32 @@ export default function FloorplanRoleViewer({
               {roomEntries.map(entry => <option key={entry.room.id} value={entry.room.id}>{entry.room.label}</option>)}
             </select>
           </label>
-          {selectedRoomEntry ? <div className={overviewStyles.selection} aria-live="polite">
-            <div className={overviewStyles.selectionHeader}>
-              <div><strong>{selectedRoomEntry.room.label}</strong><span>{presenceAvailable && selectedPresenceRoom ? t(`overview.node.${selectedPresenceRoom.node_status ?? "unmapped"}`) : t("redesign.unavailable")}</span></div>
-              <span>{selectedPresenceRoom?.alert_count ?? 0} {t("overview.roomAlerts")}</span>
-            </div>
-            {presenceAvailable && selectedPresenceRoom ? <>
-              <section className={overviewStyles.residentPanel} aria-label={t("overview.residentsInRoom")}>
-                <h3>{t("overview.residentsInRoom")}</h3>
-                {selectedPatients.length ? <ul>{selectedPatients.map((person) => {
-                  const href = presenceHrefForOccupant(person, roleBase);
-                  return <li key={`patient-${person.actor_id}`}>
-                    <UserAvatar username={person.display_name} profileImageUrl={person.photo_url} sizePx={44} />
-                    <div><strong>{href ? <Link href={href}>{person.display_name}</Link> : person.display_name}</strong><span>{person.subtitle || t("overview.residentLegend")}</span></div>
-                  </li>;
-                })}</ul> : <p>{t("overview.noOccupants")}</p>}
-              </section>
-              <section className={overviewStyles.staffPanel} aria-label={t("overview.staffLocations")}>
-                <h3><MapPin aria-hidden="true" />{t("overview.staffLocations")}<span>{t("overview.simulated")}</span></h3>
-                {floorStaffLocations.length ? <ul>{floorStaffLocations.map(({ person, roomLabel }) => <li key={`staff-${person.actor_id}`}>
-                  <UserAvatar username={person.display_name} profileImageUrl={person.photo_url} sizePx={32} />
-                  <strong>{person.display_name}</strong><span className={overviewStyles.staffLocation}><i aria-hidden="true" />{roomLabel}</span>
-                  <small>{person.source === "simulation" ? t("overview.simulated") : person.subtitle}</small>
-                </li>)}</ul> : <p>{t("overview.noStaffLocations")}</p>}
-              </section>
-              <section className={overviewStyles.devicePanel} aria-label={t("overview.roomDevices")}>
-                <h3><Wifi aria-hidden="true" />{t("overview.roomDevices")}</h3>
-                {inspectorDevices.length ? <ul>{inspectorDevices.map((device) => <li key={`device-${device.id}`}>
-                  <span><strong>{device.name}</strong><small>{device.device_type.replaceAll("_", " ")}{device.ha_entity_id ? ` · ${device.ha_entity_id}` : ""}</small></span>
-                  <span data-state={device.state || "unknown"}>{device.state || t("overview.deviceStateUnavailable")}</span>
-                </li>)}</ul> : <p>{t("overview.noRoomDevices")}</p>}
-              </section>
-              {selectedPresenceRoom.computed_at ? <time className={overviewStyles.selectionUpdated} dateTime={selectedPresenceRoom.computed_at}>{t("patient.roomControls.lastUpdated")}: {formatDateTime(selectedPresenceRoom.computed_at)}</time> : null}
-            </> : <p>{t("redesign.unavailable")}</p>}
-          </div> : null}
+          <DetailSheet
+            open={Boolean(selectedRoomEntry)}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedId(null);
+                setCaptureMessage(null);
+              }
+            }}
+            title={selectedRoomEntry ? t("floorplan.roomTitle").replace("{room}", selectedRoomEntry.room.label) : t("floorplan.roomProps")}
+            description={t("floorplan.liveDescription")}
+          >
+            {selectedRoomEntry ? (
+              <RoomInspectorContent
+                selectedRoomEntry={selectedRoomEntry}
+                selectedPresenceRoom={selectedPresenceRoom}
+                selectedPatients={selectedPatients}
+                selectedStaff={selectedStaff}
+                inspectorDevices={inspectorDevices}
+                captureBusy={captureBusy}
+                captureMessage={captureMessage}
+                requestCapture={() => void requestCapture()}
+                refetchPresence={() => void refetchPresence()}
+                deviceLabel={deviceLabel}
+              />
+            ) : null}
+          </DetailSheet>
         </>}
       <p role={presenceError ? "status" : undefined} className="mt-2 text-xs text-muted-foreground">
         {presenceError ? t("overview.presenceUnavailable") : presenceData ? `${t("patient.roomControls.lastUpdated")}: ${formatDateTime(presenceData.computed_at)}` : t("overview.presencePending")}
@@ -1139,12 +1219,10 @@ export default function FloorplanRoleViewer({
           <div className="min-w-0">
             <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
               <MapPin className="h-4 w-4 text-primary" />
-              {compact ? "Ward monitoring summary" : "Live operations map"}
+              {compact ? t("overview.ward") : t("floorplan.liveOpsTitle")}
             </h3>
             <p className="mt-1 text-sm text-foreground-variant">
-              {compact
-                ? "Room occupancy, alerts, and node freshness in one glance."
-                : "Readable room cards, occupancy context, and room-level inspection for staff operations."}
+              {compact ? t("floorplan.wardSubtitle") : t("floorplan.liveOpsSubtitle")}
             </p>
           </div>
 
@@ -1163,7 +1241,7 @@ export default function FloorplanRoleViewer({
                 onClick={() => setViewMode("list")}
                 aria-pressed={viewMode === "list"}
               >
-                List
+                {t("floorplan.viewList")}
               </Button>
               <Button
                 type="button"
@@ -1174,35 +1252,35 @@ export default function FloorplanRoleViewer({
                 disabled={!hasSavedGeometry}
                 aria-pressed={viewMode === "floorplan"}
               >
-                Floorplan
+                {t("floorplan.viewFloorplan")}
               </Button>
             </div>
             ) : null}
-            <Badge variant="outline">{presenceRooms.length || rooms.length} rooms</Badge>
-            <Badge variant="outline">{presenceData ? occupiedRooms : "—"} occupied</Badge>
-            <Badge variant={totalAlerts > 0 ? "destructive" : "outline"}>{presenceData ? totalAlerts : "—"} alerts</Badge>
-            <Badge variant={staleNodes > 0 ? "warning" : "outline"}>{presenceData ? staleNodes : "—"} stale</Badge>
+            <Badge variant="outline">{t("floorplan.badge.rooms").replace("{count}", String(presenceRooms.length || rooms.length))}</Badge>
+            <Badge variant="outline">{t("floorplan.badge.occupied").replace("{count}", String(presenceData ? occupiedRooms : "—"))}</Badge>
+            <Badge variant={totalAlerts > 0 ? "destructive" : "outline"}>{t("floorplan.badge.alerts").replace("{count}", String(presenceData ? totalAlerts : "—"))}</Badge>
+            <Badge variant={staleNodes > 0 ? "warning" : "outline"}>{t("floorplan.badge.stale").replace("{count}", String(presenceData ? staleNodes : "—"))}</Badge>
           </div>
         </div>
 
         {!compact ? (
           <div className="ws-stat-strip grid grid-cols-2 xl:grid-cols-4">
-            <SummaryStat icon={Users} label="Occupied rooms" value={occupiedRooms} tone="success" />
+            <SummaryStat icon={Users} label={t("floorplan.stat.occupiedRooms")} value={occupiedRooms} tone="success" />
             <SummaryStat
               icon={ShieldAlert}
-              label="Active alerts"
+              label={t("floorplan.stat.activeAlerts")}
               value={totalAlerts}
               tone={totalAlerts > 0 ? "critical" : "info"}
             />
             <SummaryStat
               icon={Wifi}
-              label="Online nodes"
+              label={t("floorplan.stat.onlineNodes")}
               value={onlineNodes}
               tone={onlineNodes > 0 ? "success" : "warning"}
             />
             <SummaryStat
               icon={Activity}
-              label="Stale nodes"
+              label={t("floorplan.stat.staleNodes")}
               value={staleNodes}
               tone={staleNodes > 0 ? "warning" : "success"}
             />
@@ -1246,8 +1324,8 @@ export default function FloorplanRoleViewer({
                 ? `${selectedRoomEntry.room.label}: ${getRoomOccupants(selectedRoomEntry.presenceRoom)
                     .slice(0, 3)
                     .map((item) => item.display_name)
-                    .join(", ") || "No visible occupants"}`
-                : "Open the live map to inspect Home Assistant state and the latest room snapshot."}
+                    .join(", ") || t("overview.noOccupants")}`
+                : t("floorplan.compactOpenMapHint")}
             </p>
           </>
         ) : (
@@ -1267,8 +1345,8 @@ export default function FloorplanRoleViewer({
                 role={presenceError ? "status" : undefined}
               >
                 {presenceError
-                  ? "Presence feed degraded. Room geometry remains available while live overlays retry."
-                  : "Select a room on the map or list to open live details in the side panel."}
+                  ? t("floorplan.presenceDegraded")
+                  : t("floorplan.selectRoomHint")}
               </div>
             </div>
 
@@ -1280,7 +1358,7 @@ export default function FloorplanRoleViewer({
                   setCaptureMessage(null);
                 }
               }}
-              title={selectedRoomEntry ? `Room ${selectedRoomEntry.room.label}` : "Room details"}
+              title={selectedRoomEntry ? t("floorplan.roomTitle").replace("{room}", selectedRoomEntry.room.label) : t("floorplan.roomProps")}
           description={t("floorplan.liveDescription")}
             >
               {selectedRoomEntry ? (
@@ -1294,6 +1372,7 @@ export default function FloorplanRoleViewer({
                   captureMessage={captureMessage}
                   requestCapture={() => void requestCapture()}
                   refetchPresence={() => void refetchPresence()}
+                  deviceLabel={deviceLabel}
                 />
               ) : null}
             </DetailSheet>
