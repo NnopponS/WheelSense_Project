@@ -1,0 +1,1442 @@
+"""AI chat streaming - OpenAI-compatible cloud providers and GitHub Copilot CLI SDK."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+from collections.abc import AsyncIterator
+from functools import lru_cache
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from types import SimpleNamespace
+from typing import Any, get_args, get_origin
+from zoneinfo import ZoneInfo
+
+from fastapi import HTTPException
+from openai import AsyncOpenAI
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
+from app.models.chat import ChatConversation, WorkspaceAISettings
+from app.models.chat_actions import ChatAction
+from app.models.core import Workspace
+from app.models.users import User
+from app.roles import role_is_allowed
+from app.schemas.agent_runtime import ExecutionPlan, ExecutionPlanStep
+from app.schemas.chat import ChatMessagePart
+from app.schemas.chat_actions import ChatActionProposeIn
+from app.services import agent_runtime_client
+from app.services.ai_provider_attempts import ProviderAttempt, start_provider_attempt
+from app.services.workflow import audit_trail_service
+from app.mcp.tool_catalog import easeai_forbidden_tools, patient_exclusive_tools
+
+logger = logging.getLogger("wheelsense.ai_chat")
+
+COPILOT_ALLOWED_MODELS = {
+    "gpt-4o": {
+        "name": "GPT-4o",
+        "supports_reasoning_effort": False,
+        "supports_vision": True,
+    },
+    "gpt-4.1": {
+        "name": "GPT-4.1",
+        "supports_reasoning_effort": False,
+        "supports_vision": True,
+    },
+}
+
+# Role-specific system prompts (EaseAI)
+ROLE_SYSTEM_PROMPTS: dict[str, str] = {
+    "admin": (
+        "You are EaseAI for WheelSense, assisting an IT administrator. "
+        "Handle both general questions and WheelSense operations. "
+        "For WheelSense-specific facts, rely on grounded data when available and never invent patient data."
+    ),
+    "head_caregiver": (
+        "You are EaseAI for a head caregiver. "
+        "Handle both general questions and ward operations. Prioritize patient safety and concise action."
+    ),
+    "caregiver": (
+        "You are EaseAI for floor staff. Handle both general questions and assigned-zone operations."
+    ),
+    "patient": (
+        "You are EaseAI for a patient user. Handle both general questions and patient-facing assistance. "
+        "Use simple language and encourage contacting staff for emergencies. "
+        "When WheelSense tool results are provided for this session, you may use them to answer about "
+        "this signed-in patient's own profile (including name and room assignment), vitals, timeline, "
+        "assigned care team, messages, and alerts. Never infer or disclose other patients' data."
+    ),
+}
+
+GENERAL_ASSISTANT_SUFFIX = (
+    " You can answer general questions, small talk, and broad knowledge queries as a normal assistant. "
+    "Answer in the language of the user's latest message: English for English, Thai for Thai, and mixed only when the user mixes languages. "
+    "When a request needs WheelSense live data or actions, use only grounded system data and do not invent facts. "
+    "Do not attempt to run shell commands, modify application source code, or touch the host filesystem outside "
+    "the published WheelSense MCP tools."
+)
+
+WORKSPACE_ACTION_MANAGER_ROLES = {"admin", "head_caregiver"}
+
+
+@lru_cache(maxsize=1)
+def _all_mcp_workspace_tool_names() -> frozenset[str]:
+    """Workspace MCP tool names from `_WORKSPACE_TOOL_REGISTRY` (authoritative)."""
+    from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
+
+    return frozenset(_WORKSPACE_TOOL_REGISTRY.keys())
+
+
+# ---------------------------------------------------------------------------
+# Admin-only tools that other roles must never call.
+# ---------------------------------------------------------------------------
+_ADMIN_ONLY_TOOLS: frozenset[str] = frozenset(
+    {
+        "execute_python_code",
+        "get_ai_runtime_summary",
+        "get_ai_settings",
+        "update_ai_settings",
+        "list_users",
+        "create_user",
+        "update_user",
+        "delete_user",
+        "delete_patient",
+        "delete_caregiver",
+        "delete_facility",
+        "delete_room",
+    }
+)
+
+# Caregiver has head_caregiver's read tools + own-shift write ops
+# Vitals / timeline manual writes (REST: ROLE_CARE_NOTE_WRITERS — excludes head_caregiver).
+_CARE_NOTE_WRITER_TOOLS: frozenset[str] = frozenset(
+    {
+        "add_vital_reading",
+        "add_health_observation",
+        "add_timeline_event",
+    }
+)
+
+_CAREGIVER_ONLY_WRITE: frozenset[str] = frozenset(
+    {
+        "create_workflow_task",
+        "update_workflow_task_status",
+        "send_message",
+        "add_vital_reading",
+        "add_health_observation",
+        "add_timeline_event",
+        "create_alert",
+        "acknowledge_alert",
+        "create_support_ticket",
+        "create_service_request",
+        "get_my_shift_checklist",
+        "update_my_shift_checklist",
+        "list_calendar_events",
+        "acknowledge_care_directive",
+        "mark_message_read",
+    }
+)
+
+_CAREGIVER_READ: frozenset[str] = frozenset(
+    {
+        "get_current_user_context",
+        "get_system_health",
+        "list_workspaces",
+        "list_visible_patients",
+        "get_patient_details",
+        "list_patient_devices",
+        "list_patient_contacts",
+        "list_patient_caregivers",
+        "list_devices",
+        "get_device_details",
+        "list_active_alerts",
+        "get_alert_details",
+        "list_rooms",
+        "get_room_details",
+        "list_facilities",
+        "get_facility_details",
+        "get_floorplan_layout",
+        "get_floorplan_presence",
+        "list_facility_floors",
+        "get_patient_vitals",
+        "get_patient_timeline",
+        "list_workflow_tasks",
+        "list_workflow_schedules",
+        "get_message_recipients",
+        "get_workspace_analytics",
+        "list_prescriptions",
+        "list_pharmacy_orders",
+        "list_support_tickets",
+        "list_service_requests",
+        "list_caregivers",
+        "list_staff",
+        "get_caregiver_details",
+        "get_staff_details",
+        "get_staff_timeline",
+        "list_caregiver_patients",
+        "list_calendar_events",
+        "get_my_shift_checklist",
+    }
+)
+
+
+@lru_cache(maxsize=1)
+def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
+    all_tools = _all_mcp_workspace_tool_names()
+    forbidden = easeai_forbidden_tools(all_tools)
+    patient_exclusive = patient_exclusive_tools(all_tools)
+    head_caregiver = all_tools - _ADMIN_ONLY_TOOLS - patient_exclusive
+    head_caregiver_copy = set(head_caregiver)
+    caregiver = _CAREGIVER_READ | _CAREGIVER_ONLY_WRITE
+    return {
+        "admin": set(all_tools - forbidden - patient_exclusive),
+        "head_caregiver": set(head_caregiver),
+        "caregiver": set(caregiver - patient_exclusive),
+        "patient": {
+            # Own data read
+            "get_current_user_context",
+            "get_system_health",
+            "get_patient_details",
+            "get_patient_vitals",
+            "get_patient_health_analysis",
+            "get_patient_timeline",
+            "list_patient_devices",
+            "list_patient_contacts",
+            "list_patient_caregivers",
+            # Rooms & facilities (read)
+            "list_rooms",
+            "get_room_details",
+            "get_facility_details",
+            "get_floorplan_layout",
+        "get_floorplan_presence",
+            # Room controls
+            "control_room_smart_device",
+            # Own schedule & tasks
+            "list_workflow_tasks",
+            "list_task_management_tasks",
+            "list_workflow_schedules",
+            "list_calendar_events",
+            # Own medications
+            "list_prescriptions",
+            "list_pharmacy_orders",
+            "request_pharmacy_order",
+            # Alerts (own) — includes patient-scoped SOS creation
+            "list_active_alerts",
+            "sos_create_alert",
+            # Service & support requests
+            "create_service_request",
+            "list_service_requests",
+            "create_support_ticket",
+            "list_support_tickets",
+            # Messaging (same as REST ROLE_ALL_AUTHENTICATED on workflow messages)
+            "get_message_recipients",
+            "list_messages",
+            "mark_message_read",
+            "send_message",
+        },
+    }
+
+
+def _system_prompt_for_role(role: str) -> str:
+    return ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS["caregiver"]) + GENERAL_ASSISTANT_SUFFIX
+
+
+# Cache: skip Copilot fallback after first auth failure to avoid wasting time.
+_copilot_unavailable: bool = False
+_copilot_unavailable_at: float = 0.0
+_COPILOT_UNAVAILABLE_TTL_SECONDS: float = 300.0  # retry Copilot after 5 minutes
+
+
+def _copilot_marked_unavailable() -> bool:
+    """Return True if Copilot was recently marked unavailable (auth failure)."""
+    global _copilot_unavailable, _copilot_unavailable_at
+    if not _copilot_unavailable:
+        return False
+    import time as _time
+    if _time.monotonic() - _copilot_unavailable_at > _COPILOT_UNAVAILABLE_TTL_SECONDS:
+        _copilot_unavailable = False
+        return False
+    return True
+
+
+def _mark_copilot_unavailable() -> None:
+    """Mark Copilot as unavailable for the next few minutes."""
+    global _copilot_unavailable, _copilot_unavailable_at
+    import time as _time
+    _copilot_unavailable = True
+    _copilot_unavailable_at = _time.monotonic()
+
+
+_AI_UNAVAILABLE_MARKERS = (
+    "[ai service temporarily unavailable",
+    "[ai provider is not available right now",
+    "[github copilot is not connected",
+    "[ai request failed",
+    "[requested copilot model",
+    "[ai provider is not available",
+)
+
+
+def _is_unavailable_reply(text: str) -> bool:
+    normalized = (text or "").strip().lower()
+    if not normalized:
+        return True
+    return any(marker in normalized for marker in _AI_UNAVAILABLE_MARKERS)
+
+def _runtime_prompt_metadata(
+    *,
+    provider: str,
+    configured_model: str,
+    active_model: str | None = None,
+) -> str:
+    resolved_model = active_model or configured_model
+    now_utc = datetime.now(timezone.utc)
+    now_bangkok = now_utc.astimezone(ZoneInfo("Asia/Bangkok"))
+    return (
+        "\n\nRuntime metadata:\n"
+        "- assistant name: EaseAI for WheelSense\n"
+        f"- provider: {provider}\n"
+        f"- configured model: {configured_model}\n"
+        f"- active model: {resolved_model}\n"
+        f"- current utc time: {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}\n"
+        f"- current thailand time: {now_bangkok.strftime('%Y-%m-%d %H:%M:%S %Z')}\n"
+        "- If the user asks which provider/model is running, answer from this metadata exactly.\n"
+        "- If the user asks for the current time in Thailand, answer from this metadata exactly.\n"
+        "- Do not guess, switch providers in your answer, or claim a different model."
+    )
+
+CLOUD_PROVIDER_URLS = {
+    "openai": "https://api.openai.com/v1",
+    "openrouter": "https://openrouter.ai/api/v1",
+}
+
+
+async def get_cloud_provider_options(
+    db: AsyncSession, workspace_id: int, provider: str,
+) -> dict[str, str]:
+    from app.core.token_crypto import decrypt_secret
+
+    base_url = CLOUD_PROVIDER_URLS[provider]
+    row = await db.get(WorkspaceAISettings, workspace_id)
+    encrypted = getattr(row, f"{provider}_api_key_encrypted", None)
+    api_key = decrypt_secret(encrypted) if encrypted else None
+    if not api_key:
+        raise ValueError(f"{provider} API key is not configured for this workspace")
+    return {"base_url": base_url, "api_key": api_key}
+
+
+async def get_workspace_ai_defaults(
+    db: AsyncSession, workspace_id: int
+) -> tuple[str, str]:
+    """Return (provider, model) for workspace, falling back to global config."""
+    res = await db.execute(
+        select(WorkspaceAISettings).where(
+            WorkspaceAISettings.workspace_id == workspace_id
+        )
+    )
+    row = res.scalar_one_or_none()
+    if row:
+        return row.default_provider, row.default_model
+    return settings.ai_provider, settings.ai_default_model
+
+async def get_workspace_copilot_token(
+    db: AsyncSession, workspace_id: int
+) -> str | None:
+    res = await db.execute(
+        select(WorkspaceAISettings).where(
+            WorkspaceAISettings.workspace_id == workspace_id
+        )
+    )
+    row = res.scalar_one_or_none()
+    if not row or not row.copilot_token_encrypted:
+        return None
+
+    from app.core.token_crypto import decrypt_secret
+
+    return decrypt_secret(row.copilot_token_encrypted)
+
+async def resolve_effective_ai(
+    db: AsyncSession,
+    *,
+    workspace_id: int,
+    override_provider: str | None,
+    override_model: str | None,
+) -> tuple[str, str]:
+    """Resolve effective AI settings with optional provider/model overrides."""
+    ws_p, ws_m = await get_workspace_ai_defaults(db, workspace_id)
+    provider = (override_provider or ws_p or settings.ai_provider).strip().lower()
+    model = (override_model or ws_m or settings.ai_default_model).strip()
+    if provider not in ("copilot", "openai", "openrouter"):
+        provider = "copilot"
+    if not model:
+        model = settings.ai_default_model
+    return provider, model
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _ensure_utc_datetime(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _normalize_action_timestamps(action: ChatAction) -> ChatAction:
+    action.created_at = _ensure_utc_datetime(action.created_at)
+    action.updated_at = _ensure_utc_datetime(action.updated_at)
+    action.confirmed_at = _ensure_utc_datetime(action.confirmed_at)
+    action.executed_at = _ensure_utc_datetime(action.executed_at)
+    return action
+
+
+def _is_action_visible_to_user(action: ChatAction, user: User) -> bool:
+    if role_is_allowed(user.role, WORKSPACE_ACTION_MANAGER_ROLES):
+        return True
+    return action.proposed_by_user_id == user.id
+
+
+def _ensure_action_visible_to_user(action: ChatAction, user: User) -> None:
+    if not _is_action_visible_to_user(action, user):
+        raise HTTPException(status_code=403, detail="Operation not permitted")
+
+
+def _ensure_tool_allowed_for_role(role: str, tool_name: str) -> None:
+    allowed = get_role_mcp_tool_allowlist().get(role, set())
+    if tool_name not in allowed:
+        raise HTTPException(status_code=403, detail="Tool is not allowed for this role")
+
+
+def _normalize_execution_result(raw: Any) -> dict[str, Any]:
+    if isinstance(raw, dict):
+        return raw
+    return {"result": raw}
+
+
+def _extract_execution_plan(action: ChatAction) -> ExecutionPlan | None:
+    proposed_changes = dict(action.proposed_changes or {})
+    plan_payload = proposed_changes.get("execution_plan")
+    if not isinstance(plan_payload, dict):
+        return None
+    try:
+        return ExecutionPlan.model_validate(plan_payload)
+    except Exception:
+        return None
+
+
+def _is_read_only_mcp_tool(tool_name: str | None) -> bool:
+    if not tool_name:
+        return False
+    from app.agent_runtime.layers.layer4_constrained_synthesis import is_mcp_tool_read_only
+
+    return is_mcp_tool_read_only(tool_name)
+
+
+def _action_requires_confirmation_before_force(action: ChatAction) -> bool:
+    if action.action_type == "note":
+        return False
+    if action.action_type == "mcp_tool":
+        return not _is_read_only_mcp_tool(action.tool_name)
+    if action.action_type == "mcp_plan":
+        plan = _extract_execution_plan(action)
+        if plan is None:
+            return True
+        return any(not _is_read_only_mcp_tool(step.tool_name) for step in plan.steps)
+    return True
+
+
+def _messages_to_openai(
+    messages: list[ChatMessagePart], system_text: str
+) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = [{"role": "system", "content": system_text}]
+    for m in messages:
+        out.append({"role": m.role, "content": m.content})
+    return out
+
+def _messages_to_copilot_prompt(messages: list[ChatMessagePart]) -> str:
+    """Copilot CLI session uses a single prompt per turn for our integration."""
+    lines: list[str] = []
+    for m in messages:
+        lines.append(f"{m.role.upper()}: {m.content}")
+    return "\n\n".join(lines)
+
+def build_copilot_client_config(
+    github_token: str | None,
+) -> object | None:
+    from copilot import ExternalServerConfig, SubprocessConfig
+
+    url = settings.copilot_cli_url.strip()
+    if github_token:
+        return SubprocessConfig(github_token=github_token)
+    if url and "copilot-cli" not in url:
+        return ExternalServerConfig(url=url)
+    return None
+
+def _copilot_model_id(model: object) -> str | None:
+    model_id = getattr(model, "id", None)
+    return model_id if isinstance(model_id, str) else None
+
+def allowed_copilot_models_from(models: list[object]) -> list[object]:
+    return [
+        model
+        for model in models
+        if _copilot_model_id(model) in COPILOT_ALLOWED_MODELS
+    ]
+
+def fallback_copilot_models() -> list[object]:
+    return [
+        SimpleNamespace(
+            id=model_id,
+            name=metadata["name"],
+            capabilities=SimpleNamespace(
+                reasoning_effort=metadata["supports_reasoning_effort"],
+                vision=metadata["supports_vision"],
+            ),
+        )
+        for model_id, metadata in COPILOT_ALLOWED_MODELS.items()
+    ]
+
+
+def has_copilot_connection(github_token: str | None) -> bool:
+    external_cli_configured = bool(
+        settings.copilot_cli_url.strip()
+        and "copilot-cli" not in settings.copilot_cli_url.strip()
+    )
+    return bool(github_token or external_cli_configured)
+
+async def list_copilot_models(
+    *,
+    github_token: str | None = None,
+) -> list[object]:
+    from copilot import CopilotClient
+    _patch_copilot_model_billing_tolerance()
+
+    config = build_copilot_client_config(github_token)
+    if config is None:
+        raise RuntimeError(
+            "GitHub Copilot is not connected for this workspace. Please authenticate first."
+        )
+
+    async with CopilotClient(config) as client:
+        return await client.list_models()
+
+
+def _patch_copilot_model_billing_tolerance() -> None:
+    """Tolerate missing 'multiplier' in Copilot ModelBilling (GitHub API drift).
+
+    The Copilot SDK 0.1.0 requires 'multiplier' in billing dicts, but GitHub's
+    API no longer sends it for some models. Default to 1.0 so model discovery
+    succeeds instead of falling back. Idempotent.
+    """
+    try:
+        from copilot.client import ModelBilling
+    except ImportError:
+        return
+    if getattr(ModelBilling.from_dict, "_wheelsense_patched", False):
+        return
+
+    @staticmethod
+    def _tolerant_from_dict(obj: object) -> object:
+        if not isinstance(obj, dict):
+            return ModelBilling(multiplier=1.0)
+        return ModelBilling(multiplier=float(obj.get("multiplier", 1.0)))
+
+    _tolerant_from_dict._wheelsense_patched = True  # type: ignore[attr-defined]
+    ModelBilling.from_dict = _tolerant_from_dict  # type: ignore[assignment]
+
+
+def _log_provider_attempts(attempts: list[ProviderAttempt]) -> None:
+    if not attempts:
+        return
+    logger.info(
+        "ai_provider_attempts",
+        extra={"provider_attempts": [attempt.as_dict() for attempt in attempts]},
+    )
+
+
+def _publish_provider_attempts(
+    attempts: list[ProviderAttempt],
+    out: list[dict[str, object]] | None,
+) -> None:
+    if not attempts:
+        return
+    _log_provider_attempts(attempts)
+    if out is not None:
+        out.extend(attempt.as_dict() for attempt in attempts)
+
+async def stream_openai_compatible(
+    *,
+    model: str,
+    oai_messages: list[dict[str, str]],
+    max_tokens: int | None = 300,
+    base_url: str,
+    api_key: str,
+    response_schema: dict[str, Any] | None = None,
+) -> AsyncIterator[str]:
+    client = AsyncOpenAI(
+        base_url=base_url,
+        api_key=api_key,
+    )
+    try:
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": oai_messages,
+            "stream": True,
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        if response_schema:
+            kwargs["response_format"] = {"type": "json_schema", "json_schema": {"name": "task_intake", "schema": response_schema}}
+            kwargs["temperature"] = 0
+        stream = await client.chat.completions.create(**kwargs)
+        async for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            if delta and delta.content:
+                yield delta.content
+    except Exception as exc:
+        logger.warning("OpenAI-compatible stream failed (%s)", type(exc).__name__)
+        yield "\n[AI service temporarily unavailable. Please try again.]\n"
+    finally:
+        await client.close()
+
+
+@dataclass
+class ParsedToolCall:
+    id: str
+    name: str
+    arguments: dict[str, Any]
+
+
+def _strip_optional(annotation: Any) -> tuple[Any, bool]:
+    origin = get_origin(annotation)
+    if origin is None:
+        return annotation, False
+    args = get_args(annotation)
+    if type(None) not in args:
+        return annotation, False
+    rest = [a for a in args if a is not type(None)]
+    if len(rest) == 1:
+        return rest[0], True
+    return annotation, False
+
+
+def _annotation_to_schema(annotation: Any) -> dict[str, Any]:
+    ann, _ = _strip_optional(annotation)
+    origin = get_origin(ann)
+    args = get_args(ann)
+    if origin is list or ann is list:
+        inner = args[0] if args else str
+        if inner is str:
+            return {"type": "array", "items": {"type": "string"}}
+        return {"type": "array", "items": _annotation_to_schema(inner)}
+    if origin is dict or ann is dict:
+        return {"type": "object", "additionalProperties": True}
+    if ann is int:
+        return {"type": "integer"}
+    if ann is float:
+        return {"type": "number"}
+    if ann is bool:
+        return {"type": "boolean"}
+    if ann is str:
+        return {"type": "string"}
+    return {"type": "string"}
+
+
+async def complete_openai_compatible_tool_calls(
+    *,
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    tool_choice: str = "auto",
+    base_url: str,
+    api_key: str,
+) -> tuple[list[ParsedToolCall], str]:
+    """Non-streaming tool completion for an OpenAI-compatible cloud provider."""
+    client = AsyncOpenAI(
+        base_url=base_url,
+        api_key=api_key,
+    )
+    try:
+        resp = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            stream=False,
+        )
+    finally:
+        await client.close()
+    choice = resp.choices[0]
+    msg = choice.message
+    text = (msg.content or "").strip()
+    out: list[ParsedToolCall] = []
+    for tc in msg.tool_calls or []:
+        fn = getattr(tc, "function", None)
+        if fn is None:
+            continue
+        name = getattr(fn, "name", None) or ""
+        raw_args = getattr(fn, "arguments", None) or "{}"
+        try:
+            parsed = json.loads(raw_args) if isinstance(raw_args, str) else dict(raw_args)
+        except Exception:
+            parsed = {}
+        if not isinstance(parsed, dict):
+            parsed = {}
+        out.append(
+            ParsedToolCall(
+                id=str(getattr(tc, "id", "") or name),
+                name=name,
+                arguments=parsed,
+            )
+        )
+    return out, text
+
+
+def parse_tool_calls_json_blob(text: str) -> list[ParsedToolCall]:
+    """Parse `{"tool_calls":[{"name":...,"arguments":{}}]}` from model text (Copilot / fallback)."""
+    blob = (text or "").strip()
+    if not blob:
+        return []
+    start = blob.find("{")
+    end = blob.rfind("}")
+    if start < 0 or end <= start:
+        return []
+    try:
+        data = json.loads(blob[start : end + 1])
+    except Exception:
+        return []
+    if not isinstance(data, dict):
+        return []
+    raw_calls = data.get("tool_calls")
+    if not isinstance(raw_calls, list):
+        return []
+    out: list[ParsedToolCall] = []
+    for i, item in enumerate(raw_calls):
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        args = item.get("arguments")
+        if not isinstance(args, dict):
+            args = {}
+        out.append(ParsedToolCall(id=str(item.get("id") or f"call-{i}"), name=name, arguments=args))
+    return out
+
+
+async def collect_copilot_json_tool_calls(
+    *,
+    db: AsyncSession,
+    user: User,
+    workspace: Workspace,
+    system_text: str,
+    user_prompt: str,
+    history: list[ChatMessagePart] | None = None,
+) -> list[ParsedToolCall]:
+    """Ask workspace primary AI (Copilot or a cloud provider) for JSON-only tool_calls.
+
+    Used when native OpenAI-style ``tools=`` is unavailable (Copilot path) or as a fallback.
+    Optional ``history`` supplies prior user/assistant turns for multi-turn routing.
+    """
+    routing_tail = (
+        f"{user_prompt}\n\n"
+        "Respond with ONLY a single JSON object, no markdown, in this exact shape:\n"
+        '{"tool_calls":[{"name":"<mcp_tool_name>","arguments":{}}]}\n'
+        "Use an empty tool_calls array if no tool applies."
+    )
+    tail = [m for m in (history or [])[-12:] if m.role in ("user", "assistant")]
+    if tail:
+        transcript = "\n\n".join(f"{m.role.upper()}: {m.content}" for m in tail)
+        content = (
+            "Prior conversation (most recent last):\n"
+            f"{transcript}\n\n---\n\nCurrent routing request:\n{routing_tail}"
+        )
+    else:
+        content = routing_tail
+    messages = [ChatMessagePart(role="user", content=content)]
+    oai_system = (
+        system_text
+        + "\n\nYou are a routing engine. Output valid JSON only. "
+        "Never call tools yourself; only list intended tool names and arguments."
+    )
+    oai_messages = _messages_to_openai(messages, oai_system)
+    parts: list[str] = []
+    provider, model = await resolve_effective_ai(db, workspace_id=workspace.id, override_provider=None, override_model=None)
+    if provider != "copilot":
+        options = (
+            await get_cloud_provider_options(db, workspace.id, provider)
+            if provider in CLOUD_PROVIDER_URLS else {}
+        )
+        async for chunk in stream_openai_compatible(model=model, oai_messages=oai_messages, **options):
+            parts.append(chunk)
+    else:
+        github_token = await get_workspace_copilot_token(db, workspace.id)
+        prompt = oai_system + "\n\nCONVERSATION:\n" + _messages_to_copilot_prompt(messages)
+        async for chunk in stream_copilot(model=model or "gpt-4.1", prompt=prompt, github_token=github_token):
+            parts.append(chunk)
+    return parse_tool_calls_json_blob("".join(parts))
+
+
+async def stream_copilot(
+    *,
+    model: str,
+    prompt: str,
+    github_token: str | None = None,
+    _fallback_attempted: bool = False,
+) -> AsyncIterator[str]:
+    try:
+        from copilot import CopilotClient
+        from copilot.generated.session_events import SessionEventType
+        from copilot.session import PermissionHandler
+    except ImportError:
+        logger.exception("copilot sdk import failed")
+        yield "\n[AI provider is not available right now.]\n"
+        return
+
+    config = build_copilot_client_config(github_token)
+    if config is None:
+        logger.error(
+            "No github token available for Copilot subprocess, and external CLI is unavailable."
+        )
+        _mark_copilot_unavailable()
+        yield "\n[GitHub Copilot is not connected for this Workspace. Please go to AI Settings and authenticate to connect.]\n"
+        return
+
+    chunks: asyncio.Queue[str | None] = asyncio.Queue()
+    error_holder: list[str] = []
+    got_delta = False
+    active_model = model or "default"
+
+    def on_event(event: object) -> None:
+        nonlocal got_delta
+        try:
+            et = getattr(event, "type", None)
+            et_s = getattr(et, "value", et)
+            data = getattr(event, "data", None)
+            if (
+                et == SessionEventType.ASSISTANT_MESSAGE_DELTA
+                or et_s == "assistant.message_delta"
+            ):
+                dc = getattr(data, "delta_content", None) if data else None
+                if dc:
+                    got_delta = True
+                    chunks.put_nowait(dc)
+            elif et == SessionEventType.ASSISTANT_MESSAGE or et_s == "assistant.message":
+                content = getattr(data, "content", None) if data else None
+                if content and not got_delta:
+                    chunks.put_nowait(content)
+            elif et == SessionEventType.SESSION_IDLE or et_s == "session.idle":
+                chunks.put_nowait(None)
+            elif et == SessionEventType.SESSION_ERROR or et_s == "session.error":
+                msg = getattr(data, "message", str(data)) if data else "session error"
+                error_holder.append(str(msg))
+                chunks.put_nowait(None)
+        except Exception as ex:
+            logger.exception("copilot event handler: %s", ex)
+            error_holder.append(str(ex))
+            chunks.put_nowait(None)
+
+    try:
+        async with CopilotClient(config) as client:
+            available_models = fallback_copilot_models()
+            available_model_ids = {m.id for m in available_models}
+            if model and model not in available_model_ids:
+                available = ", ".join(sorted(available_model_ids)) or "none"
+                logger.warning(
+                    "copilot model %s not available; available=%s",
+                    model,
+                    available,
+                )
+                yield (
+                    f"\n[Requested Copilot model '{model}' is not available for this workspace. "
+                    f"Available models: {available}]\n"
+                )
+                return
+
+            session = await client.create_session(
+                on_permission_request=PermissionHandler.approve_all,
+                model=model,
+                streaming=True,
+            )
+            try:
+                current = await session.rpc.model.get_current()
+                if current.model_id:
+                    active_model = current.model_id
+            except Exception:
+                logger.exception("copilot get_current_model failed")
+
+            if model and active_model != model:
+                logger.warning(
+                    "copilot session active model differs from requested model: requested=%s active=%s",
+                    model,
+                    active_model,
+                )
+
+            runtime_prompt = (
+                f"{prompt}\n\n"
+                "Runtime metadata (validated by the backend):\n"
+                "- provider: copilot\n"
+                f"- configured model: {model or 'default'}\n"
+                f"- active model: {active_model}\n"
+                "- If asked about your runtime or model, answer from this metadata exactly."
+            )
+
+            session.on(on_event)
+            await session.send(runtime_prompt)
+            while True:
+                item = await chunks.get()
+                if item is None:
+                    break
+                yield item
+            if error_holder:
+                yield "\n[AI request failed. Please retry shortly.]\n"
+            await session.disconnect()
+    except Exception as exc:
+        if (not _fallback_attempted) and model != "gpt-4.1" and "not available" in str(exc).lower():
+            logger.warning(
+                "copilot model %s unavailable, retrying with gpt-4.1",
+                model,
+            )
+            async for part in stream_copilot(
+                model="gpt-4.1",
+                prompt=prompt,
+                github_token=github_token,
+                _fallback_attempted=True,
+            ):
+                yield part
+            return
+        # Mark Copilot as unavailable so we skip it in fallback for a while.
+        if "not authenticated" in str(exc).lower() or "auth" in str(exc).lower():
+            _mark_copilot_unavailable()
+        logger.exception("copilot stream failed")
+        yield "\n[AI service temporarily unavailable. Please try again.]\n"
+
+async def stream_chat_response(
+    *,
+    db: AsyncSession,
+    user: User,
+    workspace: Workspace,
+    messages: list[ChatMessagePart],
+    provider_override: str | None,
+    model_override: str | None,
+    system_instructions: str | None = None,
+    max_tokens: int = 300,
+    response_schema: dict[str, Any] | None = None,
+) -> AsyncIterator[str]:
+    """Yield text chunks for the assistant reply."""
+    provider, model = await resolve_effective_ai(
+        db,
+        workspace_id=workspace.id,
+        override_provider=provider_override,
+        override_model=model_override,
+    )
+    system_text = _system_prompt_for_role(user.role)
+    if system_instructions:
+        system_text += "\n\n" + system_instructions
+
+    if provider != "copilot":
+        options = (
+            await get_cloud_provider_options(db, workspace.id, provider)
+            if provider in CLOUD_PROVIDER_URLS else {}
+        )
+        cloud_system_text = system_text + _runtime_prompt_metadata(
+            provider=provider,
+            configured_model=model,
+        )
+        oai_messages = _messages_to_openai(messages, cloud_system_text)
+        async for part in stream_openai_compatible(model=model, oai_messages=oai_messages, max_tokens=max_tokens, **({"response_schema": response_schema} if response_schema else {}), **options):
+            yield part
+        return
+
+    github_token = await get_workspace_copilot_token(db, workspace.id)
+    prompt = system_text + _runtime_prompt_metadata(
+        provider=provider,
+        configured_model=model or "gpt-4.1",
+    )
+    prompt += "\n\nCONVERSATION:\n" + _messages_to_copilot_prompt(messages)
+    async for part in stream_copilot(
+        model=model or "gpt-4.1",
+        prompt=prompt,
+        github_token=github_token,
+    ):
+        yield part
+
+
+async def collect_chat_reply_best_effort(
+    *,
+    db: AsyncSession,
+    user: User,
+    workspace: Workspace,
+    messages: list[ChatMessagePart],
+    provider_attempts_out: list[dict[str, object]] | None = None,
+    system_instructions: str | None = None,
+    max_tokens: int = 300,
+    response_schema: dict[str, Any] | None = None,
+) -> str:
+    """Collect a full assistant reply and fail over providers when needed."""
+    primary_provider, primary_model = await get_workspace_ai_defaults(db, workspace.id)
+    if primary_provider not in {"copilot", "openai", "openrouter"}:
+        primary_provider = settings.ai_provider
+    if not primary_model:
+        primary_model = settings.ai_default_model
+
+    attempts: list[tuple[str, str]] = [(primary_provider, primary_model)]
+    if primary_provider == "copilot" and primary_model != "gpt-4.1":
+        attempts.append(("copilot", "gpt-4.1"))
+    elif primary_provider != "copilot":
+        # Only add Copilot fallback if a usable token exists.
+        github_token = await get_workspace_copilot_token(db, workspace.id)
+        if has_copilot_connection(github_token) and not _copilot_marked_unavailable():
+            attempts.append(("copilot", "gpt-4.1"))
+
+    seen: set[tuple[str, str]] = set()
+    unique_attempts: list[tuple[str, str]] = []
+    for provider, model in attempts:
+        key = (provider, model)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_attempts.append(key)
+
+    provider_attempts: list[ProviderAttempt] = []
+    last_reply = ""
+    import time as _time
+    for index, (provider, model) in enumerate(unique_attempts, start=1):
+        logger.info("best_effort attempt %d/%d: provider=%s model=%s", index, len(unique_attempts), provider, model)
+        _t0 = _time.perf_counter()
+        timer = start_provider_attempt(
+            provider=provider,
+            model=model,
+            phase="best_effort_reply",
+            attempt=index,
+        )
+        has_next_attempt = index < len(unique_attempts)
+        parts: list[str] = []
+        try:
+            async for chunk in stream_chat_response(
+                db=db,
+                user=user,
+                workspace=workspace,
+                messages=messages,
+                provider_override=provider,
+                model_override=model,
+                **({"system_instructions": system_instructions} if system_instructions else {}),
+                **({"max_tokens": max_tokens} if max_tokens != 300 else {}),
+                **({"response_schema": response_schema} if response_schema else {}),
+            ):
+                parts.append(chunk)
+        except Exception as exc:
+            logger.warning("best_effort attempt %d FAILED in %.2fs: %s", index, _time.perf_counter()-_t0, exc)
+            provider_attempts.append(
+                timer.finish(
+                    status="fallback" if has_next_attempt else "error",
+                    fallback_reason="provider_exception" if has_next_attempt else None,
+                    error=str(exc),
+                )
+            )
+            logger.exception("AI provider attempt failed: provider=%s model=%s", provider, model)
+            continue
+
+        reply = "".join(parts).strip()
+        logger.info("best_effort attempt %d done in %.2fs: reply_len=%d unavailable=%s", index, _time.perf_counter()-_t0, len(reply), _is_unavailable_reply(reply))
+        if reply and not _is_unavailable_reply(reply):
+            provider_attempts.append(timer.finish(status="success"))
+            _publish_provider_attempts(provider_attempts, provider_attempts_out)
+            return reply
+        if reply:
+            last_reply = reply
+        provider_attempts.append(
+            timer.finish(
+                status="fallback" if has_next_attempt else "error",
+                fallback_reason="provider_unavailable_reply" if has_next_attempt else None,
+                error=reply or "empty reply",
+            )
+        )
+
+    _publish_provider_attempts(provider_attempts, provider_attempts_out)
+    if last_reply:
+        return last_reply
+    return "AI service is unavailable right now. Please try again shortly."
+
+
+async def collect_grounded_tool_answer(
+    *,
+    db: AsyncSession,
+    user: User,
+    workspace: Workspace,
+    user_message: str,
+    tool_name: str,
+    tool_result: Any,
+    provider_attempts_out: list[dict[str, object]] | None = None,
+) -> str:
+    tool_json = _safe_json(tool_result)
+    grounded_messages = [
+        ChatMessagePart(
+            role="user",
+            content=(
+                f"User request:\n{user_message}\n\n"
+                f"Ground truth WheelSense tool used: {tool_name}\n"
+                f"Ground truth tool result JSON:\n{tool_json}\n\n"
+                "Answer in the language of the user's latest message. "
+                "If the latest user message is English, answer in English; if Thai, answer in Thai. "
+                "Use only the grounded tool result for WheelSense facts. "
+                "Do not dump raw JSON unless the user explicitly asked for raw data. "
+                "If the result does not contain enough information, say that clearly."
+            ),
+        )
+    ]
+    return await collect_chat_reply_best_effort(
+        db=db,
+        user=user,
+        workspace=workspace,
+        messages=grounded_messages,
+        provider_attempts_out=provider_attempts_out,
+    )
+
+
+async def collect_grounded_multi_tool_answer(
+    *,
+    db: AsyncSession,
+    user: User,
+    workspace: Workspace,
+    user_message: str,
+    tool_results: list[tuple[str, Any]],
+    provider_attempts_out: list[dict[str, object]] | None = None,
+) -> str:
+    """Summarize multiple MCP read results in one assistant reply."""
+    blocks: list[str] = []
+    for tool_name, tool_result in tool_results:
+        raw = _safe_json(tool_result)
+        # Truncate large tool results to keep synthesis fast.
+        if len(raw) > 2000:
+            raw = raw[:2000] + "\n... (truncated, showing first 2000 chars)"
+        blocks.append(f"Tool `{tool_name}` JSON:\n{raw}")
+    grounded_messages = [
+        ChatMessagePart(
+            role="user",
+            content=(
+                f"User request:\n{user_message}\n\n"
+                "Ground truth WheelSense tool results (in order):\n\n"
+                + "\n\n".join(blocks)
+                + "\n\nAnswer in the language of the user's latest message. "
+                "If the latest user message is English, answer in English; if Thai, answer in Thai. "
+                "Use only the grounded tool results for WheelSense facts. "
+                "Synthesize across tools when needed. "
+                "Be concise: summarize key findings in 2-4 sentences, do not list every row. "
+                "Do not dump raw JSON unless the user explicitly asked for raw data."
+            ),
+        )
+    ]
+    return await collect_chat_reply_best_effort(
+        db=db,
+        user=user,
+        workspace=workspace,
+        messages=grounded_messages,
+        provider_attempts_out=provider_attempts_out,
+    )
+
+
+async def collect_plan_confirmation_reply(
+    *,
+    db: AsyncSession,
+    user: User,
+    workspace: Workspace,
+    user_message: str,
+    execution_plan: ExecutionPlan,
+    provider_attempts_out: list[dict[str, object]] | None = None,
+) -> str:
+    plan_json = _safe_json(execution_plan.model_dump(mode="json"))
+    plan_messages = [
+        ChatMessagePart(
+            role="user",
+            content=(
+                f"User request:\n{user_message}\n\n"
+                f"Planned WheelSense execution JSON:\n{plan_json}\n\n"
+                "Explain the plan naturally in the user's language. "
+                "State what will be changed, key targets, and that user confirmation is required before execution. "
+                "Do not claim the action has already happened."
+            ),
+        )
+    ]
+    return await collect_chat_reply_best_effort(
+        db=db,
+        user=user,
+        workspace=workspace,
+        messages=plan_messages,
+        provider_attempts_out=provider_attempts_out,
+    )
+
+
+def _safe_json(payload: Any) -> str:
+    try:
+        return json.dumps(payload, ensure_ascii=False, indent=2, default=str)
+    except Exception:
+        return str(payload)
+
+
+async def get_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    action_id: int,
+) -> ChatAction | None:
+    result = await db.execute(
+        select(ChatAction).where(
+            ChatAction.workspace_id == ws_id,
+            ChatAction.id == action_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_chat_actions(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    user: User,
+    limit: int = 100,
+    conversation_id: int | None = None,
+) -> list[ChatAction]:
+    stmt = select(ChatAction).where(ChatAction.workspace_id == ws_id)
+    if conversation_id is not None:
+        stmt = stmt.where(ChatAction.conversation_id == conversation_id)
+    if not role_is_allowed(user.role, WORKSPACE_ACTION_MANAGER_ROLES):
+        stmt = stmt.where(ChatAction.proposed_by_user_id == user.id)
+    result = await db.execute(stmt.order_by(ChatAction.created_at.desc()).limit(limit))
+    return list(result.scalars().all())
+
+
+async def propose_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    actor: User,
+    payload: ChatActionProposeIn,
+) -> ChatAction:
+    if payload.conversation_id is not None:
+        conv = await db.get(ChatConversation, payload.conversation_id)
+        if conv is None or conv.workspace_id != ws_id:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        if not role_is_allowed(actor.role, WORKSPACE_ACTION_MANAGER_ROLES) and conv.user_id != actor.id:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+
+    if payload.action_type == "mcp_tool":
+        assert payload.tool_name is not None
+        _ensure_tool_allowed_for_role(actor.role, payload.tool_name)
+    elif payload.action_type == "mcp_plan":
+        plan_payload = dict(payload.proposed_changes or {}).get("execution_plan")
+        if not isinstance(plan_payload, dict):
+            raise HTTPException(status_code=422, detail="execution_plan is required for mcp_plan")
+        plan = ExecutionPlan.model_validate(plan_payload)
+        for step in plan.steps:
+            _ensure_tool_allowed_for_role(actor.role, step.tool_name)
+
+    row = ChatAction(
+        workspace_id=ws_id,
+        conversation_id=payload.conversation_id,
+        proposed_by_user_id=actor.id,
+        title=payload.title,
+        action_type=payload.action_type,
+        tool_name=payload.tool_name,
+        tool_arguments=dict(payload.tool_arguments),
+        summary=payload.summary,
+        proposed_changes=dict(payload.proposed_changes),
+        status="proposed",
+    )
+    db.add(row)
+    await db.flush()
+    await audit_trail_service.log_event(
+        db,
+        ws_id,
+        actor_user_id=actor.id,
+        domain="chat_action",
+        action="propose",
+        entity_type="chat_action",
+        entity_id=row.id,
+        details={
+            "action_type": row.action_type,
+            "tool_name": row.tool_name,
+            "conversation_id": row.conversation_id,
+        },
+    )
+    await db.commit()
+    await db.refresh(row)
+    return _normalize_action_timestamps(row)
+
+
+async def confirm_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    action_id: int,
+    actor: User,
+    approved: bool,
+    note: str,
+) -> ChatAction:
+    action = await get_chat_action(db, ws_id=ws_id, action_id=action_id)
+    if action is None:
+        raise HTTPException(status_code=404, detail="Chat action not found")
+    _ensure_action_visible_to_user(action, actor)
+    if action.status not in {"proposed", "confirmed"}:
+        raise HTTPException(status_code=409, detail="Chat action cannot be confirmed")
+
+    action.confirmed_by_user_id = actor.id
+    action.confirmed_at = _utcnow()
+    action.confirmation_note = note or ""
+    action.status = "confirmed" if approved else "rejected"
+    db.add(action)
+    await audit_trail_service.log_event(
+        db,
+        ws_id,
+        actor_user_id=actor.id,
+        domain="chat_action",
+        action="confirm" if approved else "reject",
+        entity_type="chat_action",
+        entity_id=action.id,
+        details={"note": action.confirmation_note},
+    )
+    await db.commit()
+    await db.refresh(action)
+    return _normalize_action_timestamps(action)
+
+
+async def execute_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    action_id: int,
+    actor: User,
+    force: bool = False,
+) -> tuple[ChatAction, dict[str, Any]]:
+    action = await get_chat_action(db, ws_id=ws_id, action_id=action_id)
+    if action is None:
+        raise HTTPException(status_code=404, detail="Chat action not found")
+    _ensure_action_visible_to_user(action, actor)
+
+    if action.status != "confirmed":
+        if not (force and action.status == "proposed"):
+            raise HTTPException(status_code=409, detail="Chat action must be confirmed first")
+        if _action_requires_confirmation_before_force(action):
+            raise HTTPException(
+                status_code=409,
+                detail="Mutating chat action must be confirmed before execution",
+            )
+
+    result_payload: dict[str, Any]
+    if action.action_type == "note":
+        result_payload = {"status": "noop", "message": "Note action recorded"}
+    elif action.action_type == "mcp_tool":
+        if not action.tool_name:
+            raise HTTPException(status_code=422, detail="tool_name is required")
+        _ensure_tool_allowed_for_role(actor.role, action.tool_name)
+        try:
+            execution_plan = ExecutionPlan(
+                playbook="compat-single-tool",
+                summary=action.summary or action.title,
+                reasoning_target="medium",
+                model_target="copilot:gpt-4.1",
+                risk_level="low",
+                steps=[
+                    ExecutionPlanStep(
+                        id="single-step",
+                        title=action.title,
+                        tool_name=action.tool_name,
+                        arguments=dict(action.tool_arguments or {}),
+                        risk_level="low",
+                        permission_basis=[],
+                        affected_entities=[],
+                        requires_confirmation=True,
+                    )
+                ],
+            )
+            result_payload = (
+                await agent_runtime_client.execute_plan(
+                    actor_access_token=getattr(actor, "_access_token", ""),
+                    execution_plan=execution_plan,
+                )
+            ).execution_result
+        except Exception as exc:
+            action.status = "failed"
+            action.executed_by_user_id = actor.id
+            action.executed_at = _utcnow()
+            action.error_message = str(exc)
+            action.execution_result = {"error": str(exc)}
+            db.add(action)
+            await audit_trail_service.log_event(
+                db,
+                ws_id,
+                actor_user_id=actor.id,
+                domain="chat_action",
+                action="execute_failed",
+                entity_type="chat_action",
+                entity_id=action.id,
+                details={"error": str(exc), "tool_name": action.tool_name},
+            )
+            await db.commit()
+            await db.refresh(action)
+            _normalize_action_timestamps(action)
+            raise HTTPException(status_code=500, detail="Chat action execution failed") from exc
+    elif action.action_type == "mcp_plan":
+        execution_plan = _extract_execution_plan(action)
+        if execution_plan is None:
+            raise HTTPException(status_code=422, detail="execution_plan is required")
+        for step in execution_plan.steps:
+            _ensure_tool_allowed_for_role(actor.role, step.tool_name)
+        try:
+            runtime_result = await agent_runtime_client.execute_plan(
+                actor_access_token=getattr(actor, "_access_token", ""),
+                execution_plan=execution_plan,
+            )
+            result_payload = runtime_result.execution_result
+            if runtime_result.message and isinstance(result_payload, dict):
+                result_payload.setdefault("message", runtime_result.message)
+        except Exception as exc:
+            action.status = "failed"
+            action.executed_by_user_id = actor.id
+            action.executed_at = _utcnow()
+            action.error_message = str(exc)
+            action.execution_result = {"error": str(exc)}
+            db.add(action)
+            await audit_trail_service.log_event(
+                db,
+                ws_id,
+                actor_user_id=actor.id,
+                domain="chat_action",
+                action="execute_failed",
+                entity_type="chat_action",
+                entity_id=action.id,
+                details={"error": str(exc), "action_type": action.action_type},
+            )
+            await db.commit()
+            await db.refresh(action)
+            _normalize_action_timestamps(action)
+            raise HTTPException(status_code=500, detail="Chat action execution failed") from exc
+    else:
+        raise HTTPException(status_code=422, detail="Unsupported chat action type")
+
+    action.status = "executed"
+    action.executed_by_user_id = actor.id
+    action.executed_at = _utcnow()
+    action.error_message = ""
+    action.execution_result = result_payload
+    db.add(action)
+    await audit_trail_service.log_event(
+        db,
+        ws_id,
+        actor_user_id=actor.id,
+        domain="chat_action",
+        action="execute",
+        entity_type="chat_action",
+        entity_id=action.id,
+        details={"tool_name": action.tool_name, "result": result_payload},
+    )
+    await db.commit()
+    await db.refresh(action)
+    return _normalize_action_timestamps(action), result_payload

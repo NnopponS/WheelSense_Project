@@ -1,0 +1,168 @@
+from __future__ import annotations
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""Facility and Floor CRUD endpoints."""
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.api.dependencies import (
+    RequireRole,
+    get_current_user_workspace,
+    get_db,
+    ROLE_FACILITY_READ,
+    ROLE_PATIENT_MANAGERS,
+)
+from app.models.core import Workspace
+from app.models.core import Room
+from app.models.users import User
+from app.models.facility import Facility, Floor
+from app.schemas.facility import (
+    FacilityCreate,
+    FacilityUpdate,
+    FacilityOut,
+    FloorCreate,
+    FloorUpdate,
+    FloorOut,
+)
+from app.services.base import CRUDBase
+
+facility_service = CRUDBase[Facility, FacilityCreate, FacilityUpdate](Facility)
+floor_service = CRUDBase[Floor, FloorCreate, FloorUpdate](Floor)
+
+router = APIRouter()
+
+# ── Facility CRUD ────────────────────────────────────────────────────────────
+
+@router.get("", response_model=list[FacilityOut])
+async def list_facilities(
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_FACILITY_READ)),
+):
+    return await facility_service.get_multi(db, ws_id=ws.id, skip=skip, limit=limit)
+
+@router.post("", response_model=FacilityOut, status_code=201)
+async def create_facility(
+    data: FacilityCreate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    return await facility_service.create(db, ws_id=ws.id, obj_in=data)
+
+@router.get("/{facility_id}", response_model=FacilityOut)
+async def get_facility(
+    facility_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_FACILITY_READ)),
+):
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+    return fac
+
+@router.delete("/{facility_id}", status_code=204)
+async def delete_facility(
+    facility_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    deleted = await facility_service.delete(db, ws_id=ws.id, id=facility_id)
+    if not deleted:
+        raise HTTPException(404, "Facility not found")
+
+@router.patch("/{facility_id}", response_model=FacilityOut)
+async def update_facility(
+    facility_id: int,
+    data: FacilityUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+    return await facility_service.update(db, ws_id=ws.id, db_obj=fac, obj_in=data)
+
+# ── Floor CRUD ───────────────────────────────────────────────────────────────
+
+@router.get("/{facility_id}/floors", response_model=list[FloorOut])
+async def list_floors(
+    facility_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_FACILITY_READ)),
+):
+    all_floors = await floor_service.get_multi(db, ws_id=ws.id)
+    return sorted(
+        (f for f in all_floors if f.facility_id == facility_id),
+        key=lambda floor: (floor.floor_number, floor.id),
+    )
+
+@router.post("/{facility_id}/floors", response_model=FloorOut, status_code=201)
+async def create_floor(
+    facility_id: int,
+    data: FloorCreate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    # Verify facility exists and belongs to workspace
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+    # Override facility_id from path
+    floor_data = data.model_copy(update={"facility_id": facility_id})
+    return await floor_service.create(db, ws_id=ws.id, obj_in=floor_data)
+
+@router.patch("/{facility_id}/floors/{floor_id}", response_model=FloorOut)
+async def update_floor(
+    facility_id: int,
+    floor_id: int,
+    data: FloorUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+    floor = await floor_service.get(db, ws_id=ws.id, id=floor_id)
+    if not floor or floor.facility_id != facility_id:
+        raise HTTPException(404, "Floor not found")
+    return await floor_service.update(db, ws_id=ws.id, db_obj=floor, obj_in=data)
+
+@router.delete("/{facility_id}/floors/{floor_id}", status_code=204)
+async def delete_floor(
+    facility_id: int,
+    floor_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+
+    floor = await floor_service.get(db, ws_id=ws.id, id=floor_id)
+    if not floor or floor.facility_id != facility_id:
+        raise HTTPException(404, "Floor not found")
+
+    linked_rooms = await db.execute(
+        select(Room.id).where(Room.workspace_id == ws.id, Room.floor_id == floor_id).limit(1)
+    )
+    if linked_rooms.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete floor while rooms are assigned to this floor",
+        )
+
+    await db.delete(floor)
+    await db.commit()
+

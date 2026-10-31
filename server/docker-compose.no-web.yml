@@ -1,0 +1,15 @@
+# Optional override: run the Next.js app on the host instead of in Docker.
+#
+# Full stack without the web container (API still at http://127.0.0.1:8000):
+#   docker compose -f docker-compose.yml -f docker-compose.no-web.yml up -d
+#
+# Then from ../frontend:
+#   npm run dev
+#
+# When you are done, use the normal compose file again and rebuild web:
+#   docker compose up -d --build wheelsense-platform-web
+
+services:
+  wheelsense-platform-web:
+    profiles:
+      - dockerized-frontend

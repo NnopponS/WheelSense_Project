@@ -1,0 +1,1811 @@
+#!/usr/bin/env python3
+"""
+WheelSense Enhanced Simulation Controller
+Realistic patient-based simulation with care-level aware vitals, room movement, and workflow automation.
+
+Usage:
+  python sim_controller.py [options]
+
+Options:
+  --routine           Run routine simulation infinitely
+  --event             Trigger a specific crisis event (fall, abnormal_hr, etc.)
+  --workspace-id      Select workspace ID explicitly (else SIM_WORKSPACE_ID env, else demo workspace
+                      name from settings, else workspace with most active device assignments, else latest id)
+  --config            Path to custom simulation config JSON file
+  --pause             Pause an already running simulation
+  --stop              Stop all simulation processes
+  --status            Show simulation status
+
+Examples:
+  # Start routine simulation
+  python sim_controller.py --routine --workspace-id 1
+
+  # Trigger fall event for specific patient
+  python sim_controller.py --event fall --patient-id 5
+
+  # Use custom config
+  python sim_controller.py --routine --config my_sim_config.json
+"""
+
+from __future__ import annotations
+
+import sys
+import os
+import asyncio
+import argparse
+import random
+import json
+import logging
+import threading
+import math
+from collections import deque
+from dataclasses import dataclass, field
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from typing import Any
+
+SIM_CONTROL_TOPIC = "WheelSense/sim/control"
+SIM_TELEMETRY_TOPIC = "WheelSense/simulator/data"
+SIMULATOR_TAKEOVER_PREFIX = "WheelSense/simulator/takeover/"
+
+import paho.mqtt.client as mqtt
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+from sqlalchemy import func, update
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
+
+from app.config import settings
+from app.db.session import AsyncSessionLocal
+from app.models import (
+    Workspace, Room, Patient, PatientDeviceAssignment, Device,
+    CareGiver, CareSchedule, CareTask, HandoverNote,
+    ActivityTimeline, Alert, DemoActorPosition, User
+)
+
+# =============================================================================
+# Configuration
+# =============================================================================
+
+BROKER = os.environ.get("MQTT_BROKER", "127.0.0.1")
+PORT = int(os.environ.get("MQTT_PORT", "1883"))
+MQTT_USER = (os.environ.get("MQTT_USER") or "").strip() or None
+MQTT_PASSWORD = (os.environ.get("MQTT_PASSWORD") or "").strip() or None
+MQTT_TLS = os.environ.get("MQTT_TLS", "").strip().lower() in {"1", "true", "yes", "on"}
+
+SIMULATION_CONFIG = {
+    "vital_update_interval": 30,      # seconds between vital updates
+    "alert_probability": 0.0,         # random alerts are opt-in for demo control
+    "movement_probability": 0.15,   # 15% chance to move rooms per cycle
+    "caregiver_task_completion": 0.8, # 80% tasks completed on time
+    "routine_check_interval": 300,  # 5 minutes between routine checks
+    "handover_generation_interval": 3600,  # 1 hour between handovers
+    "enable_vitals": True,
+    "enable_movement": True,
+    "enable_alerts": False,
+    "enable_routine_simulation": True,
+    "enable_handover_generation": True,
+    "log_level": "INFO",
+    "emergency_stop_file": ".sim_stop",
+    "pause_file": ".sim_pause",
+}
+
+# Room type movement preferences by care level
+ROOM_PREFERENCES = {
+    "critical": {
+        "preferred": ["bedroom", "clinic"],
+        "avoid": ["garden", "activity"],
+        "stay_probability": 0.85,  # High chance to stay in current room
+    },
+    "special": {
+        "preferred": ["bedroom", "dining", "clinic"],
+        "avoid": [],
+        "stay_probability": 0.70,
+    },
+    "normal": {
+        "preferred": ["bedroom", "dining", "activity", "garden"],
+        "avoid": ["clinic"],
+        "stay_probability": 0.50,
+    },
+}
+
+# Vital sign ranges by care level
+VITAL_RANGES = {
+    "critical": {
+        "heart_rate": (85, 120),
+        "heart_rate_variability": 15,  # Higher variability
+        "spo2": (88, 95),
+        "movement_volatility": 0.4,  # More erratic movement
+    },
+    "special": {
+        "heart_rate": (70, 110),
+        "heart_rate_variability": 10,
+        "spo2": (90, 97),
+        "movement_volatility": 0.25,
+    },
+    "normal": {
+        "heart_rate": (60, 90),
+        "heart_rate_variability": 5,
+        "spo2": (95, 100),
+        "movement_volatility": 0.15,
+    },
+}
+
+# Alert thresholds
+ALERT_THRESHOLDS = {
+    "heart_rate_high": 110,
+    "heart_rate_low": 50,
+    "spo2_low": 90,
+}
+
+
+# =============================================================================
+# Data Classes
+# =============================================================================
+
+@dataclass
+class PatientState:
+    """Tracks simulation state for each patient."""
+    patient_id: int
+    device_id: str
+    care_level: str
+    current_room_idx: int
+    home_room_idx: int
+    mobility_type: str
+    
+    # Vital tracking
+    last_heart_rate: float = 75.0
+    last_spo2: int = 98
+    consecutive_abnormal_hr: int = 0
+    consecutive_tachy: int = 0
+    consecutive_brady: int = 0
+    
+    # Resting baselines and history
+    resting_heart_rate: float | None = None
+    resting_rmssd: float | None = None
+    hr_history: deque = field(default_factory=lambda: deque(maxlen=12))
+    rmssd_history: deque = field(default_factory=lambda: deque(maxlen=12))
+    
+    # Movement tracking
+    time_in_current_room: int = 0
+    total_moves_today: int = 0
+    last_movement_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    # Alert state
+    active_alerts: list[str] = field(default_factory=list)
+    
+    def __post_init__(self):
+        # Set initial vitals based on care level
+        ranges = VITAL_RANGES.get(self.care_level, VITAL_RANGES["normal"])
+        lo, hi = ranges["heart_rate"]
+        self.last_heart_rate = float(random.randint(lo, hi))
+        self.resting_heart_rate = (lo + hi) / 2.0
+        self.last_spo2 = random.randint(*ranges["spo2"])
+
+
+class SimulationStatus:
+    STOPPED = "stopped"
+    RUNNING = "running"
+    PAUSED = "paused"
+    EMERGENCY_STOP = "emergency_stop"
+
+
+# =============================================================================
+# Simulator Classes
+# =============================================================================
+
+class VitalSimulator:
+    """Generates realistic vital signs based on patient care level."""
+    
+    def __init__(self, config: dict):
+        self.config = config
+    
+    def _generate_hr_window(self, base_hr: float, n: int = 30) -> list[float]:
+        """Generate n roughly one-per-second HR samples around base_hr."""
+        return [max(40.0, min(160.0, base_hr + random.uniform(-3.0, 3.0))) for _ in range(n)]
+
+    def _hr_to_rr(self, hr: float) -> float:
+        """Convert bpm to RR interval (ms) with a small respiratory variation."""
+        rr = 60000.0 / hr if hr > 0 else 800.0
+        return max(400.0, min(1500.0, rr + random.uniform(-40.0, 40.0)))
+
+    def _rmssd(self, rr_intervals: list[float]) -> float:
+        """Root mean square of successive RR differences (ms)."""
+        if len(rr_intervals) < 2:
+            return 0.0
+        diffs = [(rr_intervals[i + 1] - rr_intervals[i]) ** 2 for i in range(len(rr_intervals) - 1)]
+        return math.sqrt(sum(diffs) / len(diffs))
+
+    def generate_for_patient(self, patient_state: PatientState) -> dict[str, Any]:
+        """Generate vitals appropriate for patient's care level."""
+        care_level = patient_state.care_level
+        ranges = VITAL_RANGES.get(care_level, VITAL_RANGES["normal"])
+
+        # Target HR with care-level variability and trend continuity
+        hr_variability = ranges["heart_rate_variability"]
+        hr_change = random.randint(-hr_variability, hr_variability)
+        target_hr = max(40.0, min(160.0, patient_state.last_heart_rate + hr_change))
+
+        # Occasionally introduce spikes for critical patients
+        if care_level == "critical" and random.random() < 0.15:
+            target_hr = random.uniform(100.0, 135.0)
+
+        # Generate one 30-second window of beat-to-beat HR/RR
+        hr_window = self._generate_hr_window(target_hr)
+        rr_window = [self._hr_to_rr(hr) for hr in hr_window]
+        mean_hr = sum(hr_window) / len(hr_window)
+        rmssd = self._rmssd(rr_window)
+
+        # SpO2 with care-level appropriate ranges
+        spo2_change = random.randint(-2, 2)
+        spo2 = max(85, min(100, patient_state.last_spo2 + spo2_change))
+
+        # Critical patients have lower baseline SpO2
+        if care_level == "critical":
+            spo2 = min(spo2, random.randint(88, 95))
+        elif care_level == "special":
+            spo2 = min(spo2, random.randint(92, 97))
+
+        # Sensor battery (gradual drain)
+        battery = max(20, 100 - (patient_state.total_moves_today * 2))
+
+        # Update history and state
+        patient_state.last_heart_rate = mean_hr
+        patient_state.last_spo2 = spo2
+        patient_state.hr_history.append(mean_hr)
+        patient_state.rmssd_history.append(rmssd)
+
+        # Update resting baselines when the patient has been stable
+        if abs(mean_hr - patient_state.resting_heart_rate) <= 5.0:
+            recent_hr = list(patient_state.hr_history)[-5:]
+            recent_rmssd = list(patient_state.rmssd_history)[-5:]
+            if len(recent_hr) >= 3:
+                patient_state.resting_heart_rate = sum(recent_hr) / len(recent_hr)
+            if len(recent_rmssd) >= 3:
+                patient_state.resting_rmssd = sum(recent_rmssd) / len(recent_rmssd)
+
+        return {
+            "heart_rate_bpm": round(mean_hr),
+            "rr_interval_ms": round(rr_window[-1]),
+            "rmssd": round(rmssd, 2),
+            "mean_hr": round(mean_hr, 2),
+            "spo2": spo2,
+            "sensor_battery": battery,
+        }
+    
+    def generate_fall_vitals(self, patient_state: PatientState) -> dict[str, Any]:
+        """Generate vitals indicating a fall event."""
+        hr = float(random.randint(100, 140))  # Elevated from stress
+        rr = float(random.randint(500, 700))
+        return {
+            "heart_rate_bpm": random.randint(100, 140),  # Elevated from stress
+            "rr_interval_ms": random.randint(500, 700),
+            "rmssd": round(self._rmssd([rr - 20, rr, rr + 20]), 2),
+            "mean_hr": round(hr, 2),
+            "spo2": max(85, patient_state.last_spo2 - random.randint(3, 8)),
+            "sensor_battery": random.randint(50, 100),
+        }
+
+
+def _is_camera_bound_room(room: Room) -> bool:
+    """Rooms watched by TsimCam/CAM_* nodes — occupancy must come from the model, not sim."""
+    node_id = str(room.node_device_id or "").strip()
+    return node_id.startswith(("MODEL_", "CAM_"))
+
+
+class RoomSimulator:
+    """Simulates realistic room movement patterns."""
+    
+    def __init__(self, rooms: list[Room], config: dict):
+        self.rooms = rooms
+        self.config = config
+        self.room_type_map = self._build_room_type_map()
+    
+    def _build_room_type_map(self) -> dict[int, str]:
+        """Build mapping of room index to room type."""
+        return {idx: room.room_type for idx, room in enumerate(self.rooms)}
+    
+    def should_move(self, patient_state: PatientState) -> bool:
+        """Determine if patient should move based on care level and probability."""
+        care_level = patient_state.care_level
+        preferences = ROOM_PREFERENCES.get(care_level, ROOM_PREFERENCES["normal"])
+        
+        # Higher stay probability means less movement
+        stay_prob = preferences["stay_probability"]
+        time_factor = min(patient_state.time_in_current_room / 10, 0.3)
+        
+        effective_stay_prob = stay_prob - time_factor
+        return random.random() > effective_stay_prob
+    
+    def select_destination(self, patient_state: PatientState) -> int:
+        """Select realistic destination room based on preferences."""
+        care_level = patient_state.care_level
+        preferences = ROOM_PREFERENCES.get(care_level, ROOM_PREFERENCES["normal"])
+        current_idx = patient_state.current_room_idx
+        
+        # Get preferred room indices
+        preferred_indices = [
+            idx for idx, room in enumerate(self.rooms)
+            if room.room_type in preferences["preferred"]
+        ]
+        
+        # Get avoid room indices
+        avoid_indices = [
+            idx for idx, room in enumerate(self.rooms)
+            if room.room_type in preferences["avoid"]
+        ]
+        
+        # Weight rooms by preference
+        weights = []
+        for idx in range(len(self.rooms)):
+            room = self.rooms[idx]
+            if _is_camera_bound_room(room) and idx != current_idx:
+                # Camera-watched rooms are populated by real YOLO detections —
+                # simulated RSSI must not conjure occupants there.
+                weights.append(0.0)
+            elif idx == current_idx:
+                weights.append(0.1)  # Low weight for staying
+            elif idx in preferred_indices:
+                weights.append(3.0)  # High weight for preferred rooms
+            elif idx in avoid_indices:
+                weights.append(0.2)  # Low weight for avoided rooms
+            else:
+                weights.append(1.0)  # Neutral weight
+        
+        # Normalize weights
+        total = sum(weights)
+        weights = [w / total for w in weights]
+        
+        # Select based on weights
+        return random.choices(range(len(self.rooms)), weights=weights, k=1)[0]
+    
+    def simulate_movement(self, patient_state: PatientState) -> tuple[int, bool]:
+        """Simulate room movement for a patient. Returns (new_room_idx, did_move)."""
+        if not self.should_move(patient_state):
+            patient_state.time_in_current_room += 1
+            return patient_state.current_room_idx, False
+        
+        new_room = self.select_destination(patient_state)
+        
+        if new_room != patient_state.current_room_idx:
+            patient_state.current_room_idx = new_room
+            patient_state.time_in_current_room = 0
+            patient_state.total_moves_today += 1
+            patient_state.last_movement_time = datetime.now(timezone.utc)
+            return new_room, True
+        
+        patient_state.time_in_current_room += 1
+        return new_room, False
+
+
+class AlertSimulator:
+    """Generates alerts based on vital thresholds and care level."""
+
+    def __init__(self, config: dict):
+        self.config = config
+        self.thresholds = dict(ALERT_THRESHOLDS)
+        hr = config.get("heart_rate_high")
+        if isinstance(hr, (int, float)):
+            self.thresholds["heart_rate_high"] = int(hr)
+    
+    def check_vitals_for_alerts(self, patient_state: PatientState, vitals: dict) -> list[dict]:
+        """Check vitals against thresholds and return alert configs."""
+        alerts = []
+        care_level = patient_state.care_level
+
+        # Use mean HR when available; fall back to the single sample.
+        mean_hr = float(vitals.get("mean_hr") or vitals.get("heart_rate_bpm", 75))
+        hr = float(vitals.get("heart_rate_bpm", mean_hr))
+        rmssd = float(vitals.get("rmssd") or 0.0)
+        rest = float(patient_state.resting_heart_rate or mean_hr)
+        rest_rmssd = float(patient_state.resting_rmssd or rmssd or 1.0)
+
+        # 1. Tachycardia: mean HR >= min(rest + 40, 130)
+        tachy_threshold = min(rest + 40.0, 130.0)
+        if mean_hr >= tachy_threshold:
+            patient_state.consecutive_tachy += 1
+            if patient_state.consecutive_tachy >= 2:
+                severity = "critical" if mean_hr >= 130 else "warning"
+                alerts.append({
+                    "alert_type": "tachycardia",
+                    "severity": severity,
+                    "title": f"Tachycardia: {mean_hr:.0f} BPM",
+                    "description": f"Mean HR {mean_hr:.0f} BPM at or above threshold {tachy_threshold:.0f} (rest {rest:.0f}).",
+                })
+        else:
+            patient_state.consecutive_tachy = 0
+
+        # 2. Bradycardia: mean HR <= max(rest - 25, 40)
+        brady_threshold = max(rest - 25.0, 40.0)
+        if mean_hr <= brady_threshold:
+            patient_state.consecutive_brady += 1
+            if patient_state.consecutive_brady >= 2:
+                severity = "critical" if mean_hr <= 40 else "warning"
+                alerts.append({
+                    "alert_type": "bradycardia",
+                    "severity": severity,
+                    "title": f"Bradycardia: {mean_hr:.0f} BPM",
+                    "description": f"Mean HR {mean_hr:.0f} BPM at or below threshold {brady_threshold:.0f} (rest {rest:.0f}).",
+                })
+        else:
+            patient_state.consecutive_brady = 0
+
+        # 3. Sudden drop: >= 30 bpm below the last 30 s, and that stretch was near rest
+        hr_values = list(patient_state.hr_history)
+        previous_hr = hr_values[-2] if len(hr_values) >= 2 else mean_hr
+        if (
+            len(hr_values) >= 2
+            and (previous_hr - mean_hr) >= 30.0
+            and abs(previous_hr - rest) <= 10.0
+        ):
+            alerts.append({
+                "alert_type": "sudden_hr_drop",
+                "severity": "warning",
+                "title": f"Sudden HR Drop: {mean_hr:.0f} BPM",
+                "description": f"Heart rate fell {previous_hr - mean_hr:.0f} BPM from the previous {previous_hr:.0f} BPM near rest.",
+            })
+
+        # 4. Irregular: HR still near rest, RMSSD <= 50% of rest RMSSD
+        if abs(mean_hr - rest) <= 10.0 and rmssd <= 0.5 * rest_rmssd and rmssd > 0:
+            alerts.append({
+                "alert_type": "irregular_hr",
+                "severity": "info",
+                "title": f"Irregular Heart Rhythm",
+                "description": f"RMSSD {rmssd:.1f} ms is well below resting RMSSD {rest_rmssd:.1f} ms while HR is near rest.",
+            })
+
+        # Legacy aggregate counter for threshold-style callers
+        if alerts:
+            patient_state.consecutive_abnormal_hr += 1
+        else:
+            patient_state.consecutive_abnormal_hr = 0
+        
+        # SpO2 checks
+        spo2 = vitals.get("spo2", 98)
+        if spo2 < self.thresholds["spo2_low"]:
+            alerts.append({
+                "alert_type": "low_spo2",
+                "severity": "critical" if spo2 < 85 else "warning",
+                "title": f"Low SpO2: {spo2}%",
+                "description": f"Blood oxygen level below threshold ({spo2}%).",
+            })
+        
+        # Care-level specific alert probability for random alerts
+        alert_prob = self.config.get("alert_probability", 0.0)
+        if care_level == "critical":
+            alert_prob *= 2.5
+        elif care_level == "special":
+            alert_prob *= 1.5
+        
+        if random.random() < alert_prob and not alerts:
+            # Generate contextual random alert
+            alert_types = [
+                ("no_movement", "info", "Extended Inactivity"),
+                ("zone_violation", "warning", "Unusual Location"),
+            ]
+            if care_level == "critical":
+                alert_types.append(("abnormal_hr", "warning", "Heart Rate Variability"))
+            
+            alert_type, severity, title = random.choice(alert_types)
+            alerts.append({
+                "alert_type": alert_type,
+                "severity": severity,
+                "title": title,
+                "description": f"Simulated {alert_type} alert for {care_level} patient.",
+            })
+        
+        return alerts
+
+
+class RoutineSimulator:
+    """Simulates caregiver routine completion and workflow updates."""
+    
+    def __init__(self, config: dict):
+        self.config = config
+        self.last_routine_check: datetime | None = None
+        self.last_handover_time: datetime | None = None
+    
+    async def simulate_caregiver_tasks(self, session, workspace_id: int) -> dict:
+        """Simulate caregivers completing scheduled tasks."""
+        results = {"tasks_completed": 0, "schedules_completed": 0, "handovers_created": 0}
+        
+        if not self.config.get("enable_routine_simulation", True):
+            return results
+        
+        now = datetime.now(timezone.utc)
+        completion_rate = self.config.get("caregiver_task_completion", 0.8)
+        
+        # Find pending tasks that are due
+        result = await session.execute(
+            select(CareTask)
+            .where(
+                CareTask.workspace_id == workspace_id,
+                CareTask.status.in_(["pending", "in_progress"]),
+                CareTask.due_at <= now + timedelta(minutes=30)
+            )
+        )
+        tasks = result.scalars().all()
+        
+        for task in tasks:
+            if random.random() < completion_rate:
+                task.status = "completed"
+                task.completed_at = now
+                results["tasks_completed"] += 1
+                
+                # Create completion activity
+                activity = ActivityTimeline(
+                    workspace_id=workspace_id,
+                    patient_id=task.patient_id,
+                    timestamp=now,
+                    event_type="task_completed",
+                    description=f"Task '{task.title}' completed by simulation",
+                    data={"task_id": task.id, "source": "simulation"},
+                    source="system"
+                )
+                session.add(activity)
+        
+        # Check for schedules that should be marked completed
+        result = await session.execute(
+            select(CareSchedule)
+            .where(
+                CareSchedule.workspace_id == workspace_id,
+                CareSchedule.status == "scheduled",
+                CareSchedule.ends_at <= now
+            )
+        )
+        schedules = result.scalars().all()
+        
+        for schedule in schedules:
+            if random.random() < completion_rate:
+                schedule.status = "completed"
+                results["schedules_completed"] += 1
+        
+        await session.commit()
+        return results
+    
+    async def generate_handover_notes(self, session, workspace_id: int, 
+                                       patients: list[Patient],
+                                       caregivers: list[CareGiver]) -> int:
+        """Generate periodic handover notes."""
+        if not self.config.get("enable_handover_generation", True):
+            return 0
+        
+        now = datetime.now(timezone.utc)
+        interval = self.config.get("handover_generation_interval", 3600)
+        
+        if self.last_handover_time and (now - self.last_handover_time).seconds < interval:
+            return 0
+        
+        if not caregivers or not patients:
+            return 0
+        
+        count = 0
+        shift_labels = ["morning", "evening", "night"]
+        priorities = ["routine", "routine", "urgent"]
+        
+        for idx, patient in enumerate(patients[:3]):  # Max 3 handovers per cycle
+            handover = HandoverNote(
+                workspace_id=workspace_id,
+                patient_id=patient.id,
+                author_user_id=None,  # System generated
+                target_role="head_caregiver",
+                shift_date=now.date(),
+                shift_label=random.choice(shift_labels),
+                priority=priorities[idx % len(priorities)],
+                note=f"[SIM] Automated handover: {patient.care_level} care level patient. "
+                     f"Recent activity normal. Next check scheduled.",
+                created_at=now
+            )
+            session.add(handover)
+            count += 1
+        
+        await session.commit()
+        self.last_handover_time = now
+        return count
+
+
+# =============================================================================
+# Main Simulation Engine
+# =============================================================================
+
+class SimulationEngine:
+    """Enhanced WheelSense simulation engine with realistic patient behavior."""
+    
+    def __init__(self, config: dict | None = None):
+        self.config = config or SIMULATION_CONFIG.copy()
+        self.workspace: Workspace | None = None
+        self.rooms: list[Room] = []
+        self.patients: list[Patient] = []
+        self.caregivers: list[CareGiver] = []
+        self.patient_states: dict[int, PatientState] = {}  # patient_id -> state
+        self.assignments: list[PatientDeviceAssignment] = []
+        self.mqtt_client: mqtt.Client | None = None
+        self._physical_device_ids: set[str] = set()
+        
+        # Simulators
+        self.vital_sim: VitalSimulator | None = None
+        self.room_sim: RoomSimulator | None = None
+        self.alert_sim: AlertSimulator | None = None
+        self.routine_sim: RoutineSimulator | None = None
+        
+        # Control
+        self.status = SimulationStatus.STOPPED
+        self.loop_task: asyncio.Task | None = None
+        self._control_lock = threading.Lock()
+        self._mqtt_paused = False
+        self._pending_inject_events: deque[tuple[str, int | None]] = deque()
+        self._pending_actor_moves: deque[dict[str, Any]] = deque()
+
+        # Logging
+        self._setup_logging()
+        self.logger.info("SimulationEngine initialized")
+    
+    def _setup_logging(self):
+        """Configure logging for simulation."""
+        log_level = getattr(logging, self.config.get("log_level", "INFO").upper())
+        logging.basicConfig(
+            level=log_level,
+            format="[%(asctime)s] [%(levelname)s] %(message)s",
+            datefmt="%H:%M:%S"
+        )
+        self.logger = logging.getLogger("Simulation")
+    
+    def _check_control_files(self) -> str:
+        """Check for pause/stop control files."""
+        stop_file = Path(self.config.get("emergency_stop_file", ".sim_stop"))
+        pause_file = Path(self.config.get("pause_file", ".sim_pause"))
+        
+        if stop_file.exists():
+            return SimulationStatus.EMERGENCY_STOP
+        if pause_file.exists():
+            return SimulationStatus.PAUSED
+        return SimulationStatus.RUNNING
+    
+    def _remove_control_files(self):
+        """Clean up control files."""
+        for filename in [".sim_stop", ".sim_pause"]:
+            path = Path(filename)
+            if path.exists():
+                path.unlink()
+
+    def _is_mqtt_paused(self) -> bool:
+        with self._control_lock:
+            return self._mqtt_paused
+
+    def _apply_runtime_config_updates(self, updates: dict) -> None:
+        if not isinstance(updates, dict):
+            return
+        with self._control_lock:
+            if "vital_update_interval" in updates and updates["vital_update_interval"] is not None:
+                try:
+                    v = int(updates["vital_update_interval"])
+                    self.config["vital_update_interval"] = max(5, min(600, v))
+                except (TypeError, ValueError):
+                    pass
+            if "alert_probability" in updates and updates["alert_probability"] is not None:
+                try:
+                    v = float(updates["alert_probability"])
+                    self.config["alert_probability"] = max(0.0, min(1.0, v))
+                except (TypeError, ValueError):
+                    pass
+            if "enable_alerts" in updates and updates["enable_alerts"] is not None:
+                self.config["enable_alerts"] = bool(updates["enable_alerts"])
+            if "heart_rate_high" in updates and updates["heart_rate_high"] is not None:
+                try:
+                    v = int(updates["heart_rate_high"])
+                    v = max(60, min(200, v))
+                    self.config["heart_rate_high"] = v
+                    if self.alert_sim is not None:
+                        self.alert_sim.thresholds["heart_rate_high"] = v
+                except (TypeError, ValueError):
+                    pass
+        self.logger.info("[SIM-CONTROL] Runtime config updated from MQTT")
+
+    def _apply_control_command_sync(self, payload: dict) -> None:
+        cmd = str(payload.get("command", "")).strip().lower()
+        if cmd == "pause":
+            with self._control_lock:
+                self._mqtt_paused = True
+            self.logger.info("[SIM-CONTROL] MQTT pause enabled")
+        elif cmd == "resume":
+            with self._control_lock:
+                self._mqtt_paused = False
+            self.logger.info("[SIM-CONTROL] MQTT pause cleared")
+        elif cmd == "set_config":
+            cfg = payload.get("config")
+            if isinstance(cfg, dict):
+                self._apply_runtime_config_updates(cfg)
+        elif cmd == "inject_abnormal_hr":
+            pid = payload.get("patient_id")
+            pid_i = int(pid) if pid is not None and str(pid).strip().isdigit() else None
+            with self._control_lock:
+                self._pending_inject_events.append(("abnormal_hr", pid_i))
+            self.logger.info("[SIM-CONTROL] Queued inject_abnormal_hr patient_id=%s", pid_i)
+        elif cmd == "inject_fall":
+            pid = payload.get("patient_id")
+            pid_i = int(pid) if pid is not None and str(pid).strip().isdigit() else None
+            with self._control_lock:
+                self._pending_inject_events.append(("fall", pid_i))
+            self.logger.info("[SIM-CONTROL] Queued inject_fall patient_id=%s", pid_i)
+        elif cmd == "move_actor":
+            move_payload = {
+                "actor_type": str(payload.get("actor_type") or "").strip().lower(),
+                "actor_id": payload.get("actor_id"),
+                "patient_id": payload.get("patient_id"),
+                "room_id": payload.get("room_id"),
+                "node_device_id": payload.get("node_device_id"),
+            }
+            with self._control_lock:
+                self._pending_actor_moves.append(move_payload)
+            self.logger.info(
+                "[SIM-CONTROL] Queued move_actor actor_type=%s actor_id=%s patient_id=%s room_id=%s",
+                move_payload["actor_type"],
+                move_payload["actor_id"],
+                move_payload["patient_id"],
+                move_payload["room_id"],
+            )
+
+    def _handle_control_mqtt_message(self, msg: Any) -> None:
+        try:
+            payload = json.loads(msg.payload.decode("utf-8"))
+        except Exception:
+            self.logger.debug("[SIM-CONTROL] Ignored non-JSON MQTT message")
+            return
+        if not isinstance(payload, dict):
+            return
+        wid = payload.get("workspace_id")
+        if self.workspace is None or wid is None:
+            return
+        try:
+            if int(wid) != int(self.workspace.id):
+                return
+        except (TypeError, ValueError):
+            return
+        self._apply_control_command_sync(payload)
+
+    def _handle_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
+        topic = str(msg.topic)
+        if topic.startswith(SIMULATOR_TAKEOVER_PREFIX):
+            device_id = topic.removeprefix(SIMULATOR_TAKEOVER_PREFIX).strip()
+            try:
+                source = json.loads(msg.payload.decode("utf-8")).get("source")
+            except (AttributeError, UnicodeDecodeError, json.JSONDecodeError):
+                return
+            if not device_id or "/" in device_id:
+                return
+            if source == "physical":
+                self._physical_device_ids.add(device_id)
+                self.logger.info("[SIM] Physical telemetry took over device %s", device_id)
+            elif source == "simulation":
+                self._physical_device_ids.discard(device_id)
+            return
+        self._handle_control_mqtt_message(msg)
+
+    def _publish_telemetry(self, payload: dict[str, Any]) -> None:
+        device_id = str(payload.get("device_id") or "")
+        if self.mqtt_client is None or device_id in self._physical_device_ids:
+            return
+        self.mqtt_client.publish(SIM_TELEMETRY_TOPIC, json.dumps(payload), qos=1)
+
+    async def _drain_pending_inject_events(self) -> None:
+        pending: list[tuple[str, int | None]] = []
+        with self._control_lock:
+            while self._pending_inject_events:
+                pending.append(self._pending_inject_events.popleft())
+        for ev_type, pid in pending:
+            try:
+                await self.trigger_event(ev_type, pid)
+            except Exception as exc:
+                self.logger.warning("[SIM-CONTROL] inject %s failed: %s", ev_type, exc)
+
+    async def _drain_pending_actor_moves(self) -> None:
+        pending: list[dict[str, Any]] = []
+        with self._control_lock:
+            while self._pending_actor_moves:
+                pending.append(self._pending_actor_moves.popleft())
+        for payload in pending:
+            try:
+                await self.move_actor_to_room(payload)
+            except Exception as exc:
+                self.logger.warning("[SIM-CONTROL] move_actor failed: %s", exc)
+
+    async def initialize_data(self, workspace_id: int | None = None):
+        """Load workspace data from database."""
+        self.logger.info("Loading workspace data from database...")
+        
+        async with AsyncSessionLocal() as session:
+            # Get workspace
+            if workspace_id is not None:
+                result = await session.execute(
+                    select(Workspace).where(Workspace.id == workspace_id)
+                )
+                ws = result.scalar_one_or_none()
+            else:
+                # Avoid picking an empty "latest id" workspace: prefer configured demo name,
+                # then any workspace that already has active patient↔device assignments.
+                ws = None
+                demo_name = (settings.bootstrap_demo_workspace_name or "").strip()
+                if demo_name:
+                    result = await session.execute(
+                        select(Workspace).where(Workspace.name == demo_name)
+                    )
+                    ws = result.scalar_one_or_none()
+                if ws is None:
+                    wid_row = await session.execute(
+                        select(
+                            PatientDeviceAssignment.workspace_id,
+                            func.count().label("cnt"),
+                        )
+                        .where(PatientDeviceAssignment.is_active.is_(True))
+                        .group_by(PatientDeviceAssignment.workspace_id)
+                        .order_by(func.count().desc())
+                        .limit(1)
+                    )
+                    first = wid_row.first()
+                    if first is not None:
+                        wid = int(first[0])
+                        result = await session.execute(
+                            select(Workspace).where(Workspace.id == wid)
+                        )
+                        ws = result.scalar_one_or_none()
+                if ws is None:
+                    result = await session.execute(
+                        select(Workspace).order_by(Workspace.id.desc()).limit(1)
+                    )
+                    ws = result.scalar_one_or_none()
+            
+            if not ws:
+                self.logger.error("Workspace not found. Run seed script first.")
+                sys.exit(1)
+            
+            self.workspace = ws
+            self.logger.info(f"Workspace: {ws.name} (id={ws.id})")
+            
+            # Get rooms with relationships
+            result = await session.execute(
+                select(Room).where(Room.workspace_id == ws.id)
+            )
+            self.rooms = result.scalars().all()
+            self.logger.info(f"Loaded {len(self.rooms)} rooms")
+            
+            # Get patients
+            result = await session.execute(
+                select(Patient)
+                .where(Patient.workspace_id == ws.id, Patient.is_active.is_(True))
+            )
+            self.patients = result.scalars().all()
+            self.logger.info(f"Loaded {len(self.patients)} patients")
+            
+            # Get caregivers
+            result = await session.execute(
+                select(CareGiver)
+                .where(CareGiver.workspace_id == ws.id, CareGiver.is_active.is_(True))
+            )
+            self.caregivers = result.scalars().all()
+            self.logger.info(f"Loaded {len(self.caregivers)} caregivers")
+            
+            # Get active device assignments with patient data
+            result = await session.execute(
+                select(PatientDeviceAssignment)
+                .options(joinedload(PatientDeviceAssignment.patient))
+                .where(
+                    PatientDeviceAssignment.workspace_id == ws.id,
+                    PatientDeviceAssignment.is_active.is_(True)
+                )
+            )
+            self.assignments = result.scalars().all()
+            self.logger.info(f"Loaded {len(self.assignments)} device assignments")
+            
+            # Initialize patient states
+            bedroom_indices = [i for i, r in enumerate(self.rooms) if r.room_type == "bedroom"]
+            
+            for assignment in self.assignments:
+                patient = assignment.patient
+                if not patient:
+                    continue
+                
+                # Find home room (patient's assigned room or first bedroom)
+                home_idx = 0
+                if patient.room_id:
+                    for idx, room in enumerate(self.rooms):
+                        if room.id == patient.room_id:
+                            home_idx = idx
+                            break
+                elif bedroom_indices:
+                    home_idx = bedroom_indices[assignment.patient_id % len(bedroom_indices)]
+                
+                # Create patient state
+                self.patient_states[patient.id] = PatientState(
+                    patient_id=patient.id,
+                    device_id=assignment.device_id,
+                    care_level=patient.care_level or "normal",
+                    current_room_idx=home_idx,
+                    home_room_idx=home_idx,
+                    mobility_type=patient.mobility_type or "wheelchair"
+                )
+            
+            if not self.rooms or not self.patient_states:
+                self.logger.error("Not enough data to simulate. Check database.")
+                sys.exit(1)
+        
+        # Initialize simulators
+        self.vital_sim = VitalSimulator(self.config)
+        self.room_sim = RoomSimulator(self.rooms, self.config)
+        self.alert_sim = AlertSimulator(self.config)
+        self.routine_sim = RoutineSimulator(self.config)
+        
+        self.logger.info("Data initialization complete")
+    
+    def connect_mqtt(self):
+        """Connect to MQTT broker."""
+        self.logger.info(f"Connecting to MQTT broker at {BROKER}:{PORT}...")
+        
+        try:
+            self.mqtt_client = mqtt.Client(
+                mqtt.CallbackAPIVersion.VERSION2,
+                client_id="wheelsense-simulator",
+            )
+            if MQTT_USER:
+                self.mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD or "")
+            def _on_connect(client, _userdata, _flags, reason_code, _properties):
+                code_value = getattr(reason_code, "value", reason_code)
+                failed = bool(getattr(reason_code, "is_failure", False))
+                if failed or (isinstance(code_value, int) and code_value != 0):
+                    self.logger.warning("MQTT connected with non-zero reason code: %s", reason_code)
+                    return
+                client.subscribe(SIM_CONTROL_TOPIC, qos=0)
+                client.subscribe(f"{SIMULATOR_TAKEOVER_PREFIX}+", qos=1)
+                self.logger.info("MQTT connected; subscribed to simulator control and physical takeover")
+
+            self.mqtt_client.on_message = self._handle_mqtt_message
+            self.mqtt_client.on_connect = _on_connect
+            if MQTT_TLS:
+                self.mqtt_client.tls_set()
+            self.mqtt_client.connect(BROKER, PORT, 60)
+            self.mqtt_client.loop_start()
+        except Exception as e:
+            self.logger.error(f"Failed to connect to MQTT: {e}")
+            sys.exit(1)
+    
+    def generate_payload(self, device_id: str, patient_state: PatientState, 
+                         vitals: dict, room_idx: int, 
+                         motion_state: str = "idle", is_fall: bool = False) -> dict:
+        """Generate telemetry payload."""
+        room = self.rooms[room_idx]
+        node_id = str(room.node_device_id or f"SIM_NODE_{room_idx + 1:02d}")
+        
+        # IMU data based on motion state
+        if is_fall:
+            ax, ay, az = random.uniform(-2.0, 2.0), random.uniform(-2.0, 2.0), 3.5
+            velocity = 0.01
+        elif motion_state == "moving":
+            volatility = VITAL_RANGES[patient_state.care_level]["movement_volatility"]
+            ax = random.uniform(-0.5 - volatility, 0.5 + volatility)
+            ay = random.uniform(-0.5 - volatility, 0.5 + volatility)
+            az = random.uniform(0.8, 1.2)
+            velocity = random.uniform(0.3, 1.5)
+        else:
+            ax, ay, az = 0.0, 0.0, 1.0
+            velocity = 0.0
+
+        distance_m = 0.0
+        if motion_state == "moving" and velocity > 0:
+            interval_seconds = max(1, min(int(self.config.get("vital_update_interval", 30)), 60))
+            distance_m = round(velocity * interval_seconds, 1)
+        
+        return {
+            "device_id": device_id,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "battery": {
+                "percentage": random.randint(75, 100),
+                "voltage_v": round(random.uniform(4.0, 4.2), 2),
+                "charging": False
+            },
+            "imu": {
+                "ax": round(ax, 3),
+                "ay": round(ay, 3),
+                "az": round(az, 3),
+                "gx": 0.0,
+                "gy": 0.0,
+                "gz": 0.0
+            },
+            "motion": {
+                "distance_m": distance_m,
+                "velocity_ms": round(velocity, 2),
+                "accel_ms2": round(abs(az - 1.0) * 9.81, 2),
+                "state": "fall" if is_fall else motion_state
+            },
+            "rssi": [
+                {
+                    "node": node_id,
+                    "rssi": -38 + random.randint(-3, 3),
+                    "mac": f"00:11:22:33:44:{room_idx:02d}"
+                }
+            ],
+            "polar_hr": vitals if vitals.get("heart_rate_bpm") else None
+        }
+    
+    async def _publish_vitals(self, patient_state: PatientState, room_idx: int, 
+                              is_fall: bool = False):
+        """Publish vital signs for a patient."""
+        if not self.config.get("enable_vitals", True):
+            return
+        
+        if is_fall:
+            vitals = self.vital_sim.generate_fall_vitals(patient_state)
+        else:
+            vitals = self.vital_sim.generate_for_patient(patient_state)
+        
+        # Determine motion state
+        motion_state = "idle"
+        if patient_state.current_room_idx != room_idx:
+            motion_state = "moving"
+        
+        payload = self.generate_payload(
+            patient_state.device_id,
+            patient_state,
+            vitals,
+            room_idx,
+            motion_state,
+            is_fall
+        )
+        
+        self._publish_telemetry(payload)
+        
+        # Get patient name
+        patient = next((p for p in self.patients if p.id == patient_state.patient_id), None)
+        patient_name = f"{patient.first_name} {patient.last_name}" if patient else "Unknown"
+        
+        room = self.rooms[room_idx]
+        hr = vitals.get("heart_rate_bpm", "N/A")
+        spo2 = vitals.get("spo2", "N/A")
+        
+        self.logger.info(
+            f"[VITALS] {patient_name} ({patient_state.care_level}) | "
+            f"Room: {room.name} | HR: {hr} | SpO2: {spo2}"
+        )
+        
+        return vitals
+    
+    async def _check_and_generate_alerts(self, session, patient_state: PatientState, 
+                                          vitals: dict, room_idx: int):
+        """Check vitals and generate alerts if needed."""
+        if not self.config.get("enable_alerts", False):
+            return []
+        
+        alerts = self.alert_sim.check_vitals_for_alerts(patient_state, vitals)
+        
+        for alert_config in alerts:
+            # Create alert in database
+            alert = Alert(
+                workspace_id=self.workspace.id,
+                patient_id=patient_state.patient_id,
+                device_id=patient_state.device_id,
+                timestamp=datetime.now(timezone.utc),
+                alert_type=alert_config["alert_type"],
+                severity=alert_config["severity"],
+                title=alert_config["title"],
+                description=alert_config["description"],
+                data={"simulated": True, "vitals": vitals, "source": "simulation"},
+                status="active"
+            )
+            session.add(alert)
+            
+            self.logger.warning(
+                f"[ALERT] {alert_config['severity'].upper()}: {alert_config['title']}"
+            )
+            
+            # Publish alert to MQTT
+            alert_payload = {
+                "patient_id": patient_state.patient_id,
+                "device_id": patient_state.device_id,
+                "alert_type": alert_config["alert_type"],
+                "severity": alert_config["severity"],
+                "title": alert_config["title"],
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            self.mqtt_client.publish(
+                f"WheelSense/alerts/{patient_state.patient_id}",
+                json.dumps(alert_payload)
+            )
+        
+        if alerts:
+            await session.commit()
+        
+        return alerts
+    
+    async def _log_room_transition(self, session, patient_state: PatientState, 
+                                    old_room_idx: int, new_room_idx: int):
+        """Log room transition to activity timeline."""
+        old_room = self.rooms[old_room_idx]
+        new_room = self.rooms[new_room_idx]
+        
+        patient = next((p for p in self.patients if p.id == patient_state.patient_id), None)
+        patient_name = f"{patient.first_name} {patient.last_name}" if patient else "Unknown"
+        
+        # Room exit event
+        exit_event = ActivityTimeline(
+            workspace_id=self.workspace.id,
+            patient_id=patient_state.patient_id,
+            timestamp=datetime.now(timezone.utc),
+            event_type="room_exit",
+            room_id=old_room.id if old_room else None,
+            room_name=old_room.name if old_room else "",
+            description=f"Left {old_room.name if old_room else 'unknown'}",
+            data={"simulated": True, "destination": new_room.name if new_room else ""},
+            source="auto"
+        )
+        session.add(exit_event)
+        
+        # Room enter event
+        enter_event = ActivityTimeline(
+            workspace_id=self.workspace.id,
+            patient_id=patient_state.patient_id,
+            timestamp=datetime.now(timezone.utc) + timedelta(seconds=1),
+            event_type="room_enter",
+            room_id=new_room.id if new_room else None,
+            room_name=new_room.name if new_room else "",
+            description=f"Entered {new_room.name if new_room else 'unknown'}",
+            data={"simulated": True, "source_room": old_room.name if old_room else ""},
+            source="auto"
+        )
+        session.add(enter_event)
+        
+        await session.commit()
+        
+        self.logger.info(
+            f"[MOVEMENT] {patient_name} moved from "
+            f"'{old_room.name if old_room else 'unknown'}' to '{new_room.name if new_room else 'unknown'}'"
+        )
+    
+    async def _simulation_cycle(self):
+        """Run one simulation cycle for all patients."""
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                update(Device)
+                .where(
+                    Device.workspace_id == self.workspace.id,
+                    Device.hardware_type.in_(("node", "polar_sense")),
+                    Device.config["seed"].as_boolean().is_(True),
+                )
+                .values(last_seen=datetime.now(timezone.utc))
+            )
+            await session.commit()
+            staff_users = list((await session.execute(
+                select(User)
+                .where(
+                    User.workspace_id == self.workspace.id,
+                    User.is_active.is_(True),
+                    User.role.in_(("caregiver", "head_caregiver", "admin")),
+                )
+                .order_by(User.id)
+            )).scalars().all())
+            staff_users.sort(key=lambda user: (user.role == "admin", user.id))
+            if staff_users and self.rooms:
+                staff_ids = [user.id for user in staff_users]
+                positions = list((await session.execute(
+                    select(DemoActorPosition).where(
+                        DemoActorPosition.workspace_id == self.workspace.id,
+                        DemoActorPosition.actor_type.in_(("staff", "user")),
+                        DemoActorPosition.actor_id.in_(staff_ids),
+                    )
+                )).scalars().all())
+                position_by_actor = {position.actor_id: position for position in positions}
+                simulated_position = next(
+                    (position_by_actor[user.id] for user in staff_users
+                     if user.id in position_by_actor and position_by_actor[user.id].source == "simulation"),
+                    None,
+                )
+                if simulated_position is not None:
+                    route_rooms = sorted(
+                        (r for r in self.rooms if not _is_camera_bound_room(r)),
+                        key=lambda room: room.id,
+                    )
+                    current_index = next(
+                        (index for index, room in enumerate(route_rooms) if room.id == simulated_position.room_id),
+                        -1,
+                    )
+                    simulated_position.room_id = route_rooms[(current_index + 1) % len(route_rooms)].id
+                    simulated_position.updated_at = datetime.now(timezone.utc)
+                    session.add(simulated_position)
+                    await session.commit()
+                else:
+                    unlocated_staff = next(
+                        (user for user in staff_users if user.id not in position_by_actor),
+                        None,
+                    )
+                    if unlocated_staff is not None:
+                        session.add(DemoActorPosition(
+                            workspace_id=self.workspace.id,
+                            actor_type="staff",
+                            actor_id=unlocated_staff.id,
+                            room_id=min(self.rooms, key=lambda room: room.id).id,
+                            source="simulation",
+                            note="Simulated staff route",
+                        ))
+                        await session.commit()
+            for patient_state in self.patient_states.values():
+                # Check for control signals
+                control_status = self._check_control_files()
+                if control_status == SimulationStatus.EMERGENCY_STOP:
+                    self.logger.critical("EMERGENCY STOP detected - halting simulation")
+                    self.status = SimulationStatus.EMERGENCY_STOP
+                    return False
+                if control_status == SimulationStatus.PAUSED:
+                    self.logger.info("Simulation paused via control file")
+                    await asyncio.sleep(5)
+                    continue
+                
+                # Check if this patient is Robert Chen (TsimCam hardware-tracked patient)
+                patient_obj = next((p for p in self.patients if p.id == patient_state.patient_id), None)
+                is_robert_tsimcam = bool(
+                    patient_obj
+                    and (patient_obj.first_name or "").strip().lower().startswith("robert")
+                )
+
+                if is_robert_tsimcam:
+                    # Robert's room location is controlled by TsimCam YOLOv8 (or manual Demo Control),
+                    # NOT random simulator movement. Sync current_room_idx from latest RoomPrediction.
+                    from app.models.telemetry import RoomPrediction
+                    from sqlalchemy import desc
+
+                    pred_q = await session.execute(
+                        select(RoomPrediction)
+                        .where(
+                            RoomPrediction.workspace_id == self.workspace.id,
+                            RoomPrediction.device_id == patient_state.device_id,
+                        )
+                        .order_by(desc(RoomPrediction.timestamp))
+                        .limit(1)
+                    )
+                    latest_pred = pred_q.scalars().first()
+                    if latest_pred and latest_pred.predicted_room_id is not None:
+                        for r_idx, rm in enumerate(self.rooms):
+                            if rm.id == latest_pred.predicted_room_id:
+                                patient_state.current_room_idx = r_idx
+                                break
+                    new_room_idx = patient_state.current_room_idx
+                    did_move = False
+                else:
+                    # Simulate movement for all other patients
+                    old_room_idx = patient_state.current_room_idx
+                    new_room_idx, did_move = self.room_sim.simulate_movement(patient_state)
+
+                    if did_move and self.config.get("enable_movement", True):
+                        await self._log_room_transition(session, patient_state, 
+                                                        old_room_idx, new_room_idx)
+                
+                # Generate and publish vitals
+                vitals = await self._publish_vitals(patient_state, new_room_idx)
+                
+                # Check for alerts
+                await self._check_and_generate_alerts(session, patient_state, 
+                                                     vitals, new_room_idx)
+                
+                await asyncio.sleep(0.1)  # Small delay between patients
+            
+            return True
+    
+    async def _routine_cycle(self):
+        """Run routine simulation cycle (caregiver tasks, handovers)."""
+        async with AsyncSessionLocal() as session:
+            # Simulate caregiver task completion
+            task_results = await self.routine_sim.simulate_caregiver_tasks(
+                session, self.workspace.id
+            )
+            
+            if task_results["tasks_completed"] > 0:
+                self.logger.info(
+                    f"[ROUTINE] Completed {task_results['tasks_completed']} tasks, "
+                    f"{task_results['schedules_completed']} schedules"
+                )
+            
+            # Generate handover notes
+            handover_count = await self.routine_sim.generate_handover_notes(
+                session, self.workspace.id, self.patients, self.caregivers
+            )
+            
+            if handover_count > 0:
+                self.logger.info(f"[ROUTINE] Generated {handover_count} handover notes")
+    
+    async def run_routine(self):
+        """Run the main simulation loop."""
+        self.logger.info("=" * 60)
+        self.logger.info("Starting WheelSense Routine Simulation")
+        self.logger.info("=" * 60)
+        self.logger.info(f"Patients: {len(self.patient_states)}")
+        self.logger.info(f"Rooms: {len(self.rooms)}")
+        self.logger.info(f"Update interval: {self.config.get('vital_update_interval', 30)}s")
+        self.logger.info("Press Ctrl+C to stop, create .sim_pause to pause, .sim_stop to emergency stop")
+        self.logger.info("=" * 60)
+        
+        self.status = SimulationStatus.RUNNING
+        self._remove_control_files()
+
+        last_vital_time = datetime.now(timezone.utc)
+        last_routine_time = datetime.now(timezone.utc)
+
+        try:
+            while self.status == SimulationStatus.RUNNING:
+                await self._drain_pending_actor_moves()
+                await self._drain_pending_inject_events()
+                now = datetime.now(timezone.utc)
+                vital_interval = int(self.config.get("vital_update_interval", 30))
+                routine_interval = int(self.config.get("routine_check_interval", 300))
+
+                # Check for control files
+                control_status = self._check_control_files()
+                if control_status == SimulationStatus.EMERGENCY_STOP:
+                    self.logger.critical("EMERGENCY STOP triggered via control file")
+                    break
+                if control_status == SimulationStatus.PAUSED or self._is_mqtt_paused():
+                    self.logger.info("Simulation paused (file or MQTT; checking again in 5s)...")
+                    await asyncio.sleep(5)
+                    continue
+
+                # Vital simulation cycle
+                if (now - last_vital_time).seconds >= vital_interval:
+                    success = await self._simulation_cycle()
+                    if not success:
+                        break
+                    last_vital_time = now
+                
+                # Routine simulation cycle
+                if (now - last_routine_time).seconds >= routine_interval:
+                    await self._routine_cycle()
+                    last_routine_time = now
+                
+                await asyncio.sleep(1)
+                
+        except asyncio.CancelledError:
+            self.logger.info("Simulation cancelled")
+        except KeyboardInterrupt:
+            self.logger.info("Keyboard interrupt received")
+        finally:
+            self.status = SimulationStatus.STOPPED
+            self.logger.info("Simulation stopped")
+    
+    async def trigger_event(self, event_type: str = "fall", patient_id: int | None = None):
+        """Trigger a specific crisis event."""
+        self.logger.warning(f"\n{'=' * 40}")
+        self.logger.warning(f"INJECTING CRISIS EVENT: {event_type.upper()}")
+        self.logger.warning(f"{'=' * 40}\n")
+        
+        # Select patient
+        if patient_id and patient_id in self.patient_states:
+            target_state = self.patient_states[patient_id]
+        else:
+            # Pick random patient, prefer critical
+            critical_patients = [
+                s for s in self.patient_states.values() 
+                if s.care_level == "critical"
+            ]
+            if critical_patients and random.random() < 0.7:
+                target_state = random.choice(critical_patients)
+            else:
+                target_state = random.choice(list(self.patient_states.values()))
+        
+        patient = next((p for p in self.patients if p.id == target_state.patient_id), None)
+        patient_name = f"{patient.first_name} {patient.last_name}" if patient else "Unknown"
+        room = self.rooms[target_state.current_room_idx]
+        
+        self.logger.warning(f"Target: {patient_name} ({target_state.care_level})")
+        self.logger.warning(f"Location: {room.name}")
+        self.logger.warning(f"Device: {target_state.device_id}")
+        
+        if event_type == "fall":
+            # Generate fall vitals
+            vitals = self.vital_sim.generate_fall_vitals(target_state)
+            payload = self.generate_payload(
+                target_state.device_id,
+                target_state,
+                vitals,
+                target_state.current_room_idx,
+                is_fall=True
+            )
+            self._publish_telemetry(payload)
+            
+            self.logger.critical(f"[FALL EVENT] Fall detected for {patient_name}!")
+            
+            # Create alert
+            async with AsyncSessionLocal() as session:
+                alert = Alert(
+                    workspace_id=self.workspace.id,
+                    patient_id=target_state.patient_id,
+                    device_id=target_state.device_id,
+                    timestamp=datetime.now(timezone.utc),
+                    alert_type="fall",
+                    severity="critical",
+                    title=f"FALL DETECTED: {patient_name}",
+                    description=f"Simulated fall event for {patient_name} in {room.name}",
+                    data={"simulated": True, "event_type": "fall", "vitals": vitals},
+                    status="active"
+                )
+                session.add(alert)
+                await session.commit()
+            
+            # Recovery payload after 2 seconds
+            await asyncio.sleep(2)
+            normal_vitals = self.vital_sim.generate_for_patient(target_state)
+            recovery_payload = self.generate_payload(
+                target_state.device_id,
+                target_state,
+                normal_vitals,
+                target_state.current_room_idx,
+                motion_state="idle"
+            )
+            self._publish_telemetry(recovery_payload)
+            self.logger.info("[FALL EVENT] Recovery telemetry sent")
+            
+        elif event_type == "abnormal_hr":
+            # Generate high HR vitals
+            vitals = {
+                "heart_rate_bpm": random.randint(120, 150),
+                "rr_interval_ms": random.randint(400, 500),
+                "spo2": random.randint(90, 95),
+                "sensor_battery": random.randint(50, 100),
+            }
+            payload = self.generate_payload(
+                target_state.device_id,
+                target_state,
+                vitals,
+                target_state.current_room_idx
+            )
+            self._publish_telemetry(payload)
+            
+            self.logger.critical(f"[HR EVENT] Abnormal HR: {vitals['heart_rate_bpm']} BPM for {patient_name}!")
+            
+            # Create alert
+            async with AsyncSessionLocal() as session:
+                alert = Alert(
+                    workspace_id=self.workspace.id,
+                    patient_id=target_state.patient_id,
+                    device_id=target_state.device_id,
+                    timestamp=datetime.now(timezone.utc),
+                    alert_type="abnormal_hr",
+                    severity="critical",
+                    title=f"High Heart Rate: {vitals['heart_rate_bpm']} BPM",
+                    description=f"Simulated abnormal HR event for {patient_name}",
+                    data={"simulated": True, "event_type": "abnormal_hr", "vitals": vitals},
+                    status="active"
+                )
+                session.add(alert)
+                await session.commit()
+        
+        self.logger.info(f"\n{'=' * 40}")
+        self.logger.info("Event injection complete")
+        self.logger.info(f"{'=' * 40}\n")
+
+    async def move_actor_to_room(self, payload: dict[str, Any]) -> None:
+        """Move a simulator patient and publish normal telemetry for MQTT ingest."""
+        actor_type = str(payload.get("actor_type") or "").strip().lower()
+        if actor_type not in {"patient", ""}:
+            self.logger.info("[SIM-CONTROL] Ignoring non-patient move_actor: %s", actor_type)
+            return
+
+        raw_patient_id = payload.get("patient_id") or payload.get("actor_id")
+        try:
+            patient_id = int(raw_patient_id)
+        except (TypeError, ValueError):
+            self.logger.warning("[SIM-CONTROL] move_actor missing patient_id/actor_id")
+            return
+
+        patient_state = self.patient_states.get(patient_id)
+        if patient_state is None:
+            self.logger.warning("[SIM-CONTROL] move_actor patient_id=%s not loaded", patient_id)
+            return
+
+        room_idx: int | None = None
+        raw_room_id = payload.get("room_id")
+        if raw_room_id is not None:
+            try:
+                room_id = int(raw_room_id)
+            except (TypeError, ValueError):
+                room_id = None
+            if room_id is not None:
+                for idx, room in enumerate(self.rooms):
+                    if int(room.id) == room_id:
+                        room_idx = idx
+                        break
+
+        node_device_id = str(payload.get("node_device_id") or "").strip()
+        if room_idx is None and node_device_id:
+            for idx, room in enumerate(self.rooms):
+                if str(room.node_device_id or "").strip() == node_device_id:
+                    room_idx = idx
+                    break
+
+        if room_idx is None:
+            self.logger.warning("[SIM-CONTROL] move_actor target room not found: %s", payload)
+            return
+
+        old_room_idx = patient_state.current_room_idx
+        patient_state.current_room_idx = room_idx
+        patient_state.time_in_current_room = 0
+        if old_room_idx != room_idx:
+            patient_state.total_moves_today += 1
+            patient_state.last_movement_time = datetime.now(timezone.utc)
+
+        vitals = self.vital_sim.generate_for_patient(patient_state) if self.vital_sim else {}
+        motion_state = "moving" if old_room_idx != room_idx else "idle"
+        mqtt_payload = self.generate_payload(
+            patient_state.device_id,
+            patient_state,
+            vitals,
+            room_idx,
+            motion_state=motion_state,
+        )
+        if self.mqtt_client is not None:
+            self._publish_telemetry(mqtt_payload)
+        room = self.rooms[room_idx]
+        self.logger.info(
+            "[SIM-CONTROL] Published move telemetry patient_id=%s room=%s node=%s",
+            patient_id,
+            room.name,
+            room.node_device_id or f"SIM_NODE_{room_idx + 1:02d}",
+        )
+    
+    def cleanup(self):
+        """Clean up resources."""
+        if self.mqtt_client:
+            self.mqtt_client.loop_stop()
+            self.mqtt_client.disconnect()
+            self.logger.info("MQTT disconnected")
+        self.status = SimulationStatus.STOPPED
+
+
+# =============================================================================
+# Interactive Menu
+# =============================================================================
+
+def _configure_console_utf8() -> None:
+    """Avoid UnicodeEncodeError on Windows when printing Thai room/patient names."""
+    out = getattr(sys.stdout, "reconfigure", None)
+    if callable(out):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
+
+async def interactive_menu(engine: SimulationEngine):
+    """Run interactive simulation menu."""
+    print("\n" + "=" * 50)
+    print(" WheelSense Enhanced Nursing Home Simulator")
+    print("=" * 50)
+    print(f"Workspace: {engine.workspace.name}")
+    print(f"Patients: {len(engine.patient_states)}")
+    print(f"Rooms: {len(engine.rooms)}")
+    print(f"Caregivers: {len(engine.caregivers)}")
+    print("=" * 50)
+    
+    while True:
+        print("\nOptions:")
+        print("  1. Start Routine Simulation (Vitals + Movement + Alerts)")
+        print("  2. Inject Fall Event")
+        print("  3. Inject Abnormal HR Event")
+        print("  4. Pause/Resume Simulation")
+        print("  5. Stop Routine Simulation")
+        print("  6. Show Patient Status")
+        print("  Q. Quit")
+        
+        choice = input("\nSim Menu > ").strip().lower()
+        
+        if choice == 'q':
+            if engine.loop_task and not engine.loop_task.done():
+                engine.loop_task.cancel()
+                try:
+                    await engine.loop_task
+                except asyncio.CancelledError:
+                    pass
+            break
+            
+        elif choice == '1':
+            if engine.loop_task and not engine.loop_task.done():
+                print("[!] Simulation already running")
+            else:
+                engine.loop_task = asyncio.create_task(engine.run_routine())
+                print("[OK] Routine simulation started")
+                
+        elif choice == '2':
+            await engine.trigger_event("fall")
+            
+        elif choice == '3':
+            await engine.trigger_event("abnormal_hr")
+            
+        elif choice == '4':
+            pause_file = Path(".sim_pause")
+            if pause_file.exists():
+                pause_file.unlink()
+                print("[OK] Simulation resumed")
+            else:
+                pause_file.touch()
+                print("[OK] Simulation paused (create .sim_pause file)")
+                
+        elif choice == '5':
+            if engine.loop_task and not engine.loop_task.done():
+                engine.loop_task.cancel()
+                try:
+                    await engine.loop_task
+                except asyncio.CancelledError:
+                    pass
+                print("[OK] Simulation stopped")
+            else:
+                print("[!] Simulation not running")
+                
+        elif choice == '6':
+            print("\nPatient Status:")
+            print("-" * 60)
+            for patient in engine.patients[:5]:  # Show first 5
+                state = engine.patient_states.get(patient.id)
+                if state:
+                    room = engine.rooms[state.current_room_idx]
+                    print(f"  {patient.first_name} {patient.last_name} ({patient.care_level})")
+                    print(f"    Room: {room.name} | HR: {state.last_heart_rate} | SpO2: {state.last_spo2}")
+            print("-" * 60)
+            
+        else:
+            print("[!] Invalid choice")
+
+
+# =============================================================================
+# Main Entry Point
+# =============================================================================
+
+def merge_env_sim_overrides(config: dict) -> None:
+    """Apply SIM_* environment overrides (Docker / host tuning without editing JSON)."""
+
+    def _parse_int(raw: str, default: int, lo: int, hi: int) -> int:
+        try:
+            return max(lo, min(hi, int(raw)))
+        except ValueError:
+            return default
+
+    def _parse_float(raw: str, default: float, lo: float, hi: float) -> float:
+        try:
+            return max(lo, min(hi, float(raw)))
+        except ValueError:
+            return default
+
+    vi = os.environ.get("SIM_VITAL_UPDATE_INTERVAL", "").strip()
+    if vi:
+        config["vital_update_interval"] = _parse_int(
+            vi, int(config.get("vital_update_interval", 30)), 5, 600
+        )
+    ap = os.environ.get("SIM_ALERT_PROBABILITY", "").strip()
+    if ap:
+        config["alert_probability"] = _parse_float(
+            ap, float(config.get("alert_probability", 0.0)), 0.0, 1.0
+        )
+    ea = os.environ.get("SIM_ENABLE_ALERTS", "").strip().lower()
+    if ea in ("0", "false", "no", "off"):
+        config["enable_alerts"] = False
+    elif ea in ("1", "true", "yes", "on"):
+        config["enable_alerts"] = True
+    hr = os.environ.get("SIM_HEART_RATE_HIGH", "").strip()
+    if hr:
+        config["heart_rate_high"] = _parse_int(
+            hr, int(ALERT_THRESHOLDS["heart_rate_high"]), 60, 200
+        )
+
+
+def load_config(config_path: str | None) -> dict:
+    """Load simulation configuration from file or use defaults."""
+    config = SIMULATION_CONFIG.copy()
+
+    if config_path and Path(config_path).exists():
+        with open(config_path) as f:
+            user_config = json.load(f)
+            config.update(user_config)
+        print(f"[OK] Loaded config from {config_path}")
+
+    merge_env_sim_overrides(config)
+    return config
+
+
+async def main():
+    _configure_console_utf8()
+    
+    parser = argparse.ArgumentParser(
+        description="WheelSense Enhanced Nursing Home Simulator"
+    )
+    parser.add_argument(
+        "--routine", 
+        action="store_true", 
+        help="Start routine immediately in headless mode"
+    )
+    parser.add_argument(
+        "--event", 
+        type=str, 
+        choices=["fall", "abnormal_hr"],
+        help="Inject crisis event type"
+    )
+    parser.add_argument(
+        "--patient-id", 
+        type=int, 
+        default=None,
+        help="Target specific patient ID for event"
+    )
+    parser.add_argument(
+        "--workspace-id",
+        type=int,
+        default=None,
+        help="Workspace ID to simulate (overrides SIM_WORKSPACE_ID and default resolution when set)",
+    )
+    parser.add_argument(
+        "--config", 
+        type=str, 
+        default=None,
+        help="Path to custom simulation config JSON file"
+    )
+    parser.add_argument(
+        "--stop",
+        action="store_true",
+        help="Emergency stop any running simulation"
+    )
+    parser.add_argument(
+        "--pause",
+        action="store_true",
+        help="Toggle pause state"
+    )
+    parser.add_argument(
+        "--status",
+        action="store_true",
+        help="Show simulation status"
+    )
+    
+    args = parser.parse_args()
+    
+    # Handle control commands
+    if args.stop:
+        Path(".sim_stop").touch()
+        print("[OK] Emergency stop triggered")
+        return
+    
+    if args.pause:
+        pause_file = Path(".sim_pause")
+        if pause_file.exists():
+            pause_file.unlink()
+            print("[OK] Simulation resumed")
+        else:
+            pause_file.touch()
+            print("[OK] Simulation paused")
+        return
+    
+    if args.status:
+        stop_exists = Path(".sim_stop").exists()
+        pause_exists = Path(".sim_pause").exists()
+        print(f"Emergency stop file: {'present' if stop_exists else 'not present'}")
+        print(f"Pause file: {'present' if pause_exists else 'not present'}")
+        return
+    
+    # Load configuration
+    config = load_config(args.config)
+
+    workspace_id: int | None = args.workspace_id
+    if workspace_id is None:
+        raw_ws = (os.environ.get("SIM_WORKSPACE_ID") or "").strip()
+        if raw_ws.isdigit():
+            workspace_id = int(raw_ws)
+
+    # Initialize engine
+    engine = SimulationEngine(config)
+    await engine.initialize_data(workspace_id)
+    engine.connect_mqtt()
+    
+    try:
+        if args.routine:
+            await engine.run_routine()
+        elif args.event:
+            await engine.trigger_event(args.event, args.patient_id)
+        else:
+            await interactive_menu(engine)
+    except KeyboardInterrupt:
+        print("\nExiting gracefully...")
+    finally:
+        engine.cleanup()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

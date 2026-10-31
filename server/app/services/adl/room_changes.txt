@@ -1,0 +1,178 @@
+WheelSense / EaseAI — Facility room changes for Barthel ADL
+============================================================
+Purpose of this file: lock the room map BEFORE regenerating the
+simulated timeline. Do not score Barthel yet. The old CSV
+(sim_patient_timelines.csv) used rooms as a random-walk graph.
+That cannot represent a care-home day or the Collin & Wade
+Barthel Index (0-20, three tiers).
+
+
+1. Why the rooms must change
+----------------------------
+Room nodes only answer WHERE a resident is. Barthel answers WHAT
+they did and HOW MUCH HELP they needed.
+
+The current map fails because:
+  - Room 401-406 are treated as interchangeable wander space.
+    Residents do not live in other people's bedrooms.
+  - A single "Bathroom" mixes toilet use, bowel/bladder, and
+    bathing. Those are different Barthel items.
+  - Dining, PT, lounge, and nurses' station are used as 30-90 s
+    hops, not as real destinations.
+  - There is no 24-hour occupancy in a home bedroom (sleep).
+
+Rule: each Barthel item that location can support must have a
+place it can appear as occupancy. Items that happen inside one
+room (transfers, dressing, tray meals) use the HOME BEDROOM.
+
+
+2. Current rooms (do not keep this meaning)
+-------------------------------------------
+  id    name                  old use
+  157   Room 401              random hop
+  158   Room 402              random hop
+  159   Room 403              random hop
+  160   Room 404              random hop
+  161   Room 405              random hop
+  162   Room 406              random hop
+  163   Bathroom              toilet + bath mixed
+  164   Dining Room           60 s visits
+  165   Main Hall             treated as a hangout
+  166   Physiotherapy Room    60 s visits
+  167   Nurses' Station       random hop
+  168   Garden Lounge         random hop
+
+
+3. Target rooms (same node count: 12)
+-------------------------------------
+  id    name                  ADL role
+  157   Room 401              home bedroom (assigned resident)
+  158   Room 402              home bedroom (assigned resident)
+  159   Room 403              home bedroom (assigned resident)
+  160   Room 404              home bedroom (assigned resident)
+  161   Room 405              home bedroom (assigned resident)
+  162   Room 406              home bedroom (assigned resident)
+  163   Toilet                bowel / bladder / toilet use
+  169   Shower                bathing (NEW; replaces generic Bathroom)
+  164   Dining Room           feeding opportunity (meals eaten in hall)
+  165   Main Hall             circulation / transit only
+  166   Physiotherapy Room    scheduled mobility / therapy
+  167   Nurses' Station       care ops (NOT a Barthel item)
+  168   Garden Lounge         daytime sitting / social
+
+Bathroom (163) is SPLIT:
+  - keep 163 as Toilet
+  - add 169 as Shower
+  Drop the name "Bathroom".
+
+Do not add: kitchen (cooking is IADL, not Barthel feeding),
+stairs (wheelchair residents score 0; no fake stair node),
+extra lounges, or other residents' rooms as a normal path.
+
+Optional later (not in this pass): outdoor garden path; ensuite
+toilet nodes inside each bedroom. If a toilet is ensuite, it MUST
+have its own node or toilet visits disappear into "still in bed".
+For this project use SHARED Toilet + SHARED Shower on the corridor
+so every hygiene trip leaves the bedroom and also counts as mobility.
+
+
+4. Home bedroom assignment
+--------------------------
+Each resident has exactly one home room. Sleep, morning care,
+dressing, transfers, tray meals, and incontinence care happen there.
+
+  patient_id  name              home room
+  69          Eleanor Price     Room 406  (162)
+  70          Robert Chen       Room 405  (161)
+  71          Margaret Lewis    Room 404  (160)
+  72          Daniel Carter     Room 403  (159)
+  73          Grace Wilson      Room 402  (158)
+  74          Samuel Ortiz      Room 401  (157)
+
+Other bedrooms: unused in a normal day (no random visits).
+
+
+5. How rooms map to Barthel items (0-20, Collin & Wade)
+-------------------------------------------------------
+  Item              pts    Visible in which room
+  Bowels            0-2    Toilet (+ night in home bedroom)
+  Bladder           0-2    Toilet (+ night in home bedroom)
+  Grooming          0-1    Home bedroom morning block (inferred)
+  Toilet use        0-2    Toilet (self-initiated trip + dwell)
+  Feeding           0-2    Dining Room; tray meal = stay in home bedroom
+  Transfers         0-3    Home bedroom / Toilet — NOT a room change
+  Mobility          0-3    Main Hall + destinations; wheelchair independent = 1
+  Dressing          0-2    Home bedroom after wake, before breakfast
+  Stairs            0-2    Not in this facility; score 0 for chair users
+  Bathing           0-1    Shower (long morning block, few times / week)
+
+Location can SUPPORT toilet, bathing, feeding opportunity, and
+mobility. It cannot score transfer quality, true continence,
+chewing/being fed, or dressing skill. Those need staff/IMU later.
+
+
+6. Intended dwell (for the new timeline)
+----------------------------------------
+  Room                 typical dwell
+  Home bedroom         sleep ~8 h; morning care 30-50 min; afternoon rest
+  Toilet               3-12 min (bowel up to ~15-20); never 60 s
+  Shower               15-30 min, usually morning, 2-3 times / week
+  Dining Room          20-40 min inside a meal window, or they did not eat there
+  Main Hall            20-90 s transit only
+  Physiotherapy Room   30-45 min, scheduled
+  Garden Lounge        30-60 min afternoon (Tier 1-2)
+  Nurses' Station      5-15 min, 1-3 times / day
+
+Meal windows (facility local / treat CSV as this clock for sim):
+  breakfast  07:00-09:30
+  lunch      11:30-13:30
+  dinner     17:00-19:30
+
+
+7. How the three tiers USE these rooms (timeline grammar)
+---------------------------------------------------------
+Tiers are Collin & Wade totals (not computed in this step):
+  Tier 1  12-19  Independent / mild dependence
+  Tier 2   5-11  Moderate dependence
+  Tier 3   0-4   Severe / total dependence
+
+A wheelchair user who is otherwise independent often lands ~14-17
+(mobility = 1, stairs = 0), still Tier 1.
+
+Tier 1 — home is a base, not a cage
+  Home -> Toilet -> Home (morning care) -> Hall -> Dining (all 3 meals)
+  -> Toilet after meals -> PT and/or Lounge -> Shower a few times/week
+  -> sleep in HOME room. Night: 0-1 Toilet. No other bedrooms.
+  Room changes have empty caregiver_id (self-propelled).
+
+Tier 2 — same rooms, escorted and shorter
+  Some meals in Dining with caregiver_id; some tray in Home.
+  Toilet clustered after meals (prompted), longer dwells.
+  Shower with staff. Afternoon rest in Home. Little Lounge.
+  Fewer metres through Hall.
+
+Tier 3 — almost only home room
+  Home bedroom most of 24 h. Meals in room (no Dining).
+  No self Toilet, or 0-1 staff-taken trip. No self Shower
+  (bed bath is invisible). PT/Lounge absent or rare.
+  Absence of rooms is the signal.
+
+
+8. Timeline rules that follow from this map
+-------------------------------------------
+  1. One resident, one room, all 24 hours (occupancy tape).
+  2. Assigned home room for sleep and rest.
+  3. Paths go Home <-> Hall <-> destination. No teleport.
+  4. No duplicate echo enter/exit with empty data.
+  5. Tag each interval with intended activity
+     (sleep, toilet, shower, breakfast, transit, therapy, ...).
+     That label is simulation ground truth for later Barthel.
+  6. Do not compute the 0-20 score until this map and a clean
+     day tape exist.
+
+
+9. Next step
+------------
+Regenerate the simulated timeline on THIS room map: one clean
+24 h occupancy day per persona (at least one Tier 1, one Tier 2,
+one Tier 3), then later add the Barthel classifier.

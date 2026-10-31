@@ -3,7 +3,7 @@
 
 Usage:
     python scripts/seed_demo.py
-    python scripts/seed_demo.py --workspace "WheelSense Demo Workspace" --reset
+    python scripts/seed_demo.py --workspace "WheelSense Smart Care" --reset
 """
 
 from __future__ import annotations
@@ -67,17 +67,24 @@ from app.models import (
 
 SEED = 4242
 DEMO_PASSWORD = "demo1234"
-DEMO_WORKSPACE = "WheelSense Demo Workspace"
+DEMO_WORKSPACE = "WheelSense Smart Care"
 DEMO_PATIENT_COUNT = 6
 DEMO_ROOM_NODE_COUNT = 24
 
 # Level 2 model-home rooms bind to the physical TsimCam camera nodes
-# (Model-Node 1-4) instead of simulated SIM_NODE_* devices.
+# (Camera Node 1-4) instead of simulated SIM_NODE_* devices.
 MODEL_ROOM_NODE_BINDINGS: dict[str, tuple[str, str]] = {
-    "Model Living Room": ("MODEL_NODE_01", "Model-Node 1"),
-    "Model Bedroom": ("MODEL_NODE_02", "Model-Node 2"),
-    "Model Kitchen": ("MODEL_NODE_03", "Model-Node 3"),
-    "Model Bathroom": ("MODEL_NODE_04", "Model-Node 4"),
+    "Living Room": ("MODEL_NODE_01", "Camera Node 1"),
+    "Bedroom": ("MODEL_NODE_02", "Camera Node 2"),
+    "Kitchen": ("MODEL_NODE_03", "Camera Node 3"),
+    "Bathroom": ("MODEL_NODE_04", "Camera Node 4"),
+}
+
+# E84 touchscreen room screens share a room with the TsimCam camera node — the
+# binding lives on the device config (config.room_id), not rooms.node_device_id
+# (which stays 1:1 with the detection camera).
+E84_ROOM_SCREEN_BINDINGS: dict[str, tuple[str, str]] = {
+    "Living Room": ("CAM_E84_0001", "E84 Room Screen"),
 }
 
 THAI_ROOMS: list[dict[str, str]] = [
@@ -390,12 +397,12 @@ DEMO_ROOMS: list[dict[str, str]] = [
     {"name": "Staff Break Room", "type": "staff"},
     {"name": "Laundry / Utility", "type": "utility"},
     {"name": "Reception", "type": "entry"},
-    # Level 2 - Model Home (physical TsimCam/CucumberRS demo model; appended last
+    # Level 2 - Residence (physical TsimCam/CucumberRS demo model; appended last
     # so indices 0-23 stay stable). Names must stay unique workspace-wide.
-    {"name": "Model Living Room", "type": "lounge"},
-    {"name": "Model Bedroom", "type": "bedroom"},
-    {"name": "Model Kitchen", "type": "dining"},
-    {"name": "Model Bathroom", "type": "bathroom"},
+    {"name": "Living Room", "type": "lounge"},
+    {"name": "Bedroom", "type": "bedroom"},
+    {"name": "Kitchen", "type": "dining"},
+    {"name": "Bathroom", "type": "bathroom"},
     # Ground Level - Shared Care extra zones (appended last so indices 0-27 stay
     # stable). Names must stay unique workspace-wide.
     {"name": "Accessible Restroom NW", "type": "bathroom"},
@@ -858,19 +865,19 @@ async def seed_facility(session: AsyncSession, workspace_id: int) -> tuple[Facil
             workspace_id=workspace_id,
             name=DEMO_FACILITY_NAME,
             address=DEMO_FACILITY_ADDRESS,
-            description="English demo facility for role walkthroughs",
+            description="WheelSense demonstration care facility — Level 2 residence monitoring",
             config={},
         )
         session.add(facility)
         await session.flush()
     else:
         facility.address = DEMO_FACILITY_ADDRESS
-        facility.description = "English demo facility for role walkthroughs"
+        facility.description = "WheelSense demonstration care facility — Level 2 residence monitoring"
 
     floors: list[Floor] = []
     for floor_number, floor_name in (
         (1, "Ground Level - Shared Care"),
-        (2, "Level 2 - Model Home"),
+        (2, "Level 2 - Residence"),
         (3, "Level 3 - Care Wing"),
         (4, "Level 4 - Resident Wing"),
     ):
@@ -922,7 +929,11 @@ async def seed_rooms(
         else:
             floor_id = floors_by_number[1].id
         q = await session.execute(
-            select(Room).where(Room.workspace_id == workspace_id, Room.name == row["name"])
+            select(Room).where(
+                Room.workspace_id == workspace_id,
+                Room.name == row["name"],
+                Room.floor_id == floor_id,
+            )
         )
         room = q.scalar_one_or_none()
         if room is None:
@@ -1037,10 +1048,10 @@ LEVEL2_BACKGROUND = {
 # bathroom/utility middle, bedroom bottom).
 # (svg coords x 3.452762 -> 1448x1086 viewBox on a 5000x3750 canvas background).
 LEVEL2_ROOM_GEOMETRY: dict[str, tuple[float, float, float, float]] = {
-    "Model Living Room": (1004.9, 224.4, 1446.7, 1457.3),
-    "Model Kitchen": (2613.7, 224.4, 1243.0, 2244.3),
-    "Model Bathroom": (1004.9, 1788.5, 1470.9, 718.2),
-    "Model Bedroom": (1004.9, 2600.2, 2852.0, 783.8),
+    "Living Room": (2613.7, 224.4, 1243.0, 2244.3),
+    "Kitchen": (1004.9, 224.4, 1446.7, 1457.3),
+    "Bathroom": (1004.9, 1788.5, 1470.9, 718.2),
+    "Bedroom": (1004.9, 2600.2, 2852.0, 783.8),
 }
 
 FLOOR_SVG_BACKGROUNDS = {
@@ -1176,9 +1187,9 @@ async def seed_room_node_mappings(
     node_ids = [f"SIM_NODE_{idx:02d}" for idx in range(1, DEMO_ROOM_NODE_COUNT + 1)]
     mapped = 0
     for idx, node_id in enumerate(node_ids):
-        mapped += await _bind_room_node(session, workspace_id, rooms[idx] if idx < len(rooms) else None, node_id, f"Demo Node {idx + 1:02d}", "sim-node-v1")
+        mapped += await _bind_room_node(session, workspace_id, rooms[idx] if idx < len(rooms) else None, node_id, f"Sensor Node {idx + 1:02d}", "sim-node-v1")
 
-    # Level 2 model-home rooms bind to the physical TsimCam nodes (Model-Node 1-4),
+    # Level 2 model-home rooms bind to the physical TsimCam nodes (Camera Node 1-4),
     # not to simulated SIM_NODE_* devices.
     for room in rooms:
         binding = MODEL_ROOM_NODE_BINDINGS.get(room.name)
@@ -1193,7 +1204,7 @@ async def seed_room_node_mappings(
         if room.node_device_id and str(room.node_device_id).strip():
             continue
         node_id = f"SIM_NODE_{sim_idx:02d}"
-        mapped += await _bind_room_node(session, workspace_id, room, node_id, f"Demo Node {sim_idx:02d}", "sim-node-v1")
+        mapped += await _bind_room_node(session, workspace_id, room, node_id, f"Sensor Node {sim_idx:02d}", "sim-node-v1")
         sim_idx += 1
 
     await session.commit()
@@ -1245,6 +1256,52 @@ async def _bind_room_node(
     return 1
 
 
+async def seed_e84_room_screens(
+    session: AsyncSession,
+    workspace_id: int,
+    rooms: list[Room],
+) -> int:
+    """Pre-bind E84 touchscreen room screens to model-home rooms via
+    ``config.room_id`` so the physical board works on first MQTT registration."""
+    mapped = 0
+    for room in rooms:
+        binding = E84_ROOM_SCREEN_BINDINGS.get(room.name)
+        if binding is None:
+            continue
+        device_id, display_name = binding
+        dq = await session.execute(
+            select(Device).where(
+                Device.workspace_id == workspace_id,
+                Device.device_id == device_id,
+            )
+        )
+        device = dq.scalar_one_or_none()
+        if device is None:
+            device = Device(
+                workspace_id=workspace_id,
+                device_id=device_id,
+                device_type="camera",
+                hardware_type="node",
+                display_name=display_name,
+                ip_address="",
+                firmware="e84-room-node-v1",
+                config={},
+            )
+            session.add(device)
+            await session.flush()
+        cfg = dict(device.config or {})
+        if cfg.get("seed") is True and cfg.get("room_id") == room.id and cfg.get("e84_room_node") is True:
+            continue
+        cfg["seed"] = True
+        cfg["e84_room_node"] = True
+        cfg["room_id"] = room.id
+        cfg["room_name"] = room.name
+        device.config = cfg
+        mapped += 1
+    await session.commit()
+    return mapped
+
+
 async def seed_smart_devices(
     session: AsyncSession,
     workspace_id: int,
@@ -1253,21 +1310,21 @@ async def seed_smart_devices(
     """Seed deterministic smart-home entities per workspace/room (including CucumberRS 4-room hardware)."""
     seeded = 0
     specs: list[tuple[str, str, str, int, dict]] = [
-        # Model Living Room, DEMO_ROOMS[24] (livingroom on CucumberRS)
-        ("Model Living Room Light", "light", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "light", "gpio": 21}),
-        ("Model Living Room AC", "climate", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "AC", "gpio": 4}),
-        ("Model Living Room Fan", "fan", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "fan", "gpio": 8}),
-        ("Model Living Room TV", "switch", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "tv", "gpio": 6}),
-        # Model Bedroom, DEMO_ROOMS[25] (bedroom on CucumberRS)
-        ("Model Bedroom Light", "light", "on", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "light", "gpio": 17}),
-        ("Model Bedroom AC", "climate", "off", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "AC", "gpio": 16}),
-        ("Model Bedroom TV", "switch", "off", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "tv", "gpio": 18}),
-        ("Model Bedroom Alarm", "switch", "off", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "alarm", "gpio": 15}),
-        # Model Kitchen, DEMO_ROOMS[26] (kitchen on CucumberRS)
-        ("Model Kitchen Light", "light", "off", 26, {"pin_board": "CucumberRS", "room_key": "kitchen", "appliance": "light", "gpio": 5}),
-        ("Model Kitchen Alarm", "switch", "off", 26, {"pin_board": "CucumberRS", "room_key": "kitchen", "appliance": "alarm", "gpio": 7}),
-        # Model Bathroom, DEMO_ROOMS[27] (bathroom on CucumberRS)
-        ("Model Bathroom Light", "light", "off", 27, {"pin_board": "CucumberRS", "room_key": "bathroom", "appliance": "light", "gpio": 14}),
+        # Living Room, DEMO_ROOMS[24] (livingroom on CucumberRS)
+        ("Living Room Light", "light", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "light", "gpio": 21}),
+        ("Living Room AC", "climate", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "AC", "gpio": 4}),
+        ("Living Room Fan", "fan", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "fan", "gpio": 8}),
+        ("Living Room TV", "switch", "off", 24, {"pin_board": "CucumberRS", "room_key": "livingroom", "appliance": "tv", "gpio": 6}),
+        # Bedroom, DEMO_ROOMS[25] (bedroom on CucumberRS)
+        ("Bedroom Light", "light", "on", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "light", "gpio": 17}),
+        ("Bedroom AC", "climate", "off", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "AC", "gpio": 16}),
+        ("Bedroom TV", "switch", "off", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "tv", "gpio": 18}),
+        ("Bedroom Alarm", "switch", "off", 25, {"pin_board": "CucumberRS", "room_key": "bedroom", "appliance": "alarm", "gpio": 15}),
+        # Kitchen, DEMO_ROOMS[26] (kitchen on CucumberRS)
+        ("Kitchen Light", "light", "off", 26, {"pin_board": "CucumberRS", "room_key": "kitchen", "appliance": "light", "gpio": 5}),
+        ("Kitchen Alarm", "switch", "off", 26, {"pin_board": "CucumberRS", "room_key": "kitchen", "appliance": "alarm", "gpio": 7}),
+        # Bathroom, DEMO_ROOMS[27] (bathroom on CucumberRS)
+        ("Bathroom Light", "light", "off", 27, {"pin_board": "CucumberRS", "room_key": "bathroom", "appliance": "light", "gpio": 14}),
         # Dining Room AC (sim-only, stays on floor 4)
         ("Dining Room AC", "climate", "cool", 7, {}),
         # Shared facility rooms
@@ -1457,6 +1514,10 @@ async def seed_patients_and_devices(
         portrait_slug = patient_payload.pop("portrait_slug")
         patient_payload["photo_url"] = _demo_portrait_url(portrait_slug)
         room = bedroom_rooms[i % len(bedroom_rooms)] if bedroom_rooms else None
+        if i == 1:
+            # Robert Chen's patient room controls bind to the Level-2 "Bedroom"
+            # smart-device set; keep him there on reseed.
+            room = next((r for r in rooms if r.name == "Bedroom"), room)
         q = await session.execute(
             select(Patient).where(
                 Patient.workspace_id == workspace_id,
@@ -1586,14 +1647,14 @@ async def seed_demo_actor_positions(
                 actor_id=user.id,
                 room_id=room_id,
                 source="seed",
-                note="show-demo seeded room presence",
+                note="Baseline room presence assignment",
                 updated_by_user_id=users_by_role["demo_admin"].id,
             )
             session.add(row)
         else:
             row.room_id = room_id
             row.source = "seed"
-            row.note = "show-demo seeded room presence"
+            row.note = "Baseline room presence assignment"
             row.updated_by_user_id = users_by_role["demo_admin"].id
         count += 1
     await session.commit()
@@ -1839,14 +1900,14 @@ async def seed_alerts(
             timestamp=ts,
             alert_type="fall" if i % 3 == 0 else "abnormal_hr",
             severity=severities[i % len(severities)],
-            title=f"Demo Alert #{i + 1}",
-            description="Seeded alert for role walkthrough and triage testing",
+            title=f"Alert #{i + 1}",
+            description="Event reported by the monitoring system; review and triage.",
             data={"seed": True, "sequence": i + 1},
             status=status,
             acknowledged_by=caregiver.id if caregiver and acknowledged_at else None,
             acknowledged_at=acknowledged_at,
             resolved_at=resolved_at,
-            resolution_note="Resolved by demo workflow" if resolved_at else "",
+            resolution_note="Resolved by care workflow" if resolved_at else "",
         )
         session.add(row)
         count += 1
@@ -2115,7 +2176,7 @@ async def seed_workflow(
             recurrence_rule="FREQ=DAILY",
             assigned_role="caregiver",
             assigned_user_id=observer.id,
-            notes="Demo schedule",
+            notes="Care schedule",
             status="scheduled",
             created_by_user_id=head_nurse.id,
         )
@@ -2272,6 +2333,33 @@ async def seed_messages_and_handovers(
             "patient_id": patients[3].id,
             "is_read": False,
         },
+        {
+            "sender_user_id": head_nurse.id,
+            "recipient_role": "admin",
+            "recipient_user_id": None,
+            "subject": "Night shift handover note",
+            "body": "Overnight quiet on Level 2. One warning-grade heart rate alert for Robert Chen was acknowledged and cleared at 03:40. Morning team, please recheck vitals at the 07:00 round.",
+            "patient_id": None,
+            "is_read": False,
+        },
+        {
+            "sender_user_id": (users_by_role.get("caregiver") or observer).id,
+            "recipient_role": "admin",
+            "recipient_user_id": None,
+            "subject": "Belt sensor firmware updated",
+            "body": "Wheelchair belt sensors on the Level 2 residence nodes were updated to firmware 2.4.1 overnight. Telemetry looks stable; no patient action required.",
+            "patient_id": patients[1].id if len(patients) > 1 else patients[0].id,
+            "is_read": False,
+        },
+        {
+            "sender_user_id": supervisor.id,
+            "recipient_role": "admin",
+            "recipient_user_id": None,
+            "subject": "Pharmacy order confirmed",
+            "body": "Repeat prescription order RX-2026-004 for Margaret Lee was confirmed by Bang Khae Pharmacy. Delivery expected before the afternoon medication round.",
+            "patient_id": None,
+            "is_read": False,
+        },
     ]
 
     for idx, spec in enumerate(message_specs):
@@ -2280,7 +2368,7 @@ async def seed_messages_and_handovers(
             sender_user_id=int(spec["sender_user_id"]),
             recipient_role=spec["recipient_role"],  # type: ignore[arg-type]
             recipient_user_id=spec["recipient_user_id"],  # type: ignore[arg-type]
-            patient_id=int(spec["patient_id"]),
+            patient_id=spec["patient_id"],  # type: ignore[arg-type]
             subject=str(spec["subject"]),
             body=str(spec["body"]),
             is_read=bool(spec["is_read"]),
@@ -2337,8 +2425,8 @@ async def seed_future_domains(
             specialty=specialty,
             license_number=license_number,
             phone="",
-            email=f"{first_name.lower()}.{last_name.lower()}@demo.local",
-            notes="Seeded specialist profile",
+            email=f"{first_name.lower()}.{last_name.lower()}@example.com",
+            notes=f"Consulting {specialty} specialist",
             is_active=True,
         )
         session.add(row)
@@ -2383,13 +2471,13 @@ async def seed_future_domains(
             prescription_id=prescription.id,
             patient_id=prescription.patient_id,
             order_number=f"WS{workspace_id:03d}-RX{idx + 1:04d}",
-            pharmacy_name="Bang Khae Demo Pharmacy",
+            pharmacy_name="Bang Khae Pharmacy",
             quantity=30,
             refills_remaining=max(0, 2 - idx % 3),
             status=status,
             requested_at=requested_at,
             fulfilled_at=fulfilled_at,
-            notes="Seeded pharmacy workflow order",
+            notes="Repeat prescription order",
         )
         session.add(row)
         pharmacy_order_count += 1
@@ -2634,6 +2722,7 @@ async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
         extra_devices = await seed_additional_sim_devices(session, ws.id)
         devices.extend(extra_devices)
         room_node_mappings = await seed_room_node_mappings(session, ws.id, rooms)
+        e84_screens = await seed_e84_room_screens(session, ws.id, rooms)
         smart_devices_count = await seed_smart_devices(session, ws.id, rooms)
         access_rows = await seed_sim_team_observer_access(session, ws.id, caregivers_by_key, patients)
         await seed_patient_contacts(session, ws.id, patients)
@@ -2652,7 +2741,7 @@ async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
     print("\n[OK] Sim team seed complete (simulator-ready).")
     print(f"Workspace id: {workspace_id} | name: {workspace_name}")
     print(f"Rooms: {len(rooms)} | Patients: {len(patients)} | Wheelchair devices + assignments: OK")
-    print(f"Smart devices: {smart_devices_count} | Room-node mappings: {room_node_mappings}")
+    print(f"Smart devices: {smart_devices_count} | Room-node mappings: {room_node_mappings} | E84 room screens: {e84_screens}")
     print(f"Caregiver patient access rows (new): {access_rows}")
     print("\nStaff logins (password is the username):")
     print("  ada.m      (admin)")
@@ -2683,6 +2772,7 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         extra_devices = await seed_additional_sim_devices(session, ws.id)
         devices.extend(extra_devices)
         room_node_mappings = await seed_room_node_mappings(session, ws.id, rooms)
+        e84_screens = await seed_e84_room_screens(session, ws.id, rooms)
         smart_devices_count = await seed_smart_devices(session, ws.id, rooms)
 
         contacts_count = await seed_patient_contacts(session, ws.id, patients)
@@ -2725,6 +2815,7 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
     print(
         "Smart devices: "
         f"{smart_devices_count} | Room-node mappings: {room_node_mappings} | "
+        f"E84 room screens: {e84_screens} | "
         f"Actor positions: {actor_positions} | Photo snapshots: {photo_snapshots} | "
         f"Specialists: {specialists} | Prescriptions: {prescriptions} | "
         f"Pharmacy orders: {pharmacy_orders}\n"

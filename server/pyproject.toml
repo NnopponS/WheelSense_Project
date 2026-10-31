@@ -1,0 +1,14 @@
+[project]
+name = "wheelsense-server"
+version = "0.1.0"
+description = "WheelSense FastAPI backend"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["app", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E402"]
