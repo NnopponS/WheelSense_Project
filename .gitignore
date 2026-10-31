@@ -11,3 +11,12 @@ build/
 coverage/
 .cursor/
 graft/
+server/captures/
+*.pt
+server/homeassistant/.storage/
+server/homeassistant/deps/
+server/homeassistant/tts/
+server/homeassistant/blueprints/
+server/homeassistant/.HA_VERSION
+server/homeassistant/.ha_run.lock
+server/homeassistant/home-assistant.log*
