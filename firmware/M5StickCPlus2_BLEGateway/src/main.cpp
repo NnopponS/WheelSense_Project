@@ -11,7 +11,7 @@
 #include <esp_system.h>
 #include <math.h>
 
-#define FIRMWARE_VERSION "4.0.0-ble-gateway"
+#define FIRMWARE_VERSION "4.2.0-fall-belt"
 
 namespace {
 constexpr const char* SERVICE_UUID = "8f6e0001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -21,6 +21,7 @@ constexpr const char* COMMAND_UUID = "8f6e0004-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr const char* ACK_UUID = "8f6e0005-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr const char* ROOM_CONFIG_UUID = "8f6e0006-b5a3-f393-e0a9-e50e24dcca9e";
 constexpr const char* TIME_SYNC_UUID = "8f6e0007-b5a3-f393-e0a9-e50e24dcca9e";
+constexpr const char* FALL_ALERT_UUID = "8f6e0008-b5a3-f393-e0a9-e50e24dcca9e";
 
 constexpr uint32_t TELEMETRY_INTERVAL_MS = 50;
 constexpr uint32_t TELEMETRY_IDLE_INTERVAL_MS = 100;
@@ -56,12 +57,56 @@ constexpr uint32_t STATIC_DISPLAY_UPDATE_INTERVAL_MS = 1000;
 constexpr uint32_t BUTTON_SCAN_INTERVAL_MS = 20;
 constexpr uint32_t BUTTON_DEBOUNCE_MS = 120;
 constexpr uint32_t BOOT_DURATION_MS = 1800;
+constexpr uint8_t BUZZER_PIN = 2;
+constexpr uint32_t FALL_FREEFALL_MIN_MS = 80;
+constexpr uint32_t FALL_IMPACT_WINDOW_MS = 1500;
+constexpr uint32_t FALL_STILL_WINDOW_MS = 10000; // people often move/struggle before lying still
+constexpr uint32_t FALL_ALERT_COUNTDOWN_MS = 10000;
+constexpr uint32_t FALL_TEST_COUNTDOWN_MS = 5000;
+constexpr float FALL_STILL_BAND_G = 0.25f;
+constexpr float FALL_STILL_GYRO_DPS = 60.0f;
+constexpr uint32_t FALL_SIREN_STEP_MS = 160;
+constexpr float FALL_FREEFALL_G[3] = {0.50f, 0.60f, 0.70f};
+constexpr float FALL_IMPACT_G[3] = {3.0f, 2.4f, 2.0f};
+constexpr uint32_t FALL_STILL_MS[3] = {1800, 1500, 1200};
+constexpr float FALL_RECOVER_GYRO_DPS = 100.0f;
+constexpr float FALL_RECOVER_ACCEL_G = 0.30f;
+constexpr uint32_t FALL_RECOVER_MS = 1000;
+constexpr uint32_t FALL_RECOVER_GAP_MS = 400;
+constexpr float FALL_POSTURE_COS = 0.65f;        // cos <= this = clearly rotated -> alert
+constexpr float FALL_POSTURE_COS_REJECT = 0.82f; // cos > this = same posture -> reject; between = recheck
+constexpr float STABLE_GRAVITY_ALPHA = 0.02f;    // fast EMA ~0.7s, tracks post-event orientation
+constexpr float BASE_GRAVITY_ALPHA = 0.003f;     // slow EMA ~4s, pre-fall baseline (slow falls still count)
+// Belt-specific: impact without free-fall must come with trunk rotation (heel strikes, jumps,
+// sitting down hard don't rotate the waist much); peak is held over ~1s around the impact.
+constexpr float FALL_ROT_DPS[3] = {180.0f, 140.0f, 100.0f};
+constexpr uint32_t FALL_ROT_HOLD_MS = 1000;
+// Upright reference learned while walking (walking => torso upright). Once known, posture is
+// judged absolutely: lying = >60 deg from upright, still upright/sitting = <45 deg.
+constexpr float FALL_LYING_COS = 0.50f;
+constexpr float FALL_UPRIGHT_COS = 0.71f;
+constexpr float UPRIGHT_TAU_S = 3.0f;
+constexpr uint32_t UPRIGHT_LEARN_MS = 5000;
+// Waist pedometer on |a|: band-limited bounce per step, hysteresis peak/valley, regular cadence.
+constexpr float STEP_LP_TAU_S = 0.05f;
+constexpr float STEP_MEAN_TAU_S = 1.0f;
+constexpr float STEP_HI_G = 0.07f;
+constexpr float STEP_LO_G = -0.05f;
+constexpr float STEP_MAX_G = 1.2f;               // larger swings are impacts, not steps
+constexpr uint32_t STEP_MIN_MS = 250;
+constexpr uint32_t STEP_MAX_MS = 2000;
+constexpr uint8_t STEP_CONFIRM = 4;              // steps only count once 4 regular ones in a row
+constexpr uint32_t WALKING_HOLD_MS = 1500;
+constexpr uint32_t SLEEP_TIMEOUT_OPTIONS_MS[] = {10000, 30000, 60000, 0}; // 0 = never
+constexpr uint8_t SLEEP_OPTION_COUNT = 4;
+constexpr uint8_t kMenuItemCount = 9;
 
 Preferences prefs;
 TFT_eSPI display;
 BLECharacteristic* deviceInfoChar = nullptr;
 BLECharacteristic* telemetryChar = nullptr;
 BLECharacteristic* ackChar = nullptr;
+BLECharacteristic* fallAlertChar = nullptr;
 BLEAdvertising* advertising = nullptr;
 BLEServer* bleServer = nullptr;
 SemaphoreHandle_t writeMutex = nullptr;
@@ -98,11 +143,74 @@ enum class ScreenMode : uint8_t {
   pair,
   info,
   calibrating,
+  fallAlert,
+};
+
+enum class FallState : uint8_t {
+  monitoring,
+  freefall,
+  impactWait,
+  stillWait,
+  alertPending,
+  alerted,
 };
 
 ScreenMode screenMode = ScreenMode::dashboard;
 uint8_t dashboardPage = 0;
 uint8_t menuIndex = 0;
+FallState fallState = FallState::monitoring;
+uint8_t fallSensitivity = 1;
+uint8_t fallAlertSeq = 0;
+bool fallTestMode = false;
+uint32_t fallAlertStartMs = 0;
+uint32_t freefallStartMs = 0;
+uint32_t impactMs = 0;
+uint32_t stillStartMs = 0;
+float fallPeakG = 0.0f;
+const char* fallCancelSource = "device_button";
+bool buzzerOn = false;
+uint32_t buzzerToggleMs = 0;
+uint8_t sleepOptionIndex = 1;
+uint32_t lastActivityMs = 0;
+bool screenAsleep = false;
+uint32_t recoverStartMs = 0;
+uint32_t recoverLastMotionMs = 0;
+float stableAx = 0.0f;
+float stableAy = 0.0f;
+float stableAz = 1.0f;
+float baseAx = 0.0f;
+float baseAy = 0.0f;
+float baseAz = 1.0f;
+float preFallAx = 0.0f;
+float preFallAy = 0.0f;
+float preFallAz = 1.0f;
+float uprightAx = 0.0f;
+float uprightAy = 0.0f;
+float uprightAz = 1.0f;
+uint32_t uprightLearnMs = 0;
+float rotPeakDps = 0.0f;
+uint32_t rotPeakMs = 0;
+float fallPeakDps = 0.0f;
+float fallTiltDeg = 0.0f;
+bool fallHadFreefall = false;
+uint32_t stepsAtImpact = 0;
+
+uint32_t stepCount = 0;
+uint8_t stepRun = 0;
+bool stepArmed = false;
+float stepLp = 1.0f;
+float stepMean = 1.0f;
+uint32_t stepLastSampleMs = 0;
+uint32_t lastStepEventMs = 0;
+uint32_t lastWalkingMs = 0;
+
+uint32_t fallCountdownMs() {
+  return fallTestMode ? FALL_TEST_COUNTDOWN_MS : FALL_ALERT_COUNTDOWN_MS;
+}
+
+bool fallAlertActive() {
+  return fallState == FallState::alertPending || fallState == FallState::alerted;
+}
 
 struct ButtonState {
   bool lastReading = false;
@@ -184,6 +292,14 @@ void loadConfig() {
   roomId = prefs.getString("roomId", "");
   roomName = prefs.getString("roomName", "");
   wheelRadiusM = prefs.getFloat("wheelR", 0.30f);
+  fallSensitivity = prefs.getUChar("fallSens", 1);
+  if (fallSensitivity > 2) {
+    fallSensitivity = 1;
+  }
+  sleepOptionIndex = prefs.getUChar("sleepIdx", 1);
+  if (sleepOptionIndex >= SLEEP_OPTION_COUNT) {
+    sleepOptionIndex = 1;
+  }
   prefs.end();
   if (deviceName.length() == 0) {
     deviceName = deviceId;
@@ -197,6 +313,8 @@ void saveConfig() {
   prefs.putString("roomId", roomId);
   prefs.putString("roomName", roomName);
   prefs.putFloat("wheelR", wheelRadiusM);
+  prefs.putUChar("fallSens", fallSensitivity);
+  prefs.putUChar("sleepIdx", sleepOptionIndex);
   prefs.end();
 }
 
@@ -263,6 +381,7 @@ void initPowerAndButtons() {
   pinMode(BUTTON_A_PIN, INPUT);
   pinMode(BUTTON_B_PIN, INPUT);
   pinMode(BUTTON_C_PIN, INPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
   pinMode(BATTERY_ADC_PIN, INPUT);
   analogSetPinAttenuation(BATTERY_ADC_PIN, ADC_11db);
 }
@@ -419,17 +538,50 @@ void showBootSequence(const char* subtitle) {
   updateBootProgress(100);
 }
 
+uint32_t screenSleepTimeoutMs() {
+  return SLEEP_TIMEOUT_OPTIONS_MS[sleepOptionIndex];
+}
+
+void setBacklight(bool on) {
+  #ifdef TFT_BL
+  digitalWrite(TFT_BL, on ? TFT_BACKLIGHT_ON : !TFT_BACKLIGHT_ON);
+  #endif
+}
+
+void wakeScreen(uint32_t nowMs) {
+  if (screenAsleep) {
+    setBacklight(true);
+    screenAsleep = false;
+  }
+  lastActivityMs = nowMs;
+}
+
+void sleepScreen() {
+  setBacklight(false);
+  screenAsleep = true;
+}
+
 void drawMenu() {
-  static const char* items[] = {
+  char sleepLabel[24];
+  const uint32_t sleepMs = screenSleepTimeoutMs();
+  if (sleepMs == 0) {
+    snprintf(sleepLabel, sizeof(sleepLabel), "Sleep: Off");
+  } else {
+    snprintf(sleepLabel, sizeof(sleepLabel), "Sleep: %lus", static_cast<unsigned long>(sleepMs / 1000));
+  }
+  const char* items[] = {
     "Pair with Phone",
     "Unpair Phone",
     "Device Name",
     "Calibrate 0",
-    "Reset Distance",
+    "Reset Dist/Steps",
     "Battery / Info",
+    sleepLabel,
+    "Test Fall",
     "Dashboard",
   };
   constexpr uint8_t itemCount = sizeof(items) / sizeof(items[0]);
+  static_assert(itemCount == kMenuItemCount, "menu item count mismatch");
   clearDisplay();
   drawHeader("Main Menu");
 
@@ -553,7 +705,7 @@ void drawDashboardStatic() {
     display.fillRect(4, y - 2, w - 8, 14, COLOR_PANEL);
     drawMetricRowStatic(60, "Speed");
     drawMetricRowStatic(83, "Dist");
-    drawMetricRowStatic(106, "Accel");
+    drawMetricRowStatic(106, "Steps");
   } else if (dashboardPage == 1) {
     display.fillRoundRect(4, 32, w - 8, 84, 6, COLOR_PANEL);
     display.setTextSize(1);
@@ -603,7 +755,7 @@ void updateDashboardDynamic() {
                     10, 46, 1, centralConnected ? COLOR_PRIMARY : COLOR_WARNING, COLOR_PANEL);
     drawChangedText(dashSpeed, fmtFloat(velocityMs, 2) + " m/s", w - 10, 70, 2, COLOR_PRIMARY, COLOR_PANEL, MR_DATUM);
     drawChangedText(dashDist, fmtFloat(distanceM, 2) + " m", w - 10, 93, 2, COLOR_PRIMARY, COLOR_PANEL, MR_DATUM);
-    drawChangedText(dashAccel, fmtFloat(accelMs2, 2) + " m/s2", w - 10, 116, 2, COLOR_PRIMARY, COLOR_PANEL, MR_DATUM);
+    drawChangedText(dashAccel, String(stepCount), w - 10, 116, 2, COLOR_PRIMARY, COLOR_PANEL, MR_DATUM);
   } else if (dashboardPage == 1) {
     const int x1 = 34;
     const int x2 = w / 2 + 24;
@@ -693,12 +845,58 @@ void drawInfoScreen() {
   drawFooter("M5:PAIR", "Side:MENU", "Power:BACK");
 }
 
+void drawFallAlert() {
+  static uint8_t drawnSeq = 0;
+  static int8_t drawnState = -1;
+  static int8_t drawnBlink = -1;
+  static TextField countField;
+  const int w = display.width();
+  const int8_t state = fallState == FallState::alerted ? 1 : 0;
+  const int8_t blink = state == 1 && ((millis() / 350) & 1) == 0 ? 1 : 0;
+  if (drawnSeq != fallAlertSeq || drawnState != state || drawnBlink != blink) {
+    const bool inverted = state == 1 && blink == 0;
+    const uint16_t bg = inverted ? COLOR_TEXT : COLOR_ERROR;
+    const uint16_t fg = inverted ? COLOR_ERROR : COLOR_TEXT;
+    display.fillScreen(bg);
+    resetField(countField);
+    display.setTextDatum(MC_DATUM);
+    display.setTextColor(fg);
+    if (state == 0) {
+      display.setTextSize(2);
+      display.drawString("FALL DETECTED?", w / 2, 34);
+      display.setTextSize(1);
+      display.drawString("M5: I'M OK", w / 2, display.height() - 16);
+    } else {
+      display.setTextSize(3);
+      display.drawString("HELP SENT", w / 2, 52);
+      display.setTextSize(1);
+      display.drawString(fallTestMode ? "TEST ALERT" : "Emergency contacts notified", w / 2, 86);
+      display.drawString("M5: CLEAR", w / 2, display.height() - 16);
+    }
+    display.setTextDatum(TL_DATUM);
+    drawnSeq = fallAlertSeq;
+    drawnState = state;
+    drawnBlink = blink;
+  }
+  if (state == 0) {
+    const uint32_t elapsed = millis() - fallAlertStartMs;
+    const uint32_t countdown = fallCountdownMs();
+    const uint32_t remainingS = elapsed >= countdown ? 0 : (countdown - elapsed + 999) / 1000;
+    drawChangedText(countField, String(remainingS), w / 2, 78, 6, COLOR_TEXT, COLOR_ERROR, MC_DATUM);
+  }
+}
+
 void redrawScreen(bool force = false) {
+  if (screenAsleep) {
+    return;
+  }
   const uint32_t now = millis();
   if (!force && now - lastDisplayMs < DISPLAY_UPDATE_INTERVAL_MS && screenMode == ScreenMode::dashboard) {
     return;
   }
-  if (!force && now - lastDisplayMs < STATIC_DISPLAY_UPDATE_INTERVAL_MS && screenMode != ScreenMode::dashboard) {
+  const uint32_t staticInterval =
+      screenMode == ScreenMode::fallAlert ? 300 : STATIC_DISPLAY_UPDATE_INTERVAL_MS;
+  if (!force && now - lastDisplayMs < staticInterval && screenMode != ScreenMode::dashboard) {
     return;
   }
   lastDisplayMs = now;
@@ -719,6 +917,9 @@ void redrawScreen(bool force = false) {
       drawInfoScreen();
       break;
     case ScreenMode::calibrating:
+      break;
+    case ScreenMode::fallAlert:
+      drawFallAlert();
       break;
   }
 }
@@ -926,6 +1127,31 @@ void updateSensors() {
 
   filteredGyroZ = 0.35f * sensorFrame.gz + 0.65f * filteredGyroZ;
   float gyroDps = fabsf(filteredGyroZ) < 2.5f ? 0.0f : filteredGyroZ;
+
+  // Zero-velocity update: when the unit is clearly stationary, hold odometry
+  // at rest so gyro noise does not accumulate phantom distance.
+  const float accelSvm = sqrtf(sensorFrame.ax * sensorFrame.ax +
+                             sensorFrame.ay * sensorFrame.ay +
+                             sensorFrame.az * sensorFrame.az);
+  const float gyroSvm = sqrtf(sensorFrame.gx * sensorFrame.gx +
+                              sensorFrame.gy * sensorFrame.gy +
+                              sensorFrame.gz * sensorFrame.gz);
+  const bool stationary =
+      fabsf(accelSvm - 1.0f) < 0.08f && gyroSvm < 6.0f;
+  static uint32_t stationarySinceMs = 0;
+  if (stationary) {
+    if (stationarySinceMs == 0) {
+      stationarySinceMs = nowMs;
+    } else if (nowMs - stationarySinceMs >= 300) {
+      velocityMs = 0.0f;
+      accelMs2 = 0.0f;
+      previousVelocityMs = 0.0f;
+      return;
+    }
+  } else {
+    stationarySinceMs = 0;
+  }
+
   velocityMs = gyroDps * 0.0174532925f * wheelRadiusM;
   accelMs2 = (velocityMs - previousVelocityMs) / dt;
   previousVelocityMs = velocityMs;
@@ -933,7 +1159,7 @@ void updateSensors() {
 }
 
 void calibrateImu() {
-  if (imuDriver == ImuDriver::none) {
+  if (imuDriver == ImuDriver::none || fallState != FallState::monitoring) {
     return;
   }
   Serial.println("[IMU] Calibrating gyro Z offset");
@@ -963,14 +1189,15 @@ void calibrateImu() {
   velocityMs = 0.0f;
   accelMs2 = 0.0f;
   previousVelocityMs = 0.0f;
+  lastActivityMs = millis();
   screenMode = ScreenMode::dashboard;
   redrawScreen(true);
   Serial.printf("[IMU] Gyro Z offset %.2f dps (%d samples)\n", gyroZOffset, samples);
 }
 
 void updateDeviceInfo() {
-  StaticJsonDocument<512> doc;
-  char buf[512];
+  StaticJsonDocument<768> doc;
+  char buf[768];
   doc["device_id"] = deviceId;
   doc["device_name"] = deviceName;
   doc["device_type"] = "wheelchair";
@@ -984,6 +1211,9 @@ void updateDeviceInfo() {
   doc["ack_uuid"] = ACK_UUID;
   doc["room_config_uuid"] = ROOM_CONFIG_UUID;
   doc["time_sync_uuid"] = TIME_SYNC_UUID;
+  doc["fall_alert_uuid"] = FALL_ALERT_UUID;
+  doc["fall_detection"] = true;
+  doc["step_counter"] = true;
   doc["room_id"] = roomId;
   doc["room_name"] = roomName;
   size_t n = serializeJson(doc, buf, sizeof(buf));
@@ -1010,6 +1240,320 @@ void notifyAck(const char* command, const char* status, const char* message, con
   if (n > 0 && n < sizeof(buf)) {
     ackChar->setValue(reinterpret_cast<uint8_t*>(buf), n);
     ackChar->notify();
+  }
+}
+
+void notifyFallAlert(const char* event) {
+  if (!centralConnected || !fallAlertChar) {
+    return;
+  }
+  StaticJsonDocument<384> doc;
+  char buf[320];
+  const uint32_t nowMs = millis();
+  doc["event"] = event;
+  doc["device_id"] = deviceId;
+  doc["uptime_ms"] = nowMs;
+  const uint64_t ts = epochMs(nowMs);
+  if (ts > 0) {
+    doc["ts"] = ts;
+  }
+  if (strcmp(event, "fall_suspect") == 0) {
+    doc["countdown_s"] = static_cast<int>(fallCountdownMs() / 1000);
+  } else if (strcmp(event, "fall_detected") == 0) {
+    doc["peak_g"] = fallPeakG;
+    if (sensorFrame.batteryPercent >= 0) {
+      doc["battery_pct"] = sensorFrame.batteryPercent;
+    }
+    doc["reason"] = fallHadFreefall ? "freefall_impact_posture" : "impact_rotation_posture";
+    doc["peak_dps"] = static_cast<int>(fallPeakDps);
+    doc["tilt_deg"] = static_cast<int>(fallTiltDeg);
+  } else if (strcmp(event, "fall_canceled") == 0) {
+    doc["source"] = fallCancelSource;
+  } else if (strcmp(event, "fall_test") == 0) {
+    doc["reason"] = "test";
+    if (fallPeakG > 0.0f) {
+      doc["peak_g"] = fallPeakG;
+    }
+  }
+  size_t n = serializeJson(doc, buf, sizeof(buf));
+  if (n > 0 && n < sizeof(buf)) {
+    fallAlertChar->setValue(reinterpret_cast<uint8_t*>(buf), n);
+    fallAlertChar->notify();
+  }
+}
+
+void enterAlertPending(uint32_t nowMs, bool testMode) {
+  fallState = FallState::alertPending;
+  fallTestMode = testMode;
+  fallAlertStartMs = nowMs;
+  recoverStartMs = 0;
+  recoverLastMotionMs = 0;
+  fallAlertSeq++;
+  buzzerOn = false;
+  buzzerToggleMs = 0;
+  wakeScreen(nowMs);
+  screenMode = ScreenMode::fallAlert;
+  notifyFallAlert("fall_suspect");
+  redrawScreen(true);
+}
+
+void cancelFallAlert(const char* source) {
+  if (fallState != FallState::alertPending && fallState != FallState::alerted) {
+    return;
+  }
+  noTone(BUZZER_PIN);
+  buzzerOn = false;
+  fallCancelSource = source;
+  notifyFallAlert("fall_canceled");
+  fallState = FallState::monitoring;
+  fallTestMode = false;
+  screenMode = ScreenMode::dashboard;
+  redrawScreen(true);
+}
+
+void startFallTest() {
+  fallPeakG = 0.0f;
+  enterAlertPending(millis(), true);
+}
+
+void registerFallImpact(uint32_t nowMs, float impactG) {
+  if (fallState != FallState::stillWait) {
+    // First impact of the event: snapshot pre-fall posture; later impacts keep it.
+    fallHadFreefall = fallState == FallState::freefall || fallState == FallState::impactWait;
+    preFallAx = baseAx;
+    preFallAy = baseAy;
+    preFallAz = baseAz;
+    fallPeakG = impactG;
+    fallPeakDps = rotPeakDps;
+  }
+  impactMs = nowMs;
+  stillStartMs = 0;
+  if (fallHadFreefall || rotPeakDps >= FALL_ROT_DPS[fallSensitivity > 2 ? 1 : fallSensitivity]) {
+    stepRun = 0; // fall-like: its own bounces must not continue a walking run (heel strikes keep it)
+  }
+  stepsAtImpact = stepCount;
+  fallState = FallState::stillWait;
+}
+
+float cosBetween(float ax, float ay, float az, float bx, float by, float bz) {
+  const float aLen = sqrtf(ax * ax + ay * ay + az * az);
+  const float bLen = sqrtf(bx * bx + by * by + bz * bz);
+  return aLen > 0.0f && bLen > 0.0f ? (ax * bx + ay * by + az * bz) / (aLen * bLen) : 1.0f;
+}
+
+void updateStepCounter(uint32_t nowMs) {
+  if (!sensorFrame.imuValid) {
+    return;
+  }
+  const float dt = stepLastSampleMs == 0 ? 0.0f : (nowMs - stepLastSampleMs) / 1000.0f;
+  stepLastSampleMs = nowMs;
+  if (dt <= 0.0f || dt > 0.5f) {
+    return;
+  }
+  const float svm = sqrtf(sensorFrame.ax * sensorFrame.ax + sensorFrame.ay * sensorFrame.ay +
+                          sensorFrame.az * sensorFrame.az);
+  stepLp += dt / (STEP_LP_TAU_S + dt) * (svm - stepLp);
+  stepMean += dt / (STEP_MEAN_TAU_S + dt) * (stepLp - stepMean);
+  const float d = stepLp - stepMean;
+
+  if (fabsf(d) > STEP_MAX_G) {
+    stepArmed = false;
+    stepRun = 0;
+  } else if (!stepArmed && d > STEP_HI_G) {
+    stepArmed = true;
+  } else if (stepArmed && d < STEP_LO_G) {
+    // One bounce cycle (peak then valley) at the waist = one step.
+    stepArmed = false;
+    const uint32_t gap = nowMs - lastStepEventMs;
+    if (lastStepEventMs != 0 && gap < STEP_MIN_MS) {
+      return; // double peak within one step
+    }
+    lastStepEventMs = nowMs;
+    stepRun = (gap > STEP_MAX_MS) ? 1 : stepRun + 1;
+    if (stepRun == STEP_CONFIRM) {
+      stepCount += STEP_CONFIRM;
+    } else if (stepRun > STEP_CONFIRM) {
+      stepCount++;
+      stepRun = STEP_CONFIRM + 1; // keep from overflowing
+    }
+    if (stepRun >= STEP_CONFIRM) {
+      lastWalkingMs = nowMs;
+    }
+  }
+
+  // Walking => torso upright: learn the belt's upright gravity direction.
+  if (lastWalkingMs != 0 && nowMs - lastWalkingMs < WALKING_HOLD_MS && fallState == FallState::monitoring) {
+    if (uprightLearnMs == 0) {
+      uprightAx = stableAx;
+      uprightAy = stableAy;
+      uprightAz = stableAz;
+    }
+    const float a = dt / (UPRIGHT_TAU_S + dt);
+    uprightAx += a * (sensorFrame.ax - uprightAx);
+    uprightAy += a * (sensorFrame.ay - uprightAy);
+    uprightAz += a * (sensorFrame.az - uprightAz);
+    uprightLearnMs += static_cast<uint32_t>(dt * 1000.0f);
+  }
+}
+
+void updateFallDetection(uint32_t nowMs) {
+  const float accelSvm = sqrtf(sensorFrame.ax * sensorFrame.ax + sensorFrame.ay * sensorFrame.ay +
+                               sensorFrame.az * sensorFrame.az);
+  const float gyroSvm = sqrtf(sensorFrame.gx * sensorFrame.gx + sensorFrame.gy * sensorFrame.gy +
+                              sensorFrame.gz * sensorFrame.gz);
+
+  // EMAs of the gravity direction, frozen during motion/impact.
+  // fast = post-event orientation; slow = baseline from seconds ago so slow falls still register.
+  if (sensorFrame.imuValid && fabsf(accelSvm - 1.0f) < FALL_STILL_BAND_G) {
+    stableAx += STABLE_GRAVITY_ALPHA * (sensorFrame.ax - stableAx);
+    stableAy += STABLE_GRAVITY_ALPHA * (sensorFrame.ay - stableAy);
+    stableAz += STABLE_GRAVITY_ALPHA * (sensorFrame.az - stableAz);
+    baseAx += BASE_GRAVITY_ALPHA * (sensorFrame.ax - baseAx);
+    baseAy += BASE_GRAVITY_ALPHA * (sensorFrame.ay - baseAy);
+    baseAz += BASE_GRAVITY_ALPHA * (sensorFrame.az - baseAz);
+  }
+
+  // Getting back up = ~1s episode of strong motion; brief dips don't reset it.
+  if (fallAlertActive() && sensorFrame.imuValid) {
+    const bool moving =
+        gyroSvm > FALL_RECOVER_GYRO_DPS || fabsf(accelSvm - 1.0f) > FALL_RECOVER_ACCEL_G;
+    if (moving) {
+      recoverLastMotionMs = nowMs;
+      if (recoverStartMs == 0) {
+        recoverStartMs = nowMs;
+      }
+    } else if (nowMs - recoverLastMotionMs > FALL_RECOVER_GAP_MS) {
+      recoverStartMs = 0;
+    }
+    if (recoverStartMs != 0 && nowMs - recoverStartMs >= FALL_RECOVER_MS) {
+      cancelFallAlert("user_recovered");
+      return;
+    }
+  }
+
+  if (fallState == FallState::alertPending) {
+    const uint32_t countdown = fallCountdownMs();
+    const uint32_t elapsed = nowMs - fallAlertStartMs;
+    const uint32_t remaining = elapsed >= countdown ? 0 : countdown - elapsed;
+    const uint32_t beepPeriod = remaining <= 3000 ? 250 : 1000;
+    if (buzzerOn && nowMs - buzzerToggleMs >= 100) {
+      noTone(BUZZER_PIN);
+      buzzerOn = false;
+    } else if (!buzzerOn && nowMs - buzzerToggleMs >= beepPeriod) {
+      tone(BUZZER_PIN, 2200);
+      buzzerOn = true;
+      buzzerToggleMs = nowMs;
+    }
+    if (elapsed >= countdown) {
+      fallState = FallState::alerted;
+      notifyFallAlert(fallTestMode ? "fall_test" : "fall_detected");
+      redrawScreen(true);
+    }
+    return;
+  }
+  if (fallState == FallState::alerted) {
+    if (nowMs - buzzerToggleMs >= FALL_SIREN_STEP_MS) {
+      buzzerOn = !buzzerOn;
+      tone(BUZZER_PIN, buzzerOn ? 2600 : 1800);
+      buzzerToggleMs = nowMs;
+    }
+    return;
+  }
+  if (!sensorFrame.imuValid) {
+    return;
+  }
+
+  const uint8_t sens = fallSensitivity > 2 ? 1 : fallSensitivity;
+  const float freefallThreshG = FALL_FREEFALL_G[sens];
+  const float impactThreshG = FALL_IMPACT_G[sens];
+  const uint32_t stillRequiredMs = FALL_STILL_MS[sens];
+  if (accelSvm > fallPeakG) {
+    fallPeakG = accelSvm;
+  }
+  if (gyroSvm >= rotPeakDps || nowMs - rotPeakMs > FALL_ROT_HOLD_MS) {
+    rotPeakDps = gyroSvm;
+    rotPeakMs = nowMs;
+  }
+  if (fallState == FallState::stillWait && gyroSvm > fallPeakDps) {
+    fallPeakDps = gyroSvm;
+  }
+
+  switch (fallState) {
+    case FallState::monitoring:
+      if (accelSvm < freefallThreshG) {
+        fallState = FallState::freefall;
+        freefallStartMs = nowMs;
+        fallPeakG = accelSvm;
+        fallTestMode = false;
+      } else if (accelSvm >= impactThreshG) {
+        // Body falls aren't ballistic: impact alone also arms the stillness check.
+        registerFallImpact(nowMs, accelSvm);
+      }
+      break;
+    case FallState::freefall:
+      if (accelSvm >= impactThreshG) {
+        registerFallImpact(nowMs, accelSvm);
+      } else if (accelSvm < freefallThreshG) {
+        if (nowMs - freefallStartMs >= FALL_FREEFALL_MIN_MS) {
+          fallState = FallState::impactWait;
+        }
+      } else {
+        fallState = FallState::monitoring;
+      }
+      break;
+    case FallState::impactWait:
+      if (accelSvm >= impactThreshG) {
+        registerFallImpact(nowMs, accelSvm);
+      } else if (nowMs - freefallStartMs > FALL_IMPACT_WINDOW_MS) {
+        fallState = FallState::monitoring;
+      }
+      break;
+    case FallState::stillWait:
+      if (accelSvm >= impactThreshG) {
+        registerFallImpact(nowMs, accelSvm); // second impact re-arms the window
+      } else if (nowMs - impactMs > FALL_STILL_WINDOW_MS || stepCount > stepsAtImpact) {
+        fallState = FallState::monitoring; // timed out, or walked away
+      } else {
+        const bool still = fabsf(accelSvm - 1.0f) < FALL_STILL_BAND_G && gyroSvm < FALL_STILL_GYRO_DPS;
+        if (still) {
+          if (stillStartMs == 0) {
+            stillStartMs = nowMs;
+          }
+          if (nowMs - stillStartMs >= stillRequiredMs) {
+            float cosA;
+            float alertCos;
+            float rejectCos;
+            if (uprightLearnMs >= UPRIGHT_LEARN_MS) {
+              // Absolute: is the wearer lying relative to their learned upright?
+              cosA = cosBetween(stableAx, stableAy, stableAz, uprightAx, uprightAy, uprightAz);
+              alertCos = FALL_LYING_COS;
+              rejectCos = FALL_UPRIGHT_COS;
+            } else {
+              // Not walked yet: fall back to change from pre-fall posture.
+              cosA = cosBetween(stableAx, stableAy, stableAz, preFallAx, preFallAy, preFallAz);
+              alertCos = FALL_POSTURE_COS;
+              rejectCos = FALL_POSTURE_COS_REJECT;
+            }
+            fallTiltDeg = acosf(constrain(cosA, -1.0f, 1.0f)) * 57.2957795f;
+            const bool rotated = fallHadFreefall || fallPeakDps >= FALL_ROT_DPS[sens];
+            if (cosA <= alertCos && rotated) {
+              Serial.printf("[FALL] alert tilt=%.0f peak=%.2fg rot=%.0fdps ff=%d\n", fallTiltDeg, fallPeakG,
+                            fallPeakDps, fallHadFreefall);
+              enterAlertPending(nowMs, false);
+            } else if (cosA > rejectCos || !rotated) {
+              // Still upright / orientation unchanged, or no trunk rotation: bump, jump, hard sit.
+              Serial.printf("[FALL] reject tilt=%.0f peak=%.2fg rot=%.0fdps\n", fallTiltDeg, fallPeakG, fallPeakDps);
+              fallState = FallState::monitoring;
+            }
+            // borderline band: keep waiting, re-evaluate on the next still sample
+          }
+        } else {
+          stillStartMs = 0;
+        }
+      }
+      break;
+    default:
+      break;
   }
 }
 
@@ -1044,6 +1588,8 @@ void resetMotionCounters() {
   accelMs2 = 0.0f;
   previousVelocityMs = 0.0f;
   filteredGyroZ = 0.0f;
+  stepCount = 0;
+  stepRun = 0;
   telemetrySeq = 0;
 }
 
@@ -1194,6 +1740,25 @@ void handleCommand(const String& payload) {
   } else if (command == "reset_distance") {
     resetMotionCounters();
     notifyAck(command.c_str(), "ok", "Motion counters reset", commandId);
+  } else if (command == "fall_test") {
+    startFallTest();
+    notifyAck(command.c_str(), "ok", "Fall test started", commandId);
+  } else if (command == "fall_cancel") {
+    if (fallAlertActive()) {
+      cancelFallAlert("ble_command");
+      notifyAck(command.c_str(), "ok", "Fall alert canceled", commandId);
+    } else {
+      notifyAck(command.c_str(), "ok", "No fall alert active", commandId);
+    }
+  } else if (command == "fall_sensitivity") {
+    const int level = doc["level"] | -1;
+    if (level < 0 || level > 2) {
+      notifyAck(command.c_str(), "error", "level must be 0, 1 or 2", commandId);
+      return;
+    }
+    fallSensitivity = static_cast<uint8_t>(level);
+    saveConfig();
+    notifyAck(command.c_str(), "ok", "Fall sensitivity saved", commandId);
   } else {
     notifyAck(command.length() ? command.c_str() : "unknown", "unsupported", "Unsupported command", commandId);
   }
@@ -1266,11 +1831,12 @@ struct WheelTelemetryPacket {
   uint16_t battery_mv;    // mV
   int16_t  velocity_cms;  // cm/s
   uint32_t distance_cm;   // cm
-  uint8_t  flags;         // bit 0: isRecording, bit 1: imuValid, bit 2: charging
+  uint8_t  flags;         // bit 0: isRecording, bit 1: imuValid, bit 2: charging, bit 3: fallAlert
+  uint32_t step_count;    // appended; readers of the first 30 bytes are unaffected
 };
 #pragma pack(pop)
 
-static_assert(sizeof(WheelTelemetryPacket) == 30, "Packet must be exactly 30 bytes");
+static_assert(sizeof(WheelTelemetryPacket) == 34, "Packet must be exactly 34 bytes");
 
 void notifyTelemetry(uint32_t nowMs) {
   if (!telemetryChar || !centralConnected) {
@@ -1290,7 +1856,9 @@ void notifyTelemetry(uint32_t nowMs) {
   pkt.battery_mv = static_cast<uint16_t>(sensorFrame.batteryVoltageMv > 0 ? sensorFrame.batteryVoltageMv : 0);
   pkt.velocity_cms = static_cast<int16_t>(velocityMs * 100.0f);
   pkt.distance_cm = static_cast<uint32_t>(distanceM * 100.0f);
-  pkt.flags = (recording ? 1 : 0) | (sensorFrame.imuValid ? 2 : 0) | (sensorFrame.charging ? 4 : 0);
+  pkt.flags = (recording ? 1 : 0) | (sensorFrame.imuValid ? 2 : 0) | (sensorFrame.charging ? 4 : 0) |
+              (fallAlertActive() ? 8 : 0);
+  pkt.step_count = stepCount;
 
   telemetryChar->setValue(reinterpret_cast<uint8_t*>(&pkt), sizeof(pkt));
   telemetryChar->notify();
@@ -1303,7 +1871,9 @@ void setupBle() {
 
   bleServer = BLEDevice::createServer();
   bleServer->setCallbacks(new ServerCallbacks());
-  BLEService* service = bleServer->createService(SERVICE_UUID);
+  // The default 15 handles run out before the fall-alert characteristic
+  // (7 characteristics + 3 CCCDs need 18), which then silently never exists.
+  BLEService* service = bleServer->createService(BLEUUID(SERVICE_UUID), 32);
 
   deviceInfoChar = service->createCharacteristic(DEVICE_INFO_UUID, BLECharacteristic::PROPERTY_READ);
   telemetryChar = service->createCharacteristic(
@@ -1329,6 +1899,12 @@ void setupBle() {
   BLECharacteristic* timeChar = service->createCharacteristic(
       TIME_SYNC_UUID, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
   timeChar->setCallbacks(new WriteCallbacks(TIME_TARGET));
+
+  fallAlertChar = service->createCharacteristic(
+      FALL_ALERT_UUID, BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ);
+  BLE2902* fall2902 = new BLE2902();
+  fall2902->setNotifications(true);
+  fallAlertChar->addDescriptor(fall2902);
 
   updateDeviceInfo();
   service->start();
@@ -1380,6 +1956,14 @@ void handleMenuSelect() {
       screenMode = ScreenMode::info;
       redrawScreen(true);
       break;
+    case 6:
+      sleepOptionIndex = (sleepOptionIndex + 1) % SLEEP_OPTION_COUNT;
+      saveConfig();
+      redrawScreen(true);
+      break;
+    case 7:
+      startFallTest();
+      break;
     default:
       screenMode = ScreenMode::dashboard;
       redrawScreen(true);
@@ -1397,9 +1981,25 @@ void handleButtons() {
   updateButton(buttonB, BUTTON_B_PIN, now);
   updateButton(buttonC, BUTTON_C_PIN, now);
 
+  if (buttonA.pressedEvent || buttonB.pressedEvent || buttonC.pressedEvent) {
+    lastActivityMs = now;
+    if (screenAsleep) {
+      wakeScreen(now);
+      redrawScreen(true);
+      return; // first press while asleep only wakes the screen
+    }
+  }
+
+  if (fallAlertActive()) {
+    if (buttonA.pressedEvent) {
+      cancelFallAlert("device_button");
+    }
+    return;
+  }
+
   if (screenMode == ScreenMode::menu) {
     if (buttonB.pressedEvent) {
-      menuIndex = (menuIndex + 1) % 7;
+      menuIndex = (menuIndex + 1) % kMenuItemCount;
       redrawScreen(true);
     }
     if (buttonA.pressedEvent) {
@@ -1469,6 +2069,7 @@ void setup() {
   drawBootScreen("Hold still for Calibrate 0", 82);
   calibrateImu();
   setupBle();
+  lastActivityMs = millis();
   screenMode = ScreenMode::dashboard;
   redrawScreen(true);
   Serial.printf("WheelSense BLE Gateway %s advertising as %s (%s)\n", FIRMWARE_VERSION, deviceName.c_str(), deviceId.c_str());
@@ -1478,6 +2079,8 @@ void loop() {
   const uint32_t now = millis();
   updateSensors();
   handleButtons();
+  updateStepCounter(now);
+  updateFallDetection(now);
   PendingWrite event;
   while (takeWrite(COMMAND_TARGET, event)) {
     handleCommand(event.payload);
@@ -1493,6 +2096,10 @@ void loop() {
   if (now - lastTelemetryMs >= interval) {
     notifyTelemetry(now);
     lastTelemetryMs = now;
+  }
+  const uint32_t sleepMs = screenSleepTimeoutMs();
+  if (!screenAsleep && !fallAlertActive() && sleepMs > 0 && now - lastActivityMs >= sleepMs) {
+    sleepScreen();
   }
   redrawScreen();
   delay(10);

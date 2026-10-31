@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/sensor_telemetry.dart';
 import '../theme/app_palette.dart';
-import '../theme/app_typography.dart';
+import 'product_ui.dart';
 
 class NodeScannerCard extends StatelessWidget {
   const NodeScannerCard({super.key, required this.nodes, this.onRefresh});
@@ -13,69 +13,35 @@ class NodeScannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: isDark ? AppPalette.slate900 : AppPalette.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppPalette.slate800 : AppPalette.slate200,
-        ),
-      ),
+    return ProductSurface(
+      padding: const EdgeInsets.only(top: 16, bottom: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppPalette.info.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.radar_rounded,
-                        size: 20,
-                        color: AppPalette.infoBright,
-                      ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 12, 8),
+            child: ProductSectionHeading(
+              title: 'Nearby nodes',
+              subtitle: '${nodes.length} found',
+              trailing: onRefresh == null
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.refresh_rounded, size: 20),
+                      onPressed: onRefresh,
+                      tooltip: 'Scan beacons',
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Node_Tsimcam Camera Radar',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (onRefresh != null)
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded, size: 20),
-                  onPressed: onRefresh,
-                  tooltip: 'Scan beacons',
-                ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
           if (nodes.isEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              alignment: Alignment.center,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
               child: Column(
                 children: [
                   Icon(
                     Icons.cell_tower_rounded,
-                    size: 36,
-                    color: isDark ? AppPalette.slate700 : AppPalette.slate300,
+                    size: 32,
+                    color: theme.colorScheme.outline,
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -86,16 +52,10 @@ class NodeScannerCard extends StatelessWidget {
               ),
             )
           else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: nodes.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final node = nodes[index];
-                return _NodeItemTile(node: node, isDark: isDark);
-              },
-            ),
+            for (final node in nodes) ...[
+              if (node != nodes.first) const Divider(indent: 68),
+              _NodeItemTile(node: node),
+            ],
         ],
       ),
     );
@@ -103,177 +63,102 @@ class NodeScannerCard extends StatelessWidget {
 }
 
 class _NodeItemTile extends StatelessWidget {
-  const _NodeItemTile({required this.node, required this.isDark});
+  const _NodeItemTile({required this.node});
 
   final NodeTsimcamSnapshot node;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final rssi = node.rssi;
-    final signalPct = ((rssi + 100) / 70).clamp(0.0, 1.0);
-    final signalColor = rssi >= -65
-        ? AppPalette.successBright
-        : rssi >= -80
-        ? AppPalette.warningBright
-        : AppPalette.dangerBright;
+    final bars = rssi >= -65
+        ? 4
+        : rssi >= -75
+        ? 3
+        : rssi >= -85
+        ? 2
+        : 1;
+    final details = [
+      if (node.deviceId != node.nodeId) node.deviceId,
+      if (node.bleMac.isNotEmpty && node.bleMac != '—') node.bleMac,
+      if (node.ipAddress != null) node.ipAddress!,
+      if (node.batteryPercent != null) '${node.batteryPercent}%',
+      if (node.streamEnabled) 'Streaming',
+    ];
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? AppPalette.slate850 : AppPalette.slate50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppPalette.slate800 : AppPalette.slate200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppPalette.brand.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.videocam_rounded,
-                  size: 18,
-                  color: AppPalette.brand,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      node.nodeId,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                    Text(
-                      '${node.deviceId} • MAC: ${node.bleMac}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark
-                            ? AppPalette.slate400
-                            : AppPalette.slate500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.wifi_tethering_rounded,
-                        size: 14,
-                        color: signalColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${node.rssi} dBm',
-                        style: AppTypography.monospaceMetrics(
-                          color: signalColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    width: 50,
-                    height: 4,
-                    margin: const EdgeInsets.only(top: 4),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
-                      child: LinearProgressIndicator(
-                        value: signalPct,
-                        backgroundColor: isDark
-                            ? AppPalette.slate700
-                            : AppPalette.slate200,
-                        valueColor: AlwaysStoppedAnimation<Color>(signalColor),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (node.ipAddress != null || node.batteryPercent != null) ...[
-            const SizedBox(height: 8),
-            const Divider(height: 1),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ProductIconBadge('scan', tint: colors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (node.ipAddress != null)
+                Text(node.nodeId, style: theme.textTheme.titleSmall),
+                if (details.isNotEmpty)
                   Text(
-                    'IP: ${node.ipAddress}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      color: isDark ? AppPalette.slate400 : AppPalette.slate600,
-                    ),
+                    details.join('  ·  '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
                   ),
-                if (node.batteryPercent != null)
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.battery_std_rounded,
-                        size: 13,
-                        color: isDark
-                            ? AppPalette.slate400
-                            : AppPalette.slate600,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${node.batteryPercent}% (${node.batteryVoltageV?.toStringAsFixed(2) ?? ''}V)',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark
-                              ? AppPalette.slate400
-                              : AppPalette.slate600,
-                        ),
-                      ),
-                    ],
-                  ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: node.streamEnabled
-                        ? AppPalette.success.withValues(alpha: 0.15)
-                        : AppPalette.slate700.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    node.streamEnabled ? 'STREAM ON' : 'IDLE',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: node.streamEnabled
-                          ? AppPalette.successBright
-                          : AppPalette.slate400,
-                    ),
-                  ),
-                ),
               ],
             ),
-          ],
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$rssi dBm',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(width: 10),
+          _SignalBars(
+            bars: bars,
+            color: bars >= 3
+                ? colors.primary
+                : bars == 2
+                ? AppPalette.warning
+                : colors.error,
+            idle: colors.outlineVariant,
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _SignalBars extends StatelessWidget {
+  const _SignalBars({
+    required this.bars,
+    required this.color,
+    required this.idle,
+  });
+
+  final int bars;
+  final Color color;
+  final Color idle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var i = 0; i < 4; i++) ...[
+          if (i > 0) const SizedBox(width: 2),
+          Container(
+            width: 3,
+            height: 5.0 + i * 3,
+            decoration: BoxDecoration(
+              color: i < bars ? color : idle,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

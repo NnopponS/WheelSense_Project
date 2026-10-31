@@ -59,15 +59,9 @@ class _RealtimeLineChartState extends State<RealtimeLineChart> {
     final count = widget.series.firstOrNull?.values.length ?? 0;
     final empty = count < 2;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FBFF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFDCE7F5)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Wrap(
@@ -79,8 +73,8 @@ class _RealtimeLineChartState extends State<RealtimeLineChart> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 10,
-                        height: 10,
+                        width: 8,
+                        height: 8,
                         decoration: BoxDecoration(
                           color: s.color,
                           shape: BoxShape.circle,
@@ -119,6 +113,13 @@ class _RealtimeLineChartState extends State<RealtimeLineChart> {
                             painter: _RealtimeChartPainter(
                               series: widget.series,
                               hoverIndex: _hoverIndex,
+                              gridColor: theme.colorScheme.outlineVariant,
+                              tickStyle: theme.textTheme.labelSmall!.copyWith(
+                                fontSize: 10,
+                                fontFeatures: const [
+                                  ui.FontFeature.tabularFigures(),
+                                ],
+                              ),
                             ),
                             child: _hoverIndex == null
                                 ? null
@@ -133,7 +134,6 @@ class _RealtimeLineChartState extends State<RealtimeLineChart> {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -145,9 +145,9 @@ class _RealtimeLineChartState extends State<RealtimeLineChart> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFDCE7F5)),
+        color: theme.colorScheme.surface.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -190,9 +190,16 @@ class _RealtimeLineChartState extends State<RealtimeLineChart> {
 }
 
 class _RealtimeChartPainter extends CustomPainter {
-  const _RealtimeChartPainter({required this.series, this.hoverIndex});
+  const _RealtimeChartPainter({
+    required this.series,
+    required this.gridColor,
+    required this.tickStyle,
+    this.hoverIndex,
+  });
 
   final List<ChartSeries> series;
+  final Color gridColor;
+  final TextStyle tickStyle;
   final int? hoverIndex;
 
   static const double _tickInset = 42;
@@ -205,13 +212,13 @@ class _RealtimeChartPainter extends CustomPainter {
       math.max(0, size.width - _tickInset),
       size.height,
     );
-    _drawGrid(canvas, plot);
+    _drawGrid(canvas, plot, gridColor);
 
     for (var i = 0; i < series.length; i += 1) {
       final s = series[i];
       final range = _rangeFor(s);
       if (i == 0) {
-        _drawTicks(canvas, plot, range, s);
+        _drawTicks(canvas, plot, range, s, tickStyle);
       }
       _drawSeries(canvas, plot, s, range, fill: i == 0);
     }
@@ -221,7 +228,7 @@ class _RealtimeChartPainter extends CustomPainter {
       final count = series.first.values.length;
       final x = plot.left + plot.width * hover / (count - 1);
       final paint = Paint()
-        ..color = const Color(0xFF94A3B8)
+        ..color = tickStyle.color ?? gridColor
         ..strokeWidth = 1;
       canvas.drawLine(Offset(x, 0), Offset(x, plot.bottom), paint);
     }
@@ -229,7 +236,10 @@ class _RealtimeChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RealtimeChartPainter oldDelegate) {
-    return oldDelegate.series != series || oldDelegate.hoverIndex != hoverIndex;
+    return oldDelegate.series != series ||
+        oldDelegate.hoverIndex != hoverIndex ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.tickStyle != tickStyle;
   }
 
   static (double, double) _rangeFor(ChartSeries series) {
@@ -246,9 +256,9 @@ class _RealtimeChartPainter extends CustomPainter {
     return (rawMin - series.minimumSpan, rawMax + series.minimumSpan);
   }
 
-  static void _drawGrid(Canvas canvas, Rect plot) {
+  static void _drawGrid(Canvas canvas, Rect plot, Color color) {
     final paint = Paint()
-      ..color = const Color(0xFFE1EAF5)
+      ..color = color
       ..strokeWidth = 1;
     for (var i = 0; i <= 4; i += 1) {
       final y = plot.top + plot.height * i / 4;
@@ -261,6 +271,7 @@ class _RealtimeChartPainter extends CustomPainter {
     Rect plot,
     (double, double) range,
     ChartSeries series,
+    TextStyle style,
   ) {
     final (min, max) = range;
     for (var i = 0; i <= 4; i += 1) {
@@ -268,7 +279,7 @@ class _RealtimeChartPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: series.valueFormat(value),
-          style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+          style: style,
         ),
         textDirection: ui.TextDirection.ltr,
       )..layout(maxWidth: _tickInset - 6);
@@ -334,9 +345,9 @@ class _RealtimeChartPainter extends CustomPainter {
           if (start == null || end == null) {
             continue;
           }
-          fillPath.addPath(segment, Offset.zero);
           fillPath
-            ..moveTo(end.dx, plot.bottom)
+            ..addPath(segment, Offset.zero)
+            ..lineTo(end.dx, plot.bottom)
             ..lineTo(start.dx, plot.bottom)
             ..close();
         }

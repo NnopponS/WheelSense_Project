@@ -61,7 +61,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     return ClinicalPage(
       trailing: FilledButton.icon(
         onPressed: _running ? null : _runChecks,
-        icon: const Icon(Icons.fact_check_outlined),
+        icon: const Icon(Icons.fact_check_rounded),
         label: Text(_running ? 'Running' : 'Run checks'),
       ),
       children: [
@@ -72,7 +72,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             children: [
               for (final check in checks) ...[
                 CompactRowCard(
-                  icon: Icons.checklist_rtl,
+                  icon: Icons.checklist_rtl_rounded,
                   title: check.name,
                   subtitle: check.detail,
                   meta: check.status,

@@ -33,7 +33,7 @@ class _RssiRoomScanScreenState extends State<RssiRoomScanScreen> {
     return ClinicalPage(
       trailing: FilledButton.icon(
         onPressed: _scanning ? null : _startScan,
-        icon: const Icon(Icons.play_arrow),
+        icon: const Icon(Icons.play_arrow_rounded),
         label: Text(_scanning ? 'Scanning' : 'Start scan'),
       ),
       children: [
@@ -46,7 +46,7 @@ class _RssiRoomScanScreenState extends State<RssiRoomScanScreen> {
                 detail: best == null
                     ? 'No RSSI window yet'
                     : '${(best.confidence * 100).round()}% confidence',
-                icon: Icons.meeting_room_outlined,
+                icon: Icons.meeting_room_rounded,
               ),
             ),
             MetricTile(
@@ -54,7 +54,7 @@ class _RssiRoomScanScreenState extends State<RssiRoomScanScreen> {
                 label: 'RSSI samples',
                 value: '${_scanPoints.length}',
                 detail: 'Mobile-side BLE scan',
-                icon: Icons.timeline,
+                icon: Icons.timeline_rounded,
                 severity: ClinicalSeverity.info,
               ),
             ),
@@ -68,7 +68,7 @@ class _RssiRoomScanScreenState extends State<RssiRoomScanScreen> {
             children: [
               if (_scanPoints.isEmpty)
                 const CompactRowCard(
-                  icon: Icons.radar,
+                  icon: Icons.radar_rounded,
                   title: 'No scan data',
                   subtitle: 'Start a scan to collect RSSI observations.',
                   meta: 'Ready',
@@ -144,7 +144,7 @@ class _RoomConfidenceRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CompactRowCard(
-          icon: Icons.location_searching,
+          icon: Icons.location_searching_rounded,
           title: point.room,
           subtitle:
               '${point.beaconCount} beacons  |  best ${point.bestRssi} dBm',

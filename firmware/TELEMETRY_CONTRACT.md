@@ -86,3 +86,94 @@ Node → server on `WheelSense/camera/{device_id}/ack` (reusing the assignment
   server moves the task from `pending` to `in_progress`
 - `message = "task_dismissed"` — caregiver dismissed the prompt; task stays
   `pending`
+
+## M5StickC Plus2 BLE fall-alert contract (belt device)
+
+A belt-worn M5StickC Plus2 runs on-device fall detection and reports alerts over
+BLE on the existing gateway service `8f6e0001-b5a3-f393-e0a9-e50e24dcca9e`. No
+MQTT round-trip is involved; the app subscribes to the alert characteristic.
+
+Fall-alert characteristic:
+
+- `FALL_ALERT_UUID = 8f6e0008-b5a3-f393-e0a9-e50e24dcca9e`
+- Properties: READ + NOTIFY (BLE2902 CCCD)
+- Payload: one UTF-8 JSON object per event
+
+Common event fields (present in every payload):
+
+| field | type | notes |
+|-------|------|-------|
+| `event` | string | one of `fall_suspect`, `fall_detected`, `fall_canceled`, `fall_test` |
+| `device_id` | string | e.g. `M5_XXXX` |
+| `uptime_ms` | int | device uptime; always present |
+| `ts` | int | epoch ms; `0` when time is not synced |
+
+`fall_suspect` — fall pattern confirmed on-device; cancel countdown opened:
+
+| field | type | notes |
+|-------|------|-------|
+| `countdown_s` | int | seconds remaining, default `10` |
+
+Example: `{"event":"fall_suspect","device_id":"M5_XXXX","uptime_ms":12345,"ts":1761000000000,"countdown_s":10}`
+
+`fall_detected` — countdown expired; user needs help:
+
+| field | type | notes |
+|-------|------|-------|
+| `peak_g` | float | peak impact acceleration in g |
+| `battery_pct` | int | battery percentage |
+| `reason` | string | `freefall_impact_posture` or `impact_rotation_posture` |
+| `peak_dps` | int | peak trunk angular rate around the impact (deg/s) |
+| `tilt_deg` | int | final tilt from learned upright (or from pre-fall posture if not yet learned) |
+
+`fall_canceled` — user pressed "I'm OK" or the phone sent a cancel command:
+
+| field | type | notes |
+|-------|------|-------|
+| `source` | string | `device_button` or `ble_command` |
+
+`fall_test` — test alert from the device 'Test Fall' menu or `fall_test` command:
+
+| field | type | notes |
+|-------|------|-------|
+| `reason` | string | `test` |
+
+Telemetry flags bit:
+
+- The telemetry packet on `8f6e0003` keeps its flags byte at offset 29.
+- Since 4.2.0 the packet is 34 bytes: `uint32` LE `step_count` appended at offset 30.
+  Readers that only parse the first 30 bytes are unaffected.
+- Bit 0 = recording, bit 1 = imuValid, bit 2 = charging (unchanged).
+- Bit 3 (`0x08`) = a fall alert is currently active (NEW).
+
+Commands (JSON written to the existing command char `8f6e0004`):
+
+- `{"command":"fall_test"}` — start test alert flow (5 s countdown → `fall_test`)
+- `{"command":"fall_cancel"}` — cancel pending/alerted state → `fall_canceled`
+  with `source = "ble_command"`
+- `{"command":"fall_sensitivity","level":0|1|2}` — low/medium/high detection
+  thresholds; ACK on `8f6e0005`
+
+`device_info` (`8f6e0002`) additions:
+
+- `fall_detection`: `true`
+- `step_counter`: `true`
+- `fall_alert_uuid`: the fall-alert characteristic UUID
+
+Detection pipeline (orientation-agnostic SVM on the internal IMU):
+
+1. Free-fall: total accel < ~0.6 g for >= ~80 ms, then impact > ~2.4 g within ~1.5 s;
+   or an impact alone, which must come with trunk rotation >= ~140 deg/s (held ~1 s).
+2. Within 10 s after impact: ~1.5 s of stillness, then a posture check. Once the
+   upright belt orientation has been learned from >= 5 s of walking, lying = > 60 deg
+   from upright (reject < 45 deg); before that, change from pre-fall posture is used.
+3. Walking resumed after the impact (confirmed steps) cancels the candidate.
+4. On-device cancel countdown: 10 s buzzer (GPIO 2) + red screen, 'M5 = I'M OK'.
+5. Countdown expiry → `fall_detected` BLE alert.
+
+`fall_sensitivity` levels `0`/`1`/`2` = low/medium/high; they scale the
+free-fall, impact, rotation, and stillness thresholds above.
+
+Step counter (waist): |a| low-passed (50 ms) minus a 1 s mean; a step is one
+peak (> +0.07 g) followed by a valley (< -0.05 g), 0.25-2 s apart. Steps count only
+after 4 regular steps in a row. Reset with `reset_distance` or the device menu.

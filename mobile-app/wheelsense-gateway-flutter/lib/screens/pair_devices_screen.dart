@@ -2,22 +2,28 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/gateway_ui_models.dart';
 import '../models/preview_metrics.dart';
 import 'tool_preview_readings.dart';
 import '../services/gateway_services.dart';
+import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../widgets/clinical_components.dart';
 import '../widgets/node_scanner_card.dart';
+import '../widgets/product_ui.dart';
 import '../widgets/realtime_charts.dart';
 
 enum _ScanTarget { m5, polar }
 
 class PairDevicesScreen extends StatefulWidget {
-  const PairDevicesScreen({super.key, this.previewAt});
+  const PairDevicesScreen({super.key, this.previewAt, this.initialTab = 0});
 
   final DateTime? previewAt;
+
+  /// 0 wheelchair sensor, 1 FallGuard Belt, 2 Polar, 3 beacons.
+  final int initialTab;
 
   @override
   State<PairDevicesScreen> createState() => _PairDevicesScreenState();
@@ -219,15 +225,21 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         _polarRelayActive ||
         runtime.isPolarRelayActive ||
         (runtime.snapshot.pairedPolarDevice != null && latestPolar != null);
+    final beltLabel = strings.pick('FallGuard Belt', 'เข็มขัด FallGuard');
+    final wheelchairLabel = strings.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น');
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
+      initialIndex: widget.initialTab,
       child: Column(
         children: [
           TabBar(
             isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             tabs: [
-              Tab(text: strings.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น')),
+              Tab(text: wheelchairLabel),
+              Tab(text: beltLabel),
               const Tab(text: 'Polar Verity Sense'),
               Tab(text: strings.bleBeacons),
             ],
@@ -235,169 +247,106 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           Expanded(
             child: TabBarView(
               children: [
-                ClinicalPage(
-                  children: [
-                    _SensorSection(
-                      title: strings.pick(
-                        'Wheelchair sensor',
-                        'เซนเซอร์รถเข็น',
-                      ),
-                      child: _SensorDeviceCard(
-                        title:
-                            m5View?.displayName ??
-                            strings.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น'),
-                        imageAsset:
-                            'assets/devices/m5stickcplus2_real_alt.webp',
-                        connected: isM5Connected,
-                        connecting: _m5Connecting,
-                        scanning: _scanning && _scanTarget == _ScanTarget.m5,
-                        status: _deviceStatus(
-                          device: m5View,
-                          discovered: m5Discovered != null,
-                          connected: isM5Connected,
-                          connecting: _m5Connecting,
-                          scanning: _scanning && _scanTarget == _ScanTarget.m5,
-                          error: preview == null ? _m5Error : null,
-                          fallback: strings.devicesTapToScan,
-                        ),
-                        batteryPercent: latestM5?.batteryPercent,
-                        error: preview == null ? _m5Error : null,
-                        onTap: _handleM5Tap,
-                        actions: [
-                          OutlinedButton.icon(
-                            onPressed: _m5Device == null || _m5Connecting
-                                ? null
-                                : _reconnectM5,
-                            icon: const Icon(Icons.sync),
-                            label: Text(strings.reconnect),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _m5Device == null ? null : _renameM5,
-                            icon: const Icon(Icons.edit_outlined),
-                            label: Text(strings.rename),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _m5Device == null ? null : _forgetM5,
-                            icon: const Icon(Icons.link_off),
-                            label: Text(strings.forget),
-                          ),
-                        ],
-                        metrics: [
-                          _SensorMetric(
-                            label: strings.distance,
-                            value: _number(latestM5?.distanceM),
-                            unit: 'm',
-                          ),
-                          _SensorMetric(
-                            label: strings.velocity,
-                            value: _number(latestM5?.velocityMs),
-                            unit: 'm/s',
-                          ),
-                          _SensorMetric(
-                            label: strings.acceleration,
-                            value: latestM5 == null
-                                ? '--'
-                                : (latestM5.accelMs2 / 9.80665).toStringAsFixed(
-                                    2,
-                                  ),
-                            unit: 'g',
-                          ),
-                        ],
-                        extra: isM5Connected && visibleM5History.length >= 2
-                            ? Column(
-                                children: [
-                                  AccelLineChart(
-                                    samples: List.of(visibleM5History),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  GyroLineChart(
-                                    samples: List.of(visibleM5History),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  MotionLineChart(
-                                    samples: List.of(visibleM5History),
-                                  ),
-                                ],
-                              )
-                            : null,
-                      ),
-                    ),
-                  ],
+                _m5DevicePage(
+                  sectionTitle: wheelchairLabel,
+                  cardTitle: m5View?.displayName ?? wheelchairLabel,
+                  imageAsset: 'assets/devices/m5stickcplus2_real_alt.webp',
+                  m5View: m5View,
+                  m5Discovered: m5Discovered != null,
+                  isM5Connected: isM5Connected,
+                  latestM5: latestM5,
+                  visibleM5History: visibleM5History,
+                  preview: preview,
+                  strings: strings,
+                ),
+                _m5DevicePage(
+                  sectionTitle: beltLabel,
+                  cardTitle: beltLabel,
+                  imageAsset: 'assets/devices/fallguard_belt.png',
+                  m5View: m5View,
+                  m5Discovered: m5Discovered != null,
+                  isM5Connected: isM5Connected,
+                  latestM5: latestM5,
+                  visibleM5History: visibleM5History,
+                  preview: preview,
+                  strings: strings,
                 ),
                 ClinicalPage(
                   children: [
-                    _SensorSection(
-                      title: 'Polar Verity Sense',
-                      child: _SensorDeviceCard(
-                        title: polarView?.name ?? 'Polar Verity Sense',
-                        imageAsset:
-                            'assets/devices/polar_verity_sense_real.png',
+                    _StepIntro(
+                      step: strings.pick('Step 2 of 2', 'ขั้นตอนที่ 2 จาก 2'),
+                      text: isPolarConnected
+                          ? strings.pick(
+                              'Optical sensor connected and streaming heart rate.',
+                              'เซนเซอร์ออปติคัลเชื่อมต่อแล้วและกำลังส่งอัตราการเต้นของหัวใจ',
+                            )
+                          : strings.pick(
+                              'Wear the Polar sensor, then tap the card to connect.',
+                              'สวมเซนเซอร์ Polar แล้วแตะการ์ดเพื่อเชื่อมต่อ',
+                            ),
+                    ),
+                    _SensorDeviceCard(
+                      title: polarView?.name ?? 'Polar Verity Sense',
+                      imageAsset: 'assets/devices/polar_verity_sense_real.png',
+                      connected: isPolarConnected,
+                      connecting: _polarConnecting,
+                      scanning: _scanning && _scanTarget == _ScanTarget.polar,
+                      status: _deviceStatus(
+                        device: polarView,
+                        discovered: polarDiscovered != null,
                         connected: isPolarConnected,
                         connecting: _polarConnecting,
                         scanning: _scanning && _scanTarget == _ScanTarget.polar,
-                        status: _deviceStatus(
-                          device: polarView,
-                          discovered: polarDiscovered != null,
-                          connected: isPolarConnected,
-                          connecting: _polarConnecting,
-                          scanning:
-                              _scanning && _scanTarget == _ScanTarget.polar,
-                          error: preview == null ? _polarError : null,
-                          fallback: strings.devicesTapToScan,
-                        ),
-                        batteryPercent: latestPolar?.sensorBatteryPercent,
                         error: preview == null ? _polarError : null,
-                        onTap: _handlePolarTap,
-                        actions: [
-                          OutlinedButton.icon(
-                            onPressed: _polarDevice == null || _polarConnecting
-                                ? null
-                                : _reconnectPolar,
-                            icon: const Icon(Icons.sync),
-                            label: Text(strings.reconnect),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _polarDevice == null
-                                ? null
-                                : _renamePolar,
-                            icon: const Icon(Icons.edit_outlined),
-                            label: Text(strings.rename),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _polarDevice == null
-                                ? null
-                                : _forgetPolar,
-                            icon: const Icon(Icons.link_off),
-                            label: Text(strings.forget),
-                          ),
-                        ],
-                        metrics: [
-                          _SensorMetric(
-                            label: strings.heartRate,
-                            value: latestPolar == null
-                                ? '--'
-                                : '${latestPolar.heartRateBpm}',
-                            unit: 'bpm',
-                            icon: Icons.favorite,
-                            iconColor: WheelSenseColors.emergency,
-                          ),
-                          _SensorMetric(
-                            label: strings.ppgSignal,
-                            value: latestPolar?.ppgRatio == null
-                                ? '--'
-                                : latestPolar!.ppgRatio!.toStringAsFixed(2),
-                            unit: 'ratio',
-                            icon: Icons.monitor_heart_outlined,
-                            iconColor: WheelSenseColors.success,
-                          ),
-                        ],
-                        extra:
-                            isPolarConnected && visiblePolarHistory.length >= 2
-                            ? PolarSignalChart(
-                                samples: List.of(visiblePolarHistory),
-                              )
-                            : null,
+                        fallback: strings.devicesTapToScan,
                       ),
+                      batteryPercent: latestPolar?.sensorBatteryPercent,
+                      error: preview == null ? _polarError : null,
+                      onTap: _handlePolarTap,
+                      actions: [
+                        _CardAction(
+                          onPressed: _polarDevice == null || _polarConnecting
+                              ? null
+                              : _reconnectPolar,
+                          icon: Icons.sync_rounded,
+                          label: strings.reconnect,
+                        ),
+                        _CardAction(
+                          onPressed: _polarDevice == null ? null : _renamePolar,
+                          icon: Icons.edit_rounded,
+                          label: strings.rename,
+                        ),
+                        _CardAction(
+                          onPressed: _polarDevice == null ? null : _forgetPolar,
+                          icon: Icons.link_off_rounded,
+                          label: strings.forget,
+                        ),
+                      ],
+                      metrics: [
+                        _SensorMetric(
+                          label: strings.heartRate,
+                          value: latestPolar == null
+                              ? '--'
+                              : '${latestPolar.heartRateBpm}',
+                          unit: 'bpm',
+                          icon: Icons.favorite_rounded,
+                          iconColor: WheelSenseColors.emergency,
+                        ),
+                        _SensorMetric(
+                          label: strings.ppgSignal,
+                          value: latestPolar?.ppgRatio == null
+                              ? '--'
+                              : latestPolar!.ppgRatio!.toStringAsFixed(2),
+                          unit: 'ratio',
+                          icon: Icons.monitor_heart_rounded,
+                          iconColor: AppPalette.brand,
+                        ),
+                      ],
+                      extra: isPolarConnected && visiblePolarHistory.length >= 2
+                          ? PolarSignalChart(
+                              samples: List.of(visiblePolarHistory),
+                            )
+                          : null,
                     ),
                   ],
                 ),
@@ -430,6 +379,110 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _m5DevicePage({
+    required String sectionTitle,
+    required String cardTitle,
+    required String imageAsset,
+    required BleDeviceSnapshot? m5View,
+    required bool m5Discovered,
+    required bool isM5Connected,
+    required M5TelemetrySample? latestM5,
+    required List<M5TelemetrySample> visibleM5History,
+    required PreviewMetrics? preview,
+    required GatewayStrings strings,
+  }) {
+    return ClinicalPage(
+      children: [
+        _StepIntro(
+          step: strings.pick('Step 1 of 2', 'ขั้นตอนที่ 1 จาก 2'),
+          text: isM5Connected
+              ? strings.pick(
+                  'Connected and streaming motion data over Bluetooth.',
+                  'เชื่อมต่อแล้วและกำลังส่งข้อมูลการเคลื่อนไหวผ่านบลูทูธ',
+                )
+              : strings.pick(
+                  'Turn the sensor on, then tap the card to connect.',
+                  'เปิดเซนเซอร์ แล้วแตะการ์ดเพื่อเชื่อมต่อ',
+                ),
+        ),
+        _SensorDeviceCard(
+          title: cardTitle,
+          imageAsset: imageAsset,
+          connected: isM5Connected,
+          connecting: _m5Connecting,
+          scanning: _scanning && _scanTarget == _ScanTarget.m5,
+          status: _deviceStatus(
+            device: m5View,
+            discovered: m5Discovered,
+            connected: isM5Connected,
+            connecting: _m5Connecting,
+            scanning: _scanning && _scanTarget == _ScanTarget.m5,
+            error: preview == null ? _m5Error : null,
+            fallback: strings.devicesTapToScan,
+          ),
+          batteryPercent: latestM5?.batteryPercent,
+          error: preview == null ? _m5Error : null,
+          onTap: _handleM5Tap,
+          actions: [
+            _CardAction(
+              onPressed: _m5Device == null || _m5Connecting
+                  ? null
+                  : _reconnectM5,
+              icon: Icons.sync_rounded,
+              label: strings.reconnect,
+            ),
+            _CardAction(
+              onPressed: _m5Device == null ? null : _renameM5,
+              icon: Icons.edit_rounded,
+              label: strings.rename,
+            ),
+            _CardAction(
+              onPressed: _m5Device == null ? null : _forgetM5,
+              icon: Icons.link_off_rounded,
+              label: strings.forget,
+            ),
+          ],
+          metrics: [
+            if (latestM5?.stepCount != null)
+              _SensorMetric(
+                label: strings.steps,
+                value: '${latestM5!.stepCount}',
+                unit: '',
+              ),
+            _SensorMetric(
+              label: strings.distance,
+              value: _number(latestM5?.distanceM),
+              unit: 'm',
+            ),
+            _SensorMetric(
+              label: strings.velocity,
+              value: _number(latestM5?.velocityMs),
+              unit: 'm/s',
+            ),
+            _SensorMetric(
+              label: strings.acceleration,
+              value: latestM5 == null
+                  ? '--'
+                  : (latestM5.accelMs2 / 9.80665).toStringAsFixed(2),
+              unit: 'g',
+            ),
+          ],
+          extra: isM5Connected && visibleM5History.length >= 2
+              ? Column(
+                  children: [
+                    AccelLineChart(samples: List.of(visibleM5History)),
+                    const SizedBox(height: 12),
+                    GyroLineChart(samples: List.of(visibleM5History)),
+                    const SizedBox(height: 12),
+                    MotionLineChart(samples: List.of(visibleM5History)),
+                  ],
+                )
+              : null,
+        ),
+      ],
     );
   }
 
@@ -951,85 +1004,159 @@ class _SensorDeviceCard extends StatelessWidget {
     final statusColor = error != null
         ? WheelSenseColors.emergency
         : connected
-        ? WheelSenseColors.success
+        ? theme.colorScheme.primary
         : connecting || scanning
         ? WheelSenseColors.clinicalBlue
         : WheelSenseColors.muted;
 
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-          child: Column(
+    return ProductSurface(
+      onTap: onTap,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Column(
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 126,
-                    height: 104,
-                    child: Image.asset(imageAsset, fit: BoxFit.contain),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              Container(
+                width: 64,
+                height: 64,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: imageAsset.endsWith('.svg')
+                    ? SvgPicture.asset(imageAsset, fit: BoxFit.contain)
+                    : Image.asset(imageAsset, fit: BoxFit.contain),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Row(
                       children: [
-                        Text(title, style: theme.textTheme.titleLarge),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.circle, size: 14, color: statusColor),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                status,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: Text(
+                            status,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  _BatteryLabel(percent: batteryPercent),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right, size: 32),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 16),
-              IntrinsicHeight(
-                child: Row(
-                  children: [
-                    for (var index = 0; index < metrics.length; index++) ...[
-                      Expanded(
-                        child: _SensorMetricView(metric: metrics[index]),
-                      ),
-                      if (index < metrics.length - 1)
-                        const VerticalDivider(
-                          width: 20,
-                          thickness: 1,
-                          color: Color(0xFFB8C2D0),
-                        ),
-                    ],
                   ],
                 ),
               ),
-              if (extra != null) ...[const SizedBox(height: 16), extra!],
-              if (actions.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Wrap(spacing: 8, runSpacing: 8, children: actions),
-              ],
+              const SizedBox(width: 10),
+              _BatteryLabel(percent: batteryPercent),
             ],
           ),
-        ),
+          const SizedBox(height: 18),
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                for (var index = 0; index < metrics.length; index++) ...[
+                  Expanded(child: _SensorMetricView(metric: metrics[index])),
+                  if (index < metrics.length - 1)
+                    VerticalDivider(
+                      width: 20,
+                      color: theme.colorScheme.outlineVariant,
+                    ),
+                ],
+              ],
+            ),
+          ),
+          if (extra != null) ...[const SizedBox(height: 18), extra!],
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 4),
+            Row(
+              children: [for (final action in actions) Expanded(child: action)],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Icon-over-label text action; three fit evenly across a card at any width.
+class _CardAction extends StatelessWidget {
+  const _CardAction({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Eyebrow step label and one line of guidance above a pairing card.
+class _StepIntro extends StatelessWidget {
+  const _StepIntro({required this.step, required this.text});
+
+  final String step;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            step.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(text, style: theme.textTheme.bodyMedium),
+        ],
       ),
     );
   }
@@ -1042,26 +1169,25 @@ class _BatteryLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           percent == null
-              ? Icons.battery_unknown_outlined
+              ? Icons.battery_unknown_rounded
               : percent! < 25
-              ? Icons.battery_alert_outlined
-              : Icons.battery_5_bar,
-          size: 24,
-          color: percent == null
-              ? WheelSenseColors.muted
-              : percent! < 25
-              ? WheelSenseColors.warning
-              : WheelSenseColors.ink,
+              ? Icons.battery_alert_rounded
+              : Icons.battery_5_bar_rounded,
+          size: 16,
+          color: percent != null && percent! < 25
+              ? AppPalette.warning
+              : theme.colorScheme.onSurfaceVariant,
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 3),
         Text(
           percent == null ? '--' : '$percent%',
-          style: Theme.of(context).textTheme.titleMedium,
+          style: theme.textTheme.labelMedium,
         ),
       ],
     );
@@ -1098,9 +1224,9 @@ class _SensorMetricView extends StatelessWidget {
         Text(
           metric.label,
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodyLarge,
+          style: theme.textTheme.labelMedium,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(
@@ -1108,20 +1234,19 @@ class _SensorMetricView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (metric.icon != null) ...[
-                Icon(metric.icon, color: metric.iconColor, size: 34),
-                const SizedBox(width: 8),
+                Icon(metric.icon, color: metric.iconColor, size: 20),
+                const SizedBox(width: 6),
               ],
               Text(
                 metric.value,
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: WheelSenseColors.ink,
-                  fontWeight: FontWeight.w800,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 3),
               Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(metric.unit, style: theme.textTheme.titleMedium),
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Text(metric.unit, style: theme.textTheme.bodySmall),
               ),
             ],
           ),
@@ -1154,7 +1279,9 @@ class _BeaconListCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: CompactRowCard(
-                  icon: scanning ? Icons.radar : Icons.bluetooth_disabled,
+                  icon: scanning
+                      ? Icons.radar_rounded
+                      : Icons.bluetooth_disabled_rounded,
                   title: scanning
                       ? strings.scanningNearbyBeacons
                       : strings.noBleBeacons,
@@ -1167,8 +1294,7 @@ class _BeaconListCard extends StatelessWidget {
               ),
             for (final beacon in beacons) ...[
               _BeaconRow(beacon: beacon, onTap: () => onBeaconTap(beacon)),
-              if (beacon != beacons.last)
-                const Divider(height: 1, indent: 76, endIndent: 16),
+              if (beacon != beacons.last) const Divider(indent: 64),
             ],
           ],
         ),
@@ -1189,27 +1315,15 @@ class _BeaconRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: WheelSenseColors.clinicalBlue,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.sensors, color: Colors.white),
-            ),
-            const SizedBox(width: 16),
+            ProductIconBadge('scan', tint: theme.colorScheme.primary),
+            const SizedBox(width: 12),
             Expanded(
-              child: Text(beacon.name, style: theme.textTheme.titleMedium),
+              child: Text(beacon.name, style: theme.textTheme.titleSmall),
             ),
-            Text('RSSI', style: theme.textTheme.labelLarge),
-            const SizedBox(width: 14),
-            Text('${beacon.rssi}', style: theme.textTheme.titleMedium),
-            const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, size: 28),
+            Text('${beacon.rssi} dBm', style: theme.textTheme.bodyMedium),
           ],
         ),
       ),

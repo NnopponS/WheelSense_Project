@@ -70,7 +70,7 @@ class OverviewScreen extends StatelessWidget {
         return ClinicalPage(
           trailing: FilledButton.icon(
             onPressed: onStartGateway,
-            icon: const Icon(Icons.play_arrow),
+            icon: const Icon(Icons.play_arrow_rounded),
             label: Text(strings.startGateway),
           ),
           children: [
@@ -98,7 +98,7 @@ class OverviewScreen extends StatelessWidget {
                     label: strings.metricGateway,
                     value: strings.modeLabel(status.mode),
                     detail: status.message,
-                    icon: Icons.health_and_safety_outlined,
+                    icon: Icons.health_and_safety_rounded,
                     severity: _severity(status.mode),
                   ),
                 ),
@@ -111,7 +111,7 @@ class OverviewScreen extends StatelessWidget {
                     detail: state.failedPublishCount == 0
                         ? strings.metricNoPublishFailures
                         : strings.publishFailureCount(state.failedPublishCount),
-                    icon: Icons.cloud_upload_outlined,
+                    icon: Icons.cloud_upload_rounded,
                     severity: state.failedPublishCount == 0
                         ? ClinicalSeverity.normal
                         : ClinicalSeverity.warning,
@@ -126,7 +126,7 @@ class OverviewScreen extends StatelessWidget {
                         : config.linkedCaregiverId != null
                         ? strings.caregiverId(config.linkedCaregiverId!)
                         : strings.metricWaitingForRetainedConfig,
-                    icon: Icons.link_outlined,
+                    icon: Icons.link_rounded,
                     severity: config.alertsEnabled
                         ? ClinicalSeverity.normal
                         : ClinicalSeverity.info,
@@ -140,7 +140,7 @@ class OverviewScreen extends StatelessWidget {
               subtitle: strings.overviewSetupSubtitle,
               action: TextButton.icon(
                 onPressed: onOpenSettings,
-                icon: const Icon(Icons.tune),
+                icon: const Icon(Icons.tune_rounded),
                 label: Text(strings.openSettings),
               ),
               child: Column(
@@ -148,8 +148,8 @@ class OverviewScreen extends StatelessWidget {
                   for (final item in setupItems) ...[
                     CompactRowCard(
                       icon: item.done
-                          ? Icons.check_circle_outline
-                          : Icons.radio_button_unchecked,
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.radio_button_unchecked_rounded,
                       title: item.title,
                       subtitle: item.detail,
                       meta: item.done ? strings.done : strings.needed,
@@ -165,7 +165,7 @@ class OverviewScreen extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: onOpenDevices,
-                          icon: const Icon(Icons.sensors),
+                          icon: const Icon(Icons.sensors_rounded),
                           label: Text(strings.openDevices),
                         ),
                       ),
@@ -173,7 +173,7 @@ class OverviewScreen extends StatelessWidget {
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: onStartGateway,
-                          icon: const Icon(Icons.sync),
+                          icon: const Icon(Icons.sync_rounded),
                           label: Text(strings.resumeRelay),
                         ),
                       ),
@@ -191,7 +191,7 @@ class OverviewScreen extends StatelessWidget {
                   if (state.latestPolarSample != null ||
                       state.latestM5Sample != null) ...[
                     CompactRowCard(
-                      icon: Icons.monitor_heart_outlined,
+                      icon: Icons.monitor_heart_rounded,
                       title: state.latestPolarSample != null
                           ? '${strings.heartRate} ${state.latestPolarSample!.heartRateBpm} bpm'
                           : strings.velocity,
@@ -206,7 +206,7 @@ class OverviewScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                   ],
                   CompactRowCard(
-                    icon: Icons.meeting_room_outlined,
+                    icon: Icons.meeting_room_rounded,
                     title:
                         state.latestRoomPrediction?.roomName ??
                         strings.noRoomPrediction,
@@ -222,7 +222,7 @@ class OverviewScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   CompactRowCard(
-                    icon: Icons.notifications_active_outlined,
+                    icon: Icons.notifications_active_rounded,
                     title: strings.liveAlerts(state.alerts.length),
                     subtitle: state.alerts.isEmpty
                         ? strings.noActiveAlerts
@@ -275,7 +275,7 @@ class OverviewScreen extends StatelessWidget {
         detail: strings.nextPermissionsDetail,
         actionLabel: strings.startGateway,
         meta: strings.needed,
-        icon: Icons.bluetooth_searching,
+        icon: Icons.bluetooth_searching_rounded,
         severity: ClinicalSeverity.warning,
         onPressed: onStartGateway,
       );
@@ -286,7 +286,7 @@ class OverviewScreen extends StatelessWidget {
         detail: strings.nextServerDetail,
         actionLabel: strings.openSettings,
         meta: strings.needed,
-        icon: Icons.hub_outlined,
+        icon: Icons.hub_rounded,
         severity: ClinicalSeverity.warning,
         onPressed: onOpenSettings,
       );
@@ -297,7 +297,7 @@ class OverviewScreen extends StatelessWidget {
         detail: strings.nextM5Detail,
         actionLabel: strings.openDevices,
         meta: strings.needed,
-        icon: Icons.sensors,
+        icon: Icons.sensors_rounded,
         severity: ClinicalSeverity.warning,
         onPressed: onOpenDevices,
       );
@@ -308,7 +308,7 @@ class OverviewScreen extends StatelessWidget {
         detail: strings.nextFirstPacketDetail,
         actionLabel: strings.openDevices,
         meta: strings.waiting,
-        icon: Icons.sync,
+        icon: Icons.sync_rounded,
         severity: ClinicalSeverity.info,
         onPressed: onOpenDevices,
       );
@@ -318,7 +318,7 @@ class OverviewScreen extends StatelessWidget {
       detail: strings.nextReadyDetail,
       actionLabel: strings.resumeRelay,
       meta: strings.ready,
-      icon: Icons.check_circle_outline,
+      icon: Icons.check_circle_outline_rounded,
       severity: ClinicalSeverity.normal,
       onPressed: onStartGateway,
     );

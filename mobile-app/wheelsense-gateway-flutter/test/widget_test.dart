@@ -14,13 +14,16 @@ import 'package:wheelsense_gateway_flutter/screens/portal_webview_screen.dart';
 void main() {
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
+  // Preview data is switched from the avatar's quick settings on every tab.
   Future<void> togglePreview(WidgetTester tester) async {
-    final toggle = find.byWidgetPredicate(
-      (widget) =>
-          widget is IconButton && widget.tooltip == 'Toggle preview data',
-    );
-    await tester.tap(toggle);
-    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.byTooltip('Quick settings'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byTooltip('Toggle preview data'));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
   }
 
   testWidgets('Every engineering tool opens and returns to Devices', (
@@ -44,8 +47,12 @@ void main() {
     expect(find.text('Polar Studio'), findsNothing);
     expect(find.text('Connected'), findsWidgets);
     expect(find.text('View data'), findsWidgets);
+    // Preview shows all three sensors; without it only paired ones appear.
+    expect(find.text('View data'), findsNWidgets(3));
     await togglePreview(tester);
-    expect(find.text('Pair device'), findsWidgets);
+    expect(find.text('Pair device'), findsNothing);
+    expect(find.text('No devices yet'), findsWidgets);
+    expect(find.widgetWithText(FilledButton, 'Add device'), findsOneWidget);
     for (final tool in <String, Type>{
       'Gateway settings': ServerSetupScreen,
       'Node radar': NodeRadarScreen,
@@ -148,6 +155,10 @@ void main() {
       ThemeMode.light,
     );
 
+    await tester.tap(find.byTooltip('Quick settings'));
+    // One frame starts the sheet animation, the next lets it finish.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byTooltip('Switch to dark mode'));
     await tester.pump();
     expect(
@@ -172,6 +183,9 @@ void main() {
     );
     await tester.tap(find.byType(NavigationDestination).at(3));
     await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.byTooltip('Quick settings'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byTooltip('Switch to light mode'));
     await tester.pump();
     expect(
@@ -218,9 +232,13 @@ void main() {
     await tester.tap(find.text('Health').last);
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.byType(HealthInsightsScreen), findsOneWidget);
-    expect(find.text('HRV'), findsWidgets);
-    expect(find.text('Oxygen'), findsWidgets);
-    expect(find.text('Breathing rate'), findsWidgets);
+    // Preview demos only the core metrics every wearable writes to Health
+    // Connect; device-dependent extras appear only with real data.
+    expect(find.text('Steps'), findsWidgets);
+    expect(find.text('Resting heart rate'), findsWidgets);
+    expect(find.text('HRV'), findsNothing);
+    expect(find.text('Oxygen'), findsNothing);
+    expect(find.text('Breathing rate'), findsNothing);
     expect(find.text('SLEEP ARCHITECTURE'), findsOneWidget);
 
     await tester.tap(find.byType(NavigationDestination).at(3));
@@ -252,6 +270,38 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('เข้าใจสุขภาพของคุณ'), findsNothing);
     expect(find.byType(HealthInsightsScreen), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('Home survives the zero-width first frame Android lays out', (
+    tester,
+  ) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({});
+    final invalidConstraints = <String>[];
+    final originalError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      final message = details.exceptionAsString();
+      // Overflow at width 0 is expected; invalid constraints break the tree.
+      if (!message.contains('overflowed')) invalidConstraints.add(message);
+    };
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(0, 900);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      const WheelSenseGatewayApp(requestPermissionsOnOpen: false),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    tester.view.physicalSize = const Size(411, 900);
+    await tester.pump(const Duration(milliseconds: 350));
+    // flutter_test requires the handler back before any expect().
+    FlutterError.onError = originalError;
+
+    expect(invalidConstraints, isEmpty, reason: invalidConstraints.join('\n'));
+    expect(find.text('Hello!'), findsOneWidget);
+    expect(find.text('Heart rate'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
@@ -289,6 +339,14 @@ void main() {
               );
               await tester.pump(const Duration(milliseconds: 350));
               if (brightness == Brightness.dark) {
+                // The theme switch lives in Home's quick settings sheet.
+                await tester.tap(
+                  find.byTooltip(
+                    language == 'th' ? 'ตั้งค่าด่วน' : 'Quick settings',
+                  ),
+                );
+                await tester.pump();
+                await tester.pump(const Duration(milliseconds: 400));
                 await tester.tap(
                   find.byTooltip(
                     language == 'th'
@@ -296,7 +354,11 @@ void main() {
                         : 'Switch to dark mode',
                   ),
                 );
+                await tester.pump(const Duration(milliseconds: 350));
+                // Close the sheet the way Android's back gesture does.
+                await tester.binding.handlePopRoute();
                 await tester.pump();
+                await tester.pump(const Duration(milliseconds: 400));
               }
               for (var index = 0; index < 4; index++) {
                 await tester.tap(find.byType(NavigationDestination).at(index));

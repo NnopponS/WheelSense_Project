@@ -257,6 +257,7 @@ class GatewayStrings {
       pick('Scanning nearby BLE', 'กำลังสแกน BLE ใกล้ตัว');
   String get devicesTapToConnect => pick('Tap to connect', 'แตะเพื่อเชื่อมต่อ');
   String get distance => pick('Distance', 'ระยะทาง');
+  String get steps => pick('Steps', 'ก้าว');
   String get velocity => pick('Velocity', 'ความเร็ว');
   String get acceleration => pick('Accel', 'ความเร่ง');
   String get heartRate => pick('Heart Rate', 'ชีพจร');

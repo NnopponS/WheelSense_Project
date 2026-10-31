@@ -706,6 +706,10 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
 
         patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
 
+        await _apply_mobile_fall_event(
+            session, ws_id, data.get("gateway_payload"), device_id, patient_id, ts
+        )
+
         # Persist HR vital if present (Polar Verity / SDK streams use polar_sdk)
         if hr_data and patient_id is not None:
             hr_source = "polar_sdk" if (ppg_data or data.get("hr_source") == "polar_sdk") else "mobile_ble"
@@ -893,6 +897,64 @@ async def _maybe_create_fall_alert(
         velocity,
     )
     return True
+
+
+async def _apply_mobile_fall_event(
+    session,
+    ws_id: int,
+    event,
+    device_id: str,
+    patient_id: int | None,
+    ts,
+) -> None:
+    """Mirror belt fall events relayed by the mobile app into web alerts.
+
+    ``fall_detected`` opens a critical fall alert; ``fall_canceled`` (the wearer
+    pressed "I'm OK" on the belt or in the app) resolves that belt's open ones.
+    App-only test alerts (``source: simulate``) never reach staff.
+    """
+    if not isinstance(event, dict) or event.get("source") == "simulate":
+        return
+    kind = event.get("event")
+    belt_id = str(event.get("device_id") or device_id)
+    if kind == "fall_detected":
+        if patient_id is None:
+            patient_id = await _lookup_patient_for_device(session, ws_id, belt_id)
+        peak_g = event.get("peak_g")
+        session.add(
+            Alert(
+                workspace_id=ws_id,
+                patient_id=patient_id,
+                device_id=belt_id,
+                timestamp=ts,
+                alert_type="fall",
+                severity="critical",
+                title=f"Fall Detected - {belt_id}",
+                description="FallGuard belt reported a fall"
+                + (f" (peak {peak_g:.1f} g)" if isinstance(peak_g, (int, float)) else ""),
+                data={
+                    k: event.get(k)
+                    for k in ("peak_g", "reason", "tilt_deg", "battery_pct")
+                    if event.get(k) is not None
+                },
+                status="active",
+            )
+        )
+        logger.warning("FALL DETECTED (belt via mobile): device=%s patient=%s", belt_id, patient_id)
+    elif kind == "fall_canceled":
+        open_alerts = await session.execute(
+            select(Alert).where(
+                Alert.workspace_id == ws_id,
+                Alert.alert_type == "fall",
+                Alert.device_id == belt_id,
+                Alert.status.in_(("active", "acknowledged")),
+            )
+        )
+        for alert in open_alerts.scalars():
+            alert.status = "resolved"
+            alert.resolved_at = utcnow()
+            alert.resolution_note = "Wearer confirmed OK"
+            session.add(alert)
 
 
 def _room_tracker_key(ws_id: int, patient_id: int) -> str:

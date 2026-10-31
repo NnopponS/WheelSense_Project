@@ -246,6 +246,26 @@ void main() {
         ),
         isTrue,
       );
+      // A saved sensor reconnects even if setup was reset: fall alerts
+      // must not depend on server setup.
+      expect(
+        shouldAutoStartBleRelay(
+          config: incomplete,
+          status: readyStatus,
+          requested: true,
+          hasPairedDevice: true,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldAutoStartBleRelay(
+          config: incomplete,
+          status: readyStatus.copyWith(bleReady: false),
+          requested: true,
+          hasPairedDevice: true,
+        ),
+        isFalse,
+      );
     },
   );
 

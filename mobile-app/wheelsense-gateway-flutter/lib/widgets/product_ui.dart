@@ -15,25 +15,55 @@ abstract final class ProductColors {
   static const mist = Color(0xFFECF2F3);
 }
 
+/// App icon by name. Every name maps to Material Rounded so the whole app
+/// draws from one icon set; unknown names fall back to the bundled SVG.
 class ProductIcon extends StatelessWidget {
   const ProductIcon(this.name, {super.key, this.size = 24, this.color});
   final String name;
   final double size;
   final Color? color;
 
+  static const _icons = <String, IconData>{
+    'activity': Icons.directions_walk_rounded,
+    'add': Icons.add_rounded,
+    'arrow': Icons.arrow_outward_rounded,
+    'battery': Icons.battery_5_bar_rounded,
+    'bluetooth': Icons.bluetooth_rounded,
+    'care': Icons.volunteer_activism_rounded,
+    'chart': Icons.show_chart_rounded,
+    'check': Icons.check_rounded,
+    'cloud': Icons.cloud_rounded,
+    'devices': Icons.devices_other_rounded,
+    'eye': Icons.visibility_rounded,
+    'eye-off': Icons.visibility_off_rounded,
+    'health': Icons.monitor_heart_rounded,
+    'heart': Icons.favorite_rounded,
+    'home': Icons.home_rounded,
+    'person': Icons.person_rounded,
+    'polar': Icons.watch_rounded,
+    'rr': Icons.graphic_eq_rounded,
+    'scan': Icons.radar_rounded,
+    'settings': Icons.tune_rounded,
+    'sleep': Icons.bedtime_rounded,
+    'speed': Icons.speed_rounded,
+  };
+
   @override
-  Widget build(BuildContext context) => SvgPicture.asset(
-    'assets/icons/$name.svg',
-    width: size,
-    height: size,
-    excludeFromSemantics: true,
-    colorFilter: ColorFilter.mode(
-      color ??
-          IconTheme.of(context).color ??
-          Theme.of(context).colorScheme.onSurface,
-      BlendMode.srcIn,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final tint =
+        color ??
+        IconTheme.of(context).color ??
+        Theme.of(context).colorScheme.onSurface;
+    final icon = _icons[name];
+    if (icon != null) return Icon(icon, size: size, color: tint);
+    return SvgPicture.asset(
+      'assets/icons/$name.svg',
+      width: size,
+      height: size,
+      excludeFromSemantics: true,
+      colorFilter: ColorFilter.mode(tint, BlendMode.srcIn),
+    );
+  }
 }
 
 class ProductPage extends StatelessWidget {
@@ -52,14 +82,14 @@ class ProductPage extends StatelessWidget {
           padding:
               padding ??
               EdgeInsets.fromLTRB(
-                wide ? 26 : 18,
-                wide ? 24 : 18,
-                wide ? 26 : 18,
-                32,
+                wide ? 28 : 20,
+                wide ? 24 : 12,
+                wide ? 28 : 20,
+                40,
               ),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1020),
+              constraints: const BoxConstraints(maxWidth: 960),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: children,
@@ -94,23 +124,10 @@ class ProductSectionHeading extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
-                ),
-              ),
+              Text(title, style: theme.textTheme.titleMedium),
               if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
+                const SizedBox(height: 2),
+                Text(subtitle!, style: theme.textTheme.bodySmall),
               ],
             ],
           ),
@@ -121,15 +138,17 @@ class ProductSectionHeading extends StatelessWidget {
   }
 }
 
+/// Soft card: warm surface fill on the cream canvas, no shadow; a border only
+/// when one is asked for.
 class ProductSurface extends StatelessWidget {
   const ProductSurface({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(17),
+    this.padding = const EdgeInsets.all(18),
     this.background,
     this.border,
     this.onTap,
-    this.radius = 18,
+    this.radius = 22,
   });
 
   final Widget child;
@@ -141,42 +160,24 @@ class ProductSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final fill = background ?? (isDark ? AppPalette.slate900 : Colors.white);
-    return Material(
-      color: fill,
+    final colors = Theme.of(context).colorScheme;
+    final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(radius),
+      side: border == null ? BorderSide.none : BorderSide(color: border!),
+    );
+    return Material(
+      color: background ?? colors.surface,
+      shape: shape,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(radius),
-        child: Ink(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(
-              color:
-                  border ??
-                  (isDark ? AppPalette.slate800 : const Color(0xFFE5ECEF)),
-            ),
-            boxShadow: isDark
-                ? null
-                : const [
-                    BoxShadow(
-                      color: Color(0x0B0C343E),
-                      blurRadius: 22,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-          ),
-          child: child,
-        ),
+        child: Padding(padding: padding, child: child),
       ),
     );
   }
 }
 
+/// Small status label: a coloured dot followed by text on a soft tint.
 class ProductStatusPill extends StatelessWidget {
   const ProductStatusPill({
     super.key,
@@ -193,41 +194,133 @@ class ProductStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = positive ? const Color(0xFF087C69) : const Color(0xFF91611E);
-    final bg = positive ? const Color(0xFFE2F8F0) : const Color(0xFFFFF3DF);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = positive
+        ? Theme.of(context).colorScheme.primary
+        : (isDark ? AppPalette.warningBright : const Color(0xFFB45309));
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: bg,
+        color: color.withValues(alpha: isDark ? 0.14 : 0.09),
         borderRadius: BorderRadius.circular(50),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 9 : 12,
-          vertical: compact ? 6 : 8,
+          horizontal: compact ? 8 : 10,
+          vertical: compact ? 4 : 6,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon ??
-                  (positive ? Icons.check_circle_rounded : Icons.info_rounded),
-              size: compact ? 12 : 14,
-              color: color,
-            ),
-            const SizedBox(width: 5),
+            if (icon != null)
+              Icon(icon, size: compact ? 12 : 14, color: color)
+            else
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
                 label,
                 style: TextStyle(
                   color: color,
-                  fontWeight: FontWeight.w700,
-                  fontSize: compact ? 10 : 11,
+                  fontWeight: FontWeight.w600,
+                  fontSize: compact ? 11 : 12,
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Rounded square holding a tinted icon; the one icon treatment used app-wide.
+class ProductIconBadge extends StatelessWidget {
+  const ProductIconBadge(
+    this.icon, {
+    super.key,
+    required this.tint,
+    this.size = 36,
+  });
+
+  final String icon;
+  final Color tint;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: isDark ? 0.16 : 0.09),
+        borderRadius: BorderRadius.circular(size * 0.32),
+      ),
+      child: Center(
+        child: ProductIcon(icon, color: tint, size: size * 0.52),
+      ),
+    );
+  }
+}
+
+/// Unboxed reading: small label, large tabular value, muted unit and note.
+class ProductStat extends StatelessWidget {
+  const ProductStat({
+    super.key,
+    required this.label,
+    required this.value,
+    this.unit = '',
+    this.note,
+  });
+
+  final String label;
+  final String value;
+  final String unit;
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelMedium,
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 3,
+          children: [
+            Text(
+              value,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            if (unit.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Text(unit, style: theme.textTheme.bodySmall),
+              ),
+          ],
+        ),
+        if (note != null)
+          Text(
+            note!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall,
+          ),
+      ],
     );
   }
 }
@@ -311,38 +404,27 @@ class ProductMetricCard extends StatelessWidget {
     final theme = Theme.of(context);
     return ProductSurface(
       onTap: onTap,
-      padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.11),
-                  borderRadius: BorderRadius.circular(11),
+              ProductIconBadge(icon, tint: tint, size: 32),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                child: ProductIcon(icon, color: tint, size: 20),
               ),
-              const Spacer(),
-              if (onTap != null)
-                ProductIcon(
-                  'arrow',
-                  size: 17,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
             ],
           ),
-          const SizedBox(height: 14),
-          Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 16),
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.end,
             children: [
@@ -351,28 +433,26 @@ class ProductMetricCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.displayMedium?.copyWith(
-                  fontSize: 29,
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                  letterSpacing: -0.6,
+                  fontSize: 30,
+                  height: 1.0,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
               if (unit.isNotEmpty) ...[
-                const SizedBox(width: 5),
+                const SizedBox(width: 4),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
-                  child: Text(unit, style: theme.textTheme.labelSmall),
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(unit, style: theme.textTheme.bodyMedium),
                 ),
               ],
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 6),
           Text(
             caption,
-            style: theme.textTheme.labelSmall?.copyWith(
-              height: 1.4,
-              fontWeight: FontWeight.w500,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall,
           ),
         ],
       ),

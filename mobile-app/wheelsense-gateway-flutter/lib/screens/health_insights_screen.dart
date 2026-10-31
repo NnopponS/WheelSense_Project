@@ -11,6 +11,7 @@ import '../models/preview_metrics.dart';
 import '../services/gateway_services.dart';
 import '../services/health_data_source.dart';
 import '../theme/app_palette.dart';
+import '../widgets/calm_care_ui.dart';
 import '../widgets/product_ui.dart';
 
 class HealthInsightsScreen extends StatelessWidget {
@@ -184,124 +185,137 @@ class HealthInsightsScreen extends StatelessWidget {
         final previewDates = previewDays.map((day) => day.date).toList();
         List<DateTime> datesFor(bool hasData) =>
             hasData ? actualDates : previewDates;
+        // Only show what the app can really get. Core metrics may be demoed in
+        // preview; extras appear only when Health Connect delivers them.
+        bool show(bool hasData, {bool core = false}) =>
+            hasData || (core && preview != null);
         final trendMetrics = <_TrendMetric>[
-          _TrendMetric(
-            title: t.pick('Steps', 'ก้าว'),
-            unit: t.pick('steps', 'ก้าว'),
-            source: hasSteps
-                ? _source(healthData, HealthDataType.STEPS, t)
-                : '',
-            dates: datesFor(hasSteps),
-            values: stepValues,
-            type: HealthDataType.STEPS,
-            isPreview: !hasSteps && preview != null,
-            isTotal: true,
-            color: AppPalette.brand,
-          ),
-          _TrendMetric(
-            title: t.pick('Sleep duration', 'ระยะเวลานอน'),
-            unit: '',
-            source: hasSleep
-                ? _source(healthData, HealthDataType.SLEEP_ASLEEP, t)
-                : '',
-            dates: datesFor(hasSleep),
-            values: sleepValues,
-            type: HealthDataType.SLEEP_ASLEEP,
-            isPreview: !hasSleep && preview != null,
-            isSleep: true,
-            color: AppPalette.polarPpg,
-          ),
-          _TrendMetric(
-            title: t.pick('Resting heart rate', 'ชีพจรขณะพัก'),
-            unit: 'bpm',
-            source: hasResting
-                ? _source(healthData, HealthDataType.RESTING_HEART_RATE, t)
-                : '',
-            dates: datesFor(hasResting),
-            values: restingValues,
-            type: HealthDataType.RESTING_HEART_RATE,
-            isPreview: !hasResting && preview != null,
-            color: AppPalette.polarHeart,
-          ),
-          _TrendMetric(
-            title: t.pick('Heart rate', 'ชีพจร'),
-            unit: 'bpm',
-            source: hasHeartRate
-                ? _source(healthData, HealthDataType.HEART_RATE, t)
-                : '',
-            dates: datesFor(hasHeartRate),
-            values: heartRateValues,
-            type: HealthDataType.HEART_RATE,
-            isPreview: !hasHeartRate && preview != null,
-            color: AppPalette.polarHeart,
-          ),
-          _TrendMetric(
-            title: 'HRV',
-            unit: 'ms',
-            source: hasHrv
-                ? _sourceAny(healthData, const [
-                    HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
-                    HealthDataType.HEART_RATE_VARIABILITY_SDNN,
-                  ], t)
-                : '',
-            dates: datesFor(hasHrv),
-            values: hrvValues,
-            type: defaultTargetPlatform == TargetPlatform.iOS
-                ? HealthDataType.HEART_RATE_VARIABILITY_SDNN
-                : HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
-            isPreview: !hasHrv && preview != null,
-            color: AppPalette.polarPpg,
-          ),
-          _TrendMetric(
-            title: t.pick('Oxygen saturation', 'ออกซิเจนในเลือด'),
-            unit: '%',
-            source: hasOxygen
-                ? _source(healthData, HealthDataType.BLOOD_OXYGEN, t)
-                : '',
-            dates: datesFor(hasOxygen),
-            values: oxygenValues,
-            type: HealthDataType.BLOOD_OXYGEN,
-            isPreview: !hasOxygen && preview != null,
-            color: AppPalette.brand,
-          ),
-          _TrendMetric(
-            title: t.pick('Breathing rate', 'อัตราการหายใจ'),
-            unit: t.pick('breaths/min', 'ครั้ง/นาที'),
-            source: hasRespiratory
-                ? _source(healthData, HealthDataType.RESPIRATORY_RATE, t)
-                : '',
-            dates: datesFor(hasRespiratory),
-            values: respiratoryValues,
-            type: HealthDataType.RESPIRATORY_RATE,
-            isPreview: !hasRespiratory && preview != null,
-            color: AppPalette.polarHeart,
-          ),
-          _TrendMetric(
-            title: t.pick('Active calories', 'แคลอรีที่ใช้'),
-            unit: 'kcal',
-            source: hasCalories
-                ? _source(healthData, HealthDataType.ACTIVE_ENERGY_BURNED, t)
-                : '',
-            dates: datesFor(hasCalories),
-            values: calorieValues,
-            type: HealthDataType.ACTIVE_ENERGY_BURNED,
-            isPreview: !hasCalories && preview != null,
-            isTotal: true,
-            color: AppPalette.brand,
-          ),
-          _TrendMetric(
-            title: t.pick('Distance', 'ระยะทาง'),
-            unit: t.pick('meters', 'เมตร'),
-            source: hasDistance
-                ? _source(healthData, HealthDataType.DISTANCE_DELTA, t)
-                : '',
-            dates: datesFor(hasDistance),
-            values: distanceValues,
-            type: HealthDataType.DISTANCE_DELTA,
-            isPreview: !hasDistance && preview != null,
-            isTotal: true,
-            color: AppPalette.brand,
-          ),
+          if (show(hasSteps, core: true))
+            _TrendMetric(
+              title: t.pick('Steps', 'ก้าว'),
+              unit: t.pick('steps', 'ก้าว'),
+              source: hasSteps
+                  ? _source(healthData, HealthDataType.STEPS, t)
+                  : '',
+              dates: datesFor(hasSteps),
+              values: stepValues,
+              type: HealthDataType.STEPS,
+              isPreview: !hasSteps && preview != null,
+              isTotal: true,
+              color: AppPalette.brand,
+            ),
+          if (show(hasSleep, core: true))
+            _TrendMetric(
+              title: t.pick('Sleep duration', 'ระยะเวลานอน'),
+              unit: '',
+              source: hasSleep
+                  ? _source(healthData, HealthDataType.SLEEP_ASLEEP, t)
+                  : '',
+              dates: datesFor(hasSleep),
+              values: sleepValues,
+              type: HealthDataType.SLEEP_ASLEEP,
+              isPreview: !hasSleep && preview != null,
+              isSleep: true,
+              color: AppPalette.polarPpg,
+            ),
+          if (show(hasResting, core: true))
+            _TrendMetric(
+              title: t.pick('Resting heart rate', 'ชีพจรขณะพัก'),
+              unit: 'bpm',
+              source: hasResting
+                  ? _source(healthData, HealthDataType.RESTING_HEART_RATE, t)
+                  : '',
+              dates: datesFor(hasResting),
+              values: restingValues,
+              type: HealthDataType.RESTING_HEART_RATE,
+              isPreview: !hasResting && preview != null,
+              color: AppPalette.polarHeart,
+            ),
+          if (show(hasHeartRate, core: true))
+            _TrendMetric(
+              title: t.pick('Heart rate', 'ชีพจร'),
+              unit: 'bpm',
+              source: hasHeartRate
+                  ? _source(healthData, HealthDataType.HEART_RATE, t)
+                  : '',
+              dates: datesFor(hasHeartRate),
+              values: heartRateValues,
+              type: HealthDataType.HEART_RATE,
+              isPreview: !hasHeartRate && preview != null,
+              color: AppPalette.polarHeart,
+            ),
+          if (show(hasHrv))
+            _TrendMetric(
+              title: 'HRV',
+              unit: 'ms',
+              source: hasHrv
+                  ? _sourceAny(healthData, const [
+                      HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
+                      HealthDataType.HEART_RATE_VARIABILITY_SDNN,
+                    ], t)
+                  : '',
+              dates: datesFor(hasHrv),
+              values: hrvValues,
+              type: defaultTargetPlatform == TargetPlatform.iOS
+                  ? HealthDataType.HEART_RATE_VARIABILITY_SDNN
+                  : HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
+              isPreview: !hasHrv && preview != null,
+              color: AppPalette.polarPpg,
+            ),
+          if (show(hasOxygen))
+            _TrendMetric(
+              title: t.pick('Oxygen saturation', 'ออกซิเจนในเลือด'),
+              unit: '%',
+              source: hasOxygen
+                  ? _source(healthData, HealthDataType.BLOOD_OXYGEN, t)
+                  : '',
+              dates: datesFor(hasOxygen),
+              values: oxygenValues,
+              type: HealthDataType.BLOOD_OXYGEN,
+              isPreview: !hasOxygen && preview != null,
+              color: AppPalette.brand,
+            ),
+          if (show(hasRespiratory))
+            _TrendMetric(
+              title: t.pick('Breathing rate', 'อัตราการหายใจ'),
+              unit: t.pick('breaths/min', 'ครั้ง/นาที'),
+              source: hasRespiratory
+                  ? _source(healthData, HealthDataType.RESPIRATORY_RATE, t)
+                  : '',
+              dates: datesFor(hasRespiratory),
+              values: respiratoryValues,
+              type: HealthDataType.RESPIRATORY_RATE,
+              isPreview: !hasRespiratory && preview != null,
+              color: AppPalette.polarHeart,
+            ),
+          if (show(hasCalories))
+            _TrendMetric(
+              title: t.pick('Active calories', 'แคลอรีที่ใช้'),
+              unit: 'kcal',
+              source: hasCalories
+                  ? _source(healthData, HealthDataType.ACTIVE_ENERGY_BURNED, t)
+                  : '',
+              dates: datesFor(hasCalories),
+              values: calorieValues,
+              type: HealthDataType.ACTIVE_ENERGY_BURNED,
+              isPreview: !hasCalories && preview != null,
+              isTotal: true,
+              color: AppPalette.brand,
+            ),
+          if (show(hasDistance, core: true))
+            _TrendMetric(
+              title: t.pick('Distance', 'ระยะทาง'),
+              unit: t.pick('meters', 'เมตร'),
+              source: hasDistance
+                  ? _source(healthData, HealthDataType.DISTANCE_DELTA, t)
+                  : '',
+              dates: datesFor(hasDistance),
+              values: distanceValues,
+              type: HealthDataType.DISTANCE_DELTA,
+              isPreview: !hasDistance && preview != null,
+              isTotal: true,
+              color: AppPalette.brand,
+            ),
         ];
         final todayCards =
             <
@@ -315,118 +329,159 @@ class HealthInsightsScreen extends StatelessWidget {
                 VoidCallback? onTap,
               })
             >[
-              (
-                label: t.pick('Steps today', 'ก้าววันนี้'),
-                value: todaySteps == null
-                    ? '—'
-                    : NumberFormat.decimalPattern().format(todaySteps),
-                unit: t.pick('steps', 'ก้าว'),
-                caption: hasSteps
-                    ? _source(healthData, HealthDataType.STEPS, t)
-                    : previewCaption,
-                icon: 'activity',
-                tint: AppPalette.brand,
-                onTap: null,
-              ),
-              (
-                label: t.pick('Sleep', 'การนอน'),
-                value: _sleepDuration(sleepMinutes),
-                unit: '',
-                caption: hasSleep
-                    ? _source(healthData, HealthDataType.SLEEP_ASLEEP, t)
-                    : previewCaption,
-                icon: 'sleep',
-                tint: AppPalette.polarPpg,
-                onTap: null,
-              ),
-              (
-                label: t.pick('Resting heart rate', 'ชีพจรขณะพัก'),
-                value: resting?.toStringAsFixed(0) ?? '—',
-                unit: 'bpm',
-                caption: hasResting
-                    ? _source(healthData, HealthDataType.RESTING_HEART_RATE, t)
-                    : previewCaption,
-                icon: 'heart',
-                tint: AppPalette.polarHeart,
-                onTap: null,
-              ),
-              (
-                label: t.pick('Heart rate', 'ชีพจร'),
-                value: averageHeartRate?.toStringAsFixed(0) ?? '—',
-                unit: 'bpm',
-                caption: hasHeartRate
-                    ? _source(healthData, HealthDataType.HEART_RATE, t)
-                    : previewCaption,
-                icon: 'heart',
-                tint: AppPalette.polarHeart,
-                onTap: null,
-              ),
-              (
-                label: 'HRV',
-                value: hrv?.toStringAsFixed(0) ?? '—',
-                unit: 'ms',
-                caption: hasHrv
-                    ? _sourceAny(healthData, const [
-                        HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
-                        HealthDataType.HEART_RATE_VARIABILITY_SDNN,
-                      ], t)
-                    : previewCaption,
-                icon: 'activity',
-                tint: AppPalette.polarPpg,
-                onTap: null,
-              ),
-              (
-                label: t.pick('Oxygen', 'ออกซิเจน'),
-                value: oxygen?.toStringAsFixed(0) ?? '—',
-                unit: '%',
-                caption: hasOxygen
-                    ? _source(healthData, HealthDataType.BLOOD_OXYGEN, t)
-                    : previewCaption,
-                icon: 'health',
-                tint: AppPalette.brand,
-                onTap: null,
-              ),
-              (
-                label: t.pick('Breathing rate', 'อัตราการหายใจ'),
-                value: respiratory?.toStringAsFixed(0) ?? '—',
-                unit: t.pick('breaths/min', 'ครั้ง/นาที'),
-                caption: hasRespiratory
-                    ? _source(healthData, HealthDataType.RESPIRATORY_RATE, t)
-                    : previewCaption,
-                icon: 'heart',
-                tint: AppPalette.polarHeart,
-                onTap: null,
-              ),
-              (
-                label: t.pick('Active calories', 'แคลอรีที่ใช้'),
-                value: calories?.toStringAsFixed(0) ?? '—',
-                unit: 'kcal',
-                caption: hasCalories
-                    ? _source(
-                        healthData,
-                        HealthDataType.ACTIVE_ENERGY_BURNED,
-                        t,
-                      )
-                    : previewCaption,
-                icon: 'activity',
-                tint: AppPalette.brand,
-                onTap: null,
-              ),
-              (
-                label: t.pick('Distance', 'ระยะทาง'),
-                value: _distanceValue(distance),
-                unit: _distanceUnit(distance, t),
-                caption: hasDistance
-                    ? _source(healthData, HealthDataType.DISTANCE_DELTA, t)
-                    : previewCaption,
-                icon: 'activity',
-                tint: AppPalette.brand,
-                onTap: null,
-              ),
+              if (show(hasSteps, core: true))
+                (
+                  // The section is titled "Today", so the label stays short.
+                  label: t.pick('Steps', 'จำนวนก้าว'),
+                  value: todaySteps == null
+                      ? '—'
+                      : NumberFormat.decimalPattern().format(todaySteps),
+                  unit: '',
+                  caption: hasSteps
+                      ? _source(healthData, HealthDataType.STEPS, t)
+                      : previewCaption,
+                  icon: 'activity',
+                  tint: AppPalette.brand,
+                  onTap: null,
+                ),
+              if (show(hasSleep, core: true))
+                (
+                  label: t.pick('Sleep', 'การนอน'),
+                  value: _sleepDuration(sleepMinutes),
+                  unit: '',
+                  caption: hasSleep
+                      ? _source(healthData, HealthDataType.SLEEP_ASLEEP, t)
+                      : previewCaption,
+                  icon: 'sleep',
+                  tint: AppPalette.polarPpg,
+                  onTap: null,
+                ),
+              if (show(hasResting, core: true))
+                (
+                  label: t.pick('Resting heart rate', 'ชีพจรขณะพัก'),
+                  value: resting?.toStringAsFixed(0) ?? '—',
+                  unit: 'bpm',
+                  caption: hasResting
+                      ? _source(
+                          healthData,
+                          HealthDataType.RESTING_HEART_RATE,
+                          t,
+                        )
+                      : previewCaption,
+                  icon: 'heart',
+                  tint: AppPalette.polarHeart,
+                  onTap: null,
+                ),
+              if (show(hasHeartRate, core: true))
+                (
+                  label: t.pick('Heart rate', 'ชีพจร'),
+                  value: averageHeartRate?.toStringAsFixed(0) ?? '—',
+                  unit: 'bpm',
+                  caption: hasHeartRate
+                      ? _source(healthData, HealthDataType.HEART_RATE, t)
+                      : previewCaption,
+                  icon: 'heart',
+                  tint: AppPalette.polarHeart,
+                  onTap: null,
+                ),
+              if (show(hasHrv))
+                (
+                  label: 'HRV',
+                  value: hrv?.toStringAsFixed(0) ?? '—',
+                  unit: 'ms',
+                  caption: hasHrv
+                      ? _sourceAny(healthData, const [
+                          HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
+                          HealthDataType.HEART_RATE_VARIABILITY_SDNN,
+                        ], t)
+                      : previewCaption,
+                  icon: 'activity',
+                  tint: AppPalette.polarPpg,
+                  onTap: null,
+                ),
+              if (show(hasOxygen))
+                (
+                  label: t.pick('Oxygen', 'ออกซิเจน'),
+                  value: oxygen?.toStringAsFixed(0) ?? '—',
+                  unit: '%',
+                  caption: hasOxygen
+                      ? _source(healthData, HealthDataType.BLOOD_OXYGEN, t)
+                      : previewCaption,
+                  icon: 'health',
+                  tint: AppPalette.brand,
+                  onTap: null,
+                ),
+              if (show(hasRespiratory))
+                (
+                  label: t.pick('Breathing rate', 'อัตราการหายใจ'),
+                  value: respiratory?.toStringAsFixed(0) ?? '—',
+                  unit: t.pick('breaths/min', 'ครั้ง/นาที'),
+                  caption: hasRespiratory
+                      ? _source(healthData, HealthDataType.RESPIRATORY_RATE, t)
+                      : previewCaption,
+                  icon: 'heart',
+                  tint: AppPalette.polarHeart,
+                  onTap: null,
+                ),
+              if (show(hasCalories))
+                (
+                  label: t.pick('Active calories', 'แคลอรีที่ใช้'),
+                  value: calories?.toStringAsFixed(0) ?? '—',
+                  unit: 'kcal',
+                  caption: hasCalories
+                      ? _source(
+                          healthData,
+                          HealthDataType.ACTIVE_ENERGY_BURNED,
+                          t,
+                        )
+                      : previewCaption,
+                  icon: 'activity',
+                  tint: AppPalette.brand,
+                  onTap: null,
+                ),
+              if (show(hasDistance, core: true))
+                (
+                  label: t.pick('Distance', 'ระยะทาง'),
+                  value: _distanceValue(distance),
+                  unit: _distanceUnit(distance, t),
+                  caption: hasDistance
+                      ? _source(healthData, HealthDataType.DISTANCE_DELTA, t)
+                      : previewCaption,
+                  icon: 'activity',
+                  tint: AppPalette.brand,
+                  onTap: null,
+                ),
             ];
 
+        final liveBpm = polarRecent
+            ? polar.heartRateBpm
+            : preview?.heartRateBpm;
         return ProductPage(
           children: [
+            // Same charcoal + mint pair as Home and Devices.
+            if (sleepMinutes != null || liveBpm != null) ...[
+              CalmCareSplitCards(
+                dark: CalmCareSplitItem(
+                  icon: Icons.bedtime_rounded,
+                  label: t.pick('Last night', 'เมื่อคืน'),
+                  text: sleepMinutes == null
+                      ? t.pick('No sleep data', 'ไม่มีข้อมูลการนอน')
+                      : t.pick(
+                          'Slept ${_sleepDuration(sleepMinutes)}',
+                          'นอน ${_sleepDuration(sleepMinutes)}',
+                        ),
+                ),
+                light: CalmCareSplitItem(
+                  icon: Icons.favorite_rounded,
+                  label: t.pick('Heart sensor', 'เซนเซอร์หัวใจ'),
+                  text: liveBpm == null
+                      ? t.pick('Not streaming', 'ยังไม่ส่งข้อมูล')
+                      : '$liveBpm bpm',
+                  onTap: onPolarStudio,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             ProductSectionHeading(
               title: t.pick('Today', 'วันนี้'),
               trailing: IconButton(
@@ -443,34 +498,64 @@ class HealthInsightsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, box) => SizedBox(
-                height: MediaQuery.textScalerOf(context).scale(200),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final card in todayCards)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: SizedBox(
-                            width: math.min(box.maxWidth * 0.74, 240),
-                            child: ProductMetricCard(
-                              label: card.label,
-                              value: card.value,
-                              unit: card.unit,
-                              caption: card.caption,
-                              icon: card.icon,
-                              tint: card.tint,
-                              onTap: card.onTap,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+            if (todayCards.isEmpty)
+              ProductSurface(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.pick('No data', 'ไม่มีข้อมูล'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      t.pick(
+                        'Connect Google Health in Devices to see steps, sleep and heart rate.',
+                        'เชื่อมต่อ Google Health ในหน้าอุปกรณ์เพื่อดูจำนวนก้าว การนอน และชีพจร',
+                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
+              )
+            else
+              // Horizontal row; the next card peeks in to show it scrolls.
+              LayoutBuilder(
+                builder: (context, box) {
+                  final width = (box.maxWidth * 0.44).clamp(150.0, 210.0);
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    // Equal-height cards even when a value wraps.
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final card in todayCards)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                right: card == todayCards.last ? 0 : 12,
+                              ),
+                              child: SizedBox(
+                                width: width,
+                                child: ProductMetricCard(
+                                  label: card.label,
+                                  value: card.value,
+                                  unit: card.unit,
+                                  caption: card.caption,
+                                  icon: card.icon,
+                                  tint: card.tint,
+                                  onTap: card.onTap,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
             if (hasSleepStages || preview != null) ...[
               const SizedBox(height: 20),
               _SleepStagesCard(
@@ -485,14 +570,15 @@ class HealthInsightsScreen extends StatelessWidget {
                 sleepDate: lastSleepDay?.date ?? preview?.sleepStages.date,
               ),
             ],
-            const SizedBox(height: 24),
-            const SizedBox(height: 24),
-            _HealthTrendsCarousel(
-              metrics: trendMetrics,
-              rawPoints: healthData.points,
-              now: now,
-              strings: t,
-            ),
+            if (trendMetrics.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              _HealthTrendsCarousel(
+                metrics: trendMetrics,
+                rawPoints: healthData.points,
+                now: now,
+                strings: t,
+              ),
+            ],
             const SizedBox(height: 24),
             ProductSectionHeading(
               title: 'Polar Verity Sense',
@@ -1330,7 +1416,8 @@ class _HealthTrendsCarouselState extends State<_HealthTrendsCarousel> {
           ),
         ),
         SizedBox(
-          height: MediaQuery.textScalerOf(context).scale(220),
+          // Sized for the 16px body type scale; grows with the user's text size.
+          height: MediaQuery.textScalerOf(context).scale(240),
           child: PageView.builder(
             controller: _pages,
             itemCount: widget.metrics.length,

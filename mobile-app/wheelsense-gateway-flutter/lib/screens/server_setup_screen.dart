@@ -5,6 +5,7 @@ import '../models/gateway_ui_models.dart' show ClinicalSeverity;
 
 import '../services/gateway_services.dart';
 import '../widgets/clinical_components.dart';
+import '../widgets/product_ui.dart';
 
 class ServerSetupScreen extends StatefulWidget {
   const ServerSetupScreen({super.key});
@@ -51,135 +52,113 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   Widget build(BuildContext context) {
     final strings = context.text;
     final localeController = context.gatewayLocale;
-    return ClinicalPage(
+    final theme = Theme.of(context);
+    return ProductPage(
       children: [
-        SectionPanel(
+        _SettingsSection(
           title: strings.settingsLanguageTitle,
-          child: SegmentedButton<GatewayLanguage>(
-            segments: [
-              for (final language in GatewayLanguage.values)
-                ButtonSegment<GatewayLanguage>(
-                  value: language,
-                  label: Text(language.label),
-                  icon: language == GatewayLanguage.thai
-                      ? const Icon(Icons.translate)
-                      : const Icon(Icons.language),
-                ),
-            ],
-            selected: {localeController.language},
-            onSelectionChanged: (selection) {
-              unawaited(localeController.setLanguage(selection.first));
-            },
+          child: SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<GatewayLanguage>(
+              showSelectedIcon: false,
+              segments: [
+                for (final language in GatewayLanguage.values)
+                  ButtonSegment<GatewayLanguage>(
+                    value: language,
+                    label: Text(language.label),
+                  ),
+              ],
+              selected: {localeController.language},
+              onSelectionChanged: (selection) {
+                unawaited(localeController.setLanguage(selection.first));
+              },
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        SectionPanel(
+        const SizedBox(height: 16),
+        _SettingsSection(
           title: strings.settingsServerTitle,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
+              _LabeledField(
+                label: strings.settingsPortalBaseUrl,
                 controller: _portalController,
-                decoration: InputDecoration(
-                  labelText: strings.settingsPortalBaseUrl,
-                  hintText: 'https://portal.wheelsense.example',
-                  prefixIcon: const Icon(Icons.link),
-                ),
+                hint: 'https://portal.wheelsense.example',
+                icon: Icons.link_rounded,
+                keyboardType: TextInputType.url,
               ),
-              const SizedBox(height: 10),
-              TextField(
+              _LabeledField(
+                label: strings.settingsMqttBroker,
                 controller: _mqttController,
-                decoration: InputDecoration(
-                  labelText: strings.settingsMqttBroker,
-                  hintText: 'mqtts://mqtt.wheelsense.example:8883',
-                  prefixIcon: const Icon(Icons.settings_ethernet),
-                ),
+                hint: 'mqtts://mqtt.wheelsense.example:8883',
+                icon: Icons.dns_rounded,
+                keyboardType: TextInputType.url,
               ),
-              const SizedBox(height: 10),
-              TextField(
+              _LabeledField(
+                label: strings.settingsGatewayId,
                 controller: _gatewayController,
-                decoration: InputDecoration(
-                  labelText: strings.settingsGatewayId,
-                  hintText: 'ward-a-gateway-01',
-                  prefixIcon: const Icon(Icons.badge_outlined),
-                ),
+                hint: 'ward-a-gateway-01',
+                icon: Icons.badge_rounded,
+              ),
+              _LabeledField(
+                label: strings.mqttUsername,
+                controller: _userController,
+                icon: Icons.person_outline_rounded,
+              ),
+              _LabeledField(
+                label: strings.mqttPassword,
+                controller: _passwordController,
+                icon: Icons.key_rounded,
+                obscure: true,
               ),
               if (_formError != null) ...[
-                const SizedBox(height: 10),
                 CompactRowCard(
-                  icon: Icons.error_outline,
+                  icon: Icons.error_outline_rounded,
                   title: strings.settingsNeedAttention,
                   subtitle: _formError!,
                   meta: strings.fix,
                   severity: ClinicalSeverity.warning,
                 ),
+                const SizedBox(height: 14),
               ],
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _saving ? null : _applyLocalPreset,
-                      icon: const Icon(Icons.developer_mode),
-                      label: Text(strings.settingsLocalPreset),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _saving ? null : _reset,
-                      icon: const Icon(Icons.restore),
-                      label: Text(strings.reset),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 4),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: Text(_saving ? strings.saving : strings.save),
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _userController,
-                      decoration: InputDecoration(
-                        labelText: strings.mqttUsername,
-                        prefixIcon: const Icon(Icons.person_outline),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: strings.mqttPassword,
-                        prefixIcon: const Icon(Icons.key_outlined),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _saving ? null : _testConnection,
-                      icon: const Icon(Icons.wifi_find),
-                      label: Text(strings.test),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _saving ? null : _save,
-                      icon: const Icon(Icons.save_outlined),
-                      label: Text(_saving ? strings.saving : strings.save),
-                    ),
-                  ),
-                ],
+              OutlinedButton.icon(
+                onPressed: _saving ? null : _testConnection,
+                icon: const Icon(Icons.wifi_find_rounded, size: 18),
+                label: Text(strings.test),
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 12),
+        // Developer shortcuts stay available but quiet.
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 4,
+          children: [
+            TextButton.icon(
+              onPressed: _saving ? null : _applyLocalPreset,
+              icon: const Icon(Icons.developer_mode_rounded, size: 18),
+              label: Text(strings.settingsLocalPreset),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _saving ? null : _reset,
+              icon: const Icon(Icons.restart_alt_rounded, size: 18),
+              label: Text(strings.reset),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -292,8 +271,11 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   }
 
   Future<void> _reset() async {
+    // Reset server settings only; keep this phone's identity and setup so
+    // paired sensors keep reconnecting (fall alerts depend on it).
     final defaults = GatewayConfig.defaults().copyWith(
       deviceId: _config.deviceId,
+      setupCompleted: _config.setupCompleted,
     );
     final runtime = GatewayServicesScope.of(context);
     await runtime.saveConfig(defaults);
@@ -331,5 +313,74 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ProductSurface(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Label above the field, so prefilled values never collide with it.
+class _LabeledField extends StatelessWidget {
+  const _LabeledField({
+    required this.label,
+    required this.controller,
+    required this.icon,
+    this.hint,
+    this.obscure = false,
+    this.keyboardType,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final IconData icon;
+  final String? hint;
+  final bool obscure;
+  final TextInputType? keyboardType;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 6),
+            child: Text(label, style: theme.textTheme.labelMedium),
+          ),
+          TextField(
+            controller: controller,
+            obscureText: obscure,
+            keyboardType: keyboardType,
+            autocorrect: false,
+            decoration: InputDecoration(
+              hintText: hint,
+              prefixIcon: Icon(icon, size: 20),
+              fillColor: theme.colorScheme.surfaceContainerLow,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

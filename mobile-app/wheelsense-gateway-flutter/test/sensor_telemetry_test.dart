@@ -163,6 +163,20 @@ void main() {
     );
   });
 
+  test('M5TelemetrySample reads step count from 34-byte belt frame', () {
+    final buffer = ByteData(34);
+    buffer.setUint8(29, 2); // imuValid
+    buffer.setUint32(30, 1234, Endian.little); // step_count
+
+    final sample = M5TelemetrySample.fromBytes(buffer.buffer.asUint8List());
+    expect(sample.stepCount, 1234);
+    expect(M5TelemetrySample.fromPayload(sample.toJsonString()).stepCount, 1234);
+    expect(
+      M5TelemetrySample.fromBytes(Uint8List(30)).stepCount,
+      isNull,
+    );
+  });
+
   test('M5TelemetrySample parses 20-byte raw IMU frame correctly', () {
     final buffer = ByteData(20);
     buffer.setUint32(0, 501, Endian.little); // seq

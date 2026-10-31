@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wheelsense_gateway_flutter/models/ble_device_snapshot.dart';
+import 'package:wheelsense_gateway_flutter/models/fall_alert_event.dart';
 import 'package:wheelsense_gateway_flutter/models/gateway_config.dart';
 import 'package:wheelsense_gateway_flutter/models/gateway_runtime_snapshot.dart';
 import 'package:wheelsense_gateway_flutter/models/gateway_status.dart';
@@ -16,6 +17,8 @@ import 'package:wheelsense_gateway_flutter/services/gateway_notification_service
 import 'package:wheelsense_gateway_flutter/services/gateway_foreground_service.dart';
 
 void main() {
+  _fallTests();
+
   test(
     'Concurrent resume requests share startup and resume checks denied permissions without prompting again',
     () async {
@@ -159,6 +162,78 @@ void main() {
   });
 }
 
+void _fallTests() {
+  final alert = FallAlertEvent(
+    kind: FallAlertKind.detected,
+    event: 'fall_detected',
+    deviceId: 'BELT_1',
+    timestamp: DateTime(2026, 10, 29, 9),
+    rawPayload: '{}',
+  );
+  const belt = BleDeviceSnapshot(
+    id: 'BELT_1',
+    name: 'FallGuard Belt',
+    rssi: -50,
+    serviceUuids: <String>[BleDeviceSnapshot.wheelSenseM5ServiceUuid],
+  );
+
+  test(
+    "I'm OK without a connected belt reports the cancel from the phone",
+    () async {
+      final ble = _FakeBleGatewayService();
+      final mqtt = _CapturingMqttGatewayService();
+      final runtime = GatewayRuntimeService(
+        preferences: _MemoryGatewayPreferences(),
+        ble: ble,
+        mqtt: mqtt,
+        notifications: _SilentNotifications(),
+      );
+      final events = <FallAlertEvent>[];
+      final sub = runtime.fallAlerts.listen(events.add);
+
+      await runtime.confirmWearerOk(alert);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(ble.commands, isEmpty);
+      expect(events.single.kind, FallAlertKind.canceled);
+      expect(events.single.source, 'app');
+      expect(mqtt.telemetryPayloads.single, contains('fall_canceled'));
+      expect(mqtt.telemetryPayloads.single, contains('BELT_1'));
+      await sub.cancel();
+      await runtime.dispose();
+      await ble.close();
+    },
+  );
+
+  test("I'm OK with a connected belt cancels on the belt", () async {
+    final ble = _FakeBleGatewayService()..fallCapable = true;
+    final mqtt = _CapturingMqttGatewayService();
+    final runtime = GatewayRuntimeService(
+      preferences: _MemoryGatewayPreferences(),
+      ble: ble,
+      mqtt: mqtt,
+      notifications: _SilentNotifications(),
+    );
+    await runtime.startM5TelemetryRelay(
+      GatewayConfig.defaults().copyWith(setupCompleted: true),
+      belt,
+    );
+    expect(runtime.fallBeltConnected, isTrue);
+
+    await runtime.confirmWearerOk(alert);
+    await Future<void>.delayed(Duration.zero);
+
+    // The belt echoes fall_canceled itself; the phone does not duplicate it.
+    expect(ble.commands.single['command'], 'fall_cancel');
+    expect(
+      mqtt.telemetryPayloads.where((p) => p.contains('fall_canceled')),
+      isEmpty,
+    );
+    await runtime.dispose();
+    await ble.close();
+  });
+}
+
 class _UnavailableMqttGatewayService extends MqttGatewayService {
   @override
   Future<bool> connect(GatewayConfig config) async => false;
@@ -202,6 +277,16 @@ class _DeniedPermissions extends GatewayPermissionService {
 class _SilentNotifications extends GatewayNotificationService {
   @override
   Future<bool> initialize() async => true;
+
+  @override
+  Future<void> cancelFallAlertNotification() async {}
+
+  @override
+  Future<void> showFallAlert({
+    required String title,
+    required String body,
+    bool ongoing = false,
+  }) async {}
 }
 
 class _CountingForeground extends GatewayForegroundService {
@@ -258,6 +343,21 @@ class _MemoryGatewayPreferences extends GatewayPreferencesService {
 
 class _FakeBleGatewayService implements BleGatewayService {
   final StreamController<String> _m5 = StreamController<String>.broadcast();
+  final StreamController<FallAlertEvent> _fallAlerts =
+      StreamController<FallAlertEvent>.broadcast();
+
+  @override
+  Stream<FallAlertEvent> get fallAlerts => _fallAlerts.stream;
+
+  @override
+  Stream<bool> get m5FallCapableUpdates => const Stream<bool>.empty();
+
+  /// Set true to act as a connected FallGuard belt.
+  bool fallCapable = false;
+  final List<Map<String, Object?>> commands = <Map<String, Object?>>[];
+
+  @override
+  bool get m5FallCapable => fallCapable;
 
   @override
   Stream<BleDeviceSnapshot> scan(
@@ -290,7 +390,9 @@ class _FakeBleGatewayService implements BleGatewayService {
     required GatewayConfig config,
     required String deviceId,
     required Map<String, Object?> payload,
-  }) async {}
+  }) async {
+    commands.add(payload);
+  }
 
   @override
   Future<void> writeM5RoomConfig({
@@ -304,6 +406,7 @@ class _FakeBleGatewayService implements BleGatewayService {
   }
 
   Future<void> close() {
+    _fallAlerts.close();
     return _m5.close();
   }
 
@@ -315,6 +418,7 @@ class _FakeBleGatewayService implements BleGatewayService {
 
 class _CapturingMqttGatewayService extends MqttGatewayService {
   final List<GatewayConfig> telemetryConfigs = <GatewayConfig>[];
+  final List<String> telemetryPayloads = <String>[];
 
   @override
   bool get isConnected => true;
@@ -339,6 +443,7 @@ class _CapturingMqttGatewayService extends MqttGatewayService {
     required String payload,
   }) async {
     telemetryConfigs.add(config);
+    telemetryPayloads.add(payload);
     return TelemetryPublishResult.sent(
       'WheelSense/mobile/${config.deviceId}/telemetry',
     );

@@ -42,7 +42,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
               final config = await runtime.loadConfig();
               await runtime.bootstrap(config: config);
             },
-            icon: const Icon(Icons.fact_check_outlined),
+            icon: const Icon(Icons.fact_check_rounded),
             label: Text(strings.operationsRunChecks),
           ),
           children: [
@@ -55,7 +55,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
                     detail: state.config.alertsEnabled
                         ? strings.alertsSubscribed
                         : strings.alertsWaitingConfig,
-                    icon: Icons.notifications_active_outlined,
+                    icon: Icons.notifications_active_rounded,
                     severity: state.alerts.isEmpty
                         ? ClinicalSeverity.info
                         : _severity(state.alerts.first.severity),
@@ -73,7 +73,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
                             (state.latestRoomPrediction!.confidence * 100)
                                 .round(),
                           ),
-                    icon: Icons.location_searching,
+                    icon: Icons.location_searching_rounded,
                     severity: state.latestRoomPrediction == null
                         ? ClinicalSeverity.info
                         : ClinicalSeverity.normal,
@@ -86,7 +86,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
                     detail:
                         state.lastPublishFailure?.reason.name ??
                         strings.noFailureRecorded,
-                    icon: Icons.sync_problem,
+                    icon: Icons.sync_problem_rounded,
                     severity: state.failedPublishCount == 0
                         ? ClinicalSeverity.normal
                         : ClinicalSeverity.warning,
@@ -100,7 +100,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
               subtitle: strings.operationsLiveAlertsSubtitle,
               child: state.alerts.isEmpty
                   ? CompactRowCard(
-                      icon: Icons.notifications_none,
+                      icon: Icons.notifications_none_rounded,
                       title: strings.noLiveAlerts,
                       subtitle: strings.noLiveAlertsDetail,
                       meta: strings.empty,
@@ -112,8 +112,8 @@ class _OperationsScreenState extends State<OperationsScreen> {
                           CompactRowCard(
                             icon:
                                 alert.severity == GatewayAlertSeverity.critical
-                                ? Icons.emergency
-                                : Icons.notifications_active_outlined,
+                                ? Icons.emergency_rounded
+                                : Icons.notifications_active_rounded,
                             title: alert.title,
                             subtitle: alert.description,
                             meta: _timeLabel(alert.timestamp),
@@ -133,7 +133,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
               subtitle: strings.roomPredictionSubtitle,
               child: state.latestRoomPrediction == null
                   ? CompactRowCard(
-                      icon: Icons.radar,
+                      icon: Icons.radar_rounded,
                       title: strings.waitingForRoomData,
                       subtitle: strings.waitingForRoomDataDetail,
                       meta: strings.waiting,
@@ -143,7 +143,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         CompactRowCard(
-                          icon: Icons.meeting_room_outlined,
+                          icon: Icons.meeting_room_rounded,
                           title: state.latestRoomPrediction!.roomName,
                           subtitle:
                               'Model ${state.latestRoomPrediction!.modelType}${state.latestRoomPrediction!.strategy == null ? '' : ' / ${state.latestRoomPrediction!.strategy}'}',
@@ -166,7 +166,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
               subtitle: strings.rssiRoomScanSubtitle,
               action: FilledButton.icon(
                 onPressed: _scanningRssi ? null : () => _startRssiScan(runtime),
-                icon: const Icon(Icons.radar),
+                icon: const Icon(Icons.radar_rounded),
                 label: Text(
                   _scanningRssi ? strings.scanning : strings.scanBeacons,
                 ),
@@ -174,8 +174,8 @@ class _OperationsScreenState extends State<OperationsScreen> {
               child: _scanPoints.isEmpty
                   ? CompactRowCard(
                       icon: _scanningRssi
-                          ? Icons.radar
-                          : Icons.bluetooth_disabled,
+                          ? Icons.radar_rounded
+                          : Icons.bluetooth_disabled_rounded,
                       title: _scanningRssi
                           ? strings.scanningForRssiBeacons
                           : strings.noLocalScanData,
@@ -187,7 +187,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
                       children: [
                         for (final point in _scanPoints) ...[
                           CompactRowCard(
-                            icon: Icons.location_searching,
+                            icon: Icons.location_searching_rounded,
                             title: point.room,
                             subtitle: strings.beaconSummary(
                               point.beaconCount,
@@ -246,7 +246,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
     required String detail,
   }) {
     return CompactRowCard(
-      icon: ready ? Icons.check_circle_outline : Icons.error_outline,
+      icon: ready ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded,
       title: title,
       subtitle: detail,
       meta: ready ? strings.ready : strings.fix,

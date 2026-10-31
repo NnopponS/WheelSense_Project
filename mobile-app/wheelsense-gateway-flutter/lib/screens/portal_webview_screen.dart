@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../services/gateway_services.dart';
-import '../theme/app_palette.dart';
+import '../widgets/calm_care_ui.dart';
 import '../widgets/product_ui.dart';
 
 class PortalWebViewScreen extends StatefulWidget {
@@ -14,11 +14,13 @@ class PortalWebViewScreen extends StatefulWidget {
     required this.darkMode,
     required this.onToggleTheme,
     this.onSettings,
+    this.onQuickSettings,
   });
 
   final bool darkMode;
   final VoidCallback onToggleTheme;
   final VoidCallback? onSettings;
+  final VoidCallback? onQuickSettings;
 
   @override
   State<PortalWebViewScreen> createState() => _PortalWebViewScreenState();
@@ -29,11 +31,19 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
   StreamSubscription<GatewayConfig>? _configSubscription;
   String? _loadedPortalBaseUrl;
   (String, String)? _error;
-  var _progress = 0;
   var _loadedInitialState = false;
   var _canGoBack = false;
-  var _canGoForward = false;
   var _loadGeneration = 0;
+
+  /// True once the first portal page has rendered; until then a native
+  /// loading screen covers the web view.
+  var _pageReady = false;
+
+  /// Set when the first page takes long; the loading screen then explains
+  /// and offers a retry instead of sitting silent.
+  var _slow = false;
+  Timer? _slowTimer;
+  Timer? _readyPoll;
 
   @override
   void didChangeDependencies() {
@@ -52,8 +62,25 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
   }
 
   @override
+  void didUpdateWidget(PortalWebViewScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Keep the portal's light/dark theme in step with the app.
+    if (oldWidget.darkMode != widget.darkMode && _controller != null) {
+      unawaited(
+        _controller!
+            .runJavaScript(
+              GatewayWebViewService.nativeFeelScript(dark: widget.darkMode),
+            )
+            .catchError((Object _) {}),
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _loadGeneration++;
+    _slowTimer?.cancel();
+    _readyPoll?.cancel();
     _configSubscription?.cancel();
     super.dispose();
   }
@@ -61,11 +88,9 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
   Future<void> _updateNavigationState() async {
     if (_controller == null) return;
     final back = await _controller!.canGoBack();
-    final forward = await _controller!.canGoForward();
     if (mounted) {
       setState(() {
         _canGoBack = back;
-        _canGoForward = forward;
       });
     }
   }
@@ -73,7 +98,9 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final t = context.text;
+
+    final portalUp = _controller != null && _error == null && _pageReady;
 
     return PopScope(
       canPop: !_canGoBack,
@@ -84,149 +111,95 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: isDark ? AppPalette.slate950 : AppPalette.white,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppPalette.slate900 : AppPalette.slate50,
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? AppPalette.slate800 : AppPalette.slate200,
+        body: Column(
+          children: [
+            // Once the portal is up its own top bar is the header, so the app
+            // never stacks a second one above it.
+            if (!portalUp)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: CalmCarePageHeader(
+                  title: t.pick('Care', 'การดูแล'),
+                  actions: [
+                    CalmCareRoundButton(
+                      tooltip: t.pick('Refresh', 'รีเฟรช'),
+                      onTap: () => unawaited(_load()),
+                      border: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.85,
+                      ),
+                      child: Icon(
+                        Icons.refresh_rounded,
+                        size: 21,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    if (widget.onQuickSettings != null)
+                      CalmCareAvatarButton(
+                        tooltip: t.pick('Quick settings', 'ตั้งค่าด่วน'),
+                        onTap: widget.onQuickSettings,
+                      ),
+                  ],
                 ),
               ),
-            ),
-            child: SafeArea(
-              child: Row(
+            Expanded(
+              child: Stack(
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 16,
-                    ),
-                    onPressed: _canGoBack
-                        ? () async {
-                            await _controller?.goBack();
-                            await _updateNavigationState();
-                          }
-                        : null,
-                    tooltip: context.text.pick('Back', 'ย้อนกลับ'),
+                  Positioned.fill(
+                    child: _error != null
+                        ? _PortalFallback(
+                            onSettings: widget.onSettings,
+                            message: context.text.pick(_error!.$1, _error!.$2),
+                            onRetry: () => unawaited(_load()),
+                            onOpenExternal: _openExternal,
+                          )
+                        : _controller == null
+                        ? const _PortalLoading(slow: false)
+                        : WebViewWidget(controller: _controller!),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-                    onPressed: _canGoForward
-                        ? () async {
-                            await _controller?.goForward();
-                            await _updateNavigationState();
-                          }
-                        : null,
-                    tooltip: context.text.pick('Forward', 'ไปข้างหน้า'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    onPressed: () => unawaited(_load()),
-                    tooltip: context.text.pick(
-                      'Reload portal',
-                      'โหลดพอร์ทัลใหม่',
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      height: 32,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppPalette.slate800
-                            : AppPalette.slate200,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.language_rounded,
-                            size: 12,
-                            color: AppPalette.successBright,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              _loadedPortalBaseUrl ?? 'WheelSense Care',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontFamily: 'monospace',
-                                color: isDark
-                                    ? AppPalette.slate300
-                                    : AppPalette.slate700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                  // Native loading screen instead of a browser progress bar.
+                  if (_controller != null && _error == null && !_pageReady)
+                    Positioned.fill(
+                      child: _PortalLoading(
+                        slow: _slow,
+                        onRetry: () => unawaited(_load()),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                    onPressed: _openExternal,
-                    tooltip: context.text.pick(
-                      'Open in browser',
-                      'เปิดในเบราว์เซอร์',
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      widget.darkMode
-                          ? Icons.light_mode_outlined
-                          : Icons.dark_mode_outlined,
-                    ),
-                    onPressed: widget.onToggleTheme,
-                    tooltip: context.text.pick(
-                      widget.darkMode
-                          ? 'Switch to light mode'
-                          : 'Switch to dark mode',
-                      widget.darkMode
-                          ? 'เปลี่ยนเป็นธีมสว่าง'
-                          : 'เปลี่ยนเป็นธีมมืด',
-                    ),
-                  ),
                 ],
               ),
             ),
-          ),
-        ),
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: _error != null
-                  ? _PortalFallback(
-                      onSettings: widget.onSettings,
-                      message: context.text.pick(_error!.$1, _error!.$2),
-                      onRetry: () => unawaited(_load()),
-                      onOpenExternal: _openExternal,
-                    )
-                  : _controller == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : WebViewWidget(controller: _controller!),
-            ),
-            if (_progress < 100 && _error == null)
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                child: LinearProgressIndicator(
-                  value: _progress / 100,
-                  backgroundColor: Colors.transparent,
-                  color: AppPalette.brand,
-                  minHeight: 2.5,
-                ),
-              ),
           ],
         ),
       ),
     );
+  }
+
+  void _waitUntilRendering(int generation) {
+    _readyPoll?.cancel();
+    _readyPoll = Timer.periodic(const Duration(milliseconds: 400), (
+      timer,
+    ) async {
+      final controller = _controller;
+      if (!mounted || generation != _loadGeneration || _pageReady) {
+        timer.cancel();
+        return;
+      }
+      if (controller == null) return;
+      Object? state;
+      try {
+        state = await controller.runJavaScriptReturningResult(
+          'document.readyState',
+        );
+      } on Object {
+        return;
+      }
+      if (!'$state'.contains('loading') &&
+          mounted &&
+          generation == _loadGeneration) {
+        timer.cancel();
+        _slowTimer?.cancel();
+        setState(() => _pageReady = true);
+      }
+    });
   }
 
   Future<void> _load({GatewayConfig? config}) async {
@@ -254,30 +227,48 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
       setState(() {
         _controller = null;
         _loadedPortalBaseUrl = effectiveConfig.portalBaseUrl;
-        _error = ('Portal not configured', 'ยังไม่ตั้งค่าพอร์ทัล');
+        _error = (
+          'Care isn’t set up yet. Connect to your care server in Settings.',
+          'ยังไม่ได้ตั้งค่าการดูแล เชื่อมต่อเซิร์ฟเวอร์ในการตั้งค่า',
+        );
       });
       return;
     }
     setState(() {
       _loadedPortalBaseUrl = effectiveConfig.portalBaseUrl;
       _error = null;
-      _progress = 0;
+      _pageReady = false;
+      _slow = false;
+    });
+    _slowTimer?.cancel();
+    _readyPoll?.cancel();
+    _slowTimer = Timer(const Duration(seconds: 15), () {
+      if (mounted && generation == _loadGeneration && !_pageReady) {
+        setState(() => _slow = true);
+      }
     });
     try {
       final controller = await GatewayWebViewService().buildPortalController(
         effectiveConfig,
-        onProgress: (progress) {
-          if (mounted && generation == _loadGeneration) {
-            setState(() => _progress = progress);
-          }
+        darkMode: widget.darkMode,
+        background: Theme.of(context).scaffoldBackgroundColor,
+        // The native loading screen replaces a percentage bar.
+        onProgress: (_) {},
+        onPageFinished: (_) {
+          // Android can report "finished" for a redirect hop while the real
+          // page is still loading, so wait until the document is rendering.
+          if (!_pageReady) _waitUntilRendering(generation);
+          unawaited(_updateNavigationState());
         },
-        onPageFinished: (_) => unawaited(_updateNavigationState()),
         onWebResourceError: (error) {
           if (mounted &&
               generation == _loadGeneration &&
               error.isForMainFrame == true) {
             setState(
-              () => _error = ('Connection unavailable', 'เชื่อมต่อไม่ได้'),
+              () => _error = (
+                'Can’t reach your care team right now. Check your connection.',
+                'ติดต่อทีมดูแลไม่ได้ในขณะนี้ ตรวจสอบการเชื่อมต่อ',
+              ),
             );
           }
         },
@@ -290,8 +281,8 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
       if (mounted && generation == _loadGeneration) {
         setState(
           () => _error = (
-            'Care portal is unavailable on this device. Try opening it in your browser.',
-            'พอร์ทัลไม่พร้อมใช้งานบนอุปกรณ์นี้ ลองเปิดในเบราว์เซอร์',
+            'Care isn’t available on this device right now.',
+            'การดูแลยังไม่พร้อมใช้งานบนอุปกรณ์นี้',
           ),
         );
       }
@@ -341,46 +332,116 @@ class _PortalFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.text;
+    final theme = Theme.of(context);
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ProductIcon(
-              'care',
-              size: 44,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: ProductIcon(
+                  'care',
+                  size: 40,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
             ),
             const SizedBox(height: 20),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            const SizedBox(height: 24),
             Wrap(
               spacing: 12,
-              runSpacing: 8,
+              runSpacing: 10,
               alignment: WrapAlignment.center,
               children: [
                 if (onSettings != null)
-                  FilledButton.icon(
+                  FilledButton(
                     onPressed: onSettings,
-                    icon: const ProductIcon(
-                      'settings',
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                    label: Text(t.navSettings),
+                    child: Text(t.navSettings),
                   ),
                 OutlinedButton(
                   onPressed: onRetry,
-                  child: Text(t.pick('Retry', 'ลองอีกครั้ง')),
+                  child: Text(t.pick('Try again', 'ลองอีกครั้ง')),
                 ),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PortalLoading extends StatelessWidget {
+  const _PortalLoading({required this.slow, this.onRetry});
+
+  final bool slow;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final t = context.text;
+    return ColoredBox(
+      color: theme.scaffoldBackgroundColor,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox.square(
+                dimension: 32,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                slow
+                    ? t.pick(
+                        'Care is taking longer than usual to open.',
+                        'การดูแลใช้เวลาเปิดนานกว่าปกติ',
+                      )
+                    : t.pick('Opening Care…', 'กำลังเปิดการดูแล…'),
+                textAlign: TextAlign.center,
+                style: slow
+                    ? theme.textTheme.titleMedium
+                    : theme.textTheme.bodyMedium,
+              ),
+              if (slow) ...[
+                const SizedBox(height: 6),
+                Text(
+                  t.pick(
+                    'The care server is responding slowly. You can keep waiting or try again.',
+                    'เซิร์ฟเวอร์การดูแลตอบสนองช้า รอต่อหรือลองใหม่ได้',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                if (onRetry != null) ...[
+                  const SizedBox(height: 18),
+                  OutlinedButton(
+                    onPressed: onRetry,
+                    child: Text(t.pick('Try again', 'ลองอีกครั้ง')),
+                  ),
+                ],
+              ],
+            ],
+          ),
         ),
       ),
     );

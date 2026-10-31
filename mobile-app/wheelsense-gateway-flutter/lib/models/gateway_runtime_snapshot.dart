@@ -1,4 +1,5 @@
 import 'ble_device_snapshot.dart';
+import 'fall_alert_event.dart';
 import 'gateway_config.dart';
 import 'gateway_status.dart';
 import 'sensor_telemetry.dart';
@@ -207,9 +208,12 @@ class GatewayRuntimeSnapshot {
     this.latestM5Sample,
     this.latestPolarSample,
     this.latestRoomPrediction,
+    this.latestFallEvent,
+    this.m5FallCapable = false,
     this.alerts = const <GatewayAlertEvent>[],
     this.m5History = const <M5TelemetrySample>[],
     this.polarHistory = const <PolarTelemetrySample>[],
+    this.fallHistory = const <FallAlertEvent>[],
     this.detectedNodes = const <NodeTsimcamSnapshot>[],
     this.lastSuccessfulPublishAt,
     this.failedPublishCount = 0,
@@ -230,9 +234,12 @@ class GatewayRuntimeSnapshot {
   final M5TelemetrySample? latestM5Sample;
   final PolarTelemetrySample? latestPolarSample;
   final RoomPredictionEvent? latestRoomPrediction;
+  final FallAlertEvent? latestFallEvent;
+  final bool m5FallCapable;
   final List<GatewayAlertEvent> alerts;
   final List<M5TelemetrySample> m5History;
   final List<PolarTelemetrySample> polarHistory;
+  final List<FallAlertEvent> fallHistory;
   final List<NodeTsimcamSnapshot> detectedNodes;
   final DateTime? lastSuccessfulPublishAt;
   final int failedPublishCount;
@@ -253,9 +260,12 @@ class GatewayRuntimeSnapshot {
     Object? latestM5Sample = _snapshotUnset,
     Object? latestPolarSample = _snapshotUnset,
     RoomPredictionEvent? latestRoomPrediction,
+    Object? latestFallEvent = _snapshotUnset,
+    bool? m5FallCapable,
     List<GatewayAlertEvent>? alerts,
     List<M5TelemetrySample>? m5History,
     List<PolarTelemetrySample>? polarHistory,
+    List<FallAlertEvent>? fallHistory,
     List<NodeTsimcamSnapshot>? detectedNodes,
     DateTime? lastSuccessfulPublishAt,
     int? failedPublishCount,
@@ -277,9 +287,14 @@ class GatewayRuntimeSnapshot {
           ? this.latestPolarSample
           : latestPolarSample as PolarTelemetrySample?,
       latestRoomPrediction: latestRoomPrediction ?? this.latestRoomPrediction,
+      latestFallEvent: identical(latestFallEvent, _snapshotUnset)
+          ? this.latestFallEvent
+          : latestFallEvent as FallAlertEvent?,
+      m5FallCapable: m5FallCapable ?? this.m5FallCapable,
       alerts: alerts ?? this.alerts,
       m5History: m5History ?? this.m5History,
       polarHistory: polarHistory ?? this.polarHistory,
+      fallHistory: fallHistory ?? this.fallHistory,
       detectedNodes: detectedNodes ?? this.detectedNodes,
       lastSuccessfulPublishAt:
           lastSuccessfulPublishAt ?? this.lastSuccessfulPublishAt,
@@ -412,6 +427,9 @@ bool gatewayConfigEquals(GatewayConfig left, GatewayConfig right) {
       left.bleServiceUuid == right.bleServiceUuid &&
       left.bleTelemetryCharacteristicUuid ==
           right.bleTelemetryCharacteristicUuid &&
+      left.bleFallAlertCharacteristicUuid ==
+          right.bleFallAlertCharacteristicUuid &&
+      left.bleCommandCharacteristicUuid == right.bleCommandCharacteristicUuid &&
       left.linkedPatientId == right.linkedPatientId &&
       left.linkedCaregiverId == right.linkedCaregiverId &&
       left.linkedPersonType == right.linkedPersonType &&
@@ -419,10 +437,17 @@ bool gatewayConfigEquals(GatewayConfig left, GatewayConfig right) {
       left.setupCompleted == right.setupCompleted;
 }
 
+/// Whether to reconnect saved BLE sensors on app open.
+///
+/// A brand-new install waits for setup, but once a sensor has been paired it
+/// always reconnects: fall detection must not depend on server setup.
 bool shouldAutoStartBleRelay({
   required GatewayConfig config,
   required GatewayStatus status,
   required bool requested,
+  bool hasPairedDevice = false,
 }) {
-  return requested && config.setupCompleted && status.bleReady;
+  return requested &&
+      (config.setupCompleted || hasPairedDevice) &&
+      status.bleReady;
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../models/preview_metrics.dart';
 import '../services/gateway_services.dart';
-import '../theme/app_palette.dart';
 import '../widgets/product_ui.dart';
 import '../widgets/polar_sensors_card.dart';
 import 'tool_preview_readings.dart';
@@ -46,57 +45,45 @@ class PolarStudioScreen extends StatelessWidget {
             final paired = state.pairedPolarDevice;
 
             return Scaffold(
-              backgroundColor: isDark
-                  ? AppPalette.slate950
-                  : AppPalette.slate50,
               appBar: AppBar(
-                toolbarHeight: MediaQuery.textScalerOf(context).scale(28) + 28,
-                title: const Row(
-                  children: [
-                    ProductIcon(
-                      'polar',
-                      size: 22,
-                      color: AppPalette.polarHeart,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text('Polar Verity Sense Studio', maxLines: 2),
-                    ),
-                  ],
-                ),
+                title: Text(context.text.pick('Heart sensor', 'เซนเซอร์หัวใจ')),
               ),
               body: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (paired == null && polar == null)
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppPalette.slate900
-                              : AppPalette.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isDark
-                                ? AppPalette.slate800
-                                : AppPalette.slate200,
-                          ),
-                        ),
+                      ProductSurface(
+                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
                         child: Column(
                           children: [
-                            const Icon(
-                              Icons.bluetooth_searching_rounded,
-                              size: 40,
-                              color: AppPalette.polarHeart,
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.bluetooth_searching_rounded,
+                                size: 32,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             Text(
                               context.text.pick('Not paired', 'ยังไม่จับคู่'),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              context.text.pick(
+                                'Pair your Polar sensor from Devices.',
+                                'จับคู่เซนเซอร์ Polar จากหน้าอุปกรณ์',
                               ),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium,
                             ),
                           ],
                         ),
@@ -104,31 +91,21 @@ class PolarStudioScreen extends StatelessWidget {
                     else ...[
                       // Primary Polar Verity Sense Card
                       PolarSensorsCard(sample: polar, history: history),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // Sensor Diagnostics Card
                       if (paired != null)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppPalette.slate900
-                                : AppPalette.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDark
-                                  ? AppPalette.slate800
-                                  : AppPalette.slate200,
-                            ),
-                          ),
+                        ProductSurface(
+                          padding: EdgeInsets.zero,
                           child: ExpansionTile(
+                            shape: const Border(),
+                            collapsedShape: const Border(),
                             title: Text(
                               context.text.pick(
                                 'Sensor details',
                                 'รายละเอียดเซนเซอร์',
                               ),
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: theme.textTheme.titleSmall,
                             ),
                             childrenPadding: const EdgeInsets.fromLTRB(
                               16,
@@ -216,10 +193,7 @@ class _SpecRow extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? AppPalette.slate400 : AppPalette.slate600,
-              ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
           const SizedBox(width: 12),
@@ -230,11 +204,9 @@ class _SpecRow extends StatelessWidget {
               textAlign: TextAlign.end,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppPalette.white : AppPalette.slate900,
-                fontFamily: 'monospace',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),

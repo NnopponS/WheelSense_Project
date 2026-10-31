@@ -18,6 +18,8 @@ import 'services/gateway_services.dart';
 import 'services/health_data_source.dart';
 import 'theme/app_palette.dart';
 import 'theme/app_theme.dart';
+import 'widgets/calm_care_ui.dart';
+import 'widgets/fall_alert_dialog.dart';
 import 'widgets/product_ui.dart';
 
 void main() {
@@ -131,6 +133,8 @@ class _GatewayShellState extends State<GatewayShell>
   final Set<int> _visited = {0};
   DateTime? _previewAt = DateTime.now();
   Timer? _previewTicker;
+  StreamSubscription<FallAlertEvent>? _fallAlertSubscription;
+  bool _fallDialogOpen = false;
 
   @override
   void initState() {
@@ -139,6 +143,7 @@ class _GatewayShellState extends State<GatewayShell>
     _previewTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _previewAt = DateTime.now());
     });
+    _fallAlertSubscription = _runtime.fallAlerts.listen(_onFallAlert);
     unawaited(_healthData.refresh());
     if (widget.requestPermissionsOnOpen) {
       unawaited(
@@ -221,18 +226,31 @@ class _GatewayShellState extends State<GatewayShell>
                     for (var index = 0; index < destinations.length; index++)
                       if (!_visited.contains(index))
                         const SizedBox.shrink()
-                      else if (destinations[index].fullBleed)
+                      else if (destinations[index].fullBleed || index == 0)
                         destinations[index].screen
                       else
                         Column(
                           children: [
-                            _ShellHeader(
-                              title: destinations[index].label,
-                              compact: !isWide,
-                              previewAt: _previewAt,
-                              onTogglePreview: _togglePreview,
-                              darkMode: widget.darkMode,
-                              onToggleTheme: widget.onToggleTheme,
+                            // Same header voice as Home: big title, avatar.
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                isWide ? 28 : 20,
+                                12,
+                                isWide ? 28 : 20,
+                                8,
+                              ),
+                              child: CalmCarePageHeader(
+                                title: destinations[index].label,
+                                actions: [
+                                  CalmCareAvatarButton(
+                                    tooltip: strings.pick(
+                                      'Quick settings',
+                                      'ตั้งค่าด่วน',
+                                    ),
+                                    onTap: _openQuickSettings,
+                                  ),
+                                ],
+                              ),
                             ),
                             Expanded(child: destinations[index].screen),
                           ],
@@ -245,21 +263,138 @@ class _GatewayShellState extends State<GatewayShell>
         ),
         bottomNavigationBar: isWide
             ? null
-            : NavigationBar(
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: _selectDestination,
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                destinations: [
-                  for (final destination in destinations)
-                    NavigationDestination(
-                      icon: ProductIcon(destination.icon),
-                      selectedIcon: ProductIcon(destination.icon),
-                      label: destination.label,
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
                     ),
-                ],
+                  ),
+                ),
+                child: NavigationBar(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: _selectDestination,
+                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                  destinations: [
+                    for (final destination in destinations)
+                      NavigationDestination(
+                        icon: ProductIcon(destination.icon, size: 22),
+                        selectedIcon: ProductIcon(destination.icon, size: 22),
+                        label: destination.label,
+                      ),
+                  ],
+                ),
               ),
       ),
     );
+  }
+
+  void _onFallAlert(FallAlertEvent event) {
+    if (!mounted) {
+      return;
+    }
+    try {
+      final strings = context.text;
+      switch (event.kind) {
+        case FallAlertKind.detected:
+        case FallAlertKind.test:
+          if (_fallDialogOpen) {
+            return;
+          }
+          _fallDialogOpen = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) {
+              _fallDialogOpen = false;
+              return;
+            }
+            unawaited(
+              FallAlertDialog.show(
+                context,
+                event,
+                onImOk: () {
+                  unawaited(_confirmWearerOk(event));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: AppPalette.slate900,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      content: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppPalette.brandSoft,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              strings.pick(
+                                "Fall alert dismissed · I'm OK confirmed",
+                                'รับทราบและปิดการแจ้งเตือนแล้ว (ฉันปลอดภัย)',
+                              ),
+                              style: const TextStyle(
+                                color: AppPalette.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ).whenComplete(() {
+                _fallDialogOpen = false;
+              }),
+            );
+          });
+          break;
+        case FallAlertKind.suspect:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppPalette.warning,
+              content: Text(
+                strings.pick(
+                  'Possible fall on ${event.deviceId} — cancel window open on device',
+                  'อาจมีการล้มที่ ${event.deviceId} — อุปกรณ์กำลังรอยกเลิก',
+                ),
+                style: const TextStyle(color: AppPalette.slate950),
+              ),
+            ),
+          );
+          break;
+        case FallAlertKind.canceled:
+          if (_fallDialogOpen) {
+            Navigator.of(context, rootNavigator: true).pop();
+            _fallDialogOpen = false;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                strings.pick(
+                  'Fall alert canceled',
+                  'ยกเลิกแจ้งเตือนการล้มแล้ว',
+                ),
+              ),
+            ),
+          );
+          break;
+        case FallAlertKind.unknown:
+          break;
+      }
+    } on Object {
+      // A stray fall event must never crash the shell UI.
+    }
+  }
+
+  Future<void> _confirmWearerOk(FallAlertEvent event) async {
+    try {
+      await _runtime.confirmWearerOk(event);
+    } on Object {
+      // Belt may be out of range; the dialog stays dismissible either way.
+    }
   }
 
   void _selectDestination(int index) {
@@ -304,6 +439,45 @@ class _GatewayShellState extends State<GatewayShell>
     );
   }
 
+  void _openQuickSettings() {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => GatewayServicesScope(
+          runtime: _runtime,
+          child: StatefulBuilder(
+            builder: (context, setSheetState) => _QuickSettingsSheet(
+              // Read through `widget`/state on every rebuild so the switches
+              // follow the live values after a toggle.
+              darkMode: widget.darkMode,
+              previewOn: _previewAt != null,
+              onToggleTheme: () {
+                widget.onToggleTheme();
+                setSheetState(() {});
+              },
+              onTogglePreview: () {
+                _togglePreview();
+                setSheetState(() {});
+              },
+              onSettings: () {
+                Navigator.of(sheetContext).pop();
+                _openTool(
+                  screen: const ServerSetupScreen(),
+                  title: context.text.navSettings,
+                );
+              },
+              onCare: () {
+                Navigator.of(sheetContext).pop();
+                _selectDestination(3);
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   List<_ShellDestination> _destinations(GatewayStrings strings) {
     return <_ShellDestination>[
       _ShellDestination(
@@ -314,6 +488,7 @@ class _GatewayShellState extends State<GatewayShell>
           onDevices: () => _selectDestination(1),
           onHealth: () => _selectDestination(2),
           onPortal: () => _selectDestination(3),
+          onQuickSettings: _openQuickSettings,
           onSettings: () => _openTool(
             screen: const ServerSetupScreen(),
             title: strings.navSettings,
@@ -339,6 +514,10 @@ class _GatewayShellState extends State<GatewayShell>
           onHealth: () => _selectDestination(2),
           onManagePairing: () => _openTool(
             screen: PairDevicesScreen(previewAt: _previewAt),
+            title: strings.navDevices,
+          ),
+          onPairBelt: () => _openTool(
+            screen: PairDevicesScreen(previewAt: _previewAt, initialTab: 1),
             title: strings.navDevices,
           ),
           onMonitor: () => _openTool(
@@ -380,6 +559,7 @@ class _GatewayShellState extends State<GatewayShell>
         screen: PortalWebViewScreen(
           darkMode: widget.darkMode,
           onToggleTheme: widget.onToggleTheme,
+          onQuickSettings: _openQuickSettings,
           onSettings: () => _openTool(
             screen: const ServerSetupScreen(),
             title: strings.navSettings,
@@ -394,6 +574,7 @@ class _GatewayShellState extends State<GatewayShell>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _previewTicker?.cancel();
+    unawaited(_fallAlertSubscription?.cancel());
     _healthData.dispose();
     _runtime.dispose();
     super.dispose();
@@ -434,131 +615,6 @@ class _BrandMark extends StatelessWidget {
   }
 }
 
-class _ShellHeader extends StatelessWidget {
-  const _ShellHeader({
-    required this.title,
-    required this.compact,
-    required this.previewAt,
-    required this.onTogglePreview,
-    required this.darkMode,
-    required this.onToggleTheme,
-  });
-
-  final String title;
-  final bool compact;
-  final DateTime? previewAt;
-  final VoidCallback onTogglePreview;
-  final bool darkMode;
-  final VoidCallback onToggleTheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      constraints: BoxConstraints(minHeight: compact ? 64 : 72),
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 16 : 24,
-        vertical: 12,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
-      ),
-      child: Row(
-        children: [
-          if (compact) ...[const _BrandMark(), const SizedBox(width: 12)],
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _PreviewControl(
-            enabled: previewAt != null,
-            onPressed: onTogglePreview,
-          ),
-          IconButton(
-            tooltip: context.text.pick(
-              darkMode ? 'Switch to light mode' : 'Switch to dark mode',
-              darkMode ? 'เปลี่ยนเป็นธีมสว่าง' : 'เปลี่ยนเป็นธีมมืด',
-            ),
-            onPressed: onToggleTheme,
-            icon: Icon(
-              darkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-            ),
-          ),
-          PopupMenuButton<GatewayLanguage>(
-            tooltip: context.text.pick('Change language', 'เปลี่ยนภาษา'),
-            initialValue: context.gatewayLocale.language,
-            onSelected: (language) =>
-                unawaited(context.gatewayLocale.setLanguage(language)),
-            itemBuilder: (context) => [
-              for (final language in GatewayLanguage.values)
-                PopupMenuItem<GatewayLanguage>(
-                  value: language,
-                  child: Text(language.label),
-                ),
-            ],
-            child: Semantics(
-              button: true,
-              label: context.text.pick('Change language', 'เปลี่ยนภาษา'),
-              child: SizedBox(
-                width: 38,
-                height: 40,
-                child: Center(
-                  child: Text(
-                    context.gatewayLocale.language.code.toUpperCase(),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          _ConnectionPill(compact: compact),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreviewControl extends StatelessWidget {
-  const _PreviewControl({required this.enabled, required this.onPressed});
-
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.text;
-    return IconButton(
-      isSelected: enabled,
-      onPressed: onPressed,
-      tooltip: t.pick('Toggle preview data', 'สลับข้อมูลตัวอย่าง'),
-      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-      padding: EdgeInsets.zero,
-      icon: ProductIcon(
-        enabled ? 'eye' : 'eye-off',
-        size: 20,
-        color: enabled ? Theme.of(context).colorScheme.primary : null,
-      ),
-    );
-  }
-}
-
 class _ConnectionPill extends StatelessWidget {
   const _ConnectionPill({required this.compact});
 
@@ -580,14 +636,14 @@ class _ConnectionPill extends StatelessWidget {
             message: _label(context, status.mode),
             child: ProductIcon(
               'cloud',
-              color: online ? AppPalette.success : colors.secondary,
+              color: online ? colors.primary : colors.onSurfaceVariant,
             ),
           );
         }
         return DecoratedBox(
           decoration: BoxDecoration(
             color: online
-                ? colors.tertiaryContainer
+                ? colors.primaryContainer
                 : colors.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: colors.outlineVariant),
@@ -598,9 +654,11 @@ class _ConnectionPill extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.circle,
-                  size: 10,
-                  color: online ? AppPalette.success : colors.secondary,
+                  online ? Icons.check_circle_rounded : Icons.cloud_off_rounded,
+                  size: 14,
+                  color: online
+                      ? colors.onPrimaryContainer
+                      : colors.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -619,5 +677,179 @@ class _ConnectionPill extends StatelessWidget {
 
   String _label(BuildContext context, GatewayConnectionMode mode) {
     return GatewayLocaleScope.stringsOf(context).modeLabel(mode);
+  }
+}
+
+/// Home's quick settings: appearance, language, preview data and server
+/// status, plus shortcuts to Settings and Care.
+class _QuickSettingsSheet extends StatelessWidget {
+  const _QuickSettingsSheet({
+    required this.darkMode,
+    required this.previewOn,
+    required this.onToggleTheme,
+    required this.onTogglePreview,
+    required this.onSettings,
+    required this.onCare,
+  });
+
+  final bool darkMode;
+  final bool previewOn;
+  final VoidCallback onToggleTheme;
+  final VoidCallback onTogglePreview;
+  final VoidCallback onSettings;
+  final VoidCallback onCare;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final t = context.text;
+    final locale = context.gatewayLocale;
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              t.pick('Quick settings', 'ตั้งค่าด่วน'),
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 16),
+            ProductSurface(
+              background: theme.colorScheme.surfaceContainerLow,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                children: [
+                  _QuickRow(
+                    icon: Icons.dark_mode_rounded,
+                    label: t.pick('Dark mode', 'โหมดมืด'),
+                    trailing: Tooltip(
+                      message: t.pick(
+                        darkMode
+                            ? 'Switch to light mode'
+                            : 'Switch to dark mode',
+                        darkMode ? 'เปลี่ยนเป็นธีมสว่าง' : 'เปลี่ยนเป็นธีมมืด',
+                      ),
+                      child: Switch(
+                        value: darkMode,
+                        onChanged: (_) => onToggleTheme(),
+                      ),
+                    ),
+                  ),
+                  const Divider(indent: 56),
+                  _QuickRow(
+                    icon: Icons.visibility_rounded,
+                    label: t.pick('Preview data', 'ข้อมูลตัวอย่าง'),
+                    trailing: Tooltip(
+                      message: t.pick(
+                        'Toggle preview data',
+                        'สลับข้อมูลตัวอย่าง',
+                      ),
+                      child: Switch(
+                        value: previewOn,
+                        onChanged: (_) => onTogglePreview(),
+                      ),
+                    ),
+                  ),
+                  const Divider(indent: 56),
+                  _QuickRow(
+                    icon: Icons.cloud_rounded,
+                    label: t.pick('Server', 'เซิร์ฟเวอร์'),
+                    trailing: const _ConnectionPill(compact: false),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              t.pick('Language', 'ภาษา'),
+              style: theme.textTheme.labelMedium,
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<GatewayLanguage>(
+                showSelectedIcon: false,
+                segments: [
+                  for (final language in GatewayLanguage.values)
+                    ButtonSegment<GatewayLanguage>(
+                      value: language,
+                      label: Text(language.label),
+                    ),
+                ],
+                selected: {locale.language},
+                onSelectionChanged: (selection) =>
+                    unawaited(locale.setLanguage(selection.first)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onSettings,
+                    icon: const Icon(Icons.tune_rounded, size: 18),
+                    label: Text(
+                      t.navSettings,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onCare,
+                    icon: const Icon(
+                      Icons.volunteer_activism_rounded,
+                      size: 18,
+                    ),
+                    label: Text(
+                      t.pick('Care', 'การดูแล'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickRow extends StatelessWidget {
+  const _QuickRow({
+    required this.icon,
+    required this.label,
+    required this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 16),
+            Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Align(alignment: Alignment.centerRight, child: trailing),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

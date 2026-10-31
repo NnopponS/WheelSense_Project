@@ -1,5 +1,6 @@
 export '../l10n/gateway_localizations.dart';
 export '../models/ble_device_snapshot.dart';
+export '../models/fall_alert_event.dart';
 export '../models/gateway_config.dart';
 export '../models/gateway_runtime_snapshot.dart';
 export '../models/gateway_setup_form.dart';

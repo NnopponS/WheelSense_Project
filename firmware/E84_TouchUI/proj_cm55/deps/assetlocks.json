@@ -56,6 +56,10 @@
         "locked-commit": "release-v1.7.1"
     },
     {
+        "asset-name": "ml-executorch",
+        "locked-commit": "release-v1.2.0"
+    },
+    {
         "asset-name": "mtb-dsl-pse8xxgp",
         "locked-commit": "release-v1.2.0"
     },
@@ -89,7 +93,7 @@
     },
     {
         "asset-name": "wifi-resources",
-        "locked-commit": "release-v3.0.5"
+        "locked-commit": "release-v3.0.6"
     },
     {
         "asset-name": "wpa3-external-supplicant",

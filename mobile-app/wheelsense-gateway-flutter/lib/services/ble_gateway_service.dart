@@ -8,6 +8,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:polar/polar.dart';
 
 import '../models/ble_device_snapshot.dart';
+import '../models/fall_alert_event.dart';
 import '../models/gateway_config.dart';
 import '../models/sensor_telemetry.dart';
 
@@ -20,6 +21,29 @@ class BleGatewayService {
 
   final FlutterReactiveBle _ble;
   final Polar _polar;
+
+  final StreamController<FallAlertEvent> _fallAlertController =
+      StreamController<FallAlertEvent>.broadcast();
+
+  Stream<FallAlertEvent> get fallAlerts => _fallAlertController.stream;
+
+  final StreamController<bool> _m5FallCapableController =
+      StreamController<bool>.broadcast();
+
+  Stream<bool> get m5FallCapableUpdates => _m5FallCapableController.stream;
+
+  bool _m5FallCapable = false;
+  bool get m5FallCapable => _m5FallCapable;
+
+  void _setM5FallCapable(bool value) {
+    if (_m5FallCapable == value) {
+      return;
+    }
+    _m5FallCapable = value;
+    if (!_m5FallCapableController.isClosed) {
+      _m5FallCapableController.add(value);
+    }
+  }
 
   StreamSubscription<ConnectionStateUpdate>? _polarConnectionSubscription;
   StreamSubscription<PolarTelemetrySample>? _polarTelemetrySubscription;
@@ -139,7 +163,9 @@ class BleGatewayService {
     final reassembler = _JsonObjectReassembler();
     final serviceGuid = fbp.Guid(config.bleServiceUuid);
     final telemetryGuid = fbp.Guid(config.bleTelemetryCharacteristicUuid);
+    final fallAlertGuid = fbp.Guid(config.bleFallAlertCharacteristicUuid);
     StreamSubscription<List<int>>? telemetrySubscription;
+    StreamSubscription<List<int>>? fallAlertSubscription;
 
     unawaited(() async {
       var backoff = const Duration(seconds: 2);
@@ -161,6 +187,15 @@ class BleGatewayService {
             // Best-effort
           }
 
+          // Android caches the GATT table per device; after a firmware update
+          // the cached copy can lack new characteristics (fall alerts).
+          if (defaultTargetPlatform == TargetPlatform.android) {
+            try {
+              await device.clearGattCache();
+            } on Object {
+              // Best-effort
+            }
+          }
           final services = await device.discoverServices();
           final service = services.firstWhereOrNull(
             (s) =>
@@ -240,6 +275,35 @@ class BleGatewayService {
           if (!telemetryChar.isNotifying) {
             await telemetryChar.setNotifyValue(true);
           }
+
+          // Fall-alert notifications are optional (older firmware lacks the
+          // characteristic); skip silently when it is absent.
+          final fallChar = service.characteristics.firstWhereOrNull(
+            (c) =>
+                c.characteristicUuid == fallAlertGuid ||
+                c.characteristicUuid.str128.toLowerCase() ==
+                    config.bleFallAlertCharacteristicUuid.toLowerCase(),
+          );
+          await fallAlertSubscription?.cancel();
+          fallAlertSubscription = null;
+          if (fallChar != null) {
+            fallAlertSubscription = fallChar.onValueReceived.listen((bytes) {
+              if (bytes.isEmpty || _fallAlertController.isClosed) {
+                return;
+              }
+              final event = FallAlertEvent.tryParse(
+                utf8.decode(bytes, allowMalformed: true),
+                deviceId: deviceId,
+              );
+              if (event != null && !_fallAlertController.isClosed) {
+                _fallAlertController.add(event);
+              }
+            });
+            if (!fallChar.isNotifying) {
+              await fallChar.setNotifyValue(true);
+            }
+          }
+          _setM5FallCapable(fallChar != null);
           reassembler.reset();
           backoff = const Duration(seconds: 2);
 
@@ -251,6 +315,7 @@ class BleGatewayService {
                 (state) => state == fbp.BluetoothConnectionState.disconnected,
               )
               .first;
+          _setM5FallCapable(false);
         } on Object catch (error, stack) {
           debugPrint(
             '[BleGatewayService] M5 connect/subscribe error: $error\n$stack',
@@ -267,7 +332,9 @@ class BleGatewayService {
     }());
 
     controller.onCancel = () async {
+      _setM5FallCapable(false);
       await telemetrySubscription?.cancel();
+      await fallAlertSubscription?.cancel();
       try {
         await fbp.BluetoothDevice.fromId(deviceId).disconnect();
       } on Object {
@@ -278,6 +345,7 @@ class BleGatewayService {
   }
 
   Future<void> disconnectM5(String deviceId) async {
+    _setM5FallCapable(false);
     try {
       final device = fbp.BluetoothDevice.fromId(deviceId);
       await device.disconnect();
@@ -583,7 +651,7 @@ class BleGatewayService {
   }) async {
     await _writeM5Characteristic(
       serviceUuid: config.bleServiceUuid,
-      characteristicUuid: '8f6e0004-b5a3-f393-e0a9-e50e24dcca9e',
+      characteristicUuid: config.bleCommandCharacteristicUuid,
       deviceId: deviceId,
       payload: payload,
     );
@@ -609,6 +677,13 @@ class BleGatewayService {
     required Map<String, Object?> payload,
   }) async {
     final device = fbp.BluetoothDevice.fromId(deviceId);
+    if (!device.isConnected) {
+      await device.connect(
+        license: fbp.License.nonprofit,
+        mtu: 512,
+        timeout: const Duration(seconds: 10),
+      );
+    }
     final services = device.servicesList.isNotEmpty
         ? device.servicesList
         : await device.discoverServices();
@@ -658,6 +733,8 @@ class BleGatewayService {
     _polarBatterySubscription = null;
     _polarTelemetrySubscription = null;
     _polarConnectionSubscription = null;
+    await _m5FallCapableController.close();
+    await _fallAlertController.close();
   }
 }
 

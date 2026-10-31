@@ -9,6 +9,10 @@ class GatewayConfig {
     required this.portalBaseUrl,
     required this.bleServiceUuid,
     required this.bleTelemetryCharacteristicUuid,
+    this.bleFallAlertCharacteristicUuid =
+        '8f6e0008-b5a3-f393-e0a9-e50e24dcca9e',
+    this.bleCommandCharacteristicUuid =
+        '8f6e0004-b5a3-f393-e0a9-e50e24dcca9e',
     this.linkedPatientId,
     this.linkedCaregiverId,
     this.linkedPersonType,
@@ -43,6 +47,8 @@ class GatewayConfig {
   final String portalBaseUrl;
   final String bleServiceUuid;
   final String bleTelemetryCharacteristicUuid;
+  final String bleFallAlertCharacteristicUuid;
+  final String bleCommandCharacteristicUuid;
   final int? linkedPatientId;
   final int? linkedCaregiverId;
   final String? linkedPersonType;
@@ -64,6 +70,8 @@ class GatewayConfig {
     String? portalBaseUrl,
     String? bleServiceUuid,
     String? bleTelemetryCharacteristicUuid,
+    String? bleFallAlertCharacteristicUuid,
+    String? bleCommandCharacteristicUuid,
     Object? linkedPatientId = _unset,
     Object? linkedCaregiverId = _unset,
     Object? linkedPersonType = _unset,
@@ -81,6 +89,11 @@ class GatewayConfig {
       bleServiceUuid: bleServiceUuid ?? this.bleServiceUuid,
       bleTelemetryCharacteristicUuid:
           bleTelemetryCharacteristicUuid ?? this.bleTelemetryCharacteristicUuid,
+      bleFallAlertCharacteristicUuid:
+          bleFallAlertCharacteristicUuid ??
+          this.bleFallAlertCharacteristicUuid,
+      bleCommandCharacteristicUuid:
+          bleCommandCharacteristicUuid ?? this.bleCommandCharacteristicUuid,
       linkedPatientId: identical(linkedPatientId, _unset)
           ? this.linkedPatientId
           : linkedPatientId as int?,
@@ -106,6 +119,8 @@ class GatewayConfig {
       'portalBaseUrl': portalBaseUrl,
       'bleServiceUuid': bleServiceUuid,
       'bleTelemetryCharacteristicUuid': bleTelemetryCharacteristicUuid,
+      'bleFallAlertCharacteristicUuid': bleFallAlertCharacteristicUuid,
+      'bleCommandCharacteristicUuid': bleCommandCharacteristicUuid,
       'linkedPatientId': linkedPatientId,
       'linkedCaregiverId': linkedCaregiverId,
       'linkedPersonType': linkedPersonType,
@@ -134,6 +149,12 @@ class GatewayConfig {
           telemetryUuid?.toLowerCase() == '0000a1b3-0000-1000-8000-00805f9b34fb'
           ? defaults.bleTelemetryCharacteristicUuid
           : telemetryUuid ?? defaults.bleTelemetryCharacteristicUuid,
+      bleFallAlertCharacteristicUuid:
+          json['bleFallAlertCharacteristicUuid'] as String? ??
+          defaults.bleFallAlertCharacteristicUuid,
+      bleCommandCharacteristicUuid:
+          json['bleCommandCharacteristicUuid'] as String? ??
+          defaults.bleCommandCharacteristicUuid,
       linkedPatientId: _optionalInt(json['linkedPatientId']),
       linkedCaregiverId: _optionalInt(json['linkedCaregiverId']),
       linkedPersonType: _optionalString(json['linkedPersonType']),

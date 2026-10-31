@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/preview_metrics.dart';
 import '../services/gateway_services.dart';
 import '../services/health_data_source.dart';
-import '../theme/app_palette.dart';
+import '../widgets/calm_care_ui.dart';
 import '../widgets/product_ui.dart';
 
 class DeviceHubScreen extends StatelessWidget {
@@ -20,6 +20,7 @@ class DeviceHubScreen extends StatelessWidget {
     required this.onPolarStudio,
     required this.onNodeRadar,
     required this.onSettings,
+    this.onPairBelt,
   });
   final HealthDataSource healthData;
   final DateTime? previewAt;
@@ -29,6 +30,9 @@ class DeviceHubScreen extends StatelessWidget {
       onNodeRadar,
       onSettings,
       onHealth;
+
+  /// Opens pairing on the FallGuard Belt tab; falls back to [onManagePairing].
+  final VoidCallback? onPairBelt;
 
   @override
   Widget build(BuildContext context) {
@@ -46,73 +50,115 @@ class DeviceHubScreen extends StatelessWidget {
         final m5 = s.latestM5Sample;
         final polarRecent = polar != null && _isRecent(polar.timestamp);
         final m5Recent = m5 != null && _isRecent(m5.timestamp);
+        // One M5 slot: it is the belt when the fall characteristic is there.
+        final m5Paired = s.pairedM5Device != null;
+        final beltActive = m5Paired && s.m5FallCapable;
+        final wheelchairActive = m5Paired && !s.m5FallCapable;
+        final polarPaired = s.pairedPolarDevice != null;
+        // Preview shows every sensor; otherwise only the ones paired here.
         final sensorCards = <Widget>[
-          _SensorCard(
-            title: t.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น'),
-            image: 'assets/devices/m5stickcplus2.png',
-            paired: s.pairedM5Device != null,
-            previewConnected: preview != null,
-            battery: s.latestM5Sample?.batteryPercent,
-            signal: s.pairedM5Device?.rssi,
-            lastSeen: s.latestM5Sample?.timestamp,
-            reading: m5Recent && m5.hasDistance
-                ? '${m5.distanceM.toStringAsFixed(1)} m'
-                : !m5Recent && preview != null
-                ? '${preview.distanceM.toStringAsFixed(1)} m'
-                : null,
-            readingIsPreview: !m5Recent && preview != null,
-            onManage: onManagePairing,
-            onDetails: onMonitor,
-          ),
-          _SensorCard(
-            title: 'Polar Verity Sense',
-            image: 'assets/devices/polar_verity_sense.png',
-            paired: s.pairedPolarDevice != null,
-            previewConnected: preview != null,
-            battery: s.latestPolarSample?.sensorBatteryPercent,
-            signal: s.latestPolarSample?.rssi ?? s.pairedPolarDevice?.rssi,
-            lastSeen: s.latestPolarSample?.timestamp,
-            reading: polarRecent
-                ? '${polar.heartRateBpm} bpm'
-                : preview == null
-                ? null
-                : '${preview.heartRateBpm} bpm',
-            readingIsPreview: !polarRecent && preview != null,
-            onManage: onManagePairing,
-            onDetails: onPolarStudio,
-          ),
+          if (preview != null || wheelchairActive)
+            _SensorCard(
+              title: t.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น'),
+              image: 'assets/devices/m5stickcplus2.png',
+              paired: wheelchairActive,
+              previewConnected: preview != null && !beltActive,
+              battery: wheelchairActive
+                  ? s.latestM5Sample?.batteryPercent
+                  : null,
+              signal: wheelchairActive ? s.pairedM5Device?.rssi : null,
+              lastSeen: wheelchairActive ? s.latestM5Sample?.timestamp : null,
+              note: beltActive
+                  ? t.pick(
+                      'Shares one connection with the FallGuard Belt, which is connected now.',
+                      'ใช้การเชื่อมต่อเดียวกับเข็มขัด FallGuard ซึ่งเชื่อมต่ออยู่ตอนนี้',
+                    )
+                  : null,
+              reading: beltActive
+                  ? null
+                  : m5Recent && m5.stepCount != null
+                  ? t.pick('${m5.stepCount} steps', '${m5.stepCount} ก้าว')
+                  : m5Recent && m5.hasDistance
+                  ? '${m5.distanceM.toStringAsFixed(1)} m'
+                  : !m5Recent && preview != null
+                  ? '${preview.distanceM.toStringAsFixed(1)} m'
+                  : null,
+              readingIsPreview: !m5Recent && preview != null && !beltActive,
+              onManage: onManagePairing,
+              onDetails: onMonitor,
+            ),
+          if (preview != null || beltActive)
+            _SensorCard(
+              title: t.pick('FallGuard Belt', 'เข็มขัด FallGuard'),
+              image: 'assets/devices/fallguard_belt.png',
+              paired: beltActive,
+              previewConnected: preview != null && !wheelchairActive,
+              battery: beltActive ? s.latestM5Sample?.batteryPercent : null,
+              signal: beltActive ? s.pairedM5Device?.rssi : null,
+              lastSeen: beltActive ? s.latestM5Sample?.timestamp : null,
+              note: wheelchairActive
+                  ? t.pick(
+                      'Shares one connection with the wheelchair sensor. Pairing the belt replaces it.',
+                      'ใช้การเชื่อมต่อเดียวกับเซนเซอร์รถเข็น การจับคู่เข็มขัดจะแทนที่เซนเซอร์รถเข็น',
+                    )
+                  : null,
+              reading: beltActive && m5Recent && m5.stepCount != null
+                  ? t.pick('${m5.stepCount} steps', '${m5.stepCount} ก้าว')
+                  : !beltActive && preview != null
+                  ? t.pick('${preview.steps} steps', '${preview.steps} ก้าว')
+                  : null,
+              readingIsPreview: !beltActive && preview != null,
+              onManage: onPairBelt ?? onManagePairing,
+              onDetails: onMonitor,
+            ),
+          if (preview != null || polarPaired)
+            _SensorCard(
+              title: 'Polar Verity Sense',
+              image: 'assets/devices/polar_verity_sense.png',
+              paired: polarPaired,
+              previewConnected: preview != null,
+              battery: s.latestPolarSample?.sensorBatteryPercent,
+              signal: s.latestPolarSample?.rssi ?? s.pairedPolarDevice?.rssi,
+              lastSeen: s.latestPolarSample?.timestamp,
+              reading: polarRecent
+                  ? '${polar.heartRateBpm} bpm'
+                  : preview == null
+                  ? null
+                  : '${preview.heartRateBpm} bpm',
+              readingIsPreview: !polarRecent && preview != null,
+              note: null,
+              onManage: onManagePairing,
+              onDetails: onPolarStudio,
+            ),
         ];
+        final connected = preview != null
+            ? sensorCards.length
+            : (m5Paired && m5Recent ? 1 : 0) +
+                  (polarPaired && polarRecent ? 1 : 0);
         return ProductPage(
           children: [
-            ProductSurface(
-              onTap: onManagePairing,
-              child: Row(
-                children: [
-                  ProductIcon(
-                    'bluetooth',
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Bluetooth',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  Flexible(
-                    child: Text(
-                      preview != null
-                          ? t.pick('Connected', 'เชื่อมต่อแล้ว')
-                          : s.status.bleReady
-                          ? t.pick('Allowed', 'อนุญาตแล้ว')
-                          : t.pick('Not allowed', 'ยังไม่อนุญาต'),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const ProductIcon('arrow', size: 18),
-                ],
+            // Same charcoal + mint pair as Home, so every tab feels related.
+            CalmCareSplitCards(
+              dark: CalmCareSplitItem(
+                icon: Icons.sensors_rounded,
+                label: t.pick('Sensors', 'เซนเซอร์'),
+                text: sensorCards.isEmpty
+                    ? t.pick('No devices yet', 'ยังไม่มีอุปกรณ์')
+                    : t.pick(
+                        '$connected of ${sensorCards.length} connected',
+                        'เชื่อมต่อแล้ว $connected จาก ${sensorCards.length}',
+                      ),
+                onTap: onManagePairing,
+              ),
+              light: CalmCareSplitItem(
+                icon: Icons.bluetooth_rounded,
+                label: 'Bluetooth',
+                text: preview != null
+                    ? t.pick('Connected', 'เชื่อมต่อแล้ว')
+                    : s.status.bleReady
+                    ? t.pick('Allowed', 'อนุญาตแล้ว')
+                    : t.pick('Not allowed', 'ยังไม่อนุญาต'),
+                onTap: onManagePairing,
               ),
             ),
             const SizedBox(height: 20),
@@ -136,10 +182,11 @@ class DeviceHubScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, box) {
-                final textScale = MediaQuery.textScalerOf(context).scale(1);
-                if (box.maxWidth >= 620 || textScale > 1.3) {
+            if (sensorCards.isEmpty)
+              _NoDevicesCard(onAdd: onManagePairing)
+            else
+              LayoutBuilder(
+                builder: (context, box) {
                   final width = box.maxWidth >= 620
                       ? (box.maxWidth - 12) / 2
                       : box.maxWidth;
@@ -151,57 +198,29 @@ class DeviceHubScreen extends StatelessWidget {
                         SizedBox(width: width, child: card),
                     ],
                   );
-                }
-                return SizedBox(
-                  height: 300 * textScale.clamp(1.0, 1.5),
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.only(right: 4),
-                    itemCount: sensorCards.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) => SizedBox(
-                      width: (box.maxWidth - 24).clamp(240.0, 340.0).toDouble(),
-                      child: sensorCards[index],
-                    ),
-                  ),
-                );
-              },
-            ),
+                },
+              ),
             const SizedBox(height: 24),
             ProductSectionHeading(title: t.pick('Tools', 'เครื่องมือ')),
             const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, box) {
-                final textScale = MediaQuery.textScalerOf(context).scale(1);
-                final cards = <Widget>[
-                  _ToolRow(
-                    icon: 'scan',
-                    name: t.pick('Node radar', 'เรดาร์โหนด'),
-                    onTap: onNodeRadar,
-                  ),
-                  _ToolRow(
-                    icon: 'settings',
-                    name: t.pick('Gateway settings', 'ตั้งค่าเกตเวย์'),
-                    onTap: onSettings,
-                  ),
-                ];
-                final columns = box.maxWidth >= 620 || textScale <= 1.3 ? 2 : 1;
-                final width = columns == 1
-                    ? box.maxWidth
-                    : (box.maxWidth - 12) / 2;
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    for (final card in cards)
-                      SizedBox(
-                        width: width,
-                        height: 116.0 * textScale.clamp(1.0, 1.35),
-                        child: card,
-                      ),
-                  ],
-                );
-              },
+            CalmCareToolTile(
+              title: t.pick('Node radar', 'เรดาร์โหนด'),
+              subtitle: t.pick(
+                'Nearby room nodes and signal',
+                'โหนดในห้องใกล้เคียงและความแรงสัญญาณ',
+              ),
+              icon: Icons.radar_rounded,
+              onTap: onNodeRadar,
+            ),
+            const SizedBox(height: 12),
+            CalmCareToolTile(
+              title: t.pick('Gateway settings', 'ตั้งค่าเกตเวย์'),
+              subtitle: t.pick(
+                'Server, gateway ID and sign-in',
+                'เซิร์ฟเวอร์ รหัสเกตเวย์ และการเข้าสู่ระบบ',
+              ),
+              icon: Icons.tune_rounded,
+              onTap: onSettings,
             ),
           ],
         );
@@ -212,6 +231,55 @@ class DeviceHubScreen extends StatelessWidget {
   bool _isRecent(DateTime timestamp) {
     final age = DateTime.now().difference(timestamp);
     return age >= Duration.zero && age <= const Duration(minutes: 2);
+  }
+}
+
+class _NoDevicesCard extends StatelessWidget {
+  const _NoDevicesCard({required this.onAdd});
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.text;
+    final theme = Theme.of(context);
+    return ProductSurface(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          ProductIconBadge(
+            'bluetooth',
+            tint: theme.colorScheme.primary,
+            size: 56,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            t.pick('No devices yet', 'ยังไม่มีอุปกรณ์'),
+            style: theme.textTheme.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            t.pick(
+              'Add the wheelchair sensor, FallGuard Belt or Polar Verity Sense.',
+              'เพิ่มเซนเซอร์รถเข็น เข็มขัด FallGuard หรือ Polar Verity Sense',
+            ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onAdd,
+              icon: const ProductIcon('add'),
+              label: Text(t.pick('Add device', 'เพิ่มอุปกรณ์')),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -236,20 +304,10 @@ class _HealthConnectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Center(
-                  child: ProductIcon(
-                    'health',
-                    color: AppPalette.brand,
-                    size: 38,
-                  ),
-                ),
+              ProductIconBadge(
+                'health',
+                tint: Theme.of(context).colorScheme.primary,
+                size: 48,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -299,9 +357,16 @@ class _HealthConnectionCard extends StatelessWidget {
                           );
                         },
                   child: healthData.loading
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                      // Spinner takes the button's text colour so it stays
+                      // visible on the charcoal pill.
+                      ? Builder(
+                          builder: (context) => SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: DefaultTextStyle.of(context).style.color,
+                            ),
+                          ),
                         )
                       : Text(
                           healthData.hasAccess
@@ -346,8 +411,12 @@ class _SensorCard extends StatelessWidget {
     required this.readingIsPreview,
     required this.onManage,
     required this.onDetails,
+    this.note,
   });
   final String title, image;
+
+  /// One line of context, e.g. that two sensors share a connection.
+  final String? note;
   final bool paired, previewConnected;
   final int? battery, signal;
   final DateTime? lastSeen;
@@ -380,14 +449,14 @@ class _SensorCard extends StatelessWidget {
             children: [
               InkWell(
                 onTap: onDetails,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  width: 84,
-                  height: 96,
-                  padding: const EdgeInsets.all(7),
+                  width: 96,
+                  height: 86,
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Image.asset(
                     image,
@@ -403,12 +472,7 @@ class _SensorCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),
                     ProductStatusPill(
                       label: status,
@@ -420,6 +484,26 @@ class _SensorCard extends StatelessWidget {
               ),
             ],
           ),
+          if (note != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    note!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (reading != null) ...[
             const SizedBox(height: 10),
             Row(
@@ -500,37 +584,4 @@ class _SensorCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ToolRow extends StatelessWidget {
-  const _ToolRow({required this.icon, required this.name, required this.onTap});
-  final String icon, name;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => ProductSurface(
-    onTap: onTap,
-    padding: const EdgeInsets.all(14),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            ProductIcon(icon, size: 22, color: AppPalette.brand),
-            const Spacer(),
-            const ProductIcon('arrow', size: 18),
-          ],
-        ),
-        const Spacer(),
-        Text(
-          name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-        ),
-      ],
-    ),
-  );
 }

@@ -36,6 +36,8 @@ class M5TelemetrySample {
     this.rawGy,
     this.rawGz,
     this.tDeviceUs,
+    this.fallAlertActive = false,
+    this.stepCount,
   });
 
   final DateTime timestamp;
@@ -72,6 +74,12 @@ class M5TelemetrySample {
   final int? rawGy;
   final int? rawGz;
   final int? tDeviceUs;
+
+  /// Bit 3 of the binary frame flags byte: firmware fall-alert state.
+  final bool fallAlertActive;
+
+  /// Belt firmware >= 4.2.0 appends a uint32 step count at offset 30.
+  final int? stepCount;
 
   double get speedKmh => velocityMs * 3.6;
 
@@ -182,6 +190,10 @@ class M5TelemetrySample {
     final isRecording = (flags & 1) != 0;
     final imuValid = (flags & 2) != 0;
     final batteryCharging = (flags & 4) != 0;
+    final fallActive = (flags & 8) != 0;
+    final stepCount = bytes.length >= 34
+        ? ByteData.sublistView(bytes, 30, 34).getUint32(0, Endian.little)
+        : null;
     final totalAccelG = math.sqrt(ax * ax + ay * ay + az * az);
 
     return M5TelemetrySample(
@@ -217,6 +229,8 @@ class M5TelemetrySample {
       rawGy: rawGy,
       rawGz: rawGz,
       tDeviceUs: timestampMs * 1000,
+      fallAlertActive: fallActive,
+      stepCount: stepCount,
     );
   }
 
@@ -231,6 +245,7 @@ class M5TelemetrySample {
       'room_id': roomId,
       'room_name': roomName,
       'is_recording': isRecording,
+      'fall_alert_active': fallAlertActive,
       'imu': <String, Object?>{
         'ax': accelX,
         'ay': accelY,
@@ -253,6 +268,7 @@ class M5TelemetrySample {
         'speed_kmh': speedKmh,
         'accel_ms2': accelMs2,
         'direction': direction,
+        if (stepCount != null) 'step_count': stepCount,
       },
       'battery': <String, Object?>{
         'percentage': batteryPercent,
@@ -300,6 +316,10 @@ class M5TelemetrySample {
           ? null
           : _number(_first(battery['voltage_v'], map['battery_v'])),
       batteryCharging: _bool(_first(battery['charging'], map['charging'])),
+      fallAlertActive: _bool(
+        _first(map['fall_alert_active'], map['fall_alert']),
+      ),
+      stepCount: _nullableInt(_first(motion['step_count'], map['step_count'])),
       rawPayload: payload,
       rawAx: _nullableInt(imu['raw_ax']),
       rawAy: _nullableInt(imu['raw_ay']),
@@ -324,6 +344,7 @@ class M5TelemetrySample {
       'room_id': roomId,
       'room_name': roomName,
       'is_recording': isRecording,
+      'fall_alert_active': fallAlertActive,
       'imu': <String, Object?>{
         'ax': accelX,
         'ay': accelY,
@@ -346,6 +367,7 @@ class M5TelemetrySample {
         'speed_kmh': speedKmh,
         'accel_ms2': accelMs2,
         'direction': direction,
+        if (stepCount != null) 'step_count': stepCount,
       },
       'battery': <String, Object?>{
         'percentage': batteryPercent,

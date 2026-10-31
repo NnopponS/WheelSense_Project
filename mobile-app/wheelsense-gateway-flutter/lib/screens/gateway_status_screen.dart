@@ -21,7 +21,7 @@ class GatewayStatusScreen extends StatelessWidget {
               final config = await runtime.loadConfig();
               await runtime.bootstrap(config: config);
             },
-            icon: const Icon(Icons.power_settings_new),
+            icon: const Icon(Icons.power_settings_new_rounded),
             label: const Text('Start gateway'),
           ),
           children: [
@@ -32,7 +32,7 @@ class GatewayStatusScreen extends StatelessWidget {
                     label: 'Gateway health',
                     value: _modeLabel(status.mode),
                     detail: status.message,
-                    icon: Icons.health_and_safety_outlined,
+                    icon: Icons.health_and_safety_rounded,
                     severity: _severity(status.mode),
                   ),
                 ),
@@ -41,7 +41,7 @@ class GatewayStatusScreen extends StatelessWidget {
                     label: 'BLE',
                     value: status.bleReady ? 'Ready' : 'Permission needed',
                     detail: 'Wheelchair sensor peripheral relay',
-                    icon: Icons.bluetooth_connected,
+                    icon: Icons.bluetooth_connected_rounded,
                     severity: status.bleReady
                         ? ClinicalSeverity.normal
                         : ClinicalSeverity.warning,
@@ -52,7 +52,7 @@ class GatewayStatusScreen extends StatelessWidget {
                     label: 'MQTT',
                     value: status.mqttReady ? 'Ready' : 'Offline',
                     detail: 'WheelSense/mobile/{gateway}/telemetry',
-                    icon: Icons.sync,
+                    icon: Icons.sync_rounded,
                     severity: status.mqttReady
                         ? ClinicalSeverity.normal
                         : ClinicalSeverity.warning,
@@ -63,7 +63,7 @@ class GatewayStatusScreen extends StatelessWidget {
                     label: 'Background',
                     value: status.backgroundReady ? 'Enabled' : 'Limited',
                     detail: 'Android foreground service, iOS event-limited',
-                    icon: Icons.notification_important_outlined,
+                    icon: Icons.notification_important_rounded,
                     severity: status.backgroundReady
                         ? ClinicalSeverity.normal
                         : ClinicalSeverity.info,
@@ -78,7 +78,7 @@ class GatewayStatusScreen extends StatelessWidget {
               child: Column(
                 children: [
                   CompactRowCard(
-                    icon: Icons.router,
+                    icon: Icons.router_rounded,
                     title: 'Upload path',
                     subtitle:
                         'Phone pairs BLE devices and publishes one MQTT stream.',
@@ -89,7 +89,7 @@ class GatewayStatusScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   CompactRowCard(
-                    icon: Icons.storage,
+                    icon: Icons.storage_rounded,
                     title: 'Production behavior',
                     subtitle:
                         'BLE data is shown locally and MQTT publishes when broker is online.',
@@ -98,7 +98,7 @@ class GatewayStatusScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   CompactRowCard(
-                    icon: Icons.schedule,
+                    icon: Icons.schedule_rounded,
                     title: 'Last update',
                     subtitle: status.updatedAt.toLocal().toIso8601String(),
                     meta: 'Local',

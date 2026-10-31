@@ -410,6 +410,80 @@ async def test_mobile_telemetry_persists_m5_child_imu_without_breaking_rssi_or_p
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+@patch("app.services.mqtt_publish.publish_mobile_device_config_resolved_background")
+async def test_mobile_belt_fall_opens_alert_and_im_ok_resolves_it(
+    mock_publish,
+    mock_predict,
+    active_workspace,
+):
+    from app.models.activity import Alert
+    from sqlalchemy import select
+
+    mock_predict.return_value = None
+    mock_client = AsyncMock()
+    async with _SessionFactory() as session:
+        patient = Patient(workspace_id=active_workspace.id, first_name="Belt", last_name="Wearer")
+        session.add_all(
+            [
+                patient,
+                Device(
+                    device_id="MOB_FALL",
+                    workspace_id=active_workspace.id,
+                    device_type="mobile_phone",
+                    hardware_type="mobile_phone",
+                ),
+            ]
+        )
+        await session.flush()
+        session.add(
+            PatientDeviceAssignment(
+                workspace_id=active_workspace.id,
+                patient_id=patient.id,
+                device_id="MOB_FALL",
+                device_role="mobile",
+                is_active=True,
+            )
+        )
+        await session.commit()
+        patient_id = patient.id
+
+    def envelope(event: dict) -> bytes:
+        return json.dumps(
+            {
+                "device_id": "MOB_FALL",
+                "timestamp": datetime.now(UTC).isoformat(),
+                "gateway_payload": {"device_id": "BELT_1", **event},
+            }
+        ).encode()
+
+    async def fall_alerts():
+        async with _SessionFactory() as session:
+            rows = await session.execute(select(Alert).where(Alert.device_id == "BELT_1"))
+            return list(rows.scalars())
+
+    # The app's own test button stays on the phone.
+    await _handle_mobile_telemetry(
+        envelope({"event": "fall_detected", "source": "simulate"}), mock_client
+    )
+    assert await fall_alerts() == []
+
+    await _handle_mobile_telemetry(
+        envelope({"event": "fall_detected", "peak_g": 3.4}), mock_client
+    )
+    [alert] = await fall_alerts()
+    assert (alert.status, alert.severity, alert.patient_id) == ("active", "critical", patient_id)
+
+    await _handle_mobile_telemetry(
+        envelope({"event": "fall_canceled", "source": "app"}), mock_client
+    )
+    [alert] = await fall_alerts()
+    assert alert.status == "resolved"
+    assert alert.resolved_at is not None
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 async def test_handle_telemetry_auto_register_skipped_multi_workspace(active_workspace):
     async with _SessionFactory() as session:
         session.add(Workspace(name="Second WS", is_active=True))

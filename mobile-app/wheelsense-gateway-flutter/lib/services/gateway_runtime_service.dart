@@ -4,6 +4,7 @@ import '../models/gateway_config.dart';
 import '../models/gateway_runtime_snapshot.dart';
 import '../models/gateway_status.dart';
 import '../models/ble_device_snapshot.dart';
+import '../models/fall_alert_event.dart';
 import '../models/mqtt_gateway_message.dart';
 import '../models/sensor_telemetry.dart';
 import 'ble_gateway_service.dart';
@@ -40,10 +41,14 @@ class GatewayRuntimeService {
       StreamController<GatewayConfig>.broadcast();
   final StreamController<GatewayRuntimeSnapshot> _snapshotController =
       StreamController<GatewayRuntimeSnapshot>.broadcast();
+  final StreamController<FallAlertEvent> _fallAlertController =
+      StreamController<FallAlertEvent>.broadcast();
 
   StreamSubscription<String>? _m5TelemetrySubscription;
   StreamSubscription<PolarTelemetrySample>? _polarTelemetrySubscription;
   StreamSubscription<MqttGatewayMessage>? _mqttStatusSubscription;
+  StreamSubscription<FallAlertEvent>? _fallAlertSubscription;
+  StreamSubscription<bool>? _m5FallCapableSubscription;
   Timer? _polarReconnectTimer;
   Timer? _freshnessTimer;
   Future<GatewayStatus>? _resumeOperation;
@@ -51,8 +56,10 @@ class GatewayRuntimeService {
   GatewayRuntimeSnapshot _snapshot = GatewayRuntimeSnapshot.initial();
 
   static const int _historyLimit = 300;
+  static const int _fallHistoryLimit = 50;
   final List<M5TelemetrySample> _m5History = <M5TelemetrySample>[];
   final List<PolarTelemetrySample> _polarHistory = <PolarTelemetrySample>[];
+  final List<FallAlertEvent> _fallHistory = <FallAlertEvent>[];
   final Map<String, NodeTsimcamSnapshot> _detectedNodes =
       <String, NodeTsimcamSnapshot>{};
 
@@ -63,6 +70,9 @@ class GatewayRuntimeService {
   GatewayRuntimeSnapshot get snapshot => _snapshot;
   bool get isM5RelayActive => _m5TelemetrySubscription != null;
   bool get isPolarRelayActive => _polarTelemetrySubscription != null;
+  Stream<FallAlertEvent> get fallAlerts => _fallAlertController.stream;
+  List<FallAlertEvent> get fallAlertHistory =>
+      List<FallAlertEvent>.unmodifiable(_fallHistory);
 
   Future<GatewayConfig> loadConfig() async {
     final config = await _preferences.loadConfig();
@@ -160,10 +170,13 @@ class GatewayRuntimeService {
       config: config,
       requestPermissions: requestPermissions,
     );
+    final pairedM5 = await _preferences.loadPairedM5Device();
+    final pairedPolar = await _preferences.loadPairedPolarDevice();
     if (!shouldAutoStartBleRelay(
       config: config,
       status: status,
       requested: autoStartBle,
+      hasPairedDevice: pairedM5 != null || pairedPolar != null,
     )) {
       if (autoStartBle && status.bleReady && !config.setupCompleted) {
         return _emit(
@@ -174,8 +187,6 @@ class GatewayRuntimeService {
       }
       return status;
     }
-    final pairedM5 = await _preferences.loadPairedM5Device();
-    final pairedPolar = await _preferences.loadPairedPolarDevice();
     if (pairedM5 != null && _m5TelemetrySubscription == null) {
       await startM5TelemetryRelay(config, pairedM5);
     }
@@ -324,6 +335,18 @@ class GatewayRuntimeService {
         );
       },
     );
+    await _fallAlertSubscription?.cancel();
+    _fallAlertSubscription = _bleService.fallAlerts.listen(
+      _handleFallAlert,
+      onError: (_) {},
+    );
+    await _m5FallCapableSubscription?.cancel();
+    _m5FallCapableSubscription = _bleService.m5FallCapableUpdates.listen((
+      capable,
+    ) {
+      _emitSnapshot(_snapshot.copyWith(m5FallCapable: capable));
+    });
+    _emitSnapshot(_snapshot.copyWith(m5FallCapable: _bleService.m5FallCapable));
     _emit(
       _status.copyWith(
         mode: GatewayConnectionMode.connected,
@@ -457,6 +480,10 @@ class GatewayRuntimeService {
     final paired = _snapshot.pairedM5Device;
     await _m5TelemetrySubscription?.cancel();
     _m5TelemetrySubscription = null;
+    await _fallAlertSubscription?.cancel();
+    _fallAlertSubscription = null;
+    await _m5FallCapableSubscription?.cancel();
+    _m5FallCapableSubscription = null;
     if (paired != null) {
       await _bleService.disconnectM5(paired.id);
     }
@@ -467,6 +494,7 @@ class GatewayRuntimeService {
         pairedM5Device: null,
         latestM5Sample: null,
         m5History: const <M5TelemetrySample>[],
+        m5FallCapable: false,
       ),
     );
   }
@@ -475,9 +503,14 @@ class GatewayRuntimeService {
     final paired = _snapshot.pairedM5Device;
     await _m5TelemetrySubscription?.cancel();
     _m5TelemetrySubscription = null;
+    await _fallAlertSubscription?.cancel();
+    _fallAlertSubscription = null;
+    await _m5FallCapableSubscription?.cancel();
+    _m5FallCapableSubscription = null;
     if (paired != null) {
       await _bleService.disconnectM5(paired.id);
     }
+    _emitSnapshot(_snapshot.copyWith(m5FallCapable: false));
     _emit(
       _status.copyWith(
         mode: GatewayConnectionMode.idle,
@@ -522,6 +555,93 @@ class GatewayRuntimeService {
     );
   }
 
+  Future<void> cancelFallAlert(String deviceId) async {
+    try {
+      await _bleService.writeM5Command(
+        config: _snapshot.config,
+        deviceId: deviceId,
+        payload: <String, Object?>{'command': 'fall_cancel'},
+      );
+    } on Object catch (error) {
+      _emit(
+        _status.copyWith(
+          mode: GatewayConnectionMode.degraded,
+          message: 'Fall-cancel command failed: $error',
+        ),
+      );
+    }
+  }
+
+  /// The wearer tapped "I'm OK". Cancels the alarm on the belt when it is
+  /// connected (the belt then echoes `fall_canceled`); otherwise records and
+  /// publishes the cancel from the phone so the server can close the alert.
+  Future<void> confirmWearerOk(FallAlertEvent alert) async {
+    final paired = _snapshot.pairedM5Device;
+    final beltConnected =
+        paired != null &&
+        _bleService.m5FallCapable &&
+        alert.source != 'simulate';
+    if (beltConnected) {
+      try {
+        await _bleService.writeM5Command(
+          config: _snapshot.config,
+          deviceId: paired.id,
+          payload: <String, Object?>{'command': 'fall_cancel'},
+        );
+        return;
+      } on Object {
+        // Fall through: report the cancel from the phone instead.
+      }
+    }
+    _handleFallAlert(
+      FallAlertEvent(
+        kind: FallAlertKind.canceled,
+        event: 'fall_canceled',
+        deviceId: alert.deviceId,
+        timestamp: DateTime.now(),
+        source: 'app',
+        rawPayload: '',
+      ),
+    );
+  }
+
+  /// True when the paired belt is connected and exposes fall detection.
+  bool get fallBeltConnected =>
+      _snapshot.pairedM5Device != null && _bleService.m5FallCapable;
+
+  Future<void> triggerFallTest(String deviceId) async {
+    try {
+      await _bleService.writeM5Command(
+        config: _snapshot.config,
+        deviceId: deviceId,
+        payload: <String, Object?>{'command': 'fall_test'},
+      );
+    } on Object catch (error) {
+      _emit(
+        _status.copyWith(
+          mode: GatewayConnectionMode.degraded,
+          message: 'Fall-test command failed: $error',
+        ),
+      );
+    }
+  }
+
+  void simulateFallAlert() {
+    const payload =
+        '{"event":"fall_detected","device_id":"DEMO_BELT","peak_g":3.1,"source":"simulate"}';
+    _handleFallAlert(
+      FallAlertEvent(
+        kind: FallAlertKind.detected,
+        event: 'fall_detected',
+        deviceId: 'DEMO_BELT',
+        timestamp: DateTime.now(),
+        peakG: 3.1,
+        source: 'simulate',
+        rawPayload: payload,
+      ),
+    );
+  }
+
   Future<void> notifyStatus(String title, String body) {
     return _notifications.showGatewayStatus(title: title, body: body);
   }
@@ -531,6 +651,8 @@ class GatewayRuntimeService {
     await _m5TelemetrySubscription?.cancel();
     await _polarTelemetrySubscription?.cancel();
     await _mqttStatusSubscription?.cancel();
+    await _fallAlertSubscription?.cancel();
+    await _m5FallCapableSubscription?.cancel();
     _polarReconnectTimer?.cancel();
     await _ble?.dispose();
     await _mqtt?.disconnect();
@@ -538,6 +660,7 @@ class GatewayRuntimeService {
     await _configController.close();
     await _snapshotController.close();
     await _statusController.close();
+    await _fallAlertController.close();
   }
 
   void _schedulePolarReconnect() {
@@ -713,6 +836,74 @@ class GatewayRuntimeService {
     if (alert.severity == GatewayAlertSeverity.critical) {
       await notifyStatus(alert.title, alert.description);
     }
+  }
+
+  void _handleFallAlert(FallAlertEvent event) {
+    _fallHistory.add(event);
+    if (_fallHistory.length > _fallHistoryLimit) {
+      _fallHistory.removeRange(0, _fallHistory.length - _fallHistoryLimit);
+    }
+    if (!_fallAlertController.isClosed) {
+      _fallAlertController.add(event);
+    }
+    _emitSnapshot(
+      _snapshot.copyWith(
+        latestFallEvent: event,
+        fallHistory: List<FallAlertEvent>.unmodifiable(_fallHistory),
+      ),
+    );
+
+    switch (event.kind) {
+      case FallAlertKind.suspect:
+        unawaited(
+          _notifications.showFallAlert(
+            title: 'Possible fall',
+            body: 'Device started alert countdown on ${event.deviceId}.',
+            ongoing: false,
+          ),
+        );
+      case FallAlertKind.detected:
+      case FallAlertKind.test:
+        final peakG = event.peakG;
+        unawaited(
+          _notifications.showFallAlert(
+            title: event.kind == FallAlertKind.test
+                ? 'Fall detection test'
+                : 'Fall detected',
+            body:
+                'M5StickC belt ${event.deviceId} reported a fall at '
+                '${_formatAlertTime(event.timestamp)}.'
+                '${peakG == null ? '' : ' Peak acceleration ${peakG.toStringAsFixed(2)} g.'}',
+            ongoing: true,
+          ),
+        );
+        unawaited(
+          _mqttService
+              .publishTelemetry(
+                config: _snapshot.config,
+                payload: event.toJsonString(),
+              )
+              .then(_recordPublishResult),
+        );
+      case FallAlertKind.canceled:
+        unawaited(_notifications.cancelFallAlertNotification());
+        unawaited(
+          _mqttService
+              .publishTelemetry(
+                config: _snapshot.config,
+                payload: event.toJsonString(),
+              )
+              .then(_recordPublishResult),
+        );
+      // History and snapshot update above already cover unknown kinds.
+      case FallAlertKind.unknown:
+    }
+  }
+
+  String _formatAlertTime(DateTime timestamp) {
+    final local = timestamp.toLocal();
+    String two(int value) => value.toString().padLeft(2, '0');
+    return '${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
   }
 
   GatewayStatus _emit(GatewayStatus next) {

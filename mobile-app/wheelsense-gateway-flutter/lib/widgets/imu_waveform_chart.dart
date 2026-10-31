@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/sensor_telemetry.dart';
 import '../theme/app_palette.dart';
-import '../theme/app_typography.dart';
+import 'product_ui.dart';
 
 enum ImuChartMode { accel, gyro }
 
@@ -33,7 +33,6 @@ class _ImuWaveformChartState extends State<ImuWaveformChart> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     final xSpots = <FlSpot>[];
     final ySpots = <FlSpot>[];
@@ -56,79 +55,40 @@ class _ImuWaveformChartState extends State<ImuWaveformChart> {
 
     final unit = _mode == ImuChartMode.accel ? 'g' : 'dps';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppPalette.slate900 : AppPalette.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppPalette.slate800 : AppPalette.slate200,
-        ),
-      ),
+    final colors = theme.colorScheme;
+    return ProductSurface(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.show_chart_rounded,
-                    size: 20,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _mode == ImuChartMode.accel
-                          ? 'Accelerometer Stream ($unit)'
-                          : 'Gyroscope Stream ($unit)',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
+          ProductSectionHeading(
+            title: _mode == ImuChartMode.accel ? 'Accelerometer' : 'Gyroscope',
+            subtitle: dataList.isEmpty
+                ? unit
+                : '$unit  ·  seq ${dataList.last.seq}',
+            trailing: SegmentedButton<ImuChartMode>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: ImuChartMode.accel, label: Text('Accel')),
+                ButtonSegment(value: ImuChartMode.gyro, label: Text('Gyro')),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (set) {
+                setState(() => _mode = set.first);
+              },
+              style: SegmentedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
-              const SizedBox(height: 10),
-              SegmentedButton<ImuChartMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: ImuChartMode.accel,
-                    label: Text('Accel'),
-                  ),
-                  ButtonSegment(value: ImuChartMode.gyro, label: Text('Gyro')),
-                ],
-                selected: {_mode},
-                onSelectionChanged: (set) {
-                  setState(() => _mode = set.first);
-                },
-                style: SegmentedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  textStyle: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Wrap(
             spacing: 14,
             runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              _AxisLegend(label: 'X Axis', color: AppPalette.dangerBright),
-              _AxisLegend(label: 'Y Axis', color: AppPalette.successBright),
-              _AxisLegend(label: 'Z Axis', color: AppPalette.leftBright),
-              if (dataList.isNotEmpty)
-                Text(
-                  'Seq: ${dataList.last.seq}',
-                  style: AppTypography.monospaceMetrics(
-                    color: isDark ? AppPalette.slate400 : AppPalette.slate600,
-                    fontSize: 12,
-                  ),
-                ),
+            children: const [
+              _AxisLegend(label: 'X', color: AppPalette.dangerBright),
+              _AxisLegend(label: 'Y', color: AppPalette.successBright),
+              _AxisLegend(label: 'Z', color: AppPalette.leftBright),
             ],
           ),
           const SizedBox(height: 16),
@@ -147,26 +107,34 @@ class _ImuWaveformChartState extends State<ImuWaveformChart> {
                         show: true,
                         drawVerticalLine: false,
                         getDrawingHorizontalLine: (value) => FlLine(
-                          color: isDark
-                              ? AppPalette.slate800
-                              : AppPalette.slate100,
+                          color: colors.outlineVariant,
                           strokeWidth: 1,
                         ),
                       ),
-                      titlesData: const FlTitlesData(
-                        topTitles: AxisTitles(
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        rightTitles: AxisTitles(
+                        rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        bottomTitles: AxisTitles(
+                        bottomTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
+                        // Axis labels use the small caption style so they
+                        // never inherit the 16px body size and wrap.
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 34,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) => SideTitleWidget(
+                              meta: meta,
+                              child: Text(
+                                meta.formattedValue,
+                                maxLines: 1,
+                                style: theme.textTheme.labelSmall,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -216,19 +184,12 @@ class _AxisLegend extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
+        const SizedBox(width: 5),
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
       ],
     );
   }

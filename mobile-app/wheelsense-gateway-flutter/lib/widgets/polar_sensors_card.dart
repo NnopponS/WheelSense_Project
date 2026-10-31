@@ -1,9 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/sensor_telemetry.dart';
 import '../theme/app_palette.dart';
-import '../theme/app_typography.dart';
 import '../l10n/gateway_localizations.dart';
 import 'product_ui.dart';
 
@@ -19,182 +19,88 @@ class PolarSensorsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sample = this.sample;
+    final t = context.text;
     if (sample == null) {
       return ProductSurface(
-        child: Text(context.text.pick('No Polar data', 'ไม่มีข้อมูล Polar')),
+        child: Text(t.pick('No Polar data', 'ไม่มีข้อมูล Polar')),
       );
     }
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    final bpm = sample?.heartRateBpm ?? 0;
-    final rri = sample?.rrIntervalsMs.isNotEmpty == true
-        ? sample!.rrIntervalsMs.first.toStringAsFixed(1)
-        : '--';
-    final spo2 = sample?.spo2Percent != null ? '${sample!.spo2Percent}%' : '--';
-    final battery = sample?.sensorBatteryPercent != null
-        ? '${sample!.sensorBatteryPercent}%'
-        : '--';
-    final contact = sample?.contactStatus;
+    final bpm = sample.heartRateBpm;
+    final contact = sample.contactStatus;
 
-    // Build PPG waveform spots from latest sample or history
+    // PPG waveform from the latest sample, falling back to HR history.
     final ppgSpots = <FlSpot>[];
-    if (sample != null && sample!.ppgSamples.isNotEmpty) {
-      final rows = sample!.ppgSamples;
+    if (sample.ppgSamples.isNotEmpty) {
+      final rows = sample.ppgSamples;
       for (var i = 0; i < rows.length; i++) {
-        final r = rows[i];
-        if (r.isNotEmpty) {
-          ppgSpots.add(FlSpot(i.toDouble(), r[0].toDouble()));
+        if (rows[i].isNotEmpty) {
+          ppgSpots.add(FlSpot(i.toDouble(), rows[i][0].toDouble()));
         }
       }
     } else {
-      // Fallback to HR history
       for (var i = 0; i < history.length; i++) {
         ppgSpots.add(FlSpot(i.toDouble(), history[i].heartRateBpm.toDouble()));
       }
     }
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: isDark ? AppPalette.slate900 : AppPalette.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppPalette.slate800 : AppPalette.slate200,
-        ),
+    final metrics = [
+      ProductStat(
+        label: t.pick('Heart rate', 'ชีพจร'),
+        value: bpm > 0 ? '$bpm' : '--',
+        unit: 'bpm',
       ),
+      ProductStat(
+        label: 'R-R / PPI',
+        value: sample.rrIntervalsMs.isNotEmpty
+            ? sample.rrIntervalsMs.first.toStringAsFixed(0)
+            : '--',
+        unit: 'ms',
+      ),
+      ProductStat(
+        label: 'SpO₂',
+        value: sample.spo2Percent?.toString() ?? '--',
+        unit: '%',
+        note: t.pick('Experimental', 'ค่าทดลอง'),
+      ),
+      ProductStat(
+        label: t.pick('Battery', 'แบตเตอรี่'),
+        value: sample.sensorBatteryPercent?.toString() ?? '--',
+        unit: '%',
+      ),
+    ];
+
+    return ProductSurface(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Polar · ${sample!.timestamp.toLocal()}',
-            style: theme.textTheme.labelSmall,
+          ProductSectionHeading(
+            title: 'Polar Verity Sense',
+            subtitle: DateFormat.Hms().format(sample.timestamp.toLocal()),
+            trailing: ProductStatusPill(
+              compact: true,
+              positive: contact == true,
+              label: contact == true
+                  ? t.pick('Skin contact', 'สัมผัสผิว')
+                  : contact == false
+                  ? t.pick('No contact', 'ไม่สัมผัสผิว')
+                  : t.pick('Contact unknown', 'ไม่ทราบการสัมผัส'),
+            ),
           ),
-          Text(
-            context.text.pick('SpO₂ · Experimental', 'SpO₂ · ค่าทดลอง'),
-            style: theme.textTheme.bodyMedium,
-          ),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppPalette.polarHeart.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  size: 20,
-                  color: AppPalette.polarHeart,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Polar Verity Sense Studio',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: contact == true
-                      ? AppPalette.success.withValues(alpha: 0.15)
-                      : contact == false
-                      ? AppPalette.danger.withValues(alpha: 0.15)
-                      : AppPalette.warning.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      contact == true
-                          ? Icons.check_circle_rounded
-                          : contact == false
-                          ? Icons.warning_rounded
-                          : Icons.help_outline_rounded,
-                      size: 14,
-                      color: contact == true
-                          ? AppPalette.successBright
-                          : contact == false
-                          ? AppPalette.dangerBright
-                          : AppPalette.warningBright,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      contact == true
-                          ? 'Skin Contact OK'
-                          : contact == false
-                          ? 'No Skin Contact'
-                          : 'Contact unknown',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: contact == true
-                            ? AppPalette.successBright
-                            : contact == false
-                            ? AppPalette.dangerBright
-                            : AppPalette.warningBright,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
-              const gap = 8.0;
-              final columns = constraints.maxWidth >= 560 ? 4 : 2;
+              const gap = 16.0;
+              final columns = constraints.maxWidth >= 520 ? 4 : 2;
               final width =
-                  (constraints.maxWidth - gap * (columns - 1)) / columns;
-              final metrics = [
-                _VitalPill(
-                  label: 'HEART RATE',
-                  value: bpm > 0 ? '$bpm' : '--',
-                  unit: 'BPM',
-                  icon: Icons.monitor_heart_rounded,
-                  color: AppPalette.polarHeartBright,
-                  isDark: isDark,
-                ),
-                _VitalPill(
-                  label: 'R-R / PPI',
-                  value: rri,
-                  unit: 'ms',
-                  icon: Icons.graphic_eq_rounded,
-                  color: AppPalette.polarPpgBright,
-                  isDark: isDark,
-                ),
-                _VitalPill(
-                  label: 'SpO2 (PPG)',
-                  value: spo2,
-                  unit: 'est.',
-                  icon: Icons.water_drop_rounded,
-                  color: AppPalette.infoBright,
-                  isDark: isDark,
-                ),
-                _VitalPill(
-                  label: 'BATTERY',
-                  value: battery,
-                  unit: '',
-                  icon: Icons.battery_charging_full_rounded,
-                  color: AppPalette.successBright,
-                  isDark: isDark,
-                ),
-              ];
+                  ((constraints.maxWidth - gap * (columns - 1)) / columns)
+                      .clamp(0.0, double.infinity);
               return Wrap(
                 spacing: gap,
-                runSpacing: gap,
+                runSpacing: 18,
                 children: [
                   for (final metric in metrics)
                     SizedBox(width: width, child: metric),
@@ -202,103 +108,21 @@ class PolarSensorsCard extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 16),
-          // 3D Motion Streams from Polar Verity Sense
-          if (sample?.accelXMg != null || sample?.gyroXDps != null) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark ? AppPalette.slate850 : AppPalette.slate50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? AppPalette.slate800 : AppPalette.slate200,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.screen_rotation_rounded,
-                        size: 16,
-                        color: AppPalette.brand,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Polar 3D Motion (ACC & GYRO & MAG)',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? AppPalette.slate200
-                                : AppPalette.slate800,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      const gap = 12.0;
-                      final width = (constraints.maxWidth - gap * 2) / 3;
-                      final streams = [
-                        _MotionStreamItem(
-                          title: 'ACC (mg)',
-                          x: sample?.accelXMg?.toDouble() ?? 0,
-                          y: sample?.accelYMg?.toDouble() ?? 0,
-                          z: sample?.accelZMg?.toDouble() ?? 0,
-                          isDark: isDark,
-                        ),
-                        _MotionStreamItem(
-                          title: 'GYRO (dps)',
-                          x: sample?.gyroXDps ?? 0,
-                          y: sample?.gyroYDps ?? 0,
-                          z: sample?.gyroZDps ?? 0,
-                          isDark: isDark,
-                        ),
-                        _MotionStreamItem(
-                          title: 'MAG (G)',
-                          x: sample?.magXGauss ?? 0,
-                          y: sample?.magYGauss ?? 0,
-                          z: sample?.magZGauss ?? 0,
-                          isDark: isDark,
-                        ),
-                      ];
-                      return Wrap(
-                        spacing: gap,
-                        children: [
-                          for (final stream in streams)
-                            SizedBox(width: width, child: stream),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-          ],
-          // Optical PPG / HR Waveform Chart
+          const SizedBox(height: 24),
           Text(
-            'Optical Pulse Waveform (PPG / HR Live)',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppPalette.slate400 : AppPalette.slate600,
-            ),
+            t.pick('Pulse waveform', 'คลื่นชีพจร'),
+            style: theme.textTheme.labelMedium,
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 100,
+            height: 96,
             child: ppgSpots.isEmpty
                 ? Center(
                     child: Text(
-                      'Waiting for optical sensor data...',
+                      t.pick(
+                        'Waiting for optical sensor data…',
+                        'กำลังรอข้อมูลเซนเซอร์ออปติคัล…',
+                      ),
                       style: theme.textTheme.bodyMedium,
                     ),
                   )
@@ -311,12 +135,14 @@ class PolarSensorsCard extends StatelessWidget {
                         LineChartBarData(
                           spots: ppgSpots,
                           isCurved: true,
-                          color: AppPalette.polarHeartBright,
+                          color: AppPalette.polarHeart,
                           barWidth: 2,
                           dotData: const FlDotData(show: false),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: AppPalette.polarHeart.withValues(alpha: 0.1),
+                            color: AppPalette.polarHeart.withValues(
+                              alpha: 0.08,
+                            ),
                           ),
                         ),
                       ],
@@ -324,86 +150,45 @@ class PolarSensorsCard extends StatelessWidget {
                     duration: Duration.zero,
                   ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VitalPill extends StatelessWidget {
-  const _VitalPill({
-    required this.label,
-    required this.value,
-    required this.unit,
-    required this.icon,
-    required this.color,
-    required this.isDark,
-  });
-
-  final String label;
-  final String value;
-  final String unit;
-  final IconData icon;
-  final Color color;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: BoxDecoration(
-        color: isDark ? AppPalette.slate850 : AppPalette.slate50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isDark ? AppPalette.slate800 : AppPalette.slate200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 13, color: color),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppPalette.slate400 : AppPalette.slate500,
-                    letterSpacing: 0.3,
+          if (sample.accelXMg != null || sample.gyroXDps != null) ...[
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 16),
+            Text(
+              t.pick('3D motion', 'การเคลื่อนไหว 3 มิติ'),
+              style: theme.textTheme.labelMedium,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _MotionStreamItem(
+                    title: 'ACC mg',
+                    x: sample.accelXMg?.toDouble() ?? 0,
+                    y: sample.accelYMg?.toDouble() ?? 0,
+                    z: sample.accelZMg?.toDouble() ?? 0,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 2,
-            children: [
-              Text(
-                value,
-                style: AppTypography.monospaceMetrics(
-                  color: isDark ? AppPalette.white : AppPalette.slate900,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                Expanded(
+                  child: _MotionStreamItem(
+                    title: 'GYRO dps',
+                    x: sample.gyroXDps ?? 0,
+                    y: sample.gyroYDps ?? 0,
+                    z: sample.gyroZDps ?? 0,
+                  ),
                 ),
-              ),
-              if (unit.isNotEmpty) ...[
-                Text(
-                  unit,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                Expanded(
+                  child: _MotionStreamItem(
+                    title: 'MAG G',
+                    x: sample.magXGauss ?? 0,
+                    y: sample.magYGauss ?? 0,
+                    z: sample.magZGauss ?? 0,
                   ),
                 ),
               ],
-            ],
-          ),
+            ),
+          ],
         ],
       ),
     );
@@ -416,51 +201,40 @@ class _MotionStreamItem extends StatelessWidget {
     required this.x,
     required this.y,
     required this.z,
-    required this.isDark,
   });
 
   final String title;
   final double x, y, z;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final value = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurface,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    Widget axis(String name, double v, Color color) => Row(
+      children: [
+        Text(name, style: value?.copyWith(color: color)),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            v.toStringAsFixed(1),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: value,
+          ),
+        ),
+      ],
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppPalette.slate400 : AppPalette.slate500,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          'X: ${x.toStringAsFixed(1)}',
-          style: TextStyle(
-            fontSize: 10,
-            color: AppPalette.dangerBright,
-            fontFamily: 'monospace',
-          ),
-        ),
-        Text(
-          'Y: ${y.toStringAsFixed(1)}',
-          style: TextStyle(
-            fontSize: 10,
-            color: AppPalette.successBright,
-            fontFamily: 'monospace',
-          ),
-        ),
-        Text(
-          'Z: ${z.toStringAsFixed(1)}',
-          style: TextStyle(
-            fontSize: 10,
-            color: AppPalette.leftBright,
-            fontFamily: 'monospace',
-          ),
-        ),
+        Text(title, style: theme.textTheme.labelSmall),
+        const SizedBox(height: 4),
+        axis('X', x, AppPalette.dangerBright),
+        axis('Y', y, AppPalette.successBright),
+        axis('Z', z, AppPalette.leftBright),
       ],
     );
   }

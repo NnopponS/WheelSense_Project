@@ -307,9 +307,9 @@ SeverityPalette severityColors(ClinicalSeverity severity) {
       border: Color(0xFFD6C7FF),
     ),
     ClinicalSeverity.normal => const SeverityPalette(
-      foreground: WheelSenseColors.success,
-      background: Color(0xFFE8F7EE),
-      border: Color(0xFFB8E3C8),
+      foreground: Color(0xFF1769E0),
+      background: Color(0xFFEAF2FF),
+      border: Color(0xFFC7DBFF),
     ),
   };
 }
