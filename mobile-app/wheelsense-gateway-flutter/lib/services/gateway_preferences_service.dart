@@ -15,6 +15,9 @@ class GatewayPreferencesService {
 
   static const String _configKey = 'wheelsense.gateway.config.v1';
   static const String _pairedM5Key = 'wheelsense.gateway.paired_m5.v1';
+  static const String _pairedM5BeltKey = 'wheelsense.gateway.paired_m5_belt.v1';
+  static const String _pairedM5WheelchairKey =
+      'wheelsense.gateway.paired_m5_wheelchair.v1';
   static const String _pairedPolarKey = 'wheelsense.gateway.paired_polar.v1';
   static const String _passwordKey = 'wheelsense.gateway.mqtt_password.v1';
   final FlutterSecureStorage _storage;
@@ -71,10 +74,50 @@ class GatewayPreferencesService {
     await _storage.delete(key: _passwordKey);
   }
 
+  static const List<String> _m5FallbackServices = <String>[
+    BleDeviceSnapshot.wheelSenseM5ServiceUuid,
+  ];
+
   Future<BleDeviceSnapshot?> loadPairedM5Device() {
-    return _loadPairedDevice(_pairedM5Key, const <String>[
-      BleDeviceSnapshot.wheelSenseM5ServiceUuid,
-    ]);
+    return loadPairedM5BeltDevice();
+  }
+
+  /// Belt slot. Migrates a device stored under the pre-slot legacy key so
+  /// existing installs keep their pairing as the belt.
+  Future<BleDeviceSnapshot?> loadPairedM5BeltDevice() async {
+    final slot = await _loadPairedDevice(_pairedM5BeltKey, _m5FallbackServices);
+    if (slot != null) {
+      return slot;
+    }
+    final legacy = await _loadPairedDevice(_pairedM5Key, _m5FallbackServices);
+    if (legacy == null) {
+      return null;
+    }
+    await savePairedM5BeltDevice(legacy);
+    final prefs = await _prefs;
+    await prefs.remove(_pairedM5Key);
+    return legacy;
+  }
+
+  Future<BleDeviceSnapshot?> loadPairedM5WheelchairDevice() {
+    return _loadPairedDevice(_pairedM5WheelchairKey, _m5FallbackServices);
+  }
+
+  Future<Map<M5DeviceSlot, BleDeviceSnapshot>> loadPairedM5DevicesBySlot() async {
+    final map = <M5DeviceSlot, BleDeviceSnapshot>{};
+    final belt = await loadPairedM5BeltDevice();
+    if (belt != null) {
+      map[M5DeviceSlot.belt] = belt;
+    }
+    final wheelchair = await loadPairedM5WheelchairDevice();
+    if (wheelchair != null) {
+      map[M5DeviceSlot.wheelchair] = wheelchair;
+    }
+    return map;
+  }
+
+  Future<List<BleDeviceSnapshot>> loadPairedM5Devices() async {
+    return (await loadPairedM5DevicesBySlot()).values.toList();
   }
 
   Future<BleDeviceSnapshot?> loadPairedPolarDevice() {
@@ -84,9 +127,19 @@ class GatewayPreferencesService {
   }
 
   Future<void> savePairedM5Device(BleDeviceSnapshot device) {
-    return _savePairedDevice(_pairedM5Key, device, const <String>[
-      BleDeviceSnapshot.wheelSenseM5ServiceUuid,
-    ]);
+    return savePairedM5BeltDevice(device);
+  }
+
+  Future<void> savePairedM5BeltDevice(BleDeviceSnapshot device) {
+    return _savePairedDevice(_pairedM5BeltKey, device, _m5FallbackServices);
+  }
+
+  Future<void> savePairedM5WheelchairDevice(BleDeviceSnapshot device) {
+    return _savePairedDevice(
+      _pairedM5WheelchairKey,
+      device,
+      _m5FallbackServices,
+    );
   }
 
   Future<void> savePairedPolarDevice(BleDeviceSnapshot device) {
@@ -98,6 +151,33 @@ class GatewayPreferencesService {
   Future<void> clearPairedM5Device() async {
     final prefs = await _prefs;
     await prefs.remove(_pairedM5Key);
+    await prefs.remove(_pairedM5BeltKey);
+    await prefs.remove(_pairedM5WheelchairKey);
+  }
+
+  Future<void> clearPairedM5BeltDevice() async {
+    final prefs = await _prefs;
+    await prefs.remove(_pairedM5BeltKey);
+  }
+
+  Future<void> clearPairedM5WheelchairDevice() async {
+    final prefs = await _prefs;
+    await prefs.remove(_pairedM5WheelchairKey);
+  }
+
+  /// Clears whichever slot currently holds [deviceId] (and the legacy key).
+  Future<void> removePairedM5Device(String deviceId) async {
+    if ((await loadPairedM5BeltDevice())?.id == deviceId) {
+      await clearPairedM5BeltDevice();
+    }
+    if ((await loadPairedM5WheelchairDevice())?.id == deviceId) {
+      await clearPairedM5WheelchairDevice();
+    }
+    if ((await _loadPairedDevice(_pairedM5Key, _m5FallbackServices))?.id ==
+        deviceId) {
+      final prefs = await _prefs;
+      await prefs.remove(_pairedM5Key);
+    }
   }
 
   Future<void> clearPairedPolarDevice() async {

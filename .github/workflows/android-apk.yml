@@ -1,0 +1,38 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/AI-for-All-multi-m5]
+    paths:
+      - .github/workflows/android-apk.yml
+      - mobile-app/wheelsense-gateway-flutter/**
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app/wheelsense-gateway-flutter
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheelsense-gateway-apk
+          path: mobile-app/wheelsense-gateway-flutter/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

@@ -203,9 +203,12 @@ class GatewayRuntimeSnapshot {
   const GatewayRuntimeSnapshot({
     required this.config,
     required this.status,
-    this.pairedM5Device,
+    this.pairedBeltM5Device,
+    this.pairedWheelchairM5Device,
     this.pairedPolarDevice,
     this.latestM5Sample,
+    this.latestM5SampleByDeviceId = const <String, M5TelemetrySample>{},
+    this.m5ConnectedDeviceIds = const <String>{},
     this.latestPolarSample,
     this.latestRoomPrediction,
     this.latestFallEvent,
@@ -229,9 +232,16 @@ class GatewayRuntimeSnapshot {
 
   final GatewayConfig config;
   final GatewayStatus status;
-  final BleDeviceSnapshot? pairedM5Device;
+  final BleDeviceSnapshot? pairedBeltM5Device;
+  final BleDeviceSnapshot? pairedWheelchairM5Device;
   final BleDeviceSnapshot? pairedPolarDevice;
   final M5TelemetrySample? latestM5Sample;
+
+  /// Latest sample per connected M5, keyed by the paired BLE device id.
+  final Map<String, M5TelemetrySample> latestM5SampleByDeviceId;
+
+  /// BLE ids of M5 devices with an active telemetry relay.
+  final Set<String> m5ConnectedDeviceIds;
   final PolarTelemetrySample? latestPolarSample;
   final RoomPredictionEvent? latestRoomPrediction;
   final FallAlertEvent? latestFallEvent;
@@ -245,6 +255,18 @@ class GatewayRuntimeSnapshot {
   final int failedPublishCount;
   final TelemetryPublishResult? lastPublishFailure;
 
+  /// Every paired M5 regardless of slot (belt first for legacy readers).
+  List<BleDeviceSnapshot> get pairedM5Devices =>
+      <BleDeviceSnapshot>[
+        if (pairedBeltM5Device != null) pairedBeltM5Device!,
+        if (pairedWheelchairM5Device != null) pairedWheelchairM5Device!,
+      ];
+
+  /// The single paired M5 when only one exists; belt wins when both are
+  /// paired (kept for call sites written before the second slot existed).
+  BleDeviceSnapshot? get pairedM5Device =>
+      pairedBeltM5Device ?? pairedWheelchairM5Device;
+
   bool get setupReady {
     return config.setupCompleted &&
         status.bleReady &&
@@ -255,9 +277,12 @@ class GatewayRuntimeSnapshot {
   GatewayRuntimeSnapshot copyWith({
     GatewayConfig? config,
     GatewayStatus? status,
-    Object? pairedM5Device = _snapshotUnset,
+    Object? pairedBeltM5Device = _snapshotUnset,
+    Object? pairedWheelchairM5Device = _snapshotUnset,
     Object? pairedPolarDevice = _snapshotUnset,
     Object? latestM5Sample = _snapshotUnset,
+    Map<String, M5TelemetrySample>? latestM5SampleByDeviceId,
+    Set<String>? m5ConnectedDeviceIds,
     Object? latestPolarSample = _snapshotUnset,
     RoomPredictionEvent? latestRoomPrediction,
     Object? latestFallEvent = _snapshotUnset,
@@ -274,15 +299,24 @@ class GatewayRuntimeSnapshot {
     return GatewayRuntimeSnapshot(
       config: config ?? this.config,
       status: status ?? this.status,
-      pairedM5Device: identical(pairedM5Device, _snapshotUnset)
-          ? this.pairedM5Device
-          : pairedM5Device as BleDeviceSnapshot?,
+      pairedBeltM5Device: identical(pairedBeltM5Device, _snapshotUnset)
+          ? this.pairedBeltM5Device
+          : pairedBeltM5Device as BleDeviceSnapshot?,
+      pairedWheelchairM5Device: identical(
+        pairedWheelchairM5Device,
+        _snapshotUnset,
+      )
+          ? this.pairedWheelchairM5Device
+          : pairedWheelchairM5Device as BleDeviceSnapshot?,
       pairedPolarDevice: identical(pairedPolarDevice, _snapshotUnset)
           ? this.pairedPolarDevice
           : pairedPolarDevice as BleDeviceSnapshot?,
       latestM5Sample: identical(latestM5Sample, _snapshotUnset)
           ? this.latestM5Sample
           : latestM5Sample as M5TelemetrySample?,
+      latestM5SampleByDeviceId:
+          latestM5SampleByDeviceId ?? this.latestM5SampleByDeviceId,
+      m5ConnectedDeviceIds: m5ConnectedDeviceIds ?? this.m5ConnectedDeviceIds,
       latestPolarSample: identical(latestPolarSample, _snapshotUnset)
           ? this.latestPolarSample
           : latestPolarSample as PolarTelemetrySample?,

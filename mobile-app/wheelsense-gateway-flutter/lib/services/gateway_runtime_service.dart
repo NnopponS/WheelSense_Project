@@ -44,7 +44,8 @@ class GatewayRuntimeService {
   final StreamController<FallAlertEvent> _fallAlertController =
       StreamController<FallAlertEvent>.broadcast();
 
-  StreamSubscription<String>? _m5TelemetrySubscription;
+  final Map<String, StreamSubscription<String>> _m5TelemetrySubscriptions =
+      <String, StreamSubscription<String>>{};
   StreamSubscription<PolarTelemetrySample>? _polarTelemetrySubscription;
   StreamSubscription<MqttGatewayMessage>? _mqttStatusSubscription;
   StreamSubscription<FallAlertEvent>? _fallAlertSubscription;
@@ -68,7 +69,11 @@ class GatewayRuntimeService {
   Stream<GatewayRuntimeSnapshot> get snapshots => _snapshotController.stream;
   GatewayStatus get status => _status;
   GatewayRuntimeSnapshot get snapshot => _snapshot;
-  bool get isM5RelayActive => _m5TelemetrySubscription != null;
+  bool get isM5RelayActive => _m5TelemetrySubscriptions.isNotEmpty;
+  bool isM5RelayActiveFor(String deviceId) =>
+      _m5TelemetrySubscriptions.containsKey(deviceId);
+  bool isM5FallCapableFor(String deviceId) =>
+      _bleService.isM5FallCapableFor(deviceId);
   bool get isPolarRelayActive => _polarTelemetrySubscription != null;
   Stream<FallAlertEvent> get fallAlerts => _fallAlertController.stream;
   List<FallAlertEvent> get fallAlertHistory =>
@@ -170,13 +175,14 @@ class GatewayRuntimeService {
       config: config,
       requestPermissions: requestPermissions,
     );
-    final pairedM5 = await _preferences.loadPairedM5Device();
+    final pairedM5BySlot = await _preferences.loadPairedM5DevicesBySlot();
     final pairedPolar = await _preferences.loadPairedPolarDevice();
     if (!shouldAutoStartBleRelay(
       config: config,
       status: status,
       requested: autoStartBle,
-      hasPairedDevice: pairedM5 != null || pairedPolar != null,
+      hasPairedDevice:
+          pairedM5BySlot.isNotEmpty || pairedPolar != null,
     )) {
       if (autoStartBle && status.bleReady && !config.setupCompleted) {
         return _emit(
@@ -187,8 +193,10 @@ class GatewayRuntimeService {
       }
       return status;
     }
-    if (pairedM5 != null && _m5TelemetrySubscription == null) {
-      await startM5TelemetryRelay(config, pairedM5);
+    for (final entry in pairedM5BySlot.entries) {
+      if (!isM5RelayActiveFor(entry.value.id)) {
+        await startM5TelemetryRelay(config, entry.value, slot: entry.key);
+      }
     }
     if (pairedPolar != null && _polarTelemetrySubscription == null) {
       await startPolarTelemetryRelay(config, pairedPolar);
@@ -248,6 +256,10 @@ class GatewayRuntimeService {
     return _preferences.loadPairedM5Device();
   }
 
+  Future<Map<M5DeviceSlot, BleDeviceSnapshot>> loadPairedM5DevicesBySlot() {
+    return _preferences.loadPairedM5DevicesBySlot();
+  }
+
   Future<BleDeviceSnapshot?> loadPairedPolarDevice() {
     return _preferences.loadPairedPolarDevice();
   }
@@ -294,14 +306,29 @@ class GatewayRuntimeService {
     );
   }
 
+  /// Starts (or restarts) the BLE→MQTT relay for one M5. Belt and
+  /// wheelchair slots each hold an independent connection, so both can
+  /// stream at the same time. The backend maps each device to its
+  /// canonical fleet id from the hardware ids in the registration packet.
   Future<Stream<String>> startM5TelemetryRelay(
     GatewayConfig config,
-    BleDeviceSnapshot device,
-  ) async {
-    await _preferences.savePairedM5Device(device);
-    _emitSnapshot(_snapshot.copyWith(pairedM5Device: device));
+    BleDeviceSnapshot device, {
+    M5DeviceSlot slot = M5DeviceSlot.belt,
+  }) async {
+    await _savePairedM5ToSlot(slot, device);
+    _emitSnapshot(
+      _snapshot.copyWith(
+        pairedBeltM5Device: slot == M5DeviceSlot.belt
+            ? device
+            : _clearSlotIfMatches(_snapshot.pairedBeltM5Device, device.id),
+        pairedWheelchairM5Device: slot == M5DeviceSlot.wheelchair
+            ? device
+            : _clearSlotIfMatches(_snapshot.pairedWheelchairM5Device, device.id),
+      ),
+    );
     await _ensureMqtt(config);
-    await _m5TelemetrySubscription?.cancel();
+    await _m5TelemetrySubscriptions[device.id]?.cancel();
+    _m5TelemetrySubscriptions.remove(device.id);
     unawaited(
       _mqttService.publishRegistration(
         config: config,
@@ -317,9 +344,9 @@ class GatewayRuntimeService {
     final stream = _bleService
         .connectM5Telemetry(config: config, deviceId: device.id)
         .asBroadcastStream();
-    _m5TelemetrySubscription = stream.listen(
+    _m5TelemetrySubscriptions[device.id] = stream.listen(
       (payload) async {
-        _recordM5Payload(payload);
+        _recordM5Payload(payload, deviceId: device.id);
         final result = await _mqttService.publishTelemetry(
           config: _snapshot.config,
           payload: payload,
@@ -327,6 +354,13 @@ class GatewayRuntimeService {
         _recordPublishResult(result);
       },
       onError: (Object error) {
+        _m5TelemetrySubscriptions.remove(device.id);
+        _emitSnapshot(
+          _snapshot.copyWith(
+            m5ConnectedDeviceIds: {..._snapshot.m5ConnectedDeviceIds}
+              ..remove(device.id),
+          ),
+        );
         _emit(
           _status.copyWith(
             mode: GatewayConnectionMode.error,
@@ -335,13 +369,18 @@ class GatewayRuntimeService {
         );
       },
     );
-    await _fallAlertSubscription?.cancel();
-    _fallAlertSubscription = _bleService.fallAlerts.listen(
+    _emitSnapshot(
+      _snapshot.copyWith(
+        m5ConnectedDeviceIds: {..._snapshot.m5ConnectedDeviceIds, device.id},
+      ),
+    );
+    // One shared listener feeds every connected M5's fall events; each
+    // event carries the deviceId it came from.
+    _fallAlertSubscription ??= _bleService.fallAlerts.listen(
       _handleFallAlert,
       onError: (_) {},
     );
-    await _m5FallCapableSubscription?.cancel();
-    _m5FallCapableSubscription = _bleService.m5FallCapableUpdates.listen((
+    _m5FallCapableSubscription ??= _bleService.m5FallCapableUpdates.listen((
       capable,
     ) {
       _emitSnapshot(_snapshot.copyWith(m5FallCapable: capable));
@@ -355,6 +394,41 @@ class GatewayRuntimeService {
       ),
     );
     return stream;
+  }
+
+  BleDeviceSnapshot? _clearSlotIfMatches(
+    BleDeviceSnapshot? device,
+    String deviceId,
+  ) {
+    return device?.id == deviceId ? null : device;
+  }
+
+  Future<void> _savePairedM5ToSlot(
+    M5DeviceSlot slot,
+    BleDeviceSnapshot device,
+  ) async {
+    if (slot == M5DeviceSlot.belt) {
+      await _preferences.savePairedM5BeltDevice(device);
+      if ((await _preferences.loadPairedM5WheelchairDevice())?.id ==
+          device.id) {
+        await _preferences.clearPairedM5WheelchairDevice();
+      }
+      return;
+    }
+    await _preferences.savePairedM5WheelchairDevice(device);
+    if ((await _preferences.loadPairedM5BeltDevice())?.id == device.id) {
+      await _preferences.clearPairedM5BeltDevice();
+    }
+  }
+
+  M5DeviceSlot? _slotOf(String deviceId) {
+    if (_snapshot.pairedBeltM5Device?.id == deviceId) {
+      return M5DeviceSlot.belt;
+    }
+    if (_snapshot.pairedWheelchairM5Device?.id == deviceId) {
+      return M5DeviceSlot.wheelchair;
+    }
+    return null;
   }
 
   Future<Stream<PolarTelemetrySample>> startPolarTelemetryRelay(
@@ -427,8 +501,22 @@ class GatewayRuntimeService {
     required String name,
   }) async {
     final renamed = device.copyWith(name: name);
-    await _preferences.savePairedM5Device(renamed);
-    _emitSnapshot(_snapshot.copyWith(pairedM5Device: renamed));
+    final slot = _slotOf(device.id) ?? M5DeviceSlot.belt;
+    if (slot == M5DeviceSlot.belt) {
+      await _preferences.savePairedM5BeltDevice(renamed);
+    } else {
+      await _preferences.savePairedM5WheelchairDevice(renamed);
+    }
+    _emitSnapshot(
+      _snapshot.copyWith(
+        pairedBeltM5Device: slot == M5DeviceSlot.belt
+            ? renamed
+            : _snapshot.pairedBeltM5Device,
+        pairedWheelchairM5Device: slot == M5DeviceSlot.wheelchair
+            ? renamed
+            : _snapshot.pairedWheelchairM5Device,
+      ),
+    );
     try {
       await _bleService.writeM5RoomConfig(
         config: config,
@@ -476,47 +564,93 @@ class GatewayRuntimeService {
     );
   }
 
-  Future<void> forgetM5Device() async {
-    final paired = _snapshot.pairedM5Device;
-    await _m5TelemetrySubscription?.cancel();
-    _m5TelemetrySubscription = null;
-    await _fallAlertSubscription?.cancel();
-    _fallAlertSubscription = null;
-    await _m5FallCapableSubscription?.cancel();
-    _m5FallCapableSubscription = null;
-    if (paired != null) {
-      await _bleService.disconnectM5(paired.id);
+  /// Forgets one M5 when [deviceId] is given, or every paired M5 when it is
+  /// null (the legacy single-device behavior).
+  Future<void> forgetM5Device([String? deviceId]) async {
+    if (deviceId == null) {
+      for (final id in _m5TelemetrySubscriptions.keys.toList()) {
+        await _m5TelemetrySubscriptions[id]?.cancel();
+      }
+      _m5TelemetrySubscriptions.clear();
+      for (final device in _snapshot.pairedM5Devices) {
+        await _bleService.disconnectM5(device.id);
+      }
+      await _preferences.clearPairedM5Device();
+      await _teardownSharedM5ListenersIfIdle();
+      _m5History.clear();
+      _emitSnapshot(
+        _snapshot.copyWith(
+          pairedBeltM5Device: null,
+          pairedWheelchairM5Device: null,
+          latestM5Sample: null,
+          latestM5SampleByDeviceId: const <String, M5TelemetrySample>{},
+          m5ConnectedDeviceIds: const <String>{},
+          m5History: const <M5TelemetrySample>[],
+          m5FallCapable: false,
+        ),
+      );
+      return;
     }
-    await _preferences.clearPairedM5Device();
-    _m5History.clear();
+    await _m5TelemetrySubscriptions[deviceId]?.cancel();
+    _m5TelemetrySubscriptions.remove(deviceId);
+    await _bleService.disconnectM5(deviceId);
+    await _preferences.removePairedM5Device(deviceId);
+    final latestByDevice = {..._snapshot.latestM5SampleByDeviceId}
+      ..remove(deviceId);
     _emitSnapshot(
       _snapshot.copyWith(
-        pairedM5Device: null,
-        latestM5Sample: null,
-        m5History: const <M5TelemetrySample>[],
-        m5FallCapable: false,
+        pairedBeltM5Device: _clearSlotIfMatches(
+          _snapshot.pairedBeltM5Device,
+          deviceId,
+        ),
+        pairedWheelchairM5Device: _clearSlotIfMatches(
+          _snapshot.pairedWheelchairM5Device,
+          deviceId,
+        ),
+        latestM5SampleByDeviceId: latestByDevice,
+        m5ConnectedDeviceIds: {..._snapshot.m5ConnectedDeviceIds}
+          ..remove(deviceId),
+        m5FallCapable: _bleService.m5FallCapable,
       ),
     );
+    await _teardownSharedM5ListenersIfIdle();
   }
 
-  Future<void> disconnectM5Device() async {
-    final paired = _snapshot.pairedM5Device;
-    await _m5TelemetrySubscription?.cancel();
-    _m5TelemetrySubscription = null;
-    await _fallAlertSubscription?.cancel();
-    _fallAlertSubscription = null;
-    await _m5FallCapableSubscription?.cancel();
-    _m5FallCapableSubscription = null;
-    if (paired != null) {
-      await _bleService.disconnectM5(paired.id);
+  /// Disconnects one M5's relay when [deviceId] is given, or every active
+  /// M5 relay when it is null.
+  Future<void> disconnectM5Device([String? deviceId]) async {
+    final ids = deviceId == null
+        ? _m5TelemetrySubscriptions.keys.toList()
+        : <String>[deviceId];
+    for (final id in ids) {
+      await _m5TelemetrySubscriptions[id]?.cancel();
+      _m5TelemetrySubscriptions.remove(id);
+      await _bleService.disconnectM5(id);
     }
-    _emitSnapshot(_snapshot.copyWith(m5FallCapable: false));
+    await _teardownSharedM5ListenersIfIdle();
+    _emitSnapshot(
+      _snapshot.copyWith(
+        m5ConnectedDeviceIds: {..._snapshot.m5ConnectedDeviceIds}
+          ..removeAll(ids),
+        m5FallCapable: _bleService.m5FallCapable,
+      ),
+    );
     _emit(
       _status.copyWith(
         mode: GatewayConnectionMode.idle,
         message: 'Wheelchair sensor disconnected',
       ),
     );
+  }
+
+  Future<void> _teardownSharedM5ListenersIfIdle() async {
+    if (_m5TelemetrySubscriptions.isNotEmpty) {
+      return;
+    }
+    await _fallAlertSubscription?.cancel();
+    _fallAlertSubscription = null;
+    await _m5FallCapableSubscription?.cancel();
+    _m5FallCapableSubscription = null;
   }
 
   Future<void> forgetPolarDevice() async {
@@ -576,16 +710,19 @@ class GatewayRuntimeService {
   /// connected (the belt then echoes `fall_canceled`); otherwise records and
   /// publishes the cancel from the phone so the server can close the alert.
   Future<void> confirmWearerOk(FallAlertEvent alert) async {
-    final paired = _snapshot.pairedM5Device;
-    final beltConnected =
-        paired != null &&
+    final alertDevicePaired = _snapshot.pairedM5Devices.any(
+      (device) => device.id == alert.deviceId,
+    );
+    final deviceConnected =
+        alertDevicePaired &&
+        _m5TelemetrySubscriptions.containsKey(alert.deviceId) &&
         _bleService.m5FallCapable &&
         alert.source != 'simulate';
-    if (beltConnected) {
+    if (deviceConnected) {
       try {
         await _bleService.writeM5Command(
           config: _snapshot.config,
-          deviceId: paired.id,
+          deviceId: alert.deviceId,
           payload: <String, Object?>{'command': 'fall_cancel'},
         );
         return;
@@ -648,7 +785,10 @@ class GatewayRuntimeService {
 
   Future<void> dispose() async {
     _freshnessTimer?.cancel();
-    await _m5TelemetrySubscription?.cancel();
+    for (final subscription in _m5TelemetrySubscriptions.values) {
+      await subscription.cancel();
+    }
+    _m5TelemetrySubscriptions.clear();
     await _polarTelemetrySubscription?.cancel();
     await _mqttStatusSubscription?.cancel();
     await _fallAlertSubscription?.cancel();
@@ -949,7 +1089,7 @@ class GatewayRuntimeService {
     }
   }
 
-  void _recordM5Payload(String payload) {
+  void _recordM5Payload(String payload, {required String deviceId}) {
     try {
       final sample = M5TelemetrySample.fromPayload(payload);
       _m5History.add(sample);
@@ -959,6 +1099,10 @@ class GatewayRuntimeService {
       _emitSnapshot(
         _snapshot.copyWith(
           latestM5Sample: sample,
+          latestM5SampleByDeviceId: {
+            ..._snapshot.latestM5SampleByDeviceId,
+            deviceId: sample,
+          },
           m5History: List<M5TelemetrySample>.unmodifiable(_m5History),
         ),
       );
@@ -973,12 +1117,13 @@ class GatewayRuntimeService {
   }
 
   Future<void> _loadPairedDevicesIntoSnapshot(GatewayConfig config) async {
-    final pairedM5 = await _preferences.loadPairedM5Device();
+    final pairedM5BySlot = await _preferences.loadPairedM5DevicesBySlot();
     final pairedPolar = await _preferences.loadPairedPolarDevice();
     _emitSnapshot(
       _snapshot.copyWith(
         config: config,
-        pairedM5Device: pairedM5,
+        pairedBeltM5Device: pairedM5BySlot[M5DeviceSlot.belt],
+        pairedWheelchairM5Device: pairedM5BySlot[M5DeviceSlot.wheelchair],
         pairedPolarDevice: pairedPolar,
       ),
     );

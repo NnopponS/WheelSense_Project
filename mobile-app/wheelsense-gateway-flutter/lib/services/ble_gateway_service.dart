@@ -33,7 +33,25 @@ class BleGatewayService {
   Stream<bool> get m5FallCapableUpdates => _m5FallCapableController.stream;
 
   bool _m5FallCapable = false;
+
+  /// True when at least one connected M5 exposes the fall characteristic.
   bool get m5FallCapable => _m5FallCapable;
+
+  /// Fall-capability tracked per connected M5 so one device's capability
+  /// never masks another's.
+  final Map<String, bool> _m5FallCapableByDevice = <String, bool>{};
+
+  bool isM5FallCapableFor(String deviceId) =>
+      _m5FallCapableByDevice[deviceId] ?? false;
+
+  void _setM5FallCapableFor(String deviceId, bool value) {
+    if (value) {
+      _m5FallCapableByDevice[deviceId] = true;
+    } else {
+      _m5FallCapableByDevice.remove(deviceId);
+    }
+    _setM5FallCapable(_m5FallCapableByDevice.isNotEmpty);
+  }
 
   void _setM5FallCapable(bool value) {
     if (_m5FallCapable == value) {
@@ -303,7 +321,7 @@ class BleGatewayService {
               await fallChar.setNotifyValue(true);
             }
           }
-          _setM5FallCapable(fallChar != null);
+          _setM5FallCapableFor(deviceId, fallChar != null);
           reassembler.reset();
           backoff = const Duration(seconds: 2);
 
@@ -315,7 +333,7 @@ class BleGatewayService {
                 (state) => state == fbp.BluetoothConnectionState.disconnected,
               )
               .first;
-          _setM5FallCapable(false);
+          _setM5FallCapableFor(deviceId, false);
         } on Object catch (error, stack) {
           debugPrint(
             '[BleGatewayService] M5 connect/subscribe error: $error\n$stack',
@@ -332,7 +350,7 @@ class BleGatewayService {
     }());
 
     controller.onCancel = () async {
-      _setM5FallCapable(false);
+      _setM5FallCapableFor(deviceId, false);
       await telemetrySubscription?.cancel();
       await fallAlertSubscription?.cancel();
       try {
@@ -345,7 +363,7 @@ class BleGatewayService {
   }
 
   Future<void> disconnectM5(String deviceId) async {
-    _setM5FallCapable(false);
+    _setM5FallCapableFor(deviceId, false);
     try {
       final device = fbp.BluetoothDevice.fromId(deviceId);
       await device.disconnect();

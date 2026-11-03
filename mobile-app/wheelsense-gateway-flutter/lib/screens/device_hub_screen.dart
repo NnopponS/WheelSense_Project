@@ -47,13 +47,24 @@ class DeviceHubScreen extends StatelessWidget {
             ? null
             : PreviewMetrics.at(previewAt!);
         final polar = s.latestPolarSample;
-        final m5 = s.latestM5Sample;
+        final beltDevice = s.pairedBeltM5Device;
+        final wheelchairDevice = s.pairedWheelchairM5Device;
+        final beltM5 = beltDevice == null
+            ? null
+            : s.latestM5SampleByDeviceId[beltDevice.id];
+        final wheelchairM5 = wheelchairDevice == null
+            ? null
+            : s.latestM5SampleByDeviceId[wheelchairDevice.id];
         final polarRecent = polar != null && _isRecent(polar.timestamp);
-        final m5Recent = m5 != null && _isRecent(m5.timestamp);
-        // One M5 slot: it is the belt when the fall characteristic is there.
-        final m5Paired = s.pairedM5Device != null;
-        final beltActive = m5Paired && s.m5FallCapable;
-        final wheelchairActive = m5Paired && !s.m5FallCapable;
+        final beltRecent = beltM5 != null && _isRecent(beltM5.timestamp);
+        final wheelchairRecent =
+            wheelchairM5 != null && _isRecent(wheelchairM5.timestamp);
+        // Each M5 slot is active only while its own relay is running.
+        final beltActive =
+            beltDevice != null && s.m5ConnectedDeviceIds.contains(beltDevice.id);
+        final wheelchairActive =
+            wheelchairDevice != null &&
+            s.m5ConnectedDeviceIds.contains(wheelchairDevice.id);
         final polarPaired = s.pairedPolarDevice != null;
         // Preview shows every sensor; otherwise only the ones paired here.
         final sensorCards = <Widget>[
@@ -63,27 +74,27 @@ class DeviceHubScreen extends StatelessWidget {
               image: 'assets/devices/m5stickcplus2.png',
               paired: wheelchairActive,
               previewConnected: preview != null && !beltActive,
-              battery: wheelchairActive
-                  ? s.latestM5Sample?.batteryPercent
-                  : null,
-              signal: wheelchairActive ? s.pairedM5Device?.rssi : null,
-              lastSeen: wheelchairActive ? s.latestM5Sample?.timestamp : null,
+              battery: wheelchairActive ? wheelchairM5?.batteryPercent : null,
+              signal: wheelchairActive ? wheelchairDevice?.rssi : null,
+              lastSeen: wheelchairActive ? wheelchairM5?.timestamp : null,
               note: beltActive
                   ? t.pick(
-                      'Shares one connection with the FallGuard Belt, which is connected now.',
-                      'ใช้การเชื่อมต่อเดียวกับเข็มขัด FallGuard ซึ่งเชื่อมต่ออยู่ตอนนี้',
+                      'Running alongside the FallGuard Belt.',
+                      'ทำงานควบคู่กับเข็มขัด FallGuard',
                     )
                   : null,
-              reading: beltActive
-                  ? null
-                  : m5Recent && m5.stepCount != null
-                  ? t.pick('${m5.stepCount} steps', '${m5.stepCount} ก้าว')
-                  : m5Recent && m5.hasDistance
-                  ? '${m5.distanceM.toStringAsFixed(1)} m'
-                  : !m5Recent && preview != null
+              reading: wheelchairRecent && wheelchairM5!.stepCount != null
+                  ? t.pick(
+                      '${wheelchairM5.stepCount} steps',
+                      '${wheelchairM5.stepCount} ก้าว',
+                    )
+                  : wheelchairRecent && wheelchairM5!.hasDistance
+                  ? '${wheelchairM5.distanceM.toStringAsFixed(1)} m'
+                  : !wheelchairRecent && preview != null
                   ? '${preview.distanceM.toStringAsFixed(1)} m'
                   : null,
-              readingIsPreview: !m5Recent && preview != null && !beltActive,
+              readingIsPreview:
+                  !wheelchairRecent && preview != null && !beltActive,
               onManage: onManagePairing,
               onDetails: onMonitor,
             ),
@@ -93,17 +104,20 @@ class DeviceHubScreen extends StatelessWidget {
               image: 'assets/devices/fallguard_belt.png',
               paired: beltActive,
               previewConnected: preview != null && !wheelchairActive,
-              battery: beltActive ? s.latestM5Sample?.batteryPercent : null,
-              signal: beltActive ? s.pairedM5Device?.rssi : null,
-              lastSeen: beltActive ? s.latestM5Sample?.timestamp : null,
+              battery: beltActive ? beltM5?.batteryPercent : null,
+              signal: beltActive ? beltDevice?.rssi : null,
+              lastSeen: beltActive ? beltM5?.timestamp : null,
               note: wheelchairActive
                   ? t.pick(
-                      'Shares one connection with the wheelchair sensor. Pairing the belt replaces it.',
-                      'ใช้การเชื่อมต่อเดียวกับเซนเซอร์รถเข็น การจับคู่เข็มขัดจะแทนที่เซนเซอร์รถเข็น',
+                      'Running alongside the wheelchair sensor.',
+                      'ทำงานควบคู่กับเซนเซอร์รถเข็น',
                     )
                   : null,
-              reading: beltActive && m5Recent && m5.stepCount != null
-                  ? t.pick('${m5.stepCount} steps', '${m5.stepCount} ก้าว')
+              reading: beltRecent && beltM5!.stepCount != null
+                  ? t.pick(
+                      '${beltM5.stepCount} steps',
+                      '${beltM5.stepCount} ก้าว',
+                    )
                   : !beltActive && preview != null
                   ? t.pick('${preview.steps} steps', '${preview.steps} ก้าว')
                   : null,
@@ -133,7 +147,8 @@ class DeviceHubScreen extends StatelessWidget {
         ];
         final connected = preview != null
             ? sensorCards.length
-            : (m5Paired && m5Recent ? 1 : 0) +
+            : (wheelchairActive && wheelchairRecent ? 1 : 0) +
+                  (beltActive && beltRecent ? 1 : 0) +
                   (polarPaired && polarRecent ? 1 : 0);
         return ProductPage(
           children: [

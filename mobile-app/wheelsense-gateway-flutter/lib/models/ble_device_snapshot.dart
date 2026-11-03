@@ -1,3 +1,8 @@
+/// Which physical mounting point a paired M5 represents. The slot is a
+/// local UX/storage concern; the backend maps each device to its canonical
+/// fleet id from the hardware ids in the registration packet.
+enum M5DeviceSlot { belt, wheelchair }
+
 class BleDeviceSnapshot {
   const BleDeviceSnapshot({
     required this.id,

@@ -31,11 +31,11 @@ class PairDevicesScreen extends StatefulWidget {
 
 class _PairDevicesScreenState extends State<PairDevicesScreen> {
   final List<BleDeviceSnapshot> _devices = <BleDeviceSnapshot>[];
-  final List<M5TelemetrySample> _m5Samples = <M5TelemetrySample>[];
   final List<PolarTelemetrySample> _polarSamples = <PolarTelemetrySample>[];
 
   StreamSubscription<BleDeviceSnapshot>? _scanSubscription;
-  StreamSubscription<String>? _m5Subscription;
+  final Map<M5DeviceSlot, StreamSubscription<String>> _m5Subscriptions =
+      <M5DeviceSlot, StreamSubscription<String>>{};
   StreamSubscription<PolarTelemetrySample>? _polarSubscription;
   StreamSubscription<GatewayConfig>? _configSubscription;
   Timer? _uiRefreshTimer;
@@ -43,16 +43,35 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   DateTime? _previewNow;
   bool _pendingUiUpdate = false;
 
-  BleDeviceSnapshot? _m5Device;
+  final Map<M5DeviceSlot, BleDeviceSnapshot?> _m5Devices =
+      <M5DeviceSlot, BleDeviceSnapshot?>{
+        M5DeviceSlot.belt: null,
+        M5DeviceSlot.wheelchair: null,
+      };
+  final Map<M5DeviceSlot, List<M5TelemetrySample>> _m5SlotSamples =
+      <M5DeviceSlot, List<M5TelemetrySample>>{
+        M5DeviceSlot.belt: <M5TelemetrySample>[],
+        M5DeviceSlot.wheelchair: <M5TelemetrySample>[],
+      };
+  final Map<M5DeviceSlot, bool> _m5RelayActive = <M5DeviceSlot, bool>{
+    M5DeviceSlot.belt: false,
+    M5DeviceSlot.wheelchair: false,
+  };
+  final Map<M5DeviceSlot, bool> _m5Connecting = <M5DeviceSlot, bool>{
+    M5DeviceSlot.belt: false,
+    M5DeviceSlot.wheelchair: false,
+  };
+  final Map<M5DeviceSlot, String?> _m5Errors = <M5DeviceSlot, String?>{
+    M5DeviceSlot.belt: null,
+    M5DeviceSlot.wheelchair: null,
+  };
+  M5DeviceSlot? _scanM5Slot;
   BleDeviceSnapshot? _polarDevice;
-  String? _m5Error;
   String? _polarError;
   _ScanTarget? _scanTarget;
   bool _scanning = false;
   bool _loadedInitialState = false;
-  bool _m5RelayActive = false;
   bool _polarRelayActive = false;
-  bool _m5Connecting = false;
   bool _polarConnecting = false;
   bool _m5SetupCompletionMarked = false;
   StreamSubscription<GatewayRuntimeSnapshot>? _snapshotSubscription;
@@ -107,7 +126,9 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     _uiRefreshTimer?.cancel();
     _previewTimer?.cancel();
     _scanSubscription?.cancel();
-    _m5Subscription?.cancel();
+    for (final subscription in _m5Subscriptions.values) {
+      subscription.cancel();
+    }
     _polarSubscription?.cancel();
     _configSubscription?.cancel();
     _snapshotSubscription?.cancel();
@@ -122,14 +143,16 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
       _pendingUiUpdate = true;
     });
     final config = await runtime.loadConfig();
-    final pairedM5 = await runtime.loadPairedM5Device();
+    final pairedM5 = await runtime.loadPairedM5DevicesBySlot();
     final pairedPolar = await runtime.loadPairedPolarDevice();
     if (!mounted) {
       return;
     }
     setState(() {
       _m5SetupCompletionMarked = config.setupCompleted;
-      _m5Device = pairedM5;
+      _m5Devices[M5DeviceSlot.belt] = pairedM5[M5DeviceSlot.belt];
+      _m5Devices[M5DeviceSlot.wheelchair] =
+          pairedM5[M5DeviceSlot.wheelchair];
       _polarDevice = pairedPolar;
     });
   }
@@ -162,50 +185,27 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     final preview = previewNow == null ? null : PreviewMetrics.at(previewNow);
     // Prefer the shared rolling history: it also covers relays that were
     // auto-started outside this screen (e.g. on app resume).
-    final m5Samples = runtime.snapshot.m5History.isNotEmpty
-        ? runtime.snapshot.m5History
-        : _m5Samples;
     final polarSamples = runtime.snapshot.polarHistory.isNotEmpty
         ? runtime.snapshot.polarHistory
         : _polarSamples;
-    final m5View = _selectedOrCandidate(
-      _m5Device,
-      (device) => device.looksLikeM5,
-    );
     final polarView = _selectedOrCandidate(
       _polarDevice,
       (device) => device.looksLikePolar,
     );
-    final actualM5 = m5Samples.lastOrNull ?? runtime.snapshot.latestM5Sample;
     final actualPolar =
         polarSamples.lastOrNull ?? runtime.snapshot.latestPolarSample;
     final now = previewNow ?? DateTime.now();
-    final latestM5 = ToolPreviewReadings.resolveWheelchair(
-      actual: actualM5,
-      preview: preview,
-      now: now,
-    );
     final latestPolar = ToolPreviewReadings.resolvePolar(
       actual: actualPolar,
       preview: preview,
       now: now,
     );
-    final m5Fresh = ToolPreviewReadings.isFresh(actualM5?.timestamp, now);
     final polarFresh = ToolPreviewReadings.isFresh(actualPolar?.timestamp, now);
-    final visibleM5History = m5Fresh && m5Samples.isNotEmpty
-        ? m5Samples
-        : preview == null
-        ? m5Samples
-        : ToolPreviewReadings.wheelchairHistory(now, preview);
     final visiblePolarHistory = polarFresh && polarSamples.isNotEmpty
         ? polarSamples
         : preview == null
         ? polarSamples
         : ToolPreviewReadings.polarHistory(now, preview);
-    final m5Discovered = _discoveredMatching(
-      _m5Device,
-      (device) => device.looksLikeM5,
-    );
     final polarDiscovered = _discoveredMatching(
       _polarDevice,
       (device) => device.looksLikePolar,
@@ -215,11 +215,10 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         .sorted((a, b) => b.rssi.compareTo(a.rssi))
         .toList();
 
-    final isM5Connected =
-        preview != null ||
-        _m5RelayActive ||
-        runtime.isM5RelayActive ||
-        (runtime.snapshot.pairedM5Device != null && latestM5 != null);
+    final m5SlotState = <M5DeviceSlot, _M5SlotState>{
+      for (final slot in M5DeviceSlot.values)
+        slot: _resolveM5Slot(slot, runtime, preview, now),
+    };
     final isPolarConnected =
         preview != null ||
         _polarRelayActive ||
@@ -248,26 +247,26 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
             child: TabBarView(
               children: [
                 _m5DevicePage(
+                  slot: M5DeviceSlot.wheelchair,
+                  slotState: m5SlotState[M5DeviceSlot.wheelchair]!,
                   sectionTitle: wheelchairLabel,
-                  cardTitle: m5View?.displayName ?? wheelchairLabel,
+                  cardTitle:
+                      m5SlotState[M5DeviceSlot.wheelchair]!
+                          .view
+                          ?.displayName ??
+                      wheelchairLabel,
                   imageAsset: 'assets/devices/m5stickcplus2_real_alt.webp',
-                  m5View: m5View,
-                  m5Discovered: m5Discovered != null,
-                  isM5Connected: isM5Connected,
-                  latestM5: latestM5,
-                  visibleM5History: visibleM5History,
                   preview: preview,
                   strings: strings,
                 ),
                 _m5DevicePage(
+                  slot: M5DeviceSlot.belt,
+                  slotState: m5SlotState[M5DeviceSlot.belt]!,
                   sectionTitle: beltLabel,
-                  cardTitle: beltLabel,
+                  cardTitle:
+                      m5SlotState[M5DeviceSlot.belt]!.view?.displayName ??
+                      beltLabel,
                   imageAsset: 'assets/devices/fallguard_belt.png',
-                  m5View: m5View,
-                  m5Discovered: m5Discovered != null,
-                  isM5Connected: isM5Connected,
-                  latestM5: latestM5,
-                  visibleM5History: visibleM5History,
                   preview: preview,
                   strings: strings,
                 ),
@@ -382,23 +381,99 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     );
   }
 
+  /// Resolves everything one M5 tab needs from the shared snapshot: its own
+  /// paired device, its own latest sample, its own history, its own
+  /// connect state, and the scan candidates still free to pair here.
+  _M5SlotState _resolveM5Slot(
+    M5DeviceSlot slot,
+    GatewayRuntimeService runtime,
+    PreviewMetrics? preview,
+    DateTime now,
+  ) {
+    final device = _m5Devices[slot];
+    final otherId = _m5Devices[slot == M5DeviceSlot.belt
+            ? M5DeviceSlot.wheelchair
+            : M5DeviceSlot.belt]
+        ?.id;
+    final candidates = _devices
+        .where(
+          (candidate) =>
+              candidate.looksLikeM5 &&
+              candidate.id != device?.id &&
+              candidate.id != otherId,
+        )
+        .toList();
+    final view = device ?? candidates.firstOrNull;
+
+    final local = _m5SlotSamples[slot]!.lastOrNull;
+    final byDevice = device == null
+        ? null
+        : runtime.snapshot.latestM5SampleByDeviceId[device.id];
+    // A sample without a deviceId is attributed only when this slot holds
+    // the sole paired M5.
+    final shared = runtime.snapshot.latestM5Sample;
+    final solePaired =
+        runtime.snapshot.pairedM5Devices.length <= 1 &&
+        (runtime.snapshot.pairedM5Device?.id == null ||
+            runtime.snapshot.pairedM5Device?.id == device?.id);
+    final actual = byDevice ?? local ?? (solePaired ? shared : null);
+    final latest = ToolPreviewReadings.resolveWheelchair(
+      actual: actual,
+      preview: preview,
+      now: now,
+    );
+
+    final history = runtime.snapshot.m5History.isNotEmpty
+        ? runtime.snapshot.m5History
+            .where(
+              (sample) =>
+                  device == null ||
+                  sample.deviceId == null ||
+                  sample.deviceId == device.id,
+            )
+            .toList()
+        : _m5SlotSamples[slot]!;
+    final fresh = ToolPreviewReadings.isFresh(actual?.timestamp, now);
+    final visibleHistory = fresh && history.isNotEmpty
+        ? history
+        : preview == null
+        ? history
+        : ToolPreviewReadings.wheelchairHistory(now, preview);
+
+    final connected =
+        preview != null ||
+        _m5RelayActive[slot]! ||
+        (device != null &&
+            (runtime.isM5RelayActiveFor(device.id) || latest != null));
+
+    return _M5SlotState(
+      view: view,
+      discovered: candidates.isNotEmpty,
+      candidates: candidates,
+      connected: connected,
+      latest: latest,
+      visibleHistory: visibleHistory,
+    );
+  }
+
   Widget _m5DevicePage({
+    required M5DeviceSlot slot,
+    required _M5SlotState slotState,
     required String sectionTitle,
     required String cardTitle,
     required String imageAsset,
-    required BleDeviceSnapshot? m5View,
-    required bool m5Discovered,
-    required bool isM5Connected,
-    required M5TelemetrySample? latestM5,
-    required List<M5TelemetrySample> visibleM5History,
     required PreviewMetrics? preview,
     required GatewayStrings strings,
   }) {
+    final device = _m5Devices[slot];
+    final connecting = _m5Connecting[slot]!;
+    final scanning = _scanning && _scanM5Slot == slot;
+    final error = preview == null ? _m5Errors[slot] : null;
     return ClinicalPage(
       children: [
         _StepIntro(
           step: strings.pick('Step 1 of 2', 'ขั้นตอนที่ 1 จาก 2'),
-          text: isM5Connected
+          text: slotState.connected
               ? strings.pick(
                   'Connected and streaming motion data over Bluetooth.',
                   'เชื่อมต่อแล้วและกำลังส่งข้อมูลการเคลื่อนไหวผ่านบลูทูธ',
@@ -411,77 +486,84 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         _SensorDeviceCard(
           title: cardTitle,
           imageAsset: imageAsset,
-          connected: isM5Connected,
-          connecting: _m5Connecting,
-          scanning: _scanning && _scanTarget == _ScanTarget.m5,
+          connected: slotState.connected,
+          connecting: connecting,
+          scanning: scanning,
           status: _deviceStatus(
-            device: m5View,
-            discovered: m5Discovered,
-            connected: isM5Connected,
-            connecting: _m5Connecting,
-            scanning: _scanning && _scanTarget == _ScanTarget.m5,
-            error: preview == null ? _m5Error : null,
+            device: slotState.view,
+            discovered: slotState.discovered,
+            connected: slotState.connected,
+            connecting: connecting,
+            scanning: scanning,
+            error: error,
             fallback: strings.devicesTapToScan,
           ),
-          batteryPercent: latestM5?.batteryPercent,
-          error: preview == null ? _m5Error : null,
-          onTap: _handleM5Tap,
+          batteryPercent: slotState.latest?.batteryPercent,
+          error: error,
+          onTap: () => _handleM5Tap(slot),
           actions: [
             _CardAction(
-              onPressed: _m5Device == null || _m5Connecting
+              onPressed: device == null || connecting
                   ? null
-                  : _reconnectM5,
+                  : () => _reconnectM5(slot),
               icon: Icons.sync_rounded,
               label: strings.reconnect,
             ),
             _CardAction(
-              onPressed: _m5Device == null ? null : _renameM5,
+              onPressed: device == null ? null : () => _renameM5(slot),
               icon: Icons.edit_rounded,
               label: strings.rename,
             ),
             _CardAction(
-              onPressed: _m5Device == null ? null : _forgetM5,
+              onPressed: device == null ? null : () => _forgetM5(slot),
               icon: Icons.link_off_rounded,
               label: strings.forget,
             ),
           ],
           metrics: [
-            if (latestM5?.stepCount != null)
+            if (slotState.latest?.stepCount != null)
               _SensorMetric(
                 label: strings.steps,
-                value: '${latestM5!.stepCount}',
+                value: '${slotState.latest!.stepCount}',
                 unit: '',
               ),
             _SensorMetric(
               label: strings.distance,
-              value: _number(latestM5?.distanceM),
+              value: _number(slotState.latest?.distanceM),
               unit: 'm',
             ),
             _SensorMetric(
               label: strings.velocity,
-              value: _number(latestM5?.velocityMs),
+              value: _number(slotState.latest?.velocityMs),
               unit: 'm/s',
             ),
             _SensorMetric(
               label: strings.acceleration,
-              value: latestM5 == null
+              value: slotState.latest == null
                   ? '--'
-                  : (latestM5.accelMs2 / 9.80665).toStringAsFixed(2),
+                  : (slotState.latest!.accelMs2 / 9.80665).toStringAsFixed(2),
               unit: 'g',
             ),
           ],
-          extra: isM5Connected && visibleM5History.length >= 2
+          extra: slotState.connected && slotState.visibleHistory.length >= 2
               ? Column(
                   children: [
-                    AccelLineChart(samples: List.of(visibleM5History)),
+                    AccelLineChart(samples: List.of(slotState.visibleHistory)),
                     const SizedBox(height: 12),
-                    GyroLineChart(samples: List.of(visibleM5History)),
+                    GyroLineChart(samples: List.of(slotState.visibleHistory)),
                     const SizedBox(height: 12),
-                    MotionLineChart(samples: List.of(visibleM5History)),
+                    MotionLineChart(samples: List.of(slotState.visibleHistory)),
                   ],
                 )
               : null,
         ),
+        if (slotState.candidates.isNotEmpty && !slotState.connected) ...[
+          const SizedBox(height: 14),
+          _M5FoundList(
+            devices: slotState.candidates,
+            onPick: (device) => unawaited(_pairM5(device, slot)),
+          ),
+        ],
       ],
     );
   }
@@ -537,15 +619,18 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     return _devices.firstWhereOrNull(predicate);
   }
 
-  Future<void> _scan([_ScanTarget? target]) async {
+  Future<void> _scan([_ScanTarget? target, M5DeviceSlot? m5Slot]) async {
     final runtime = GatewayServicesScope.of(context);
     final config = await runtime.loadConfig();
     setState(() {
       _devices.clear();
       _scanTarget = target;
+      _scanM5Slot = target == _ScanTarget.m5
+          ? (m5Slot ?? M5DeviceSlot.belt)
+          : null;
       _scanning = true;
       if (target == _ScanTarget.m5) {
-        _m5Error = null;
+        _m5Errors[_scanM5Slot!] = null;
       } else if (target == _ScanTarget.polar) {
         _polarError = null;
       }
@@ -579,13 +664,17 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           onDone: () {
             if (mounted) {
               final missed = _scanTarget;
+              final missedSlot = _scanM5Slot;
               setState(() {
                 _scanning = false;
                 _scanTarget = null;
+                _scanM5Slot = null;
               });
               if (missed == _ScanTarget.m5 &&
-                  !_m5Connecting &&
-                  !_m5RelayActive) {
+                  missedSlot != null &&
+                  !_m5Connecting[missedSlot]! &&
+                  !_m5RelayActive[missedSlot]! &&
+                  _m5SlotSamples[missedSlot]!.isEmpty) {
                 _show(context.text.m5NotFound);
               } else if (missed == _ScanTarget.polar &&
                   !_polarConnecting &&
@@ -597,24 +686,42 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         );
   }
 
-  void _handleM5Tap() {
-    if (_m5RelayActive) {
+  void _handleM5Tap(M5DeviceSlot slot) {
+    if (_m5RelayActive[slot]!) {
       _show(context.text.m5Connected);
       return;
     }
-    if (_m5Connecting || _scanning) {
-      _show(_m5Connecting ? context.text.connectingM5 : context.text.scanning);
+    if (_m5Connecting[slot]! || _scanning) {
+      _show(
+        _m5Connecting[slot]!
+            ? context.text.connectingM5
+            : context.text.scanning,
+      );
       return;
     }
-    final device = _discoveredMatching(
-      _m5Device,
-      (candidate) => candidate.looksLikeM5,
-    );
+    final device = _m5Devices[slot] != null
+        ? _devices.firstWhereOrNull(
+                (candidate) => candidate.id == _m5Devices[slot]!.id,
+              ) ??
+              _m5Devices[slot]!
+        : _devices.firstWhereOrNull(
+            (candidate) =>
+                candidate.looksLikeM5 &&
+                !_isPairedToOtherSlot(slot, candidate.id),
+          );
     if (device == null) {
-      unawaited(_scan(_ScanTarget.m5));
+      unawaited(_scan(_ScanTarget.m5, slot));
       return;
     }
-    unawaited(_pairM5(device));
+    unawaited(_pairM5(device, slot));
+  }
+
+  bool _isPairedToOtherSlot(M5DeviceSlot slot, String deviceId) {
+    final other =
+        _m5Devices[slot == M5DeviceSlot.belt
+            ? M5DeviceSlot.wheelchair
+            : M5DeviceSlot.belt];
+    return other?.id == deviceId;
   }
 
   void _handlePolarTap() {
@@ -640,13 +747,28 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   }
 
   void _autoConnectIfTargetFound(BleDeviceSnapshot device) {
-    if (_scanTarget == _ScanTarget.m5 && device.looksLikeM5) {
+    final slot = _scanM5Slot;
+    if (_scanTarget == _ScanTarget.m5 && slot != null && device.looksLikeM5) {
+      // With several unpaired M5s nearby, auto-grabbing the first one could
+      // land the wrong unit in this slot — list them and let the user pick.
+      final candidates = _devices
+          .where(
+            (candidate) =>
+                candidate.looksLikeM5 &&
+                !_isPairedToOtherSlot(slot, candidate.id) &&
+                candidate.id != _m5Devices[slot]?.id,
+          )
+          .toList();
+      if (candidates.length > 1) {
+        return;
+      }
       unawaited(_scanSubscription?.cancel());
       setState(() {
         _scanning = false;
         _scanTarget = null;
+        _scanM5Slot = null;
       });
-      unawaited(_pairM5(device));
+      unawaited(_pairM5(device, slot));
     } else if (_scanTarget == _ScanTarget.polar && device.looksLikePolar) {
       unawaited(_scanSubscription?.cancel());
       setState(() {
@@ -657,7 +779,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     }
   }
 
-  Future<void> _pairM5(BleDeviceSnapshot device) async {
+  Future<void> _pairM5(BleDeviceSnapshot device, M5DeviceSlot slot) async {
     final strings = context.text;
     if (!device.looksLikeM5) {
       _show(strings.notM5(device.name));
@@ -665,32 +787,37 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     }
     final runtime = GatewayServicesScope.of(context);
     final config = await _loadLatestConfig();
-    await _m5Subscription?.cancel();
+    await _m5Subscriptions[slot]?.cancel();
     if (!mounted) {
       return;
     }
+    final named = device.name == 'Unnamed BLE Device'
+        ? device.copyWith(name: 'M5StickC Plus2')
+        : device;
     setState(() {
-      _m5Device = device.name == 'Unnamed BLE Device'
-          ? device.copyWith(name: 'M5StickC Plus2')
-          : device;
-      _m5Samples.clear();
-      _m5Error = null;
-      _m5RelayActive = false;
-      _m5Connecting = true;
+      _m5Devices[slot] = named;
+      _m5SlotSamples[slot]!.clear();
+      _m5Errors[slot] = null;
+      _m5RelayActive[slot] = false;
+      _m5Connecting[slot] = true;
     });
 
     try {
-      final stream = await runtime.startM5TelemetryRelay(config, _m5Device!);
-      _m5Subscription = stream.listen(
+      final stream = await runtime.startM5TelemetryRelay(
+        config,
+        named,
+        slot: slot,
+      );
+      _m5Subscriptions[slot] = stream.listen(
         (payload) {
-          final sample = _parseM5(payload);
+          final sample = _parseM5(payload, slot);
           if (!mounted || sample == null) {
             return;
           }
-          final firstPacket = !_m5RelayActive;
-          _m5Connecting = false;
-          _m5RelayActive = true;
-          _pushLimited(_m5Samples, sample);
+          final firstPacket = !_m5RelayActive[slot]!;
+          _m5Connecting[slot] = false;
+          _m5RelayActive[slot] = true;
+          _pushLimited(_m5SlotSamples[slot]!, sample);
           if (firstPacket) {
             setState(() {});
           } else {
@@ -704,9 +831,9 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         onError: (Object error) {
           if (mounted) {
             setState(() {
-              _m5Connecting = false;
-              _m5RelayActive = false;
-              _m5Error = '$error';
+              _m5Connecting[slot] = false;
+              _m5RelayActive[slot] = false;
+              _m5Errors[slot] = '$error';
             });
           }
         },
@@ -715,8 +842,8 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     } on Object catch (error) {
       if (mounted) {
         setState(() {
-          _m5Connecting = false;
-          _m5Error = '$error';
+          _m5Connecting[slot] = false;
+          _m5Errors[slot] = '$error';
         });
       }
       _show(strings.m5ConnectionFailed(error));
@@ -790,14 +917,14 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     }
   }
 
-  M5TelemetrySample? _parseM5(String payload) {
+  M5TelemetrySample? _parseM5(String payload, M5DeviceSlot slot) {
     try {
       return M5TelemetrySample.fromPayload(payload);
     } on Object {
       if (mounted) {
         setState(() {
-          _m5Connecting = false;
-          _m5Error = context.text.invalidM5Packet;
+          _m5Connecting[slot] = false;
+          _m5Errors[slot] = context.text.invalidM5Packet;
         });
       }
       return null;
@@ -811,12 +938,12 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     }
   }
 
-  void _reconnectM5() {
-    final device = _m5Device;
+  void _reconnectM5(M5DeviceSlot slot) {
+    final device = _m5Devices[slot];
     if (device == null) {
       return;
     }
-    unawaited(_pairM5(device));
+    unawaited(_pairM5(device, slot));
   }
 
   void _reconnectPolar() {
@@ -827,8 +954,8 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     unawaited(_pairPolar(device));
   }
 
-  Future<void> _renameM5() async {
-    final device = _m5Device;
+  Future<void> _renameM5(M5DeviceSlot slot) async {
+    final device = _m5Devices[slot];
     if (device == null) {
       return;
     }
@@ -845,7 +972,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     if (!mounted) {
       return;
     }
-    setState(() => _m5Device = device.copyWith(name: name));
+    setState(() => _m5Devices[slot] = device.copyWith(name: name));
   }
 
   Future<void> _renamePolar() async {
@@ -869,18 +996,22 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     setState(() => _polarDevice = device.copyWith(name: name));
   }
 
-  Future<void> _forgetM5() async {
+  Future<void> _forgetM5(M5DeviceSlot slot) async {
     final runtime = GatewayServicesScope.of(context);
-    await _m5Subscription?.cancel();
-    await runtime.forgetM5Device();
+    final device = _m5Devices[slot];
+    await _m5Subscriptions[slot]?.cancel();
+    _m5Subscriptions.remove(slot);
+    if (device != null) {
+      await runtime.forgetM5Device(device.id);
+    }
     if (!mounted) {
       return;
     }
     setState(() {
-      _m5Device = null;
-      _m5RelayActive = false;
-      _m5Connecting = false;
-      _m5Samples.clear();
+      _m5Devices[slot] = null;
+      _m5RelayActive[slot] = false;
+      _m5Connecting[slot] = false;
+      _m5SlotSamples[slot]!.clear();
     });
   }
 
@@ -939,6 +1070,70 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// Everything one M5 slot tab renders, resolved once per build.
+class _M5SlotState {
+  const _M5SlotState({
+    required this.view,
+    required this.discovered,
+    required this.candidates,
+    required this.connected,
+    required this.latest,
+    required this.visibleHistory,
+  });
+
+  final BleDeviceSnapshot? view;
+  final bool discovered;
+  final List<BleDeviceSnapshot> candidates;
+  final bool connected;
+  final M5TelemetrySample? latest;
+  final List<M5TelemetrySample> visibleHistory;
+}
+
+/// Scan results that are still free to pair into this slot; tapping one
+/// pairs it immediately so two identical M5s never get auto-grabbed wrong.
+class _M5FoundList extends StatelessWidget {
+  const _M5FoundList({required this.devices, required this.onPick});
+
+  final List<BleDeviceSnapshot> devices;
+  final ValueChanged<BleDeviceSnapshot> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.text;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                strings.pick(
+                  'Found M5 sensors — tap to pair',
+                  'พบเซนเซอร์ M5 — แตะเพื่อจับคู่',
+                ),
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+            for (final device in devices)
+              ListTile(
+                leading: const Icon(Icons.memory_rounded),
+                title: Text(device.name),
+                subtitle: Text('${device.id} · RSSI ${device.rssi} dBm'),
+                trailing: FilledButton.tonal(
+                  onPressed: () => onPick(device),
+                  child: Text(strings.pick('Pair', 'จับคู่')),
+                ),
+                onTap: () => onPick(device),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

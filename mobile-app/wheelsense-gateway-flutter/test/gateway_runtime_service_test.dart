@@ -120,6 +120,59 @@ void main() {
     await ble.close();
   });
 
+  test('belt and wheelchair M5s relay independently on one phone', () async {
+    final ble = _FakeBleGatewayService();
+    final mqtt = _CapturingMqttGatewayService();
+    final runtime = GatewayRuntimeService(
+      preferences: _MemoryGatewayPreferences(),
+      ble: ble,
+      mqtt: mqtt,
+    );
+    final config = GatewayConfig.defaults().copyWith(setupCompleted: true);
+    const belt = BleDeviceSnapshot(
+      id: 'BELT_1',
+      name: 'FallGuard Belt',
+      rssi: -50,
+      serviceUuids: <String>[BleDeviceSnapshot.wheelSenseM5ServiceUuid],
+    );
+    const wheel = BleDeviceSnapshot(
+      id: 'WHEEL_1',
+      name: 'Wheel M5',
+      rssi: -52,
+      serviceUuids: <String>[BleDeviceSnapshot.wheelSenseM5ServiceUuid],
+    );
+
+    await runtime.startM5TelemetryRelay(
+      config,
+      belt,
+      slot: M5DeviceSlot.belt,
+    );
+    await runtime.startM5TelemetryRelay(
+      config,
+      wheel,
+      slot: M5DeviceSlot.wheelchair,
+    );
+
+    expect(runtime.isM5RelayActive, isTrue);
+    expect(runtime.isM5RelayActiveFor('BELT_1'), isTrue);
+    expect(runtime.isM5RelayActiveFor('WHEEL_1'), isTrue);
+    expect(runtime.snapshot.pairedBeltM5Device?.id, 'BELT_1');
+    expect(runtime.snapshot.pairedWheelchairM5Device?.id, 'WHEEL_1');
+    expect(runtime.snapshot.pairedM5Devices, hasLength(2));
+    expect(
+      mqtt.m5Registrations.map((entry) => entry['device_id']),
+      containsAll(<String>['BELT_1', 'WHEEL_1']),
+    );
+
+    await runtime.forgetM5Device('BELT_1');
+    expect(runtime.isM5RelayActiveFor('BELT_1'), isFalse);
+    expect(runtime.isM5RelayActiveFor('WHEEL_1'), isTrue);
+    expect(runtime.snapshot.pairedBeltM5Device, isNull);
+    expect(runtime.snapshot.pairedWheelchairM5Device?.id, 'WHEEL_1');
+    await runtime.dispose();
+    await ble.close();
+  });
+
   test('M5 live readings update before a slow MQTT publish completes', () async {
     final ble = _FakeBleGatewayService();
     final mqtt = _BlockingMqttGatewayService();
@@ -303,7 +356,8 @@ class _CountingForeground extends GatewayForegroundService {
 
 class _MemoryGatewayPreferences extends GatewayPreferencesService {
   GatewayConfig _config = GatewayConfig.defaults();
-  BleDeviceSnapshot? _m5;
+  BleDeviceSnapshot? _beltM5;
+  BleDeviceSnapshot? _wheelchairM5;
   BleDeviceSnapshot? _polar;
 
   @override
@@ -316,7 +370,17 @@ class _MemoryGatewayPreferences extends GatewayPreferencesService {
 
   @override
   Future<void> savePairedM5Device(BleDeviceSnapshot device) async {
-    _m5 = device;
+    _beltM5 = device;
+  }
+
+  @override
+  Future<void> savePairedM5BeltDevice(BleDeviceSnapshot device) async {
+    _beltM5 = device;
+  }
+
+  @override
+  Future<void> savePairedM5WheelchairDevice(BleDeviceSnapshot device) async {
+    _wheelchairM5 = device;
   }
 
   @override
@@ -325,14 +389,49 @@ class _MemoryGatewayPreferences extends GatewayPreferencesService {
   }
 
   @override
-  Future<BleDeviceSnapshot?> loadPairedM5Device() async => _m5;
+  Future<BleDeviceSnapshot?> loadPairedM5Device() async => _beltM5;
+
+  @override
+  Future<BleDeviceSnapshot?> loadPairedM5BeltDevice() async => _beltM5;
+
+  @override
+  Future<BleDeviceSnapshot?> loadPairedM5WheelchairDevice() async =>
+      _wheelchairM5;
+
+  @override
+  Future<Map<M5DeviceSlot, BleDeviceSnapshot>>
+  loadPairedM5DevicesBySlot() async => <M5DeviceSlot, BleDeviceSnapshot>{
+    if (_beltM5 != null) M5DeviceSlot.belt: _beltM5!,
+    if (_wheelchairM5 != null) M5DeviceSlot.wheelchair: _wheelchairM5!,
+  };
 
   @override
   Future<BleDeviceSnapshot?> loadPairedPolarDevice() async => _polar;
 
   @override
   Future<void> clearPairedM5Device() async {
-    _m5 = null;
+    _beltM5 = null;
+    _wheelchairM5 = null;
+  }
+
+  @override
+  Future<void> clearPairedM5BeltDevice() async {
+    _beltM5 = null;
+  }
+
+  @override
+  Future<void> clearPairedM5WheelchairDevice() async {
+    _wheelchairM5 = null;
+  }
+
+  @override
+  Future<void> removePairedM5Device(String deviceId) async {
+    if (_beltM5?.id == deviceId) {
+      _beltM5 = null;
+    }
+    if (_wheelchairM5?.id == deviceId) {
+      _wheelchairM5 = null;
+    }
   }
 
   @override
@@ -358,6 +457,9 @@ class _FakeBleGatewayService implements BleGatewayService {
 
   @override
   bool get m5FallCapable => fallCapable;
+
+  @override
+  bool isM5FallCapableFor(String deviceId) => fallCapable;
 
   @override
   Stream<BleDeviceSnapshot> scan(
@@ -419,6 +521,8 @@ class _FakeBleGatewayService implements BleGatewayService {
 class _CapturingMqttGatewayService extends MqttGatewayService {
   final List<GatewayConfig> telemetryConfigs = <GatewayConfig>[];
   final List<String> telemetryPayloads = <String>[];
+  final List<Map<String, Object?>> m5Registrations =
+      <Map<String, Object?>>[];
 
   @override
   bool get isConnected => true;
@@ -434,6 +538,9 @@ class _CapturingMqttGatewayService extends MqttGatewayService {
     Map<String, Object?>? companionM5,
     Map<String, Object?>? companionPolar,
   }) async {
+    if (companionM5 != null) {
+      m5Registrations.add(companionM5);
+    }
     return true;
   }
 
