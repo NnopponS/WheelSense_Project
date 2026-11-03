@@ -197,7 +197,9 @@ class OverviewScreen extends StatelessWidget {
                           : strings.velocity,
                       subtitle: state.latestM5Sample != null
                           ? '${strings.velocity} ${state.latestM5Sample!.velocityMs.toStringAsFixed(2)} m/s'
-                          : strings.waitingForM5Telemetry,
+                          : strings.waitingForM5Telemetry(
+                              strings.pick('M5 sensor', 'เซนเซอร์ M5'),
+                            ),
                       meta: strings.live,
                       severity: ClinicalSeverity.normal,
                       actionLabel: strings.navMonitor,

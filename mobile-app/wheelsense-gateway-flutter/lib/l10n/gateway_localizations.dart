@@ -183,8 +183,8 @@ class GatewayStrings {
   );
   String get nextM5Title => pick('Pair the M5 sensor', 'จับคู่เซนเซอร์ M5');
   String get nextM5Detail => pick(
-    'Open Devices, scan nearby BLE, and connect the wheelchair sensor.',
-    'เปิดหน้าอุปกรณ์ สแกน BLE ใกล้ตัว แล้วเชื่อมต่อเซนเซอร์รถเข็น',
+    'Open Devices, scan nearby BLE, and connect the M5 sensors.',
+    'เปิดหน้าอุปกรณ์ สแกน BLE ใกล้ตัว แล้วเชื่อมต่อเซนเซอร์ M5',
   );
   String get nextFirstPacketTitle =>
       pick('Wait for first telemetry', 'รอข้อมูลชุดแรก');
@@ -276,22 +276,22 @@ class GatewayStrings {
   String get deviceName => pick('Device name', 'ชื่ออุปกรณ์');
   String bleScanFailed(Object error) =>
       pick('BLE scan failed: $error', 'สแกน BLE ไม่สำเร็จ: $error');
-  String get m5NotFound => pick(
-    'Wheelchair sensor not found. Turn it on and scan again.',
-    'ไม่พบเซนเซอร์รถเข็น กรุณาเปิดเครื่องแล้วสแกนใหม่',
+  String m5NotFound(String label) => pick(
+    '$label not found. Turn it on and scan again.',
+    'ไม่พบ$label กรุณาเปิดเครื่องแล้วสแกนใหม่',
   );
   String get polarNotFound => pick(
     'Polar Verity Sense not found. Turn it on and scan again.',
     'ไม่พบ Polar Verity Sense กรุณาเปิดเครื่องแล้วสแกนใหม่',
   );
-  String get m5Connected =>
-      pick('Wheelchair sensor is connected', 'เซนเซอร์รถเข็นเชื่อมต่อแล้ว');
+  String m5Connected(String label) =>
+      pick('$label is connected', '$labelเชื่อมต่อแล้ว');
   String get polarConnected => pick(
     'Polar Verity Sense is connected',
     'Polar Verity Sense เชื่อมต่อแล้ว',
   );
-  String get connectingM5 =>
-      pick('Connecting to wheelchair sensor', 'กำลังเชื่อมต่อเซนเซอร์รถเข็น');
+  String connectingM5(String label) =>
+      pick('Connecting to $label', 'กำลังเชื่อมต่อ$label');
   String get connectingPolar => pick(
     'Connecting to Polar Verity Sense',
     'กำลังเชื่อมต่อ Polar Verity Sense',
@@ -304,9 +304,9 @@ class GatewayStrings {
     '$name is not a Polar Verity Sense / HR sensor',
     '$name ไม่ใช่ Polar Verity Sense หรือเซนเซอร์ชีพจร',
   );
-  String get waitingForM5Telemetry => pick(
-    'Waiting for wheelchair sensor data',
-    'กำลังรอข้อมูลจากเซนเซอร์รถเข็น',
+  String waitingForM5Telemetry(String label) => pick(
+    'Waiting for $label data',
+    'กำลังรอข้อมูลจาก$label',
   );
   String get waitingForPolarData => pick(
     'Waiting for Polar Verity Sense data',

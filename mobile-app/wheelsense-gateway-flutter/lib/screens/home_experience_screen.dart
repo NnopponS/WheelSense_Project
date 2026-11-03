@@ -124,15 +124,15 @@ class _HomeExperienceScreenState extends State<HomeExperienceScreen> {
           ),
           _ConnectionCard(
             icon: 'activity',
-            title: s.m5FallCapable
-                ? t.pick('FallGuard Belt', 'เข็มขัด FallGuard')
-                : t.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น'),
+            title: s.pairedBeltM5Device == null &&
+                    s.pairedWheelchairM5Device != null
+                ? t.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น')
+                : s.pairedWheelchairM5Device != null
+                ? t.pick('Belt + Wheelchair', 'เข็มขัด + วีลแชร์')
+                : t.pick('FallGuard Belt', 'เข็มขัด FallGuard'),
             detail: preview != null
                 ? t.pick('Connected', 'เชื่อมต่อแล้ว')
-                : (s.m5FallCapable && s.pairedM5Device != null
-                          ? 'FallGuard Belt'
-                          : s.pairedM5Device?.displayName) ??
-                      t.pick('Pair', 'จับคู่'),
+                : s.pairedM5Device?.displayName ?? t.pick('Pair', 'จับคู่'),
             active: preview != null || s.pairedM5Device != null,
             onTap: onDevices,
           ),

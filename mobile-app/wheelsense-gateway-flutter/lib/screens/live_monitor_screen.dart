@@ -186,9 +186,12 @@ class _LiveStatusStrip extends StatelessWidget {
           on: dataAvailable,
         ),
         _StatusDot(
-          label: state.m5FallCapable
-              ? 'FallGuard Belt'
-              : t.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น'),
+          label: state.pairedWheelchairM5Device != null &&
+                  state.pairedBeltM5Device == null
+              ? t.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น')
+              : state.pairedWheelchairM5Device != null
+              ? t.pick('Belt + Wheelchair', 'เข็มขัด + วีลแชร์')
+              : 'FallGuard Belt',
           on: m5Connected,
         ),
         _StatusDot(label: 'Polar', on: polarConnected),

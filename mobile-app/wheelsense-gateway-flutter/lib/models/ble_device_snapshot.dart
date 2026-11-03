@@ -59,11 +59,15 @@ class BleDeviceSnapshot {
     return !looksLikeNodeTsimcam && (looksLikeM5 || looksLikePolar);
   }
 
-  String get displayName => looksLikeM5 ? 'Wheelchair sensor' : name;
+  /// The actual advertised/saved name — the friendly slot label ("FallGuard
+  /// Belt" / "Wheelchair sensor") comes from whichever slot paired the device,
+  /// not from the device class, since the same firmware serves both roles.
+  String get displayName =>
+      name.isEmpty || name == 'Unnamed BLE Device' ? 'M5 sensor' : name;
 
   String get pairingFamily {
     if (looksLikeM5) {
-      return 'Wheelchair sensor';
+      return 'M5 sensor';
     }
     if (looksLikePolar) {
       return 'Polar Verity Sense';

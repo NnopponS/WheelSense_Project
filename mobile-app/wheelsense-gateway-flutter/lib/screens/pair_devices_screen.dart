@@ -224,8 +224,8 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         _polarRelayActive ||
         runtime.isPolarRelayActive ||
         (runtime.snapshot.pairedPolarDevice != null && latestPolar != null);
-    final beltLabel = strings.pick('FallGuard Belt', 'เข็มขัด FallGuard');
-    final wheelchairLabel = strings.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น');
+    final beltLabel = _m5SlotLabel(M5DeviceSlot.belt);
+    final wheelchairLabel = _m5SlotLabel(M5DeviceSlot.wheelchair);
 
     return DefaultTabController(
       length: 4,
@@ -456,6 +456,10 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     );
   }
 
+  String _m5SlotLabel(M5DeviceSlot slot) => slot == M5DeviceSlot.belt
+      ? context.text.pick('FallGuard Belt', 'เข็มขัด FallGuard')
+      : context.text.pick('Wheelchair sensor', 'เซนเซอร์รถเข็น');
+
   Widget _m5DevicePage({
     required M5DeviceSlot slot,
     required _M5SlotState slotState,
@@ -675,7 +679,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
                   !_m5Connecting[missedSlot]! &&
                   !_m5RelayActive[missedSlot]! &&
                   _m5SlotSamples[missedSlot]!.isEmpty) {
-                _show(context.text.m5NotFound);
+                _show(context.text.m5NotFound(_m5SlotLabel(missedSlot)));
               } else if (missed == _ScanTarget.polar &&
                   !_polarConnecting &&
                   !_polarRelayActive) {
@@ -688,13 +692,13 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
 
   void _handleM5Tap(M5DeviceSlot slot) {
     if (_m5RelayActive[slot]!) {
-      _show(context.text.m5Connected);
+      _show(context.text.m5Connected(_m5SlotLabel(slot)));
       return;
     }
     if (_m5Connecting[slot]! || _scanning) {
       _show(
         _m5Connecting[slot]!
-            ? context.text.connectingM5
+            ? context.text.connectingM5(_m5SlotLabel(slot))
             : context.text.scanning,
       );
       return;
@@ -838,7 +842,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           }
         },
       );
-      _show(strings.waitingForM5Telemetry);
+      _show(strings.waitingForM5Telemetry(_m5SlotLabel(slot)));
     } on Object catch (error) {
       if (mounted) {
         setState(() {
