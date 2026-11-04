@@ -117,9 +117,11 @@ class MqttGatewayService {
     if (config.alertsEnabled) {
       if (config.linkedPatientId != null) {
         topics.add('WheelSense/alerts/${config.linkedPatientId}');
-      } else {
-        topics.add('WheelSense/alerts/${config.deviceId}');
       }
+      // The backend also publishes a companion-M5 fall alert to the gateway's
+      // own device topic — the phone must hear its paired M5's fall even when
+      // linkedPatientId points at a different patient (or is unset).
+      topics.add('WheelSense/alerts/${config.deviceId}');
     }
     return topics;
   }
