@@ -1,6 +1,14 @@
 # WheelSense Platform
 
-WheelSense is an IoT + clinical workflow platform for wheelchair monitoring, room localization, patient workflows, smart-device control, and role-based web dashboards.
+**An assistive-technology prototype, from wheelchair sensing at home to care workflows in nursing homes.**
+
+WheelSense started with room-level tracking, reminders, smart-device control, and exercise suggestions for wheelchair users. EaseAI extends the platform with role-based dashboards and a review step before the assistant acts. This repository is the engineering source for the prototypes; it is not a clinical product.
+
+[Engineering case study](https://nnoppons.github.io/wheelsense/) · [Architecture](docs/ARCHITECTURE.md) · [Get started](#quick-start)
+
+![The WheelSense team and wheelchair prototype at the Thailand booth at InnoServe 2026 in Taipei.](docs/assets/wheelsense-innoserve-2026.jpg)
+
+*InnoServe Awards 2026 · Taipei, Taiwan · Third place in International Exchange (English).*
 
 ## Repository Layout
 
